@@ -155,6 +155,11 @@ export class TrackWindow {
     return chunk;
   }
 
+  /** Read-only sampled geometry of a live chunk (for rendering). */
+  chunkTable(chunkIndex: number): ArcLengthTable {
+    return this.#chunk(chunkIndex).table;
+  }
+
   sample(s: number): TrackSample {
     const chunk = this.#locate(s);
     return sampleArcLengthTable(chunk.table, s - chunk.startS);

@@ -98,3 +98,14 @@ describe('TrackWindow', () => {
     expect(() => window.sample(window.endS + 1)).toThrow(RangeError);
   });
 });
+
+describe('TrackWindow.chunkTable', () => {
+  it('exposes the sampled geometry of live chunks for rendering', () => {
+    const window = new TrackWindow(source, 0, world);
+    window.ensureRange(-100, 3000);
+    const table = window.chunkTable(1);
+    expect(table.chunkIndex).toBe(1);
+    expect(table.xs[0]).toBe(world.chunkWidthU);
+    expect(() => window.chunkTable(99)).toThrow(RangeError);
+  });
+});
