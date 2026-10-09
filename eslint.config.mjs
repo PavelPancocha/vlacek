@@ -7,8 +7,19 @@ export default defineConfig(
   js.configs.recommended,
   tseslint.configs.recommended,
   {
-    files: ['scripts/**/*.ts', 'tests/**/*.ts', 'vitest.config.ts'],
+    files: [
+      'scripts/**/*.ts',
+      'tests/**/*.ts',
+      'src/**/*.ts',
+      'vitest.config.ts',
+      'vite.config.ts',
+    ],
     extends: [tseslint.configs.recommendedTypeChecked],
-    languageOptions: { parserOptions: { projectService: true } },
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
   },
 );

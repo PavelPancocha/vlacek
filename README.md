@@ -36,7 +36,7 @@ Krajina je převážně středoevropská, postupně zahrnuje lesy, pole, vodu, p
 
 Nejprve přečíst tento soubor, game design a rozhodnutí. Před implementací vstupů přečíst celý dokument 02; před implementací tratě společně 03 a 04. Plán práce je v dokumentu 10. Dokument 11 je součást zadání od začátku, nikoli až závěrečný seznam přání.
 
-V tomto repozitáři jsou specifikace ve složce `vlacek-predavaci-balicek/`; tento README je jejich rozcestník. Kořenový [AGENTS.md](AGENTS.md) určuje pracovní postup včetně TDD, povinné dokumentace a pravidel udržitelnosti. Při případném přesunu do `docs/spec/` oprav i odkazy a nevytvářej druhou kopii specifikací. Herní aplikace zatím není implementovaná; vývojové nástroje, lokální hook a workflow GitHub Actions už jsou součástí repozitáře.
+V tomto repozitáři jsou specifikace ve složce `vlacek-predavaci-balicek/`; tento README je jejich rozcestník. Kořenový [AGENTS.md](AGENTS.md) určuje pracovní postup včetně TDD, povinné dokumentace a pravidel udržitelnosti. Při případném přesunu do `docs/spec/` oprav i odkazy a nevytvářej druhou kopii specifikací. Herní aplikace zatím není implementovaná; vývojové nástroje, lokální hook, workflow GitHub Actions a zástupná stránka nasazovaná na GitHub Pages už jsou součástí repozitáře.
 
 ### Vývojové prostředí a kontroly od prvního dne
 
@@ -47,7 +47,19 @@ volta run npm ci
 volta run npm run check
 ```
 
-`npm ci` také nainstaluje lokální Git hook. `npm run check` ověří formátování, lint, TypeScript, Vitest testy a místní odkazy v dokumentaci. GitHub Actions spouští stejný příkaz na push a pull request. Testy zatím ověřují vývojové nástroje a dokumentaci, nikoli hru. Herní build a browserové testy přibudou s prvním hratelným řezem.
+`npm ci` také nainstaluje lokální Git hook. `npm run check` ověří formátování, lint, TypeScript, Vitest testy a místní odkazy v dokumentaci. GitHub Actions spouští stejný příkaz a produkční build na push a pull request. Testy zatím ověřují vývojové nástroje, build a dokumentaci, nikoli hru. Browserové testy přibudou s prvním hratelným řezem.
+
+### Spuštění a nasazení
+
+```bash
+volta run npm run dev -- --host 0.0.0.0
+volta run npm run build
+volta run npm run preview -- --host 0.0.0.0
+```
+
+`dev` spustí vývojový server Vite, `build` vytvoří statický web v `dist/` a `preview` jej servíruje lokálně. Proměnná `VLACEK_BASE` nastaví cestu nasazení (výchozí je kořen domény). Pro podadresář ji předej buildu i preview, např. `VLACEK_BASE=/vlacek/ volta run npm run build` a `VLACEK_BASE=/vlacek/ volta run npm run preview`; web je pak na `http://localhost:4173/vlacek/`. Server nemá SPA fallback, takže chybějící soubor vrací 404, nikoli HTML. Každý build nese identifikátor `<verze>+<commit>` v `<meta name="vlacek-build">`.
+
+Po úspěšných kontrolách na větvi `master` workflow nasadí build na [GitHub Pages](https://pavelpancocha.github.io/vlacek/). Zatím jde o zástupnou stránku s identifikátorem buildu, nikoli o hru. Podrobnosti jsou ve [vývojovém návodu](docs/development.md#nasazení-na-github-pages) a v [rozhodnutí D-002](docs/decisions/002-github-pages.md).
 
 Podrobná instalace, příkazy, TDD, chování hooku a omezení kontrol jsou ve [vývojovém návodu](docs/development.md); volbu prostředí vysvětluje [rozhodnutí D-001](docs/decisions/001-toolchain.md).
 
