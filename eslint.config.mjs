@@ -32,6 +32,24 @@ export default defineConfig(
     },
   },
   {
+    // Phaser is a rendering detail; only the render layer may depend on it.
+    files: ['src/**/*.ts'],
+    ignores: ['src/render/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'phaser',
+              message: 'Only src/render may import Phaser.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Domain and configuration: no Phaser, DOM, storage, audio, clock or RNG.
     files: ['src/domain/**/*.ts', 'src/config/**/*.ts'],
     plugins: {

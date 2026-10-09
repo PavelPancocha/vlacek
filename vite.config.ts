@@ -40,6 +40,11 @@ export default defineConfig({
   base: normalizeBasePath(process.env['VLACEK_BASE']),
   // No SPA fallback: a missing asset must be a 404, never index.html (PWA-10).
   appType: 'mpa',
+  build: {
+    // Phaser is one ~1.4 MB chunk that cannot be split meaningfully; the real
+    // limit is the doc 13 transfer budget checked by `npm run report:budgets`.
+    chunkSizeWarningLimit: 1600,
+  },
   define: { __APP_BUILD_ID__: JSON.stringify(buildId) },
   plugins: [
     {

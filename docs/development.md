@@ -2,7 +2,7 @@
 
 ## Stav
 
-Repozitář obsahuje specifikace, vývojové nástroje a testy jejich chování a Vite build zástupné stránky nasazované na GitHub Pages. Hra, Phaser, katalog assetů, Playwright a PWA zatím nejsou implementované. Jejich kontroly přidávej spolu s funkcemi podle AGENTS.md; úspěch tohoto CI není akceptace hry.
+Repozitář obsahuje specifikace, vývojové nástroje a testy jejich chování, Vite build nasazovaný na GitHub Pages, start Phaseru s dočasnou ukázkovou scénou a Playwright smoke testy. Hra, katalog assetů a PWA zatím nejsou implementované. Jejich kontroly přidávej spolu s funkcemi podle AGENTS.md; úspěch tohoto CI není akceptace hry.
 
 Výsledky prvního lokálního ověření včetně red/green a negativních kontrol jsou v [protokolu z 2026-10-09](validation/2026-10-09-toolchain.md); průběžné ověření verze 0.1 je v [protokolu v0.1](validation/2026-10-09-v0.1.md).
 
@@ -38,7 +38,9 @@ Přesné verze závislostí vlastní `package.json`, celý strom `package-lock.j
 | ESLint, `@eslint/js`, typescript-eslint | Chyby JavaScriptu/TypeScriptu a typově informovaný lint skriptů a testů; warnings blokují kontrolu.                               |
 | Prettier                                | Jednotný formát zdrojů, konfigurací a dokumentace.                                                                                |
 | Vite                                    | Vývojový server, produkční build statického webu a jeho lokální preview.                                                          |
+| Phaser (runtime závislost)              | 2D vykreslování (WebGL s Canvas fallbackem). Smí jej importovat jen `src/render/`; vstup, fokus a audio Phaseru jsou vypnuté.     |
 | Vitest                                  | Testy v Node; `npm test` skončí po jednom běhu a selže, pokud testy nenajde.                                                      |
+| Playwright                              | Browserové testy produkčního buildu v Chromiu, desktop a dotykový tablet 1280 × 800.                                              |
 | marked                                  | Markdown parser pro kontrolu skutečných odkazů včetně referencí a vnořených seznamů; text v code blocích se za odkazy nepovažuje. |
 | Husky, lint-staged                      | Reprodukovatelný lokální pre-commit hook a kontroly staged souborů.                                                               |
 | secretlint + preset recommend           | Offline detekce tajných údajů (klíče, tokeny, privátní klíče) ve všech souborech; nalezené hodnoty maskuje.                       |
@@ -54,6 +56,8 @@ Přesné verze závislostí vlastní `package.json`, celý strom `package-lock.j
 | `npm test`                                     | Všechny Vitest testy jednou.                                                                    |
 | `npm run test:watch`                           | Průběžný vývoj s Vitest watch režimem.                                                          |
 | `npm test -- tests/tooling/check-docs.test.ts` | Cílený test validátoru pro TDD.                                                                 |
+| `npm run test:e2e`                             | Produkční build a Playwright testy proti `vite preview` (port 4173).                            |
+| `npm run report:budgets`                       | Velikost `dist/` po souborech, raw i gzip; selže nad rozpočtem 10 MiB prvního přenosu.          |
 | `npm run typecheck`                            | TypeScript bez generování souborů.                                                              |
 | `npm run lint`                                 | ESLint bez automatických oprav.                                                                 |
 | `npm run format:check`                         | Kontrola formátu bez změny souborů.                                                             |
@@ -64,7 +68,7 @@ Přesné verze závislostí vlastní `package.json`, celý strom `package-lock.j
 
 ## TypeScript projekty
 
-Společná strict pravidla jsou v `tsconfig.base.json`. Kořenový `tsconfig.json` kontroluje Node skripty, testy a konfigurace bez DOM typů. `src/tsconfig.json` kontroluje webovou aplikaci s DOM typy a rozlišením modulů pro Vite. `npm run typecheck` spouští oba projekty. Konfigurace se jmenují `tsconfig.json`, protože typově informovaný ESLint (`projectService`) hledá nejbližší soubor právě tohoto jména. Relativní importy v `src/` uvádějí příponu `.ts`, aby je stejně načetly testy v Node.
+Společná strict pravidla jsou v `tsconfig.base.json`. Kořenový `tsconfig.json` kontroluje Node skripty, testy a konfigurace bez DOM typů. `src/tsconfig.json` kontroluje webovou aplikaci s DOM typy a rozlišením modulů pro Vite; má `skipLibCheck`, protože deklarace Phaseru 4.2.1 samy neprojdou strict kontrolou TypeScriptu 6 (TS2526, TS2416, viz [D-004](decisions/004-renderer-and-phaser.md)). `tests/e2e/tsconfig.json` kontroluje Playwright testy a jejich konfiguraci s DOM typy pro kód v `page.evaluate`; kořenový projekt je vynechává. `npm run typecheck` spouští všechny tři projekty. Konfigurace se jmenují `tsconfig.json`, protože typově informovaný ESLint (`projectService`) hledá nejbližší soubor právě tohoto jména. Relativní importy v `src/` uvádějí příponu `.ts`, aby je stejně načetly testy v Node.
 
 TDD: napiš test pozorovatelného chování → spusť a ověř správný důvod selhání → minimální implementace → zelený test → refaktoring → `npm run check`. Chyba instalace/importu není red. Výsledek a provedené příkazy uveď v předání. Nové testy patří do `tests/**/*.test.ts`; `.only`, skip ani vyšší retries nesmějí zakrýt regresi.
 
@@ -75,7 +79,20 @@ TDD: napiš test pozorovatelného chování → spusť a ověř správný důvod
 - Lokální pravidlo `vlacek/pure-imports` (`tools/eslint/pure-imports.mjs`) povolí jen relativní importy, které zůstanou uvnitř čisté zóny. Odmítne balíčky (`phaser`), aliasy (`@/…`), cesty do `render/`, `ui/`, `platform/`, `app/`, re-exporty, dynamický a vypočtený `import()`, `import('x').Typ`, `require` a importy s `?query`. Protože totéž platí pro každý čistý soubor, nevede ven ani řetězec re-exportů.
 - `no-restricted-globals` (včetně `globalThis`), `no-restricted-properties` a `no-restricted-syntax` zakazují `window`, `document`, `localStorage`, `performance`, časovače, `Math.random()`, `Date.now()`, `new Date()`, `import.meta` a `declare global`. `triple-slash-reference` zakazuje `/// <reference lib="dom" />`.
 
+Mimo čistou zónu platí ještě `no-restricted-imports`: `phaser` smí importovat jen `src/render/**`.
+
 Čas, náhodnost (seed) a platformní data předává doméně volající. Negativní testy v `tests/tooling/domain-boundaries.test.ts` lintují skutečnou projektovou konfigurací ukázky každého zakázaného vzoru v obou adresářích zóny. Kontrolní testy ověřují povolený import uvnitř zóny a neomezený platformní kód. Samostatný TypeScript projekt domény bez DOM typů přibude s prvním doménovým modulem; do té doby hranici drží lint.
+
+## Browserové testy
+
+Playwright je připnutý v `package.json` a stahuje vlastní Chromium odpovídající verzi (pro 1.64.0 revize 1248, Chromium 156). Konfigurace je `tests/e2e/playwright.config.ts`; testy se jmenují `*.spec.ts`, takže je Vitest nespouští. `npm run test:e2e` nejdřív vytvoří produkční build a server spustí Playwright sám. Výstupy jsou v `test-results/` a v CI v `playwright-report/`; obojí je ignorované Gitem.
+
+```bash
+volta run npx playwright install chromium
+volta run npm run test:e2e
+```
+
+Pokud prostředí nastavuje `PLAYWRIGHT_BROWSERS_PATH` na adresář se starší revizí prohlížeče (například předinstalovaný kontejner), nainstaluj správnou revizi jinam a stejnou cestu předej i testům, např. `PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright`. Spouštění se starším Chromiem přes `executablePath` není podporovaná konfigurace. Testy mají `forbidOnly` a žádné retries; dotykový projekt používá `hasTouch`. Emulace není test fyzického zařízení.
 
 ## Kontrola dokumentace
 
@@ -89,13 +106,13 @@ Externí URL, protocol-relative URL, čisté `#fragmenty` a code bloky se ignoru
 
 Pre-commit na každém staged souboru spouští secretlint (`--no-glob`, cesty se berou doslova) a limit velikosti. Nepouští síťové požadavky, plný typecheck ani celou testovací sadu. Samotné odstranění souboru nemusí vyvolat lint-staged úlohu; proto je před commitem povinné `npm run check` a stejná kontrola běží v CI. Testy v `tests/tooling/pre-commit.test.ts` v dočasném repozitáři ověřují, že hook odmítne staged privátní klíč i příliš velký soubor. Kontrola tajných údajů je ochrana proti omylu, nikoli záruka: neodhalí každý formát tajemství.
 
-Workflow `.github/workflows/ci.yml` běží na push, pull request a ruční spuštění. Job **Quality checks** má read-only oprávnění, timeout 10 minut a action reference připnuté na commit SHA. Starší běh pro stejný ref se ruší, kromě běhu na `master`, aby se nepřerušilo nasazení. setup-node čte Node verzi z `package.json`; `.npmrc` při `npm ci` ověří i přesnou npm verzi dodanou s připnutým Node. CI vynechává instalaci lokálních hooků pomocí `HUSKY=0`, spouští `npm run check` a produkční `npm run build`.
+Workflow `.github/workflows/ci.yml` běží na push, pull request a ruční spuštění. Job **Quality checks** má read-only oprávnění, timeout 10 minut a action reference připnuté na commit SHA. Starší běh pro stejný ref se ruší, kromě běhu na `master`, aby se nepřerušilo nasazení. setup-node čte Node verzi z `package.json`; `.npmrc` při `npm ci` ověří i přesnou npm verzi dodanou s připnutým Node. CI vynechává instalaci lokálních hooků pomocí `HUSKY=0`, spouští `npm run check`, produkční `npm run build` a `npm run report:budgets`. Samostatný job **E2E** nainstaluje Chromium přes `npx playwright install --with-deps chromium`, spustí `npm run test:e2e` a při selhání nahraje report jako artefakt na 7 dní.
 
-GitHub workflow už běží po pushi; první úspěšný běh je zaznamenaný v [protokolu](validation/2026-10-09-toolchain.md). V nastavení ochrany větve nastav **Quality checks** jako povinnou kontrolu před mergem; samotný YAML toto nastavení nevynutí. Při ověření 2026-10-09 byla větev `master` nechráněná. Lokální průchod není důkaz úspěšného GitHub běhu. Build, E2E ani fyzická zařízení se v tomto workflow zatím netestují.
+GitHub workflow už běží po pushi; první úspěšný běh je zaznamenaný v [protokolu](validation/2026-10-09-toolchain.md). V nastavení ochrany větve nastav **Quality checks** a **E2E** jako povinné kontroly před mergem; samotný YAML toto nastavení nevynutí. Při ověření 2026-10-09 byla větev `master` nechráněná. Lokální průchod není důkaz úspěšného GitHub běhu. Fyzická zařízení se v CI netestují.
 
 ## Nasazení na GitHub Pages
 
-Job **Deploy to GitHub Pages** běží jen pro push nebo ruční spuštění na `master` a až po úspěšném **Quality checks**. Jen tento job má oprávnění `pages: write` a `id-token: write`. Po čisté instalaci zjistí `actions/configure-pages` cestu webu (`/vlacek`), build ji dostane přes `VLACEK_BASE` a `actions/upload-pages-artifact` + `actions/deploy-pages` nahrají obsah `dist/`. Do repozitáře se žádný build necommituje.
+Job **Deploy to GitHub Pages** běží jen pro push nebo ruční spuštění na `master` a až po úspěšných jobech **Quality checks** a **E2E**. Jen tento job má oprávnění `pages: write` a `id-token: write`. Po čisté instalaci zjistí `actions/configure-pages` cestu webu (`/vlacek`), build ji dostane přes `VLACEK_BASE` a `actions/upload-pages-artifact` + `actions/deploy-pages` nahrají obsah `dist/`. Do repozitáře se žádný build necommituje.
 
 V nastavení repozitáře musí být **Settings → Pages → Source: GitHub Actions**. Prostředí `github-pages` standardně povoluje nasazení jen z výchozí větve; pracovní větve proto web nemění. Adresa je <https://pavelpancocha.github.io/vlacek/>. Nasazený obsah ověř podle `<meta name="vlacek-build">`, který musí odpovídat commitu běhu. Workflow ověř lokálně pomocí actionlint podle [protokolu nástrojů](validation/2026-10-09-toolchain.md); ověření nasazení je v [protokolu zástupné stránky](validation/2026-10-09-pages-skeleton.md). Volbu popisuje [rozhodnutí D-002](decisions/002-github-pages.md).
 

@@ -47,7 +47,7 @@ volta run npm ci
 volta run npm run check
 ```
 
-`npm ci` také nainstaluje lokální Git hook. `npm run check` ověří formátování, lint včetně hranic čisté domény, TypeScript, Vitest testy, místní odkazy v dokumentaci, tajné údaje a velikost souborů. GitHub Actions spouští stejný příkaz a produkční build na push a pull request. Testy zatím ověřují vývojové nástroje, build a dokumentaci, nikoli hru. Browserové testy přibudou s prvním hratelným řezem.
+`npm ci` také nainstaluje lokální Git hook. `npm run check` ověří formátování, lint včetně hranic čisté domény, TypeScript, Vitest testy, místní odkazy v dokumentaci, tajné údaje a velikost souborů. GitHub Actions spouští stejný příkaz, produkční build s kontrolou velikosti a browserové testy (`npm run test:e2e`, po jednorázovém `volta run npx playwright install chromium`) na push a pull request. Testy zatím ověřují nástroje, build, start rendereru a dokumentaci, nikoli hru.
 
 ### Spuštění a nasazení
 
@@ -59,7 +59,7 @@ volta run npm run preview -- --host 0.0.0.0
 
 `dev` spustí vývojový server Vite, `build` vytvoří statický web v `dist/` a `preview` jej servíruje lokálně. Proměnná `VLACEK_BASE` nastaví cestu nasazení (výchozí je kořen domény). Pro podadresář ji předej buildu i preview, např. `VLACEK_BASE=/vlacek/ volta run npm run build` a `VLACEK_BASE=/vlacek/ volta run npm run preview`; web je pak na `http://localhost:4173/vlacek/`. Server nemá SPA fallback, takže chybějící soubor vrací 404, nikoli HTML. Každý build nese identifikátor `<verze>+<commit>` v `<meta name="vlacek-build">`.
 
-Po úspěšných kontrolách na větvi `master` workflow nasadí build na [GitHub Pages](https://pavelpancocha.github.io/vlacek/). Zatím jde o zástupnou stránku s identifikátorem buildu, nikoli o hru. Podrobnosti jsou ve [vývojovém návodu](docs/development.md#nasazení-na-github-pages) a v [rozhodnutí D-002](docs/decisions/002-github-pages.md).
+Po úspěšných kontrolách na větvi `master` workflow nasadí build na [GitHub Pages](https://pavelpancocha.github.io/vlacek/). Zatím jde o dočasnou ukázku vykreslení (Phaser, WebGL nebo `?renderer=canvas`), nikoli o hru. Podrobnosti jsou ve [vývojovém návodu](docs/development.md#nasazení-na-github-pages) a v [rozhodnutí D-002](docs/decisions/002-github-pages.md).
 
 Podrobná instalace, příkazy, TDD, chování hooku a omezení kontrol jsou ve [vývojovém návodu](docs/development.md); volbu prostředí vysvětluje [rozhodnutí D-001](docs/decisions/001-toolchain.md).
 

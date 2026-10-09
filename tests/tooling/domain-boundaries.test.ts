@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 const root = resolve(import.meta.dirname, '../..');
 const BOUNDARY_RULES = new Set([
   'vlacek/pure-imports',
+  'no-restricted-imports',
   'no-restricted-globals',
   'no-restricted-properties',
   'no-restricted-syntax',
@@ -87,6 +88,28 @@ describe('pure zone (src/domain, src/config) boundary', () => {
       await boundaryErrors(
         'src/platform/probe.ts',
         "import { a } from '../render/x.ts';\nexport const t = Date.now() + a + localStorage.length;",
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe('Phaser stays inside the render layer', () => {
+  for (const file of ['src/ui/probe.ts', 'src/app/probe.ts', 'src/main.ts']) {
+    it(`rejects Phaser in ${file}`, async () => {
+      expect(
+        await boundaryErrors(
+          file,
+          "import Phaser from 'phaser';\nexport const x = Phaser;",
+        ),
+      ).toContain('no-restricted-imports');
+    });
+  }
+
+  it('allows Phaser in src/render', async () => {
+    expect(
+      await boundaryErrors(
+        'src/render/probe.ts',
+        "import Phaser from 'phaser';\nexport const x = Phaser;",
       ),
     ).toEqual([]);
   });

@@ -1,0 +1,82 @@
+import Phaser from 'phaser';
+import type { RendererPreference } from '../platform/CapabilityProbe.ts';
+
+export type RendererName = 'webgl' | 'canvas';
+
+export interface GameHostOptions {
+  parent: HTMLElement;
+  renderer: RendererPreference;
+  /** Upper bound for the render buffer density (doc 13 `quality.*.maxDpr`). */
+  maxDpr: number;
+  scenes: Phaser.Types.Scenes.SceneType[];
+  onReady: (renderer: RendererName) => void;
+}
+
+export interface GameHost {
+  destroy(): void;
+}
+
+/**
+ * Owns the Phaser game instance. Phaser input, focus handling, audio and the
+ * banner are disabled: the single DOM InputRouter and the AudioManager own
+ * those concerns. The canvas buffer is sized in device pixels (capped DPR)
+ * and zoomed back so its CSS size always matches the parent element.
+ */
+export function createGameHost(options: GameHostOptions): GameHost {
+  const { parent } = options;
+  const density = () => Math.min(window.devicePixelRatio || 1, options.maxDpr);
+  const cssSize = () => {
+    const rect = parent.getBoundingClientRect();
+    return {
+      width: Math.max(1, Math.round(rect.width)),
+      height: Math.max(1, Math.round(rect.height)),
+    };
+  };
+
+  const initial = cssSize();
+  const initialDensity = density();
+  const game = new Phaser.Game({
+    type: options.renderer === 'canvas' ? Phaser.CANVAS : Phaser.AUTO,
+    parent,
+    backgroundColor: '#bfe3f2',
+    scale: {
+      mode: Phaser.Scale.NONE,
+      width: initial.width * initialDensity,
+      height: initial.height * initialDensity,
+      zoom: 1 / initialDensity,
+    },
+    input: {
+      keyboard: false,
+      mouse: false,
+      touch: false,
+      gamepad: false,
+      windowEvents: false,
+    },
+    autoFocus: false,
+    banner: false,
+    audio: { noAudio: true },
+    fps: { smoothStep: false },
+    scene: options.scenes,
+    callbacks: {
+      postBoot: (booted) =>
+        options.onReady(
+          booted.renderer.type === Phaser.WEBGL ? 'webgl' : 'canvas',
+        ),
+    },
+  });
+
+  const observer = new ResizeObserver(() => {
+    const size = cssSize();
+    const d = density();
+    game.scale.setZoom(1 / d);
+    game.scale.resize(size.width * d, size.height * d);
+  });
+  observer.observe(parent);
+
+  return {
+    destroy() {
+      observer.disconnect();
+      game.destroy(true);
+    },
+  };
+}
