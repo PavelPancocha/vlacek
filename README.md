@@ -47,7 +47,7 @@ volta run npm ci
 volta run npm run check
 ```
 
-`npm ci` také nainstaluje lokální Git hook. `npm run check` ověří formátování, lint včetně hranic čisté domény, TypeScript, Vitest testy, místní odkazy v dokumentaci, tajné údaje a velikost souborů. GitHub Actions spouští stejný příkaz, produkční build s kontrolou velikosti a browserové testy (`npm run test:e2e`, po jednorázovém `volta run npx playwright install chromium`) na push a pull request. Testy zatím ověřují nástroje, build, start rendereru a dokumentaci, nikoli hru.
+`npm ci` také nainstaluje lokální Git hook. `npm run check` ověří formátování, lint včetně hranic čisté domény, TypeScript, Vitest testy, katalog vozidel (`validate:assets`), místní odkazy v dokumentaci, tajné údaje a velikost souborů. GitHub Actions spouští stejný příkaz, produkční build s kontrolou velikosti a browserové testy (`npm run test:e2e`, po jednorázovém `volta run npx playwright install chromium`) na push a pull request. Testy zatím ověřují nástroje, build, start rendereru a dokumentaci, nikoli hru.
 
 ### Spuštění a nasazení
 

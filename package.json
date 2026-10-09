@@ -24,11 +24,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check:docs": "node scripts/check-docs.ts",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run check:docs && npm run check:secrets && npm run check:sizes",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run validate:assets && npm run check:docs && npm run check:secrets && npm run check:sizes",
     "check:secrets": "node scripts/check-secrets.ts",
     "check:sizes": "node scripts/check-file-sizes.ts",
     "test:e2e": "npm run build && playwright test -c tests/e2e/playwright.config.ts",
-    "report:budgets": "node scripts/report-budgets.ts"
+    "report:budgets": "node scripts/report-budgets.ts",
+    "validate:assets": "node scripts/validate-assets.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
