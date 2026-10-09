@@ -25,7 +25,19 @@ test('boots the renderer with a build ID and no external requests', async ({
   baseURL,
 }) => {
   const problems = watchPage(page, new URL(baseURL ?? '').origin);
-  await page.goto('./');
+  // Deployed-site check: wait until the CDN serves the expected commit.
+  const expectedCommit = process.env['E2E_EXPECT_COMMIT']?.slice(0, 7);
+  await expect
+    .poll(
+      async () => {
+        await page.goto('./');
+        return page
+          .locator('meta[name="vlacek-build"]')
+          .getAttribute('content');
+      },
+      { timeout: expectedCommit ? 120_000 : 10_000, intervals: [2_000] },
+    )
+    .toContain(expectedCommit ?? '+');
   const root = page.locator('#game-root');
   await expect(root).toHaveAttribute('data-renderer', /^(webgl|canvas)$/);
   await expect(root.locator('canvas')).toBeVisible();

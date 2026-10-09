@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 const port = 4173;
 const repoRoot = resolve(import.meta.dirname, '../..');
+/** Set to test a deployed site (e.g. the Pages URL) instead of `dist/`. */
+const externalBaseUrl = process.env['E2E_BASE_URL'];
 
 export default defineConfig({
   testDir: '.',
@@ -24,17 +26,21 @@ export default defineConfig({
       ]
     : 'list',
   use: {
-    baseURL: `http://localhost:${port}/`,
+    baseURL: externalBaseUrl ?? `http://localhost:${port}/`,
     trace: 'retain-on-failure',
   },
-  webServer: {
-    // `npm run test:e2e` builds first; the server only serves `dist/`.
-    command: `npm run preview -- --port ${port} --strictPort`,
-    cwd: repoRoot,
-    url: `http://localhost:${port}/`,
-    reuseExistingServer: false,
-    timeout: 60_000,
-  },
+  ...(externalBaseUrl
+    ? {}
+    : {
+        webServer: {
+          // `npm run test:e2e` builds first; the server only serves `dist/`.
+          command: `npm run preview -- --port ${port} --strictPort`,
+          cwd: repoRoot,
+          url: `http://localhost:${port}/`,
+          reuseExistingServer: false,
+          timeout: 60_000,
+        },
+      }),
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     {

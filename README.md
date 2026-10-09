@@ -49,7 +49,7 @@ volta run npm run check
 
 `npm ci` také nainstaluje lokální Git hook. `npm run check` ověří formátování, lint včetně hranic čisté domény, TypeScript, Vitest testy, katalog vozidel (`validate:assets`), místní odkazy v dokumentaci, tajné údaje a velikost souborů. GitHub Actions spouští stejný příkaz, produkční build s kontrolou velikosti a browserové testy (`npm run test:e2e`, po jednorázovém `volta run npx playwright install chromium`) na push a pull request. Testy zatím ověřují nástroje, build, start rendereru a dokumentaci, nikoli hru.
 
-### Co umí průběžná verze 0.1
+### Co umí verze 0.1
 
 Výběr ze 3 dočasných lokomotiv → depo se 7 dočasnými druhy vagonků (přidat, vybrat, posunout, odebrat, vrátit; až 100 vagonků) → jízda po nekonečné kopcovité trati → pauza → pokračování. Pokračování cesty se ukládá v prohlížeči a po obnovení stránky je vlak zastavený.
 
@@ -61,7 +61,7 @@ Výběr ze 3 dočasných lokomotiv → depo se 7 dočasnými druhy vagonků (př
 | Píšťala  | tlačítko vpravo dole                                                      | `H`               |
 | Pauza    | tlačítko vpravo nahoře                                                    | `Escape`          |
 
-Grafika i zvuky jsou zatím **dočasné placeholdery** (tvary kreslené kódem, syntetizované tóny), viz [původ assetů](assets/SOURCES.md). Parametr `?renderer=canvas` vynutí Canvas renderer, `?debug=1` ukáže diagnostiku. Elektrické lokomotivy, biomy, scénky, plný katalog a PWA přijdou v dalších milnících [plánu](vlacek-predavaci-balicek/10_IMPLEMENTACNI_PLAN.md).
+Grafika i zvuky jsou zatím **dočasné placeholdery** (tvary kreslené kódem, syntetizované tóny), viz [původ assetů](assets/SOURCES.md). Parametr `?renderer=canvas` vynutí Canvas renderer, `?debug=1` ukáže diagnostiku. Ověření je v [protokolu v0.1](docs/validation/2026-10-09-v0.1.md); fyzický tablet a Tesla jsou zatím **NEOVĚŘENO** ([matice zařízení](docs/device-tests/v0.1.md)). Elektrické lokomotivy, biomy, scénky, plný katalog a PWA přijdou v dalších milnících [plánu](vlacek-predavaci-balicek/10_IMPLEMENTACNI_PLAN.md).
 
 ### Spuštění a nasazení
 
