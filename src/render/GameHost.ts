@@ -13,6 +13,7 @@ export interface GameHostOptions {
 }
 
 export interface GameHost {
+  readonly canvas: HTMLCanvasElement;
   destroy(): void;
 }
 
@@ -74,6 +75,10 @@ export function createGameHost(options: GameHostOptions): GameHost {
   observer.observe(parent);
 
   return {
+    // Phaser creates the canvas during boot; read it lazily.
+    get canvas() {
+      return game.canvas;
+    },
     destroy() {
       observer.disconnect();
       game.destroy(true);

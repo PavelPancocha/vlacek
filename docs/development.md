@@ -2,7 +2,7 @@
 
 ## Stav
 
-Repozitář obsahuje specifikace, vývojové nástroje a testy jejich chování, Vite build nasazovaný na GitHub Pages, start Phaseru s dočasnou ukázkovou scénou a Playwright smoke testy. Hra, katalog assetů a PWA zatím nejsou implementované. Jejich kontroly přidávej spolu s funkcemi podle AGENTS.md; úspěch tohoto CI není akceptace hry.
+Repozitář obsahuje specifikace, vývojové nástroje a průběžnou verzi 0.1 hry (M0 + M1): doménu (vstupy, pohyb, trať, souprava, depo), ukládání, GameSession, Phaser renderer a DOM obrazovky, nasazované na GitHub Pages. Úplný katalog, biomy, scénky a PWA zatím nejsou implementované. Jejich kontroly přidávej spolu s funkcemi podle AGENTS.md; úspěch tohoto CI není akceptace hry.
 
 Výsledky prvního lokálního ověření včetně red/green a negativních kontrol jsou v [protokolu z 2026-10-09](validation/2026-10-09-toolchain.md); průběžné ověření verze 0.1 je v [protokolu v0.1](validation/2026-10-09-v0.1.md).
 

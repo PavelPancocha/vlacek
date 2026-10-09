@@ -286,3 +286,15 @@ describe('GameSession: depot, saving and restoring', () => {
     expect(newer.getItem(PRIMARY_KEY)).toBe('{"schemaVersion":5}');
   });
 });
+
+describe('GameSession: UI-only actions', () => {
+  it('passes actions it does not own to the shell (e.g. strip scrolling)', () => {
+    const session = createSession();
+    const seen: string[] = [];
+    session.setUnhandledActionHandler((action) => seen.push(action));
+    tap(session, 'loco:steam_local');
+    tap(session, 'to-depot');
+    tap(session, 'strip-start');
+    expect(seen).toEqual(['strip-start']);
+  });
+});

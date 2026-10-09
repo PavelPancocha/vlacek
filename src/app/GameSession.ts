@@ -80,6 +80,7 @@ export class GameSession {
   #fixedStep: FixedStepState = initialFixedStep();
   #hitObject: (clientX: number, clientY: number) => string | undefined = () =>
     undefined;
+  #unhandledAction: (action: string) => void = () => undefined;
   #events: SessionEvent[] = [];
   #notices = new Set<SessionNotice>();
   #fullSignals = 0;
@@ -143,6 +144,11 @@ export class GameSession {
     hitTest: (clientX: number, clientY: number) => string | undefined,
   ): void {
     this.#hitObject = hitTest;
+  }
+
+  /** Shell-only actions (e.g. scrolling the depot strip) go here. */
+  setUnhandledActionHandler(handler: (action: string) => void): void {
+    this.#unhandledAction = handler;
   }
 
   boot(): void {
@@ -395,6 +401,8 @@ export class GameSession {
       case 'depart':
         this.#depart();
         return;
+      default:
+        this.#unhandledAction(action);
     }
   }
 
