@@ -42,8 +42,14 @@ export interface WorldConfig {
   spawnLocalXU: number;
 }
 
+export interface InteractionConfig {
+  defaultCooldownSeconds: number;
+  hornMinIntervalSeconds: number;
+}
+
 export interface GameConfig {
   simulation: SimulationConfig;
+  interaction: InteractionConfig;
   train: TrainConfig;
   world: WorldConfig;
   input: InputConfig;
@@ -51,6 +57,7 @@ export interface GameConfig {
 
 export const gameConfig: GameConfig = {
   simulation: { fixedHz: 60, maxCatchUpSteps: 5 },
+  interaction: { defaultCooldownSeconds: 1.5, hornMinIntervalSeconds: 0.7 },
   train: {
     maxWagons: 100,
     maxVehicleLengthU: 220,
@@ -92,12 +99,20 @@ const positive = (value: number) => Number.isFinite(value) && value > 0;
 
 /** Returns the paths of invalid values; an empty list means valid. */
 export function validateGameConfig(config: GameConfig): string[] {
-  const { simulation, train, world, input } = config;
+  const { simulation, interaction, train, world, input } = config;
   const fraction = (value: number) =>
     Number.isFinite(value) && value >= 0 && value < 1;
   const checks: Check[] = [
     ['simulation.fixedHz', positiveInteger(simulation.fixedHz)],
     ['simulation.maxCatchUpSteps', positiveInteger(simulation.maxCatchUpSteps)],
+    [
+      'interaction.defaultCooldownSeconds',
+      positive(interaction.defaultCooldownSeconds),
+    ],
+    [
+      'interaction.hornMinIntervalSeconds',
+      positive(interaction.hornMinIntervalSeconds),
+    ],
     ['train.maxWagons', positiveInteger(train.maxWagons)],
     ['train.maxVehicleLengthU', positive(train.maxVehicleLengthU)],
     ['train.couplerGapU', positive(train.couplerGapU)],
