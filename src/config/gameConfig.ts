@@ -32,7 +32,14 @@ export interface TrainConfig {
 }
 
 export interface WorldConfig {
+  chunkWidthU: number;
   maxTrackGrade: number;
+  boundaryHeightScale: number;
+  arcSampleSpacingU: number;
+  geometryLookAheadU: number;
+  geometryTailMarginU: number;
+  spawnChunkIndex: number;
+  spawnLocalXU: number;
 }
 
 export interface GameConfig {
@@ -57,7 +64,16 @@ export const gameConfig: GameConfig = {
     gradeAccelerationFactor: 0.25,
     slowModeSpeedFactor: 0.65,
   },
-  world: { maxTrackGrade: 0.12 },
+  world: {
+    chunkWidthU: 1024,
+    maxTrackGrade: 0.12,
+    boundaryHeightScale: 8,
+    arcSampleSpacingU: 8,
+    geometryLookAheadU: 2048,
+    geometryTailMarginU: 1024,
+    spawnChunkIndex: 0,
+    spawnLocalXU: 512,
+  },
   input: {
     maxPointers: 5,
     leftSwipeDistanceCssPx: 64,
@@ -102,7 +118,20 @@ export function validateGameConfig(config: GameConfig): string[] {
       'train.slowModeSpeedFactor',
       positive(train.slowModeSpeedFactor) && train.slowModeSpeedFactor <= 1,
     ],
+    ['world.chunkWidthU', positive(world.chunkWidthU)],
     ['world.maxTrackGrade', positive(world.maxTrackGrade)],
+    ['world.boundaryHeightScale', positive(world.boundaryHeightScale)],
+    [
+      'world.arcSampleSpacingU',
+      positive(world.arcSampleSpacingU) && world.arcSampleSpacingU <= 8,
+    ],
+    ['world.geometryLookAheadU', world.geometryLookAheadU >= 2048],
+    ['world.geometryTailMarginU', positive(world.geometryTailMarginU)],
+    ['world.spawnChunkIndex', Number.isSafeInteger(world.spawnChunkIndex)],
+    [
+      'world.spawnLocalXU',
+      world.spawnLocalXU >= 0 && world.spawnLocalXU < world.chunkWidthU,
+    ],
     ['input.maxPointers', positiveInteger(input.maxPointers)],
     ['input.leftSwipeDistanceCssPx', positive(input.leftSwipeDistanceCssPx)],
     ['input.leftSwipeMaxDurationMs', positive(input.leftSwipeMaxDurationMs)],

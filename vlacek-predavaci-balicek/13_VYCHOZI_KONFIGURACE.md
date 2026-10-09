@@ -144,7 +144,9 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
 
 `geometryLookAheadU` je minimum. Zvětší se, pokud širší viewport nebo vícedílná scénka vyžaduje více geometrie. `logicalActivationAheadU` je naopak základ deterministických spouštěčů scén a nesmí náhodně záviset na výkonnosti rendereru. Renderovat daleko viditelné statické objekty lze bez předčasného spuštění jejich scénky.
 
-`spawnLocalXU` se při startu převádí na `arcOffsetU` pomocí LUT; tyto hodnoty nejsou zaměnitelné. Všechny další konstanty s příponou U se vztahují ke světu, `CssPx` ke skutečné dotykové ploše a atlasové `Px` k souboru textury.
+`spawnLocalXU` se při startu převádí na `arcOffsetU` pomocí LUT; tyto hodnoty nejsou zaměnitelné.
+
+`generatorVersion: 1` patří generátoru V1 podle dokumentu 04. Průběžná verze 0.1 používá dočasný generátor 0 se stejnými hranicemi a profily, ale bez biomů a rezervací ([D-005](../docs/decisions/005-provisional-track-generator-v0.md)). Geometrické parametry `world.*` jsou vstupem generátoru; jejich změna vyžaduje novou verzi generátoru, nikoli jen úpravu konfigurace. Všechny další konstanty s příponou U se vztahují ke světu, `CssPx` ke skutečné dotykové ploše a atlasové `Px` k souboru textury.
 
 Počasí má při prvním okně nové cesty vždy jasno. Další okna se vybírají samostatným seedovým klíčem; zbývající pravděpodobnost po jasnu je lehká srážka vhodná pro daný biom. Denní fáze je `(initialDayPhase + simulationSeconds/dayCycleSeconds) mod 1`.
 
