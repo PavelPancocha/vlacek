@@ -6,6 +6,7 @@ const repoRoot = resolve(import.meta.dirname, '../..');
 
 export default defineConfig({
   testDir: '.',
+  testMatch: '**/*.spec.ts',
   outputDir: resolve(repoRoot, 'test-results'),
   forbidOnly: true,
   retries: 0,

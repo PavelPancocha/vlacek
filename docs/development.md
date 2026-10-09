@@ -57,6 +57,7 @@ Přesné verze závislostí vlastní `package.json`, celý strom `package-lock.j
 | `npm run test:watch`                           | Průběžný vývoj s Vitest watch režimem.                                                                                |
 | `npm test -- tests/tooling/check-docs.test.ts` | Cílený test validátoru pro TDD.                                                                                       |
 | `npm run test:e2e`                             | Produkční build a Playwright testy proti `vite preview` (port 4173).                                                  |
+| `npm run measure:perf`                         | Měření jízdy se 100 vagonky (`PERF_SECONDS`, výchozí 60) v Chromiu; JSON v `test-results/`. Není součástí CI brány.   |
 | `npm run report:budgets`                       | Velikost `dist/` po souborech, raw i gzip; selže nad rozpočtem 10 MiB prvního přenosu.                                |
 | `npm run validate:assets`                      | Kontrakt katalogu vozidel (ID, délky, podvozky, trolej ⇔ elektrická); vypíše placeholdery. `-- --release` je odmítne. |
 | `npm run typecheck`                            | TypeScript bez generování souborů.                                                                                    |
@@ -94,6 +95,8 @@ volta run npm run test:e2e
 ```
 
 Pokud prostředí nastavuje `PLAYWRIGHT_BROWSERS_PATH` na adresář se starší revizí prohlížeče (například předinstalovaný kontejner), nainstaluj správnou revizi jinam a stejnou cestu předej i testům, např. `PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright`. Spouštění se starším Chromiem přes `executablePath` není podporovaná konfigurace. Testy mají `forbidOnly` a žádné retries; dotykový projekt používá `hasTouch`. Emulace není test fyzického zařízení.
+
+Celá uživatelská cesta (`tests/e2e/game.spec.ts`) čte stav přes diagnostické API `window.__vlacek.snapshot()`, které existuje jen s `?debug=1`. Vícedotykové testy posílají `Input.dispatchTouchEvent` přes CDP: `touchEnd` uvolní právě uvedené prsty. Časy gest se předávají explicitním `timestamp`, protože automatizační kanál doručuje události se zpožděním až stovek milisekund. Měření `*.perf.ts` má vlastní konfiguraci `tests/e2e/perf.config.ts` a běží jen přes `npm run measure:perf`.
 
 ## Kontrola dokumentace
 

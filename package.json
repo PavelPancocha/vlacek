@@ -29,7 +29,8 @@
     "check:sizes": "node scripts/check-file-sizes.ts",
     "test:e2e": "npm run build && playwright test -c tests/e2e/playwright.config.ts",
     "report:budgets": "node scripts/report-budgets.ts",
-    "validate:assets": "node scripts/validate-assets.ts"
+    "validate:assets": "node scripts/validate-assets.ts",
+    "measure:perf": "npm run build && playwright test -c tests/e2e/perf.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
