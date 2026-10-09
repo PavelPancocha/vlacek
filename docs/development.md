@@ -6,6 +6,8 @@ Repozitář obsahuje specifikace, vývojové nástroje a testy jejich chování.
 
 Výsledky prvního lokálního ověření včetně red/green a negativních kontrol jsou v [protokolu z 2026-10-09](validation/2026-10-09-toolchain.md).
 
+První konkrétní vývojový řez a jeho pořadí jsou připravené v [zahájení M0](development-start.md).
+
 ## Prostředí
 
 Používáme projektové verze **Node 24.21.0 a npm 11.19.0** přes již nainstalovanou Voltu. Nový spolupracovník nejprve nainstaluje [Voltu podle oficiálního návodu](https://docs.volta.sh/guide/getting-started). `volta` v `package.json` je zdroj projektových verzí; `engines` a `.npmrc` odmítnou instalaci nesprávným runtime. `packageManager` zaznamenává verzi npm pro další nástroje. Při upgradu udržuj tyto údaje shodné.
@@ -67,7 +69,7 @@ Pre-commit nepouští síťové požadavky, plný typecheck ani celou testovací
 
 Workflow `.github/workflows/ci.yml` běží na push, pull request a ruční spuštění. Job **Quality checks** má read-only oprávnění, timeout 10 minut a action reference připnuté na commit SHA. Starší běh pro stejný ref se ruší. setup-node čte Node verzi z `package.json`; `.npmrc` při `npm ci` ověří i přesnou npm verzi dodanou s připnutým Node. CI vynechává instalaci lokálních hooků pomocí `HUSKY=0` a spouští `npm run check`.
 
-GitHub workflow začne běžet až po pushi. V nastavení ochrany větve nastav **Quality checks** jako povinnou kontrolu před mergem; samotný YAML toto nastavení nevynutí. Lokální průchod není důkaz úspěšného GitHub běhu. Build, E2E ani fyzická zařízení se v tomto workflow zatím netestují.
+GitHub workflow už běží po pushi; první úspěšný běh je zaznamenaný v [protokolu](validation/2026-10-09-toolchain.md). V nastavení ochrany větve nastav **Quality checks** jako povinnou kontrolu před mergem; samotný YAML toto nastavení nevynutí. Při ověření 2026-10-09 byla větev `master` nechráněná. Lokální průchod není důkaz úspěšného GitHub běhu. Build, E2E ani fyzická zařízení se v tomto workflow zatím netestují.
 
 ## Diagnostika
 

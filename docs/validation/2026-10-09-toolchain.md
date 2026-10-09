@@ -13,7 +13,9 @@ Rozsah: tooling před M0, dokumentace a Git hook. Prostředí: Linux x86_64, Nod
 | `git diff --check`                                                          | PASS.                                                                                                                                  |
 | actionlint 1.7.12                                                           | PASS pro `.github/workflows/ci.yml`; záměrně neznámý výrazový kontext byl odmítnut.                                                    |
 
-Audit závislostí je časový snímek, nikoli záruka budoucí bezpečnosti. GitHub Actions zatím neběželo: workflow je připravené pro push/PR; vynucení kontroly **Quality checks** v ochraně větve zatím není nastavené.
+Audit závislostí je časový snímek, nikoli záruka budoucí bezpečnosti.
+
+Po autorizovaném pushi commitu `c8f027d4d5621189691ffba3e976c5aaba9be604` proběhlo i vzdálené ověření: [GitHub Actions 37981355515](https://github.com/PavelPancocha/vlacek/actions/runs/37981355515) — **PASS**, job **Quality checks** včetně instalace závislostí a `npm run check`. GitHub API současně potvrdilo, že `master` není chráněná větev; povinné vynucení kontroly před mergem není nastavené.
 
 ## Red → green a negativní ověření
 
@@ -29,4 +31,4 @@ Po síťových timeoutech byl oficiální Node archiv stažen s pokračováním 
 
 actionlint byl jednorázový diagnostický nástroj stažený do `/tmp` z [oficiálního vydání 1.7.12](https://github.com/rhysd/actionlint/releases/tag/v1.7.12). Archiv `actionlint_1.7.12_linux_amd64.tar.gz` byl ověřen proti `actionlint_1.7.12_checksums.txt` z téhož vydání. Pro zopakování stáhni tyto dva soubory, ověř checksum, rozbal binárku a v kořeni repozitáře spusť `actionlint .github/workflows/ci.yml`. Není závislostí hry ani součástí `npm run check`.
 
-Neprovedeno: vzdálený GitHub běh, herní build, E2E/PWA, assetové rozpočty a fyzický Android/Tesla. Kontroly importních hranic domény, secret scanner a velikostní pravidla assetů jsou dosud požadavky M0, nikoli dodané kontroly tohoto řezu.
+Neprovedeno: herní build, E2E/PWA, assetové rozpočty a fyzický Android/Tesla. Kontroly importních hranic domény, secret scanner a velikostní pravidla assetů jsou dosud požadavky M0, nikoli dodané kontroly tohoto řezu.
