@@ -20,7 +20,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc -p tsconfig.json && tsc -p src/tsconfig.json && tsc -p tests/e2e/tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p src/tsconfig.json && tsc -p src/domain/tsconfig.json && tsc -p tests/e2e/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "check:docs": "node scripts/check-docs.ts",

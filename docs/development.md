@@ -68,7 +68,7 @@ Přesné verze závislostí vlastní `package.json`, celý strom `package-lock.j
 
 ## TypeScript projekty
 
-Společná strict pravidla jsou v `tsconfig.base.json`. Kořenový `tsconfig.json` kontroluje Node skripty, testy a konfigurace bez DOM typů. `src/tsconfig.json` kontroluje webovou aplikaci s DOM typy a rozlišením modulů pro Vite; má `skipLibCheck`, protože deklarace Phaseru 4.2.1 samy neprojdou strict kontrolou TypeScriptu 6 (TS2526, TS2416, viz [D-004](decisions/004-renderer-and-phaser.md)). `tests/e2e/tsconfig.json` kontroluje Playwright testy a jejich konfiguraci s DOM typy pro kód v `page.evaluate`; kořenový projekt je vynechává. `npm run typecheck` spouští všechny tři projekty. Konfigurace se jmenují `tsconfig.json`, protože typově informovaný ESLint (`projectService`) hledá nejbližší soubor právě tohoto jména. Relativní importy v `src/` uvádějí příponu `.ts`, aby je stejně načetly testy v Node.
+Společná strict pravidla jsou v `tsconfig.base.json`. Kořenový `tsconfig.json` kontroluje Node skripty, testy a konfigurace bez DOM typů. `src/tsconfig.json` kontroluje webovou aplikaci s DOM typy a rozlišením modulů pro Vite; má `skipLibCheck`, protože deklarace Phaseru 4.2.1 samy neprojdou strict kontrolou TypeScriptu 6 (TS2526, TS2416, viz [D-004](decisions/004-renderer-and-phaser.md)). `tests/e2e/tsconfig.json` kontroluje Playwright testy a jejich konfiguraci s DOM typy pro kód v `page.evaluate`; kořenový projekt je vynechává. `src/domain/tsconfig.json` kontroluje čistou zónu bez DOM a Node typů. `npm run typecheck` spouští všechny čtyři projekty. Konfigurace se jmenují `tsconfig.json`, protože typově informovaný ESLint (`projectService`) hledá nejbližší soubor právě tohoto jména. Relativní importy v `src/` uvádějí příponu `.ts`, aby je stejně načetly testy v Node.
 
 TDD: napiš test pozorovatelného chování → spusť a ověř správný důvod selhání → minimální implementace → zelený test → refaktoring → `npm run check`. Chyba instalace/importu není red. Výsledek a provedené příkazy uveď v předání. Nové testy patří do `tests/**/*.test.ts`; `.only`, skip ani vyšší retries nesmějí zakrýt regresi.
 
@@ -81,7 +81,7 @@ TDD: napiš test pozorovatelného chování → spusť a ověř správný důvod
 
 Mimo čistou zónu platí ještě `no-restricted-imports`: `phaser` smí importovat jen `src/render/**`.
 
-Čas, náhodnost (seed) a platformní data předává doméně volající. Negativní testy v `tests/tooling/domain-boundaries.test.ts` lintují skutečnou projektovou konfigurací ukázky každého zakázaného vzoru v obou adresářích zóny. Kontrolní testy ověřují povolený import uvnitř zóny a neomezený platformní kód. Samostatný TypeScript projekt domény bez DOM typů přibude s prvním doménovým modulem; do té doby hranici drží lint.
+Čas, náhodnost (seed) a platformní data předává doméně volající. Negativní testy v `tests/tooling/domain-boundaries.test.ts` lintují skutečnou projektovou konfigurací ukázky každého zakázaného vzoru v obou adresářích zóny. Kontrolní testy ověřují povolený import uvnitř zóny a neomezený platformní kód. Druhou pojistkou je TypeScript projekt `src/domain/tsconfig.json` (lib ES2024, `types: []`), který kontroluje `src/domain` i `src/config` bez DOM a Node typů. Pre-commit typecheck nespouští, proto lint zůstává hlavní okamžitou kontrolou.
 
 ## Browserové testy
 
