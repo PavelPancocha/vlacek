@@ -1,0 +1,2 @@
+git diff --cached --check
+npm exec --no -- lint-staged --hide-unstaged

@@ -15,28 +15,41 @@ Krajina je převážně středoevropská, postupně zahrnuje lesy, pole, vodu, p
 
 ## Rozcestník
 
-| Soubor | Obsah a vlastník rozhodnutí |
-|---|---|
-| [01_GAME_DESIGN.md](01_GAME_DESIGN.md) | Záměr, rozsah V1, herní smyčka, co se záměrně nedělá. |
-| [02_OVLADANI_A_STAVY.md](02_OVLADANI_A_STAVY.md) | Dotyky, brzda, gesta, souběh prstů, menu, pauza, depo. |
-| [03_VLAK_A_JIZDA.md](03_VLAK_A_JIZDA.md) | Pohyb, dlouhá souprava, geometrie, kamera, elektrifikace. |
-| [04_PROCEDURALNI_SVET.md](04_PROCEDURALNI_SVET.md) | Seed, úseky, kontinuita tratě, biomy, streaming, čas a počasí. |
-| [05_SCENKY_A_INTERAKCE.md](05_SCENKY_A_INTERAKCE.md) | Nádraží, závory, silniční provoz, druhé koleje, zvířata a reakce. |
-| [06_KATALOG_OBSAHU.md](06_KATALOG_OBSAHU.md) | Závazný katalog 10 lokomotiv, 32 vagonků a základních scén. |
-| [07_VIZUAL_AUDIO_UX.md](07_VIZUAL_AUDIO_UX.md) | Výtvarný směr, vrstvy, assety, zvuk, přístupnost a rozložení. |
-| [08_ARCHITEKTURA_A_DATA.md](08_ARCHITEKTURA_A_DATA.md) | Moduly, typové kontrakty, ukládání, migrace a struktura projektu. |
-| [09_WEB_PWA_ANDROID_TESLA.md](09_WEB_PWA_ANDROID_TESLA.md) | Platformy, offline režim, aktualizace, nasazení a kompatibilita. |
-| [10_IMPLEMENTACNI_PLAN.md](10_IMPLEMENTACNI_PLAN.md) | Pracovní balíčky, závislosti a definice hotové práce. |
-| [11_TESTY_A_AKCEPTACE.md](11_TESTY_A_AKCEPTACE.md) | Funkční, generativní, integrační a ruční testy; výkonové cíle. |
-| [12_ROZHODNUTI_A_ZDROJE.md](12_ROZHODNUTI_A_ZDROJE.md) | Potvrzené požadavky, doplněné výchozí volby, rizika a zdroje. |
-| [13_VYCHOZI_KONFIGURACE.md](13_VYCHOZI_KONFIGURACE.md) | Centrální číselné parametry a jejich význam. |
-| [AGENTS.md](AGENTS.md) | Pracovní instrukce pro implementátora nebo kódovacího agenta. |
+| Soubor                                                                              | Obsah a vlastník rozhodnutí                                       |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [01_GAME_DESIGN.md](vlacek-predavaci-balicek/01_GAME_DESIGN.md)                     | Záměr, rozsah V1, herní smyčka, co se záměrně nedělá.             |
+| [02_OVLADANI_A_STAVY.md](vlacek-predavaci-balicek/02_OVLADANI_A_STAVY.md)           | Dotyky, brzda, gesta, souběh prstů, menu, pauza, depo.            |
+| [03_VLAK_A_JIZDA.md](vlacek-predavaci-balicek/03_VLAK_A_JIZDA.md)                   | Pohyb, dlouhá souprava, geometrie, kamera, elektrifikace.         |
+| [04_PROCEDURALNI_SVET.md](vlacek-predavaci-balicek/04_PROCEDURALNI_SVET.md)         | Seed, úseky, kontinuita tratě, biomy, streaming, čas a počasí.    |
+| [05_SCENKY_A_INTERAKCE.md](vlacek-predavaci-balicek/05_SCENKY_A_INTERAKCE.md)       | Nádraží, závory, silniční provoz, druhé koleje, zvířata a reakce. |
+| [06_KATALOG_OBSAHU.md](vlacek-predavaci-balicek/06_KATALOG_OBSAHU.md)               | Závazný katalog 10 lokomotiv, 32 vagonků a základních scén.       |
+| [07_VIZUAL_AUDIO_UX.md](vlacek-predavaci-balicek/07_VIZUAL_AUDIO_UX.md)             | Výtvarný směr, vrstvy, assety, zvuk, přístupnost a rozložení.     |
+| [08_ARCHITEKTURA_A_DATA.md](vlacek-predavaci-balicek/08_ARCHITEKTURA_A_DATA.md)     | Moduly, typové kontrakty, ukládání, migrace a struktura projektu. |
+| [09_WEB_PWA_ANDROID_TESLA.md](vlacek-predavaci-balicek/09_WEB_PWA_ANDROID_TESLA.md) | Platformy, offline režim, aktualizace, nasazení a kompatibilita.  |
+| [10_IMPLEMENTACNI_PLAN.md](vlacek-predavaci-balicek/10_IMPLEMENTACNI_PLAN.md)       | Pracovní balíčky, závislosti a definice hotové práce.             |
+| [11_TESTY_A_AKCEPTACE.md](vlacek-predavaci-balicek/11_TESTY_A_AKCEPTACE.md)         | Funkční, generativní, integrační a ruční testy; výkonové cíle.    |
+| [12_ROZHODNUTI_A_ZDROJE.md](vlacek-predavaci-balicek/12_ROZHODNUTI_A_ZDROJE.md)     | Potvrzené požadavky, doplněné výchozí volby, rizika a zdroje.     |
+| [13_VYCHOZI_KONFIGURACE.md](vlacek-predavaci-balicek/13_VYCHOZI_KONFIGURACE.md)     | Centrální číselné parametry a jejich význam.                      |
+| [AGENTS.md](AGENTS.md)                                                              | Pracovní instrukce pro implementátora nebo kódovacího agenta.     |
 
 ## Jak balíček používat
 
 Nejprve přečíst tento soubor, game design a rozhodnutí. Před implementací vstupů přečíst celý dokument 02; před implementací tratě společně 03 a 04. Plán práce je v dokumentu 10. Dokument 11 je součást zadání od začátku, nikoli až závěrečný seznam přání.
 
-Balíček lze vložit do repozitáře jako `docs/spec/`. Soubor `AGENTS.md` tam zůstane jako součást specifikace; implementátor podle něj může doplnit kořenový `AGENTS.md` skutečného projektu. Relativní odkazy fungují po rozbalení archivu ve společné složce.
+V tomto repozitáři jsou specifikace ve složce `vlacek-predavaci-balicek/`; tento README je jejich rozcestník. Kořenový [AGENTS.md](AGENTS.md) určuje pracovní postup včetně TDD, povinné dokumentace a pravidel udržitelnosti. Při případném přesunu do `docs/spec/` oprav i odkazy a nevytvářej druhou kopii specifikací. Herní aplikace zatím není implementovaná; vývojové nástroje, lokální hook a workflow GitHub Actions už jsou součástí repozitáře.
+
+### Vývojové prostředí a kontroly od prvního dne
+
+Použij [Volta](https://docs.volta.sh/guide/getting-started) a verze Node/npm připnuté v [package.json](package.json). V kořeni repozitáře Volta automaticky vybere projektové verze; závislosti zůstávají v lokálním `node_modules/`.
+
+```bash
+volta run npm ci
+volta run npm run check
+```
+
+`npm ci` také nainstaluje lokální Git hook. `npm run check` ověří formátování, lint, TypeScript, Vitest testy a místní odkazy v dokumentaci. GitHub Actions spouští stejný příkaz na push a pull request. Testy zatím ověřují vývojové nástroje a dokumentaci, nikoli hru. Herní build a browserové testy přibudou s prvním hratelným řezem.
+
+Podrobná instalace, příkazy, TDD, chování hooku a omezení kontrol jsou ve [vývojovém návodu](docs/development.md); volbu prostředí vysvětluje [rozhodnutí D-001](docs/decisions/001-toolchain.md).
 
 ### Pravidla autority
 

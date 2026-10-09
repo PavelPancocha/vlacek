@@ -1,6 +1,6 @@
 # 13 — Výchozí konfigurace a jednotky
 
-[Zpět na rozcestník](README.md)
+[Zpět na rozcestník](../README.md)
 
 Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k implementaci a ověření**, ne empiricky prokázané optimum pro konkrétní dítě nebo zařízení. Po ladění se mají změnit zde, v kódu a v souvisejících testech společně.
 
@@ -24,7 +24,7 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "coastDecelerationUPerSec2": 30,
     "brakeDecelerationUPerSec2": 180,
     "stopEpsilonUPerSec": 0.5,
-    "uphillSpeedReduction": 0.10,
+    "uphillSpeedReduction": 0.1,
     "gradeAccelerationFactor": 0.25,
     "slowModeSpeedFactor": 0.65
   },
@@ -63,7 +63,7 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
   "camera": {
     "referenceWidthU": 1280,
     "referenceHeightU": 720,
-    "locomotiveAnchorX": 0.30,
+    "locomotiveAnchorX": 0.3,
     "railAnchorY": 0.65,
     "manualPanDuringRide": false
   },
@@ -98,8 +98,8 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "initialDayPhase": 0.18,
     "dayFraction": 0.55,
     "duskFraction": 0.15,
-    "nightFraction": 0.20,
-    "dawnFraction": 0.10,
+    "nightFraction": 0.2,
+    "dawnFraction": 0.1,
     "weatherWindowSeconds": 120,
     "weatherTransitionSeconds": 12,
     "clearWeatherProbability": 0.75
@@ -120,8 +120,12 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "maxRuntimeComponents": 512
   },
   "quality": {
-    "low": {"maxDpr": 1, "targetFps": 30, "maxDecorativeParticles": 96},
-    "standard": {"maxDpr": 1.5, "targetFps": 60, "maxDecorativeParticles": 240},
+    "low": { "maxDpr": 1, "targetFps": 30, "maxDecorativeParticles": 96 },
+    "standard": {
+      "maxDpr": 1.5,
+      "targetFps": 60,
+      "maxDecorativeParticles": 240
+    },
     "minimumModeSwitchIntervalSeconds": 10
   },
   "assetBudgets": {

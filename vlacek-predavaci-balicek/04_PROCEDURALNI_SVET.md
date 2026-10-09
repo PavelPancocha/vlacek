@@ -1,6 +1,6 @@
 # 04 — Procedurální svět a jeho životní cyklus
 
-[Zpět na rozcestník](README.md)
+[Zpět na rozcestník](../README.md)
 
 ## 1. Cíl generátoru
 
@@ -67,11 +67,11 @@ Maximální derivace q je 1.875. Proto pro požadovaný maximální sklon g mus�
 
 ### Tři profily V1
 
-| Profil | Konstrukce |
-|---|---|
-| `smooth` | Jeden přechod H(k) → H(k+1) přes celých 1 024 u. |
+| Profil         | Konstrukce                                                                                                        |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `smooth`       | Jeden přechod H(k) → H(k+1) přes celých 1 024 u.                                                                  |
 | `hill` / `dip` | Dva přechody po 512 u přes společný střed M; M vybrat z průniku dovolených výšek pro oba úseky při sklonu ≤ 0.12. |
-| `flat-middle` | 256 u přechod H(k) → M, 512 u rovina M, 256 u přechod M → H(k+1), kde M je průměr hraničních výšek. |
+| `flat-middle`  | 256 u přechod H(k) → M, 512 u rovina M, 256 u přechod M → H(k+1), kde M je průměr hraničních výšek.               |
 
 `flat-middle` je vždy proveditelný: největší výškový rozdíl jedné rampy je 16 u, takže sklon nepřekročí 0.1172. Používá se pro stanici a přejezd. Most nebo tunel mohou využít `smooth`; některé varianty mají plochý střed.
 
@@ -114,13 +114,13 @@ Generovat v pořadí: **biome → profil → rezervace velkých objektů → kom
 
 Výchozí blok osmi chunků:
 
-| Slot | Obsah |
-|---|---|
-| 0 | Klidná krajina a navázání předchozího bloku. |
-| 1 nebo 2 | Jedna stanice; druhý slot je volná krajina. |
-| 3 | Jeden přejezd s bezpečnou silniční cestou. |
-| 4–6 | Buď tříchunkový souběh kolejí, nebo kombinace mostu, krajiny a tunelu dle biomu. |
-| 7 | Přechod do příštího biomu, bez nového dominantního objektu. |
+| Slot     | Obsah                                                                            |
+| -------- | -------------------------------------------------------------------------------- |
+| 0        | Klidná krajina a navázání předchozího bloku.                                     |
+| 1 nebo 2 | Jedna stanice; druhý slot je volná krajina.                                      |
+| 3        | Jeden přejezd s bezpečnou silniční cestou.                                       |
+| 4–6      | Buď tříchunkový souběh kolejí, nebo kombinace mostu, krajiny a tunelu dle biomu. |
+| 7        | Přechod do příštího biomu, bez nového dominantního objektu.                      |
 
 V prvním bloku nové cesty jsou pro rychlé předvedení pevně stanice ve slotu 1, přejezd ve slotu 3, most ve slotu 4 a krátký tunel ve slotu 6. V následujícím bloku je ve slotech 4–6 zaručený souběh kolejí. V ostatních blocích se pro tuto rezervaci použije pravděpodobnost 1/3 z klíče `secondary-rail`; jinak se vyberou biomově vhodný most a tunel, případně most a volná krajina. Jejich konkrétní vzhled a okolí se stále odvíjí od seedu. Stanice v běžném bloku volí slot 1 nebo 2 pomocí nezávislého seedového klíče.
 

@@ -1,0 +1,38 @@
+{
+  "name": "vlacek",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "volta": {
+    "node": "24.21.0",
+    "npm": "11.19.0"
+  },
+  "engines": {
+    "node": "24.21.0",
+    "npm": "11.19.0"
+  },
+  "packageManager": "npm@11.19.0",
+  "scripts": {
+    "prepare": "husky",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:docs": "node scripts/check-docs.ts",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run check:docs"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.6",
+    "eslint": "10.12.0",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "marked": "18.1.0",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.1",
+    "vitest": "5.0.3"
+  }
+}

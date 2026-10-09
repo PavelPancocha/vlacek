@@ -1,6 +1,6 @@
 # 05 — Scénky, doprava a dotykové reakce
 
-[Zpět na rozcestník](README.md)
+[Zpět na rozcestník](../README.md)
 
 ## 1. Společná pravidla
 
@@ -66,14 +66,14 @@ Aktér se může ihned rozjet, proto se detekce nesmí odkládat jen kvůli aktu
 
 ### Automat
 
-| Stav | Co se děje | Přechod |
-|---|---|---|
-| `OPEN` | Závory nahoře, auta a kola mohou projet. | Přibližuje se vlak do Dclose. |
+| Stav       | Co se děje                                                                            | Přechod                                                          |
+| ---------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `OPEN`     | Závory nahoře, auta a kola mohou projet.                                              | Přibližuje se vlak do Dclose.                                    |
 | `CLEARING` | Nový silniční vjezd je zablokován; stávající účastník dokončí průjezd, začnou světla. | Konfliktní prostor je prázdný, nejvýše 2 s podle zvolených cest. |
-| `WARNING` | Světla a tiché výstražné zvonění, silnice prázdná. | Uplyne 1.2 s. |
-| `CLOSING` | Závory se 0.8 s plynule sklápějí. | Závory dole. |
-| `CLOSED` | Vlaky projíždějí nebo stojí v blízkosti. | Žádný vlak neobsazuje zónu a žádný se neblíží v Dclose. |
-| `OPENING` | Závory se zvedají; silnice stále čeká. | Úplně otevřeno, pak vypustit provoz. |
+| `WARNING`  | Světla a tiché výstražné zvonění, silnice prázdná.                                    | Uplyne 1.2 s.                                                    |
+| `CLOSING`  | Závory se 0.8 s plynule sklápějí.                                                     | Závory dole.                                                     |
+| `CLOSED`   | Vlaky projíždějí nebo stojí v blízkosti.                                              | Žádný vlak neobsazuje zónu a žádný se neblíží v Dclose.          |
+| `OPENING`  | Závory se zvedají; silnice stále čeká.                                                | Úplně otevřeno, pak vypustit provoz.                             |
 
 Blikání přejezdových světel je lokální klidná signalizace, nikoli celoplošný intenzivní záblesk. V úsporném režimu nelze signalizaci vypnout, jen zjednodušit její kresbu.
 
@@ -113,23 +113,23 @@ Předjíždění, třetí kolej a rozvětvená železniční síť jsou pozděj�
 
 ## 7. Katalog základních reakcí
 
-| Objekt | Spouštěč | Reakce | Omezení |
-|---|---|---|---|
-| Kráva, ovce, pes, kočka | Dotyk | Pohyb hlavy, zvuk, ocas. | Jeden zvuk a krátký cooldown. |
-| Liška / srnka v křoví | Dotyk nebo klidné periodické vykouknutí | Vykoukne, krátce popojde po bezpečné cestě. | Neutíká do kolejí. |
-| Veverka | Dotyk | Vyšplhá na kmen a sedne si na větev. | Animaci nelze opakovaným tapem resetovat. |
-| Datel | Dotyk | Několik ťuknutí do kmene. | Ne neomezená smyčka zvuku. |
-| Kachna s káčaty | Dotyk | Zakváká a popoplave. | Zůstává na vodě. |
-| Žába | Dotyk | Skočí do vody s drobným šplouchnutím. | Nevelká, přívětivá reakce. |
-| Ryba | Dotyk vody v označené oblasti | Krátce vyskočí a vrátí se. | Není nutná přesnost na malý obrázek. |
-| Strom / keř | Dotyk | Zahoupání větví, pár listů; někdy vykoukne zvíře. | Jen připravené interaktivní varianty. |
-| Balónek | Dotyk | Prasknutí a krátká barevná reakce. | Jednorázový, měkký zvuk, bez bodů. |
-| Větrník / mlýn | Dotyk | Krátké zrychlení otáčení. | Nepřeruší vlak. |
-| Výpravčí / člověk | Dotyk nebo hráčova píšťala | Zamávání. | Ne všichni lidé na scéně najednou. |
-| Loď | Dotyk | Krátké zahoukání a zamávání. | Nekoliduje s mostním pilířem. |
-| Maják | Dotyk | Pomalé zesílení světla a otočení kuželu. | Žádný ostrý záblesk. |
-| Stodola | Dotyk vrat | Vrata se otevřou, vykoukne zvíře. | Není to nová obrazovka. |
-| Jeřáb v areálu | Dotyk | Přesune bednu mezi dvěma místy v areálu. | Nikdy nečeká na správný vagón. |
+| Objekt                  | Spouštěč                                | Reakce                                            | Omezení                                   |
+| ----------------------- | --------------------------------------- | ------------------------------------------------- | ----------------------------------------- |
+| Kráva, ovce, pes, kočka | Dotyk                                   | Pohyb hlavy, zvuk, ocas.                          | Jeden zvuk a krátký cooldown.             |
+| Liška / srnka v křoví   | Dotyk nebo klidné periodické vykouknutí | Vykoukne, krátce popojde po bezpečné cestě.       | Neutíká do kolejí.                        |
+| Veverka                 | Dotyk                                   | Vyšplhá na kmen a sedne si na větev.              | Animaci nelze opakovaným tapem resetovat. |
+| Datel                   | Dotyk                                   | Několik ťuknutí do kmene.                         | Ne neomezená smyčka zvuku.                |
+| Kachna s káčaty         | Dotyk                                   | Zakváká a popoplave.                              | Zůstává na vodě.                          |
+| Žába                    | Dotyk                                   | Skočí do vody s drobným šplouchnutím.             | Nevelká, přívětivá reakce.                |
+| Ryba                    | Dotyk vody v označené oblasti           | Krátce vyskočí a vrátí se.                        | Není nutná přesnost na malý obrázek.      |
+| Strom / keř             | Dotyk                                   | Zahoupání větví, pár listů; někdy vykoukne zvíře. | Jen připravené interaktivní varianty.     |
+| Balónek                 | Dotyk                                   | Prasknutí a krátká barevná reakce.                | Jednorázový, měkký zvuk, bez bodů.        |
+| Větrník / mlýn          | Dotyk                                   | Krátké zrychlení otáčení.                         | Nepřeruší vlak.                           |
+| Výpravčí / člověk       | Dotyk nebo hráčova píšťala              | Zamávání.                                         | Ne všichni lidé na scéně najednou.        |
+| Loď                     | Dotyk                                   | Krátké zahoukání a zamávání.                      | Nekoliduje s mostním pilířem.             |
+| Maják                   | Dotyk                                   | Pomalé zesílení světla a otočení kuželu.          | Žádný ostrý záblesk.                      |
+| Stodola                 | Dotyk vrat                              | Vrata se otevřou, vykoukne zvíře.                 | Není to nová obrazovka.                   |
+| Jeřáb v areálu          | Dotyk                                   | Přesune bednu mezi dvěma místy v areálu.          | Nikdy nečeká na správný vagón.            |
 
 ## 8. Píšťala a scénická odezva
 

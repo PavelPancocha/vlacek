@@ -1,6 +1,6 @@
 # 10 — Implementační plán a předání vývoje
 
-[Zpět na rozcestník](README.md)
+[Zpět na rozcestník](../README.md)
 
 ## 1. Princip postupu
 

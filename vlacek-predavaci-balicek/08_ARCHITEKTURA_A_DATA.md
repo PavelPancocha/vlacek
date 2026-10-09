@@ -1,6 +1,6 @@
 # 08 — Architektura, data a ukládání
 
-[Zpět na rozcestník](README.md)
+[Zpět na rozcestník](../README.md)
 
 ## 1. Technologická volba
 
@@ -104,18 +104,18 @@ Níže uvedené typy jsou normativní jádro, které lze rozšířit o konkrétn
 ```ts
 export type Power = 'steam' | 'diesel' | 'electric' | 'fantasy';
 export type BiomeId =
-  | 'countryside' | 'forest' | 'lakes'
-  | 'foothills' | 'mountains' | 'coast';
+  'countryside' | 'forest' | 'lakes' | 'foothills' | 'mountains' | 'coast';
 export type MotionIntent = 'THROTTLE' | 'COAST' | 'BRAKE';
-export type EffectId = 'none' | 'steam' | 'diesel' | 'stars' | 'bubbles' | 'rainbow';
+export type EffectId =
+  'none' | 'steam' | 'diesel' | 'stars' | 'bubbles' | 'rainbow';
 export type WagonGroup = 'passenger' | 'cargo' | 'service' | 'fun';
 
 export interface VehicleBase {
   id: string;
   labelCs: string;
-  lengthU: number;            // > 0, nejvýše 220
-  bogieOffsetU: number;       // oba symetrické opěrné body, < lengthU/2
-  wheelRadiusU: number;       // kladné
+  lengthU: number; // > 0, nejvýše 220
+  bogieOffsetU: number; // oba symetrické opěrné body, < lengthU/2
+  wheelRadiusU: number; // kladné
   bodyAsset: string;
   previewAsset: string;
   interactionId?: string;
@@ -123,7 +123,7 @@ export interface VehicleBase {
 export interface LocomotiveDefinition extends VehicleBase {
   kind: 'locomotive';
   power: Power;
-  requiresCatenary: boolean;  // musí přesně odpovídat power === 'electric'
+  requiresCatenary: boolean; // musí přesně odpovídat power === 'electric'
   hornAudio: string;
   effect: EffectId;
 }
@@ -132,22 +132,22 @@ export interface WagonDefinition extends VehicleBase {
   group: WagonGroup;
 }
 export interface WagonInstance {
-  instanceId: string;         // unikátní v sestavě, pořadí není identita
+  instanceId: string; // unikátní v sestavě, pořadí není identita
   definitionId: string;
   visualSeed: number;
 }
 export interface Consist {
   locomotiveId: string;
-  wagons: WagonInstance[];    // 0 až 100, duplicity definitionId povolené
+  wagons: WagonInstance[]; // 0 až 100, duplicity definitionId povolené
 }
 export interface TrackCursor {
-  chunkIndex: number;         // bezpečné celé číslo, může být záporné
-  arcOffsetU: number;         // [0, délka konkrétního chunku)
+  chunkIndex: number; // bezpečné celé číslo, může být záporné
+  arcOffsetU: number; // [0, délka konkrétního chunku)
 }
 export interface TrackSample {
   x: number;
   y: number;
-  grade: number;              // dy/dx
+  grade: number; // dy/dx
 }
 export interface TrackProfile {
   kind: 'smooth' | 'hill' | 'dip' | 'flat-middle';
@@ -191,20 +191,48 @@ Pro známé komponenty ukládat diskriminovanou unii, nikoli nekontrolovaný `Re
 
 ```ts
 export type CrossingPhase =
-  | 'OPEN' | 'CLEARING' | 'WARNING' | 'CLOSING' | 'CLOSED' | 'OPENING';
+  'OPEN' | 'CLEARING' | 'WARNING' | 'CLOSING' | 'CLOSED' | 'OPENING';
 export type EntitySnapshot =
-  | { kind: 'interaction'; id: string; phase: 'idle' | 'playing' | 'cooldown' | 'consumed';
-      remainingTicks: number; variantIndex: number }
-  | { kind: 'station'; id: string; phase: 'idle' | 'wave' | 'stop' | 'cooldown';
-      remainingTicks: number; stoppedTicks: number }
-  | { kind: 'crossing'; id: string; phase: CrossingPhase;
-      phaseTicks: number; roadQueueIds: string[] }
-  | { kind: 'actor'; id: string; pathId: string; progressU: number;
-      direction: 1 | -1; phase: 'moving' | 'waiting' | 'reacting';
-      remainingTicks: number }
-  | { kind: 'npc-train'; id: string; featureId: string; consist: Consist;
-      cursor: TrackCursor; direction: -1; speedUPerSec: number;
-      hornCooldownTicks: number };
+  | {
+      kind: 'interaction';
+      id: string;
+      phase: 'idle' | 'playing' | 'cooldown' | 'consumed';
+      remainingTicks: number;
+      variantIndex: number;
+    }
+  | {
+      kind: 'station';
+      id: string;
+      phase: 'idle' | 'wave' | 'stop' | 'cooldown';
+      remainingTicks: number;
+      stoppedTicks: number;
+    }
+  | {
+      kind: 'crossing';
+      id: string;
+      phase: CrossingPhase;
+      phaseTicks: number;
+      roadQueueIds: string[];
+    }
+  | {
+      kind: 'actor';
+      id: string;
+      pathId: string;
+      progressU: number;
+      direction: 1 | -1;
+      phase: 'moving' | 'waiting' | 'reacting';
+      remainingTicks: number;
+    }
+  | {
+      kind: 'npc-train';
+      id: string;
+      featureId: string;
+      consist: Consist;
+      cursor: TrackCursor;
+      direction: -1;
+      speedUPerSec: number;
+      hornCooldownTicks: number;
+    };
 ```
 
 Přesná cesta auta nebo zvířete je v deterministickém template registru. Snapshot ukládá jen jeho posun a stav. U NPC vlaku se validate počet vagonků omezuje na pět; u hráče na sto. `remainingTicks` je nezáporné číslo relativně k obnově, nikoli skutečný čas v kalendáři.

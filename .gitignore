@@ -1,0 +1,10 @@
+node_modules/
+coverage/
+dist/
+playwright-report/
+test-results/
+.idea/
+.jbeval/
+.env
+.env.*
+!.env.example

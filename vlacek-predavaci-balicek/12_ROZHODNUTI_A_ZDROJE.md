@@ -1,54 +1,54 @@
 # 12 — Rozhodnutí, předpoklady, rizika a zdroje
 
-[Zpět na rozcestník](README.md)
+[Zpět na rozcestník](../README.md)
 
 **Stav k 9. říjnu 2026.** Dokument odlišuje zadání uživatele od doplněných návrhových voleb. Zápis POTVRZENO neznamená, že byla již ověřena technická proveditelnost na fyzickém zařízení. Zápis VÝCHOZÍ VOLBA znamená: implementovat bez dalších otázek, dokud se vědomě nerozhodne jinak.
 
 ## 1. Potvrzený produktový základ
 
-| ID | Potvrzený požadavek | Specifikace | Hlavní kontrola |
-|---|---|---|---|
-| C-01 | Hra je především pro malou dceru, dotyky mají být velmi jednoduché. | 01, 02, 07 | INP, UI, ruční ergonomie. |
-| C-02 | Před jízdou výběr z deseti různých lokomotiv. | 02, 06 | CNT-01 až CNT-03. |
-| C-03 | Parní, naftové, elektrické a několik zábavných lokomotiv. | 06 | Katalog, odlišný vzhled a efekt. |
-| C-04 | Velké množství připojitelných vagonků různých druhů včetně osobních a nákladních. | 03, 06 | TRN-01/02, CNT-01. |
-| C-05 | Nekonečná procedurální cesta v bočním 2D pohledu: nahoru, dolů, tunely a mosty. | 03, 04 | TRN, GEN, streaming. |
-| C-06 | Živá krajina: lesy, pole, zvířata, traktor, okolní provoz, nádraží a někdy druhá kolej s jiným vlakem. | 04, 05, 06 | SCN, CNT-04. |
-| C-07 | Interaktivní věci pro zábavu, například balónky a schovaná zvířata. | 05, 06 | INP-05, SCN-11/12. |
-| C-08 | Převážně středoevropské prostředí, postupně moře a hory; proměna dne a noci. | 04, 07 | GEN-07, CNT-05, DATA-08. |
-| C-09 | Semi-realistický základ, ale povolené zábavné mašiny a vagonky. | 01, 06, 07 | Výtvarná akceptace. |
-| C-10 | Elektrická mašinka automaticky znamená trolejové vedení; není třeba řešit napájení složitě. | 03, 04 | TRN-08, GEN-12. |
-| C-11 | Držený dotyk pohání vlak, bez dotyku vlak postupně zpomaluje. | 02, 03 | INP-01/02/10/11. |
-| C-12 | Všechny herní scénky v jednom pohledu; minihry v první verzi neřešit. | 01, 05 | SCN-01/02/03. |
-| C-13 | Nádraží lze projet; zastavení a interakce nejsou povinnost. Scénky nezávisí na typu vagonků. | 01, 05 | SCN-01 až SCN-03. |
-| C-14 | Co nejjednodušší zajímavé řešení v browseru, cílit také na Teslu/tablet, snadné aktualizace bez obchodů; případná budoucí appka pro Android. | 08, 09 | PWA, matice zařízení. |
+| ID   | Potvrzený požadavek                                                                                                                          | Specifikace | Hlavní kontrola                  |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | -------------------------------- |
+| C-01 | Hra je především pro malou dceru, dotyky mají být velmi jednoduché.                                                                          | 01, 02, 07  | INP, UI, ruční ergonomie.        |
+| C-02 | Před jízdou výběr z deseti různých lokomotiv.                                                                                                | 02, 06      | CNT-01 až CNT-03.                |
+| C-03 | Parní, naftové, elektrické a několik zábavných lokomotiv.                                                                                    | 06          | Katalog, odlišný vzhled a efekt. |
+| C-04 | Velké množství připojitelných vagonků různých druhů včetně osobních a nákladních.                                                            | 03, 06      | TRN-01/02, CNT-01.               |
+| C-05 | Nekonečná procedurální cesta v bočním 2D pohledu: nahoru, dolů, tunely a mosty.                                                              | 03, 04      | TRN, GEN, streaming.             |
+| C-06 | Živá krajina: lesy, pole, zvířata, traktor, okolní provoz, nádraží a někdy druhá kolej s jiným vlakem.                                       | 04, 05, 06  | SCN, CNT-04.                     |
+| C-07 | Interaktivní věci pro zábavu, například balónky a schovaná zvířata.                                                                          | 05, 06      | INP-05, SCN-11/12.               |
+| C-08 | Převážně středoevropské prostředí, postupně moře a hory; proměna dne a noci.                                                                 | 04, 07      | GEN-07, CNT-05, DATA-08.         |
+| C-09 | Semi-realistický základ, ale povolené zábavné mašiny a vagonky.                                                                              | 01, 06, 07  | Výtvarná akceptace.              |
+| C-10 | Elektrická mašinka automaticky znamená trolejové vedení; není třeba řešit napájení složitě.                                                  | 03, 04      | TRN-08, GEN-12.                  |
+| C-11 | Držený dotyk pohání vlak, bez dotyku vlak postupně zpomaluje.                                                                                | 02, 03      | INP-01/02/10/11.                 |
+| C-12 | Všechny herní scénky v jednom pohledu; minihry v první verzi neřešit.                                                                        | 01, 05      | SCN-01/02/03.                    |
+| C-13 | Nádraží lze projet; zastavení a interakce nejsou povinnost. Scénky nezávisí na typu vagonků.                                                 | 01, 05      | SCN-01 až SCN-03.                |
+| C-14 | Co nejjednodušší zajímavé řešení v browseru, cílit také na Teslu/tablet, snadné aktualizace bez obchodů; případná budoucí appka pro Android. | 08, 09      | PWA, matice zařízení.            |
 
 Výraz u elektrické lokomotivy je zde operacionalizován jako trolejové vedení. Nejnovější upřesnění o dotykovém řízení a nepovinných stanicích má přednost před dřívějšími návrhy automatického rozjezdu a zastávek.
 
 ## 2. Doplněné výchozí volby
 
-| ID | Výchozí volba | Důvod / dopad |
-|---|---|---|
-| D-01 | Velká viditelná brzda vlevo dole + gesto doleva. Ne celá neviditelná levá polovina. | Vyřešení uživatelem otevřené varianty brzdění, srozumitelná plocha. |
-| D-02 | Dotyk objektu reaguje okamžitě a zároveň dává plyn. | Jednotný vztah dotyk–jízda, žádné čekání na rozpoznání záměru dítěte. |
-| D-03 | Brzda má prioritu nad všemi plynovými dotyky. | Jednoznačnost při více prstech. |
-| D-04 | Po přerušení je v = 0 a k rozjezdu je potřeba nový dotyk. | Odolnost vůči ztraceným koncovým událostem a nechtěnému rozjezdu. |
-| D-05 | 100 vagonků a 32 katalogových druhů. | Konkrétní implementační výklad „hodně“. Čísla nejsou původní explicitní požadavek uživatele. |
-| D-06 | Všechny typy dostupné hned; žádné skóre, odemykání a prohra. | Hračka pro malé dítě, nikoli výkonová hra. |
-| D-07 | Žádná fyzika hmotností, couvání ani volba výhybek. | Zjednodušení bez ztráty hlavního zážitku. |
-| D-08 | Kamera pevně sleduje předek, celá souprava je posuvná v depu. | Gesta během jízdy jsou vyhrazená řízení. |
-| D-09 | Jeden režim, žádné samostatné minihry a úkoly. | Nepřidávat složitost, kterou uživatel odložil. |
-| D-10 | Změna soupravy zahajuje novou cestu až po potvrzení Vyjet. | Bez přepojování vozů v živé krajině a přepočítávání obsazených přejezdů. |
-| D-11 | Jeden lokální rozehraný výlet, žádné účty a synchronizace. | Nejmenší provozní a implementační náklady. |
-| D-12 | Semi-realistická ilustrace bez obličejů lokomotiv, 7 realistických + 3 hravé typy. | Konzistentní rozpracování vizuálního záměru. |
-| D-13 | Šest biomů a jednoduchá předvídatelná gramatika jejich návaznosti. | Proceduralita bez neuvěřitelných skoků a drahého plánování. |
-| D-14 | Mírné počasí a pomalý herní den; žádná bouřka a globální roční období. | Atmosféra bez zahlcení a dalšího herního systému. |
-| D-15 | Hudba výchozí vypnutá, zvuky zapnuté, žádné automatické mluvené poučování. | Zvuková odezva bez permanentního komentátora. |
-| D-16 | TypeScript + Phaser + Vite, statické nasazení, malé DOM UI. | Jedna webová implementace, testovatelná logika a bez backendu. |
-| D-17 | PWA je volitelná; online cesta funguje i bez ní. | Specifické browsery nesmějí selhat kvůli nepodporované nadstavbě. |
-| D-18 | Standardní čekající aktualizace workeru, žádné nucené přepnutí uprostřed jízdy. | Jednoduchost a konzistence assetů. |
-| D-19 | V1 má malé lokální JSON save a zálohu, ne databázový server. | Úměrnost rozsahu, snadná možnost pozdější výměny adaptéru. |
-| D-20 | Numerické konstanty a výkonové rozpočty jsou výchozí, mají se měřit. | Nepředstírat otestované optimum před vznikem hry. |
+| ID   | Výchozí volba                                                                       | Důvod / dopad                                                                                |
+| ---- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| D-01 | Velká viditelná brzda vlevo dole + gesto doleva. Ne celá neviditelná levá polovina. | Vyřešení uživatelem otevřené varianty brzdění, srozumitelná plocha.                          |
+| D-02 | Dotyk objektu reaguje okamžitě a zároveň dává plyn.                                 | Jednotný vztah dotyk–jízda, žádné čekání na rozpoznání záměru dítěte.                        |
+| D-03 | Brzda má prioritu nad všemi plynovými dotyky.                                       | Jednoznačnost při více prstech.                                                              |
+| D-04 | Po přerušení je v = 0 a k rozjezdu je potřeba nový dotyk.                           | Odolnost vůči ztraceným koncovým událostem a nechtěnému rozjezdu.                            |
+| D-05 | 100 vagonků a 32 katalogových druhů.                                                | Konkrétní implementační výklad „hodně“. Čísla nejsou původní explicitní požadavek uživatele. |
+| D-06 | Všechny typy dostupné hned; žádné skóre, odemykání a prohra.                        | Hračka pro malé dítě, nikoli výkonová hra.                                                   |
+| D-07 | Žádná fyzika hmotností, couvání ani volba výhybek.                                  | Zjednodušení bez ztráty hlavního zážitku.                                                    |
+| D-08 | Kamera pevně sleduje předek, celá souprava je posuvná v depu.                       | Gesta během jízdy jsou vyhrazená řízení.                                                     |
+| D-09 | Jeden režim, žádné samostatné minihry a úkoly.                                      | Nepřidávat složitost, kterou uživatel odložil.                                               |
+| D-10 | Změna soupravy zahajuje novou cestu až po potvrzení Vyjet.                          | Bez přepojování vozů v živé krajině a přepočítávání obsazených přejezdů.                     |
+| D-11 | Jeden lokální rozehraný výlet, žádné účty a synchronizace.                          | Nejmenší provozní a implementační náklady.                                                   |
+| D-12 | Semi-realistická ilustrace bez obličejů lokomotiv, 7 realistických + 3 hravé typy.  | Konzistentní rozpracování vizuálního záměru.                                                 |
+| D-13 | Šest biomů a jednoduchá předvídatelná gramatika jejich návaznosti.                  | Proceduralita bez neuvěřitelných skoků a drahého plánování.                                  |
+| D-14 | Mírné počasí a pomalý herní den; žádná bouřka a globální roční období.              | Atmosféra bez zahlcení a dalšího herního systému.                                            |
+| D-15 | Hudba výchozí vypnutá, zvuky zapnuté, žádné automatické mluvené poučování.          | Zvuková odezva bez permanentního komentátora.                                                |
+| D-16 | TypeScript + Phaser + Vite, statické nasazení, malé DOM UI.                         | Jedna webová implementace, testovatelná logika a bez backendu.                               |
+| D-17 | PWA je volitelná; online cesta funguje i bez ní.                                    | Specifické browsery nesmějí selhat kvůli nepodporované nadstavbě.                            |
+| D-18 | Standardní čekající aktualizace workeru, žádné nucené přepnutí uprostřed jízdy.     | Jednoduchost a konzistence assetů.                                                           |
+| D-19 | V1 má malé lokální JSON save a zálohu, ne databázový server.                        | Úměrnost rozsahu, snadná možnost pozdější výměny adaptéru.                                   |
+| D-20 | Numerické konstanty a výkonové rozpočty jsou výchozí, mají se měřit.                | Nepředstírat otestované optimum před vznikem hry.                                            |
 
 Tyto volby tvoří proveditelné zadání bez dalšího kola otázek. Jejich pozdější úprava má být malý popsaný zásah se změnou testů, ne neřízené přidávání funkcí.
 
@@ -70,17 +70,17 @@ Ani dočasné nadšení implementátora není důvod tato rozšíření přidáv
 
 ## 5. Rizika a mitigace
 
-| Riziko | Opatření |
-|---|---|
-| Dotyky na svět kolidují s ovládáním. | Jeden InputRouter, jasná priorita UI a brzdy, reakce objektu + plyn výslovně definovaná. |
-| Dlouhý vlak rozbije výkon nebo vyjede z už smazané tratě. | Culling obrázků oddělený od geometrie; zachovat koridor až za tailS. |
-| Generátor je náhodný, ale nesouvislý. | Sdílená hranicová funkce, LUT, omezené profily a deterministické rezervace. |
-| Závory otevřou pod vagonky. | Interval celé soupravy a test v každém ticku, nikoli trigger jen na lokomotivu. |
-| Výtvarný katalog se zamění za mnoho přebarvených ikon. | Katalogové siluety, kontaktní listy a vizuální akceptace. |
-| Tesla nezvládne zvolený renderer nebo API. | M0 na reálném zařízení, konzervativní efekty, ověřený Canvas fallback; stav podpory poctivě označit. |
-| Aktualizace smíchá starý kód a nové assety. | Hashed/verzované soubory, čekající worker, konzistentní release a žádný nucený reload. |
-| Browser odstraní uloženou hru nebo offline balík. | Fallback do hratelné relace, rodičovská informace, netvrdit existenci cloudové zálohy. |
-| Rozsah naroste o úkoly a nativní platformy. | Seznam mimo V1 a práce po milnících. |
+| Riziko                                                    | Opatření                                                                                             |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Dotyky na svět kolidují s ovládáním.                      | Jeden InputRouter, jasná priorita UI a brzdy, reakce objektu + plyn výslovně definovaná.             |
+| Dlouhý vlak rozbije výkon nebo vyjede z už smazané tratě. | Culling obrázků oddělený od geometrie; zachovat koridor až za tailS.                                 |
+| Generátor je náhodný, ale nesouvislý.                     | Sdílená hranicová funkce, LUT, omezené profily a deterministické rezervace.                          |
+| Závory otevřou pod vagonky.                               | Interval celé soupravy a test v každém ticku, nikoli trigger jen na lokomotivu.                      |
+| Výtvarný katalog se zamění za mnoho přebarvených ikon.    | Katalogové siluety, kontaktní listy a vizuální akceptace.                                            |
+| Tesla nezvládne zvolený renderer nebo API.                | M0 na reálném zařízení, konzervativní efekty, ověřený Canvas fallback; stav podpory poctivě označit. |
+| Aktualizace smíchá starý kód a nové assety.               | Hashed/verzované soubory, čekající worker, konzistentní release a žádný nucený reload.               |
+| Browser odstraní uloženou hru nebo offline balík.         | Fallback do hratelné relace, rodičovská informace, netvrdit existenci cloudové zálohy.               |
+| Rozsah naroste o úkoly a nativní platformy.               | Seznam mimo V1 a práce po milnících.                                                                 |
 
 ## 6. Primární technické zdroje
 

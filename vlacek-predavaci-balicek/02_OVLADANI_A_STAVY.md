@@ -1,6 +1,6 @@
 # 02 — Ovládání, rozhraní a stavové přechody
 
-[Zpět na rozcestník](README.md)
+[Zpět na rozcestník](../README.md)
 
 ## 1. Základní kontrakt
 
@@ -12,14 +12,14 @@ Výchozí parametry jsou v [13_VYCHOZI_KONFIGURACE.md](13_VYCHOZI_KONFIGURACE.md
 
 ## 2. Rozdělení vstupních ploch
 
-| Plocha | Chování |
-|---|---|
-| Herní svět | Dotyk vytvoří požadavek na plyn. Případný zasažený objekt zároveň reaguje. |
-| Brzda vlevo dole | Po dobu držení aktivní brzda. Nikdy současně plyn ani zásah objektu pod tlačítkem. |
-| Píšťala | Jedno zahoukání při stisku, s omezením opakování. Tlačítko samo nepohání vlak. |
-| Pauza, zvuk, menu | Spotřebují událost; dotyk nepropadne do světa. |
-| Obrazovka depa a výběru | Neexistuje vstup do jízdy. Posouvání a klepání slouží pouze rozhraní. |
-| Modální vrstva / načítání | Všechny dotyky světa jsou blokované. |
+| Plocha                    | Chování                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| Herní svět                | Dotyk vytvoří požadavek na plyn. Případný zasažený objekt zároveň reaguje.         |
+| Brzda vlevo dole          | Po dobu držení aktivní brzda. Nikdy současně plyn ani zásah objektu pod tlačítkem. |
+| Píšťala                   | Jedno zahoukání při stisku, s omezením opakování. Tlačítko samo nepohání vlak.     |
+| Pauza, zvuk, menu         | Spotřebují událost; dotyk nepropadne do světa.                                     |
+| Obrazovka depa a výběru   | Neexistuje vstup do jízdy. Posouvání a klepání slouží pouze rozhraní.              |
+| Modální vrstva / načítání | Všechny dotyky světa jsou blokované.                                               |
 
 Běžná jízda nezobrazuje páku rychlosti ani tlačítko automatického rozjezdu. Stav jízdy lze jemně ukázat animací kol a páry. Numerický rychloměr není potřebný.
 

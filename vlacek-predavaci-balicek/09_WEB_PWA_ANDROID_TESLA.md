@@ -1,6 +1,6 @@
 # 09 — Browser, PWA, Android, Tesla a distribuce
 
-[Zpět na rozcestník](README.md)
+[Zpět na rozcestník](../README.md)
 
 ## 1. Základní distribuční model
 
@@ -10,13 +10,13 @@ PWA je volitelné rozšíření webu pro pohodlné spuštění a offline cache, 
 
 ## 2. Cílové platformy a poctivá úroveň podpory
 
-| Prostředí | Základní cíl | Co vyžaduje ověření |
-|---|---|---|
-| Android tablet v Chrome | Plná online hra na šířku, dotyky, zvuk, místní save. | Konkrétní výkon, rozlišení a chování vybraného tabletu. |
-| Nainstalovaná Android PWA | Spuštění z plochy, omezené browser UI, offline po dokončeném uložení balíku. | Instalační nabídka, retenční politika úložiště, fullscreen konkrétního browseru. |
-| Tesla Model 3 2019 Intel | Online jízda ve skutečném dostupném výřezu browseru, při stání. | Renderer, dotyky, audio, výkon, save, service worker a fullscreen podle konkrétního firmwaru. |
-| Desktop Chrome / Firefox | Vývoj a referenční funkční testy, myš i klávesnice. | Reálná dotyková ergonomie se desktopem nenahradí. |
-| Jiná auta, iOS, nativní Android | Mimo závaznou V1 podporu. | Případné pozdější rozšíření. |
+| Prostředí                       | Základní cíl                                                                 | Co vyžaduje ověření                                                                           |
+| ------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Android tablet v Chrome         | Plná online hra na šířku, dotyky, zvuk, místní save.                         | Konkrétní výkon, rozlišení a chování vybraného tabletu.                                       |
+| Nainstalovaná Android PWA       | Spuštění z plochy, omezené browser UI, offline po dokončeném uložení balíku. | Instalační nabídka, retenční politika úložiště, fullscreen konkrétního browseru.              |
+| Tesla Model 3 2019 Intel        | Online jízda ve skutečném dostupném výřezu browseru, při stání.              | Renderer, dotyky, audio, výkon, save, service worker a fullscreen podle konkrétního firmwaru. |
+| Desktop Chrome / Firefox        | Vývoj a referenční funkční testy, myš i klávesnice.                          | Reálná dotyková ergonomie se desktopem nenahradí.                                             |
+| Jiná auta, iOS, nativní Android | Mimo závaznou V1 podporu.                                                    | Případné pozdější rozšíření.                                                                  |
 
 Informace výrobce o zábavních funkcích Tesly nenahrazuje měření browserových API konkrétního auta. Zdroje S10 v dokumentu 12 uvádějí související omezení zábavních funkcí; neprokazují výkon naší hry ani přístup k API vozidla.
 
@@ -54,9 +54,24 @@ Příklad manifestu pro nasazení do `/vlacek/`:
   "background_color": "#F5F1E8",
   "theme_color": "#F5F1E8",
   "icons": [
-    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
 ```

@@ -1,6 +1,6 @@
 # 03 — Souprava, pohyb, trať a kamera
 
-[Zpět na rozcestník](README.md)
+[Zpět na rozcestník](../README.md)
 
 ## 1. Jednotky a souřadnice
 

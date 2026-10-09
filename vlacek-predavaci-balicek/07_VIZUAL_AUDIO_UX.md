@@ -1,6 +1,6 @@
 # 07 — Vizuál, zvuk a dětské rozhraní
 
-[Zpět na rozcestník](README.md)
+[Zpět na rozcestník](../README.md)
 
 ## 1. Výtvarný směr
 
@@ -58,14 +58,14 @@ Déšť a sníh jsou jednoduché omezené částice. Není třeba fyzikální hl
 
 ## 6. Zvukové vrstvy
 
-| Vrstva | Chování |
-|---|---|
-| Pohyb vlaku | Tichá smyčka kol podle rychlosti; při stání ztichne. |
-| Lokomotiva | Rozlišené parní, naftové, elektrické a pohádkové motivy. |
-| Píšťala | Krátký charakteristický zvuk, viditelné tlačítko, omezené opakování. |
-| Prostředí | Ptáci, vítr, voda, jemné městské okolí; maximálně několik současných smyček. |
-| Reakce | Zvířata, prasknutí balónku, mávnutí či stroj; krátké a nelekavé. |
-| Hudba | Volitelná jemná smyčka; ve výchozím nastavení vypnutá. |
+| Vrstva      | Chování                                                                      |
+| ----------- | ---------------------------------------------------------------------------- |
+| Pohyb vlaku | Tichá smyčka kol podle rychlosti; při stání ztichne.                         |
+| Lokomotiva  | Rozlišené parní, naftové, elektrické a pohádkové motivy.                     |
+| Píšťala     | Krátký charakteristický zvuk, viditelné tlačítko, omezené opakování.         |
+| Prostředí   | Ptáci, vítr, voda, jemné městské okolí; maximálně několik současných smyček. |
+| Reakce      | Zvířata, prasknutí balónku, mávnutí či stroj; krátké a nelekavé.             |
+| Hudba       | Volitelná jemná smyčka; ve výchozím nastavení vypnutá.                       |
 
 Výchozí zvuky jsou zapnuté, ale skutečné spuštění respektuje odemčení audia uživatelským dotykem. Neúspěšné odemčení nesmí blokovat hru. Chybějící zvuk se hlásí dospělému v diagnostice, ne chybovou obrazovkou před dítětem.
 
