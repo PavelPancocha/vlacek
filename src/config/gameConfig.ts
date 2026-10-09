@@ -12,11 +12,52 @@ export interface InputConfig {
   primaryControlTargetCssPx: number;
 }
 
+export interface SimulationConfig {
+  fixedHz: number;
+  maxCatchUpSteps: number;
+}
+
+export interface TrainConfig {
+  maxWagons: number;
+  maxVehicleLengthU: number;
+  couplerGapU: number;
+  maxSpeedUPerSec: number;
+  accelerationUPerSec2: number;
+  coastDecelerationUPerSec2: number;
+  brakeDecelerationUPerSec2: number;
+  stopEpsilonUPerSec: number;
+  uphillSpeedReduction: number;
+  gradeAccelerationFactor: number;
+  slowModeSpeedFactor: number;
+}
+
+export interface WorldConfig {
+  maxTrackGrade: number;
+}
+
 export interface GameConfig {
+  simulation: SimulationConfig;
+  train: TrainConfig;
+  world: WorldConfig;
   input: InputConfig;
 }
 
 export const gameConfig: GameConfig = {
+  simulation: { fixedHz: 60, maxCatchUpSteps: 5 },
+  train: {
+    maxWagons: 100,
+    maxVehicleLengthU: 220,
+    couplerGapU: 8,
+    maxSpeedUPerSec: 180,
+    accelerationUPerSec2: 65,
+    coastDecelerationUPerSec2: 30,
+    brakeDecelerationUPerSec2: 180,
+    stopEpsilonUPerSec: 0.5,
+    uphillSpeedReduction: 0.1,
+    gradeAccelerationFactor: 0.25,
+    slowModeSpeedFactor: 0.65,
+  },
+  world: { maxTrackGrade: 0.12 },
   input: {
     maxPointers: 5,
     leftSwipeDistanceCssPx: 64,
@@ -35,8 +76,33 @@ const positive = (value: number) => Number.isFinite(value) && value > 0;
 
 /** Returns the paths of invalid values; an empty list means valid. */
 export function validateGameConfig(config: GameConfig): string[] {
-  const { input } = config;
+  const { simulation, train, world, input } = config;
+  const fraction = (value: number) =>
+    Number.isFinite(value) && value >= 0 && value < 1;
   const checks: Check[] = [
+    ['simulation.fixedHz', positiveInteger(simulation.fixedHz)],
+    ['simulation.maxCatchUpSteps', positiveInteger(simulation.maxCatchUpSteps)],
+    ['train.maxWagons', positiveInteger(train.maxWagons)],
+    ['train.maxVehicleLengthU', positive(train.maxVehicleLengthU)],
+    ['train.couplerGapU', positive(train.couplerGapU)],
+    ['train.maxSpeedUPerSec', positive(train.maxSpeedUPerSec)],
+    ['train.accelerationUPerSec2', positive(train.accelerationUPerSec2)],
+    [
+      'train.coastDecelerationUPerSec2',
+      positive(train.coastDecelerationUPerSec2),
+    ],
+    [
+      'train.brakeDecelerationUPerSec2',
+      train.brakeDecelerationUPerSec2 > train.coastDecelerationUPerSec2,
+    ],
+    ['train.stopEpsilonUPerSec', positive(train.stopEpsilonUPerSec)],
+    ['train.uphillSpeedReduction', fraction(train.uphillSpeedReduction)],
+    ['train.gradeAccelerationFactor', fraction(train.gradeAccelerationFactor)],
+    [
+      'train.slowModeSpeedFactor',
+      positive(train.slowModeSpeedFactor) && train.slowModeSpeedFactor <= 1,
+    ],
+    ['world.maxTrackGrade', positive(world.maxTrackGrade)],
     ['input.maxPointers', positiveInteger(input.maxPointers)],
     ['input.leftSwipeDistanceCssPx', positive(input.leftSwipeDistanceCssPx)],
     ['input.leftSwipeMaxDurationMs', positive(input.leftSwipeMaxDurationMs)],
