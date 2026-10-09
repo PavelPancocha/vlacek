@@ -47,8 +47,18 @@ export interface InteractionConfig {
   hornMinIntervalSeconds: number;
 }
 
+export interface SaveConfig {
+  schemaVersion: number;
+  intervalSeconds: number;
+  editDebounceMs: number;
+  targetBytes: number;
+  maxBytes: number;
+  maxRuntimeComponents: number;
+}
+
 export interface GameConfig {
   simulation: SimulationConfig;
+  save: SaveConfig;
   interaction: InteractionConfig;
   train: TrainConfig;
   world: WorldConfig;
@@ -57,6 +67,14 @@ export interface GameConfig {
 
 export const gameConfig: GameConfig = {
   simulation: { fixedHz: 60, maxCatchUpSteps: 5 },
+  save: {
+    schemaVersion: 1,
+    intervalSeconds: 5,
+    editDebounceMs: 250,
+    targetBytes: 131072,
+    maxBytes: 524288,
+    maxRuntimeComponents: 512,
+  },
   interaction: { defaultCooldownSeconds: 1.5, hornMinIntervalSeconds: 0.7 },
   train: {
     maxWagons: 100,
@@ -99,12 +117,21 @@ const positive = (value: number) => Number.isFinite(value) && value > 0;
 
 /** Returns the paths of invalid values; an empty list means valid. */
 export function validateGameConfig(config: GameConfig): string[] {
-  const { simulation, interaction, train, world, input } = config;
+  const { simulation, save, interaction, train, world, input } = config;
   const fraction = (value: number) =>
     Number.isFinite(value) && value >= 0 && value < 1;
   const checks: Check[] = [
     ['simulation.fixedHz', positiveInteger(simulation.fixedHz)],
     ['simulation.maxCatchUpSteps', positiveInteger(simulation.maxCatchUpSteps)],
+    ['save.schemaVersion', save.schemaVersion === 1],
+    ['save.intervalSeconds', positive(save.intervalSeconds)],
+    ['save.editDebounceMs', positive(save.editDebounceMs)],
+    ['save.targetBytes', positiveInteger(save.targetBytes)],
+    [
+      'save.maxBytes',
+      positiveInteger(save.maxBytes) && save.maxBytes >= save.targetBytes,
+    ],
+    ['save.maxRuntimeComponents', positiveInteger(save.maxRuntimeComponents)],
     [
       'interaction.defaultCooldownSeconds',
       positive(interaction.defaultCooldownSeconds),

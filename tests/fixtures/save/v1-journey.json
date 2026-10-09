@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": 1,
+  "savedAtIso": "2026-10-09T18:00:00.000Z",
+  "appBuildId": "0.1.0+0000000",
+  "settings": {
+    "sfxEnabled": true,
+    "musicEnabled": false,
+    "reducedEffects": false,
+    "maxSpeedFactor": 1,
+    "quality": "auto"
+  },
+  "lastConsist": {
+    "locomotiveId": "steam_local",
+    "wagons": [
+      { "instanceId": "w1", "definitionId": "cargo_box", "visualSeed": 12345 },
+      {
+        "instanceId": "w2",
+        "definitionId": "fun_balloons",
+        "visualSeed": 67890
+      }
+    ]
+  },
+  "journey": {
+    "seed": 3141592653,
+    "generatorVersion": 0,
+    "consist": {
+      "locomotiveId": "steam_local",
+      "wagons": [
+        {
+          "instanceId": "w1",
+          "definitionId": "cargo_box",
+          "visualSeed": 12345
+        },
+        {
+          "instanceId": "w2",
+          "definitionId": "fun_balloons",
+          "visualSeed": 67890
+        }
+      ]
+    },
+    "head": { "chunkIndex": 7, "arcOffsetU": 412.5 },
+    "simulationTick": 54321,
+    "activeEntities": []
+  }
+}
