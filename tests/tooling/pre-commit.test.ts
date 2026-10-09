@@ -10,6 +10,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, expect, it } from 'vitest';
+import { fakePrivateKey } from './fake-secrets.ts';
 
 let root: string;
 
@@ -38,6 +39,7 @@ beforeEach(() => {
   for (const file of [
     'package.json',
     '.gitignore',
+    '.secretlintrc.json',
     '.prettierrc.json',
     'lint-staged.config.mjs',
     'scripts',
@@ -92,4 +94,24 @@ it('handles a renamed document with spaces in its path', () => {
   git('add', 'README.md');
   git('commit', '--quiet', '-m', 'Rename guide');
   expect(git('show', 'HEAD:Project guide.md')).toBe('# Fixture\n');
+}, 30_000);
+
+it('rejects a staged private key without committing it', () => {
+  writeFileSync(join(root, 'notes.txt'), fakePrivateKey());
+  git('add', 'notes.txt');
+  const before = git('rev-parse', 'HEAD');
+  const result = run('git', ['commit', '--quiet', '-m', 'Must fail']);
+  expect(result.status).not.toBe(0);
+  expect(result.stdout + result.stderr).toContain('notes.txt');
+  expect(git('rev-parse', 'HEAD')).toBe(before);
+}, 30_000);
+
+it('rejects a staged file above the size limit', () => {
+  writeFileSync(join(root, 'big.bin'), Buffer.alloc(1024 * 1024 + 1));
+  git('add', 'big.bin');
+  const before = git('rev-parse', 'HEAD');
+  const result = run('git', ['commit', '--quiet', '-m', 'Must fail']);
+  expect(result.status).not.toBe(0);
+  expect(result.stdout + result.stderr).toContain('big.bin');
+  expect(git('rev-parse', 'HEAD')).toBe(before);
 }, 30_000);

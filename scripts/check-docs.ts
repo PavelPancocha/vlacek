@@ -1,7 +1,7 @@
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { marked } from 'marked';
+import { listWorkingTreeFiles } from './repo-files.ts';
 
 export function brokenLocalLinks(
   markdown: string,
@@ -32,20 +32,8 @@ export function brokenLocalLinks(
 
 if (import.meta.main) {
   const root = process.cwd();
-  const files = [
-    ...new Set(
-      execFileSync(
-        'git',
-        ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
-        {
-          cwd: root,
-          encoding: 'utf8',
-        },
-      ).split('\0'),
-    ),
-  ].filter(
-    (file) =>
-      file.toLowerCase().endsWith('.md') && existsSync(resolve(root, file)),
+  const files = listWorkingTreeFiles(root).filter((file) =>
+    file.toLowerCase().endsWith('.md'),
   );
   if (files.length === 0) throw new Error('No Markdown documents found');
   let failures = 0;

@@ -47,7 +47,7 @@ volta run npm ci
 volta run npm run check
 ```
 
-`npm ci` také nainstaluje lokální Git hook. `npm run check` ověří formátování, lint, TypeScript, Vitest testy a místní odkazy v dokumentaci. GitHub Actions spouští stejný příkaz a produkční build na push a pull request. Testy zatím ověřují vývojové nástroje, build a dokumentaci, nikoli hru. Browserové testy přibudou s prvním hratelným řezem.
+`npm ci` také nainstaluje lokální Git hook. `npm run check` ověří formátování, lint včetně hranic čisté domény, TypeScript, Vitest testy, místní odkazy v dokumentaci, tajné údaje a velikost souborů. GitHub Actions spouští stejný příkaz a produkční build na push a pull request. Testy zatím ověřují vývojové nástroje, build a dokumentaci, nikoli hru. Browserové testy přibudou s prvním hratelným řezem.
 
 ### Spuštění a nasazení
 

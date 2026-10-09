@@ -4,7 +4,7 @@
 
 Repozitář obsahuje specifikace, vývojové nástroje a testy jejich chování a Vite build zástupné stránky nasazované na GitHub Pages. Hra, Phaser, katalog assetů, Playwright a PWA zatím nejsou implementované. Jejich kontroly přidávej spolu s funkcemi podle AGENTS.md; úspěch tohoto CI není akceptace hry.
 
-Výsledky prvního lokálního ověření včetně red/green a negativních kontrol jsou v [protokolu z 2026-10-09](validation/2026-10-09-toolchain.md).
+Výsledky prvního lokálního ověření včetně red/green a negativních kontrol jsou v [protokolu z 2026-10-09](validation/2026-10-09-toolchain.md); průběžné ověření verze 0.1 je v [protokolu v0.1](validation/2026-10-09-v0.1.md).
 
 První konkrétní vývojový řez a jeho pořadí jsou připravené v [zahájení M0](development-start.md).
 
@@ -41,6 +41,7 @@ Přesné verze závislostí vlastní `package.json`, celý strom `package-lock.j
 | Vitest                                  | Testy v Node; `npm test` skončí po jednom běhu a selže, pokud testy nenajde.                                                      |
 | marked                                  | Markdown parser pro kontrolu skutečných odkazů včetně referencí a vnořených seznamů; text v code blocích se za odkazy nepovažuje. |
 | Husky, lint-staged                      | Reprodukovatelný lokální pre-commit hook a kontroly staged souborů.                                                               |
+| secretlint + preset recommend           | Offline detekce tajných údajů (klíče, tokeny, privátní klíče) ve všech souborech; nalezené hodnoty maskuje.                       |
 
 ## Příkazy
 
@@ -58,12 +59,23 @@ Přesné verze závislostí vlastní `package.json`, celý strom `package-lock.j
 | `npm run format:check`                         | Kontrola formátu bez změny souborů.                                                             |
 | `npm run format`                               | Explicitní přeformátování projektu; před stagingem zkontroluj diff.                             |
 | `npm run check:docs`                           | Existují místní cíle odkazů ve všech Git tracked a neignorovaných untracked Markdown souborech. |
+| `npm run check:secrets`                        | secretlint nad všemi Git tracked a neignorovanými untracked soubory včetně dotfiles.            |
+| `npm run check:sizes`                          | Limit velikosti souborů: 1 MiB obecně, 4 MiB pro herní assety v `public/assets/`.               |
 
 ## TypeScript projekty
 
 Společná strict pravidla jsou v `tsconfig.base.json`. Kořenový `tsconfig.json` kontroluje Node skripty, testy a konfigurace bez DOM typů. `src/tsconfig.json` kontroluje webovou aplikaci s DOM typy a rozlišením modulů pro Vite. `npm run typecheck` spouští oba projekty. Konfigurace se jmenují `tsconfig.json`, protože typově informovaný ESLint (`projectService`) hledá nejbližší soubor právě tohoto jména. Relativní importy v `src/` uvádějí příponu `.ts`, aby je stejně načetly testy v Node.
 
 TDD: napiš test pozorovatelného chování → spusť a ověř správný důvod selhání → minimální implementace → zelený test → refaktoring → `npm run check`. Chyba instalace/importu není red. Výsledek a provedené příkazy uveď v předání. Nové testy patří do `tests/**/*.test.ts`; `.only`, skip ani vyšší retries nesmějí zakrýt regresi.
+
+## Hranice čisté domény
+
+`src/domain/**` a `src/config/**` tvoří čistou zónu bez Phaseru, DOM, úložiště, audia, hodin a náhodnosti. Vynucuje ji ESLint (`eslint.config.mjs`):
+
+- Lokální pravidlo `vlacek/pure-imports` (`tools/eslint/pure-imports.mjs`) povolí jen relativní importy, které zůstanou uvnitř čisté zóny. Odmítne balíčky (`phaser`), aliasy (`@/…`), cesty do `render/`, `ui/`, `platform/`, `app/`, re-exporty, dynamický a vypočtený `import()`, `import('x').Typ`, `require` a importy s `?query`. Protože totéž platí pro každý čistý soubor, nevede ven ani řetězec re-exportů.
+- `no-restricted-globals` (včetně `globalThis`), `no-restricted-properties` a `no-restricted-syntax` zakazují `window`, `document`, `localStorage`, `performance`, časovače, `Math.random()`, `Date.now()`, `new Date()`, `import.meta` a `declare global`. `triple-slash-reference` zakazuje `/// <reference lib="dom" />`.
+
+Čas, náhodnost (seed) a platformní data předává doméně volající. Negativní testy v `tests/tooling/domain-boundaries.test.ts` lintují skutečnou projektovou konfigurací ukázky každého zakázaného vzoru v obou adresářích zóny. Kontrolní testy ověřují povolený import uvnitř zóny a neomezený platformní kód. Samostatný TypeScript projekt domény bez DOM typů přibude s prvním doménovým modulem; do té doby hranici drží lint.
 
 ## Kontrola dokumentace
 
@@ -75,7 +87,7 @@ Externí URL, protocol-relative URL, čisté `#fragmenty` a code bloky se ignoru
 
 `npm ci` spustí Husky `prepare`. Pre-commit ověřuje `git diff --cached --check`, poté lint a formát staged souborů; při změně Markdownu také místní odkazy. Kontroly neopravují soubory ani nepřidávají cizí změny do indexu. lint-staged dočasně skryje unstaged změny a obnoví je po kontrole. Při selhání oprav konkrétní problém, explicitně stage opravu a opakuj commit.
 
-Pre-commit nepouští síťové požadavky, plný typecheck ani celou testovací sadu. Samotné odstranění souboru nemusí vyvolat lint-staged úlohu; proto je před commitem povinné `npm run check` a stejná kontrola běží v CI. Kompletní secret scanner, velikostní rozpočty herních assetů a doménová importní pravidla zatím nejsou zavedené; doplní se v M0 spolu s jejich konfigurací a negativními testy. `git diff --check` není secret scanner.
+Pre-commit na každém staged souboru spouští secretlint (`--no-glob`, cesty se berou doslova) a limit velikosti. Nepouští síťové požadavky, plný typecheck ani celou testovací sadu. Samotné odstranění souboru nemusí vyvolat lint-staged úlohu; proto je před commitem povinné `npm run check` a stejná kontrola běží v CI. Testy v `tests/tooling/pre-commit.test.ts` v dočasném repozitáři ověřují, že hook odmítne staged privátní klíč i příliš velký soubor. Kontrola tajných údajů je ochrana proti omylu, nikoli záruka: neodhalí každý formát tajemství.
 
 Workflow `.github/workflows/ci.yml` běží na push, pull request a ruční spuštění. Job **Quality checks** má read-only oprávnění, timeout 10 minut a action reference připnuté na commit SHA. Starší běh pro stejný ref se ruší, kromě běhu na `master`, aby se nepřerušilo nasazení. setup-node čte Node verzi z `package.json`; `.npmrc` při `npm ci` ověří i přesnou npm verzi dodanou s připnutým Node. CI vynechává instalaci lokálních hooků pomocí `HUSKY=0`, spouští `npm run check` a produkční `npm run build`.
 
