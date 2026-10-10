@@ -95,32 +95,60 @@ test.describe('user path', () => {
     await expect(container).toBeEnabled();
   });
 
-  test('doc 14 §1: the depot fits a phone held sideways', async ({ page }) => {
-    await page.setViewportSize({ width: 844, height: 390 });
-    await page.goto('./?debug=1');
-    await tapAction(page, 'loco:steam_local');
-    await tapAction(page, 'to-depot');
-    await tapAction(page, 'add:cargo_box');
-    const inView = async (selector: string) => {
-      const box = await page.locator(selector).first().boundingBox();
-      if (!box) throw new Error(`${selector} is not visible`);
-      return (
-        box.x >= 0 &&
-        box.y >= 0 &&
-        box.x + box.width <= 844 &&
-        box.y + box.height <= 390
-      );
-    };
-    expect(await inView('[data-action="depart"]')).toBe(true);
-    expect(await inView('.strip-item.loco')).toBe(true);
-    expect(await inView('[data-action="undo"]')).toBe(true);
-    // Every catalog card stays reachable: the row scrolls instead of
-    // spilling past the screen edge.
-    await page
-      .locator('[data-action="add:fun_balloons"]')
-      .click({ timeout: 5_000 });
-    await expect(page.locator('.count')).toHaveText('2');
-  });
+  for (const [width, height] of [
+    [844, 390],
+    [667, 375],
+    [568, 320],
+  ] as const) {
+    test(`doc 14 §1: the depot fits a phone held sideways (${width}×${height})`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('./?debug=1');
+      await tapAction(page, 'loco:steam_local');
+      await tapAction(page, 'to-depot');
+      await tapAction(page, 'add:cargo_box');
+      const selectors = [
+        '[data-action="back"]',
+        '[data-action="strip-start"]',
+        '[data-action="change-loco"]',
+        '[data-action="move-back"]',
+        '[data-action="move-forward"]',
+        '[data-action="remove"]',
+        '[data-action="undo"]',
+        '[data-action="depart"]',
+        '.strip-item.loco',
+      ];
+      const boxes = [];
+      for (const selector of selectors) {
+        const box = await page.locator(selector).first().boundingBox();
+        if (!box) throw new Error(`${selector} is not visible`);
+        // Fully on screen.
+        expect(box.x, selector).toBeGreaterThanOrEqual(0);
+        expect(box.y, selector).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width, selector).toBeLessThanOrEqual(width);
+        expect(box.y + box.height, selector).toBeLessThanOrEqual(height);
+        boxes.push({ selector, ...box });
+      }
+      // No control covers another one.
+      for (const [i, a] of boxes.entries()) {
+        for (const b of boxes.slice(i + 1)) {
+          const overlap =
+            a.x < b.x + b.width - 1 &&
+            b.x < a.x + a.width - 1 &&
+            a.y < b.y + b.height - 1 &&
+            b.y < a.y + a.height - 1;
+          expect(overlap, `${a.selector} overlaps ${b.selector}`).toBe(false);
+        }
+      }
+      // Every catalog card stays reachable: the row scrolls instead of
+      // spilling past the screen edge.
+      await page
+        .locator('[data-action="add:fun_balloons"]')
+        .click({ timeout: 5_000 });
+      await expect(page.locator('.count')).toHaveText('2');
+    });
+  }
 
   test('INP-01/02: holding drives, releasing coasts to a stop', async ({
     page,

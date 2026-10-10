@@ -456,3 +456,57 @@ h1 {
     min-height: 72px;
   }
 }
+
+/* Narrower phones held sideways (e.g. 667 × 375, 568 × 320): the two control
+   rows no longer fit side by side, so stack them. Vyjet joins the edit row
+   and the strip takes the height that is left. */
+@media (max-height: 500px) and (max-width: 760px) {
+  .builder {
+    height: 100%;
+    gap: 6px;
+    grid-template-columns: minmax(0, 1fr);
+    /* The strip keeps room for 64 px wagon touch targets (doc 13). */
+    grid-template-rows: auto auto minmax(76px, 1fr) auto;
+  }
+  .builder > .row.top {
+    grid-row: 1;
+    grid-column: 1;
+  }
+  .builder > .row.top .button-label {
+    display: none;
+  }
+  .builder > .row.actions {
+    grid-row: 2;
+    grid-column: 1;
+    justify-content: flex-start;
+  }
+  .builder > .row.bottom {
+    position: static;
+    grid-row: 2;
+    grid-column: 1;
+    justify-self: end;
+    align-self: center;
+  }
+  .builder > .row.bottom svg {
+    width: 28px;
+    height: 28px;
+  }
+  .builder .button.big {
+    min-height: 64px;
+    padding: 4px 12px;
+  }
+  .builder .group {
+    padding: 2px;
+  }
+  .builder > .strip {
+    grid-row: 3;
+    height: auto;
+  }
+  .builder > .catalog {
+    grid-row: 4;
+  }
+  .builder > .hint,
+  .builder > .notices {
+    grid-row: 5;
+  }
+}
