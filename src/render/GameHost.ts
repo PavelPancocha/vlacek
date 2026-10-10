@@ -53,6 +53,9 @@ export function createGameHost(options: GameHostOptions): GameHost {
       gamepad: false,
       windowEvents: false,
     },
+    // One texture per batch: Phaser 4.2.1's WebGL multi-texture batching
+    // drew rotated quads of interleaved textures as sheared wedges (D-010).
+    render: { maxTextures: 1 },
     autoFocus: false,
     banner: false,
     audio: { noAudio: true },

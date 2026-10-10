@@ -39,7 +39,7 @@ Ruční snímky (1280 × 720, 1024 × 768, 844 × 390, nejdelší smíšená sou
 
 Známá omezení po B:
 
-- Ve WebGL se části dočasných tvarů některých vozů (rameno jeřábu, občas kontejner) vykreslují chybně; Canvas je kreslí správně. Podezření padá na `Graphics.generateTexture` dočasných tvarů. Grafická iterace tuto cestu nahradí assety se samostatnými koly, takže se dočasné tvary neopravují.
+- Ve WebGL se části některých vozů ve svahu vykreslovaly chybně; Canvas je kreslil správně. Původní podezření na `Graphics.generateTexture` se nepotvrdilo. Skutečná příčina a oprava jsou v oddílu „WebGL: zkosené vozy“ níže a v [D-010](../decisions/010-webgl-single-texture-batches.md).
 - Scéna je při menším vlaku prázdnější a kopce působí velké; řeší grafická iterace a krajina (§3, §5).
 
 ## C1 — svižnější jízda (§6)
@@ -61,3 +61,18 @@ Výchozí měření v0 stejnou metrikou (vzorky po 8 u, 64 chunků): sklon se m�
 | Validace save s `generatorVersion` 0                                                    | 13 FAIL: fixtury 0.1 hlášené jako poškozené                                 | PASS (55 unit)      |
 
 Ruční snímky jízdy světa 123 s nejdelší soupravou: dlouhé roviny, rovná stoupání a klesání s krátkými oblouky, celý vlak v obraze, žádné chyby konzole.
+
+## WebGL: zkosené vozy (D-010)
+
+Při ručních snímcích nové tratě se ve svahu ve WebGL opakovaně objevovaly klínovité, střižené karoserie. Pokusy na stejné seedované jízdě (snímky každých 2,5 s):
+
+| Pokus                                             | Výsledek        |
+| ------------------------------------------------- | --------------- |
+| textury vozů z 2D canvasu místo `generateTexture` | chyba trvá      |
+| obrázky bez otočeného `Container`                 | chyba trvá      |
+| `setTexture` jen při změně                        | chyba trvá      |
+| `render.maxTextures: 1`                           | **chyba zmizí** |
+
+E2E `render.spec.ts` (stojící vlak na svahu světa 123, WebGL proti Canvas v rámečku soupravy): bez opatření FAIL, liší se 1,24 % pixelů (dva běhy) a 2,15 % (první běh); s opatřením 0 % ve dvou bězích, PASS na desktopu i tabletu.
+
+Výkon s opatřením (`PERF_SECONDS=30 npm run measure:perf`, nejdelší souprava, generátor v1, 480 u/s): medián 20 FPS, p95 50 ms, nejhorší 83 ms, všech 9 vozidel vykresleno, nejvýše 6 živých chunků. Medián se proti stavu bez opatření nezměnil. Celé E2E: 56 PASS / 4 skipped.
