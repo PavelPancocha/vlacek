@@ -27,17 +27,22 @@ export class EmissionClock {
 /**
  * World point of an emitter given in a vehicle's art frame (x from the
  * rear coupler, y down from the frame top, rail at y = heightU), for the
- * vehicle's pose (centre on the rail, angle of its chord). Returns render
- * coordinates (y down) and the emitter's tilt in render degrees, so smoke
- * leaves a leaning chimney along its axis (doc 14 §4).
+ * vehicle's pose (centre on the rail, angle of its chord), optionally
+ * mirrored and scaled like an oncoming train. Returns render coordinates
+ * (y down) and the emitter's tilt in render degrees, so smoke leaves a
+ * leaning chimney along its axis (doc 14 §4).
  */
 export function emitterWorldPoint(
   emitter: { xU: number; yU: number },
   frame: { lengthU: number; heightU: number },
   pose: { centerX: number; centerY: number; angleRad: number },
+  view: { mirrored?: boolean; scale?: number } = {},
 ): { x: number; y: number; tiltDeg: number } {
-  const lx = emitter.xU - frame.lengthU / 2;
-  const ly = emitter.yU - frame.heightU;
+  // A train driving left is drawn mirrored; a deeper layer smaller.
+  const scale = view.scale ?? 1;
+  const lx =
+    (emitter.xU - frame.lengthU / 2) * scale * (view.mirrored ? -1 : 1);
+  const ly = (emitter.yU - frame.heightU) * scale;
   const cos = Math.cos(pose.angleRad);
   const sin = Math.sin(pose.angleRad);
   return {

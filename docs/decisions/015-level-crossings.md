@@ -59,7 +59,7 @@ Dokument 04 §6 přejezdu dává slot 3 bloku biomu.
 
 ## Dočasná omezení a podmínky odstranění
 
-- **Protijedoucí vlak** na druhé koleji přejezdy zatím neobsazuje. Přijde s druhou kolejí v kroku G a jeho souprava se přidá do obsazení podle dokumentu 05 §4.
+- **Protijedoucí vlak** ([D-017](017-second-track-and-oncoming-train.md)) přejezdem neprojíždí. Druhá kolej vede ve slotech 4–6 a přejezd ve slotu 3 se drží mimo její portálový kopec. Až souběh povede přes přejezd, přidá se jeho souprava do obsazení podle dokumentu 05 §4.
 - **Výstražné zvonění** zatím chybí; hra má jen dočasné syntetizované zvuky. Přidá se s finálními zvuky.
 - **Dotyk na auto nebo kolo** (zamávání, klakson) zatím nic nedělá. Přijde se scénkami dokumentu 05 §5 a nesmí aktéra zastavit v zóně.
 - **Fyzická zařízení:** NEOVĚŘENO.

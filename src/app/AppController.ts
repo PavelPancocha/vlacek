@@ -187,6 +187,19 @@ export class AppController {
         this.#audio.play(HORN_BY_POWER[loco?.power ?? 'steam'] ?? 'horn-steam');
         return;
       }
+      case 'npcHorn': {
+        // The oncoming train answers with the horn of its own locomotive.
+        const train = this.#session.ride?.oncomingTrains.find(
+          (candidate) => candidate.id === event.id,
+        );
+        const loco = locomotives.find(
+          (candidate) => candidate.id === train?.vehicles[0]?.id,
+        );
+        this.#audio.play(
+          HORN_BY_POWER[loco?.power ?? 'diesel'] ?? 'horn-diesel',
+        );
+        return;
+      }
       case 'objectReacted':
         this.#audio.play('reaction');
         return;
@@ -280,6 +293,16 @@ export class AppController {
         pantographGapU: this.#scene.stats.pantographGapU,
       },
       crossings: ride ? this.#crossings(ride) : [],
+      oncoming: {
+        trains: (ride?.oncomingTrains ?? []).map((train) => ({
+          id: train.id,
+          ...train.xSpan(),
+          fromX: train.site.fromX,
+          toX: train.site.toX,
+          vehicles: train.vehicles.length,
+        })),
+        drawnInOpen: this.#scene.stats.oncomingVehicles,
+      },
       consistLengthU: ride
         ? ride.layout.frontOffsetU + ride.layout.tailOffsetU
         : 0,

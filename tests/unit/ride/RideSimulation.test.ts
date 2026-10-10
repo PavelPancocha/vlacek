@@ -6,6 +6,8 @@ import {
   type RideSetup,
 } from '../../../src/domain/ride/RideSimulation.ts';
 import type { VehicleGeometry } from '../../../src/domain/train/TrainGeometry.ts';
+import type { NpcFleet } from '../../../src/domain/interaction/OncomingTrain.ts';
+import { secondarySite } from '../../../src/domain/world/SecondaryTrack.ts';
 
 const loco: VehicleGeometry = { lengthU: 156, bogieOffsetU: 46 };
 const wagon: VehicleGeometry = { lengthU: 188, bogieOffsetU: 58 };
@@ -215,5 +217,100 @@ describe('RideSimulation restore guard', () => {
     const same = restored.crossings.find((c) => c.id === crossing.id);
     expect(same?.phase).toBe('CLOSED');
     expect(same?.barrier).toBe(1);
+  });
+});
+
+const npcFleet: NpcFleet = {
+  locomotives: [
+    { id: 'steam_local', lengthU: 156, bogieOffsetU: 46, wheelRadiusU: 15 },
+  ],
+  wagons: [
+    { id: 'cargo_box', lengthU: 164, bogieOffsetU: 51, wheelRadiusU: 12 },
+  ],
+};
+const { chunkWidthU, forcedSecondaryBiomeBlock, npcTriggerBeforeFeatureU } =
+  gameConfig.world;
+const site = secondarySite(4242, forcedSecondaryBiomeBlock);
+if (!site) throw new Error('no forced second track');
+const triggerX = site.fromX - npcTriggerBeforeFeatureU;
+const frontX = (ride: RideSimulation) => ride.sample(ride.frontS).x;
+
+/** A ride stopped this far (u) before the second track's trigger. */
+function beforeTrigger(gapU: number): RideSimulation {
+  const x = triggerX - gapU - 100;
+  const k = Math.floor(x / chunkWidthU);
+  return new RideSimulation(
+    setup(2, {
+      npcFleet,
+      head: { chunkIndex: k, arcOffsetU: x - k * chunkWidthU },
+    }),
+  );
+}
+
+describe('RideSimulation: the oncoming train (doc 05 §6, SCN-09/10)', () => {
+  it('starts once when the front comes within 512 u of the second track, and drives on when the player stops', () => {
+    const ride = beforeTrigger(300);
+    expect(frontX(ride)).toBeLessThan(triggerX);
+    let started = -1;
+    for (let i = 0; i < 60 * 20 && frontX(ride) < triggerX + 200; i++) {
+      ride.step('THROTTLE');
+      if (started < 0 && ride.oncomingTrains.length > 0) started = i;
+      if (frontX(ride) < triggerX) expect(ride.oncomingTrains).toHaveLength(0);
+    }
+    expect(started).toBeGreaterThanOrEqual(0);
+    expect(ride.oncomingTrains).toHaveLength(1);
+    // The player stops; the oncoming train runs its whole way and leaves.
+    let seen = 0;
+    for (let i = 0; i < 60 * 90; i++) {
+      ride.step('BRAKE');
+      seen = Math.max(seen, ride.oncomingTrains.length);
+    }
+    expect(seen).toBe(1);
+    expect(ride.oncomingTrains).toHaveLength(0);
+  });
+
+  it('never pops up in the open after a restore past its start', () => {
+    const k = Math.floor((site.fromX + 300) / chunkWidthU);
+    const ride = new RideSimulation(
+      setup(2, {
+        npcFleet,
+        head: { chunkIndex: k, arcOffsetU: site.fromX + 300 - k * chunkWidthU },
+      }),
+    );
+    for (let i = 0; i < 60 * 10; i++) ride.step('THROTTLE');
+    expect(ride.oncomingTrains).toHaveLength(0);
+  });
+
+  it('answers the horn at most every 8 s and never itself; greets once when meeting', () => {
+    const ride = beforeTrigger(50);
+    for (let i = 0; i < 60 * 3; i++) ride.step('THROTTLE');
+    expect(ride.oncomingTrains).toHaveLength(1);
+    // Hold still in range; it comes along and meets the player.
+    const npcHorns: number[] = [];
+    let horns = 0;
+    for (let i = 0; i < 60 * 60; i++) {
+      ride.step('BRAKE');
+      if (i % 42 === 0 && ride.requestHorn()) horns += 1;
+      for (const event of ride.drainEvents())
+        if (event.type === 'npcHorn') npcHorns.push(i / 60);
+    }
+    expect(horns).toBeGreaterThan(40);
+    expect(npcHorns.length).toBeGreaterThan(0);
+    for (let n = 1; n < npcHorns.length; n++)
+      expect(
+        (npcHorns[n] ?? 0) - (npcHorns[n - 1] ?? 0),
+      ).toBeGreaterThanOrEqual(gameConfig.interaction.npcHornCooldownSeconds);
+  });
+
+  it('greets just once on its own, without any horn from the player', () => {
+    const ride = beforeTrigger(50);
+    for (let i = 0; i < 60 * 3; i++) ride.step('THROTTLE');
+    let greetings = 0;
+    for (let i = 0; i < 60 * 60; i++) {
+      ride.step('BRAKE');
+      for (const event of ride.drainEvents())
+        if (event.type === 'npcHorn') greetings += 1;
+    }
+    expect(greetings).toBe(1);
   });
 });

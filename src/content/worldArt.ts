@@ -775,6 +775,18 @@ export const worldParts = {
     heightU: 26,
     pivotU: { x: 17, y: 26 },
   },
+  'secondary.portal-hill': {
+    file: 'secondary.portal-hill.svg',
+    widthU: 440,
+    heightU: 200,
+    pivotU: { x: 380, y: 194 },
+  },
+  'secondary.portal-mouth': {
+    file: 'secondary.portal-mouth.svg',
+    widthU: 76,
+    heightU: 110,
+    pivotU: { x: 38, y: 104 },
+  },
   'track.sand-a': {
     file: 'track.sand-a.svg',
     widthU: 66,
@@ -1026,6 +1038,16 @@ export const catenaryAnchors: Readonly<
   contact: { x: 16, y: 44 },
   messenger: { x: 16, y: 20 },
 };
+
+/**
+ * Tunnel portal of a second track (doc 04 §7): the hill drawn over the
+ * oncoming train, the dark mouth under it. Both face right (the left
+ * portal); the right portal is mirrored.
+ */
+export const secondaryParts = {
+  hill: 'secondary.portal-hill',
+  mouth: 'secondary.portal-mouth',
+} as const satisfies Record<string, WorldPartKey>;
 
 /** Road traffic at crossings, seen from the front and from behind. */
 export const roadActorParts: Readonly<

@@ -126,6 +126,13 @@ V1 nekombinuje tento motiv v témže místě s nepřipraveným tunelem či slož
 
 Tři chunky vymezují **viditelnou** vedlejší trať. Její geometrie má na obou koncích skryté pokračování alespoň o délku NPC soupravy plus 256 u. Může využít tentýž vzorkovač hlavního profilu s odsazením a držené sousední chunky. Skrytý nájezd a odjezd překrývá připravený terén nebo portál; jsou součástí tohoto template, ne další náhodně přidaný tunel. Vozidla se postupně odkrývají a zakrývají, nesmí všechna vzniknout nebo zmizet jedním přepnutím visibility. Logická reference na tuto rozšířenou dráhu trvá až do odjezdu celé soupravy.
 
+Implementace ([D-017](../docs/decisions/017-second-track-and-oncoming-train.md)):
+
+- `secondarySite` dává souběh ve slotech 4–6: vždy v bloku 1, nikdy v bloku 0, jinak s pravděpodobností z configu.
+- `SecondaryLine` je hlavní profil o 64 u hlouběji s vlastním oknem chunků, se skrytými konci o délku soupravy plus 256 u.
+- Pás tratě a portálové kopce (320 u za portály) drží zadní rekvizity za hloubkou 0,45 a vodu za tratí. Přejezd se drží mimo levý kopec.
+- Portál tvoří tmavé ústí pod vlakem a kopec s kamenným obloukem nad ním. Vozidla tak mizí po jednom.
+
 ## 8. Streaming a paměť
 
 Udržovat dva odlišné rozsahy:

@@ -21,6 +21,7 @@ import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import type { Biome } from '../domain/world/Biomes.ts';
 import { heightAtX } from '../domain/world/ArcLengthTable.ts';
 import { contactWireHeightU } from '../domain/world/Catenary.ts';
+import { SECONDARY_SCALE } from '../domain/world/SecondaryTrack.ts';
 import { chunkOfEntityId } from '../domain/world/ChunkObjects.ts';
 import { hash32 } from '../domain/world/Hash.ts';
 import {
@@ -55,7 +56,7 @@ import {
   type TrainEffectsInput,
 } from './particles/TrainEffects.ts';
 import { Backdrop } from './Backdrop.ts';
-import { ChunkView } from './ChunkView.ts';
+import { ChunkView, SECONDARY_DEPTH } from './ChunkView.ts';
 import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
 import { pantographReachU } from './pantograph.ts';
 import {
@@ -93,6 +94,8 @@ export interface RenderStats {
    * without a raised pantograph in view.
    */
   pantographGapU: number | undefined;
+  /** Vehicles of oncoming trains drawn out in the open (doc 05 §6). */
+  oncomingVehicles: number;
 }
 
 const NO_STATS: RenderStats = {
@@ -103,7 +106,14 @@ const NO_STATS: RenderStats = {
   localities: [],
   catenaryPoles: 0,
   pantographGapU: undefined,
+  oncomingVehicles: 0,
 };
+
+/**
+ * An oncoming train's vehicle is drawn while it reaches out of its tunnel
+ * mouth (the arch is 72 u wide); further in, the portal hill covers it.
+ */
+const PORTAL_EDGE_U = 40;
 
 /** Rail height samples along the train for vertical framing. */
 const SPAN_STEP_U = 32;
@@ -218,6 +228,8 @@ export class RideScene extends Phaser.Scene {
   readonly #chunks = new Map<number, ChunkView>();
   readonly #objectImages = new Map<string, Phaser.GameObjects.Image>();
   readonly #slots: VehicleSlot[] = [];
+  /** Vehicles of oncoming trains, behind the main track (doc 05 §6). */
+  readonly #npcSlots: VehicleSlot[] = [];
   /** Scenery of the chunks around the view; pure, so cached per chunk. */
   readonly #scenery = new Map<number, ChunkScenery>();
   /** World y (up) of the top screen edge; eased between frames. */
@@ -248,6 +260,7 @@ export class RideScene extends Phaser.Scene {
     Math.random,
   );
   readonly #trainEffects = new TrainEffects(this.#particles, Math.random);
+  readonly #npcEffects = new TrainEffects(this.#particles, Math.random);
   readonly #ambient = new AmbientLife(this.#particles, Math.random);
   #effectsView: EffectsView | undefined;
   #effectsTexture: string | undefined;
@@ -504,8 +517,10 @@ export class RideScene extends Phaser.Scene {
     this.#destroyChunks();
     this.#destroyObjects();
     this.#scenery.clear();
-    for (const slot of this.#slots) slot.container.destroy();
+    for (const slot of [...this.#slots, ...this.#npcSlots])
+      slot.container.destroy();
     this.#slots.length = 0;
+    this.#npcSlots.length = 0;
     this.#cameraTopY = undefined;
     this.#horizonY = undefined;
     this.#visibleObjects = [];
@@ -627,6 +642,7 @@ export class RideScene extends Phaser.Scene {
       FREE_BAND_MARGIN_U;
     this.#drawObjects(ride, leftX, rightX, timeSec);
     this.#drawTrain(ride, headS, leftX, rightX);
+    this.#drawOncoming(ride, leftX, rightX);
     this.#drawEffects(ride, headS, leftX, rightX, viewW, viewH);
 
     const horizonTarget = -(minRailY + maxRailY) / 2;
@@ -911,6 +927,45 @@ export class RideScene extends Phaser.Scene {
         ? { pantograph: this.#pantographContact }
         : {}),
     });
+    // Oncoming steam and diesel trains smoke too, out of their tunnels.
+    for (const train of ride.oncomingTrains) {
+      const loco = train.vehicles[0];
+      const shaped = this.#host
+        .catalogVehicles()
+        .find((candidate) => candidate.id === loco?.id);
+      const npcArt = shaped ? vehicleArt[shaped.id] : undefined;
+      const kind =
+        shaped?.effect === 'steam' || shaped?.effect === 'diesel'
+          ? shaped.effect
+          : undefined;
+      if (!loco || !shaped || !npcArt || kind === undefined) continue;
+      const pose = train.vehiclePose(0);
+      const npcEmitters: PlacedEmitter[] = (npcArt.emitters ?? [])
+        .map((emitter) => ({
+          kind,
+          ...emitterWorldPoint(
+            emitter,
+            { lengthU: shaped.lengthU, heightU: npcArt.heightU },
+            pose,
+            { mirrored: true, scale: SECONDARY_SCALE },
+          ),
+        }))
+        .filter(
+          (emitter) =>
+            emitter.x > train.site.fromX && emitter.x < train.site.toX,
+        );
+      this.#npcEffects.step({
+        dtSec,
+        speedUPerSec: train.speedUPerSec,
+        maxSpeedUPerSec: gameConfig.train.maxSpeedUPerSec,
+        intent: 'THROTTLE',
+        emitters: npcEmitters,
+        driverRadiusU: loco.wheelRadiusU,
+        wheels: [],
+        front: { x: 0, y: 0, ground: undefined },
+        rateScale,
+      });
+    }
     const middleX = this.#view.left + this.#originX + viewW / 2;
     const k = Math.floor(middleX / CHUNK_WIDTH_U);
     const scenery = this.#sceneryOf(ride.seed, k);
@@ -989,6 +1044,61 @@ export class RideScene extends Phaser.Scene {
     return slot;
   }
 
+  #npcSlot(index: number): VehicleSlot {
+    let slot = this.#npcSlots[index];
+    if (!slot) {
+      const container = this.add
+        .container(0, 0)
+        .setDepth(DEPTH.backProps + SECONDARY_DEPTH.train);
+      slot = { container, images: [], frames: [] };
+      this.#npcSlots[index] = slot;
+    }
+    return slot;
+  }
+
+  /**
+   * Oncoming trains on their second tracks (doc 05 §6): mirrored (they
+   * drive left), at the deeper layer's scale, between the tunnel mouths
+   * and the portal hills; a vehicle deep inside a portal is not drawn.
+   */
+  #drawOncoming(ride: RideSimulation, leftX: number, rightX: number): void {
+    const catalog = this.#host.catalogVehicles();
+    let used = 0;
+    let open = 0;
+    for (const train of ride.oncomingTrains) {
+      const { site } = train;
+      train.vehicles.forEach((vehicle, i) => {
+        const pose = train.vehiclePose(i);
+        const half = vehicle.lengthU / 2;
+        if (
+          pose.centerX + half < Math.max(leftX, site.fromX - PORTAL_EDGE_U) ||
+          pose.centerX - half > Math.min(rightX, site.toX + PORTAL_EDGE_U)
+        )
+          return;
+        const shaped = catalog.find((candidate) => candidate.id === vehicle.id);
+        if (!shaped) return;
+        const slot = this.#npcSlot(used);
+        used += 1;
+        slot.container
+          .setVisible(true)
+          .setPosition(pose.centerX - this.#originX, -pose.centerY)
+          .setRotation(-pose.angleRad)
+          .setScale(-SECONDARY_SCALE, SECONDARY_SCALE);
+        const drawn = this.#drawArtVehicle(
+          slot,
+          shaped,
+          train.travelledU / SECONDARY_SCALE,
+        );
+        for (let k = drawn; k < slot.images.length; k++)
+          slot.images[k]?.setVisible(false);
+        if (pose.centerX > site.fromX && pose.centerX < site.toX) open += 1;
+      });
+    }
+    for (let i = used; i < this.#npcSlots.length; i++)
+      this.#npcSlots[i]?.container.setVisible(false);
+    this.stats.oncomingVehicles = open;
+  }
+
   /** Image `index` of a slot showing `texture`/`frame`, created on demand. */
   #image(
     slot: VehicleSlot,
@@ -1041,7 +1151,7 @@ export class RideScene extends Phaser.Scene {
     this.#destroyChunks();
     this.#destroyObjects();
 
-    for (const slot of this.#slots) {
+    for (const slot of [...this.#slots, ...this.#npcSlots]) {
       slot.images.forEach((image, i) => {
         const shown = slot.frames[i];
         if (!shown?.startsWith(`${replaced}/`)) return;

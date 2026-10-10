@@ -7,6 +7,7 @@ import {
   cloudParts,
   crossingParts,
   effectParts,
+  secondaryParts,
   roadActorParts,
   trackTileSets,
 } from './worldArt.ts';
@@ -14,7 +15,8 @@ import {
 /**
  * Every world part key the game refers to: track tiles, the kinds the
  * world generator places (localities and stations), animals, backdrops,
- * clouds, effect sprites, crossings, road traffic and catenary. `validate:assets` reports parts outside this
+ * clouds, effect sprites, crossings, road traffic,
+ * catenary and second-track portals. `validate:assets` reports parts outside this
  * list.
  */
 export function worldUsedKeys(): string[] {
@@ -29,6 +31,7 @@ export function worldUsedKeys(): string[] {
       ...effectParts,
       ...Object.values(crossingParts),
       ...Object.values(catenaryParts),
+      ...Object.values(secondaryParts),
       ...Object.values(roadActorParts).flatMap((p) => [p.front, p.back]),
     ]),
   ];

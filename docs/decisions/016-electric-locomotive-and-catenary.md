@@ -59,6 +59,6 @@ Katalog dosud elektrickou lokomotivu neměl; test to výslovně hlídal, dokud v
 ## Dočasná omezení a podmínky odstranění
 
 - **Portálové podpěry ve stanici, mostní konzoly a tunelový závěs** (dokument 03 §9) zatím nejsou. Ve stanici stojí běžné stožáry. Konzola a závěs přijdou s mosty a tunely v kroku G4.
-- **Souběžná kolej** zatím vedení nemá. Přijde s druhou kolejí v kroku G3.
+- **Souběžná kolej** ([D-017](017-second-track-and-oncoming-train.md)) vedení zatím nemá; protijedoucí vlak je parní nebo naftový. Doplní se s další elektrickou lokomotivou katalogu.
 - **Zvuk elektrické lokomotivy** je dočasný syntetizovaný tón jako u ostatních.
 - **Fyzická zařízení:** NEOVĚŘENO.

@@ -126,6 +126,13 @@ Při setkání může jednou zahoukat a rozsvítit světla. Hráčova píšťala
 
 Předjíždění, třetí kolej a rozvětvená železniční síť jsou pozdější rozšíření. Již první protijedoucí vlak splní požadavek živého souběžného provozu.
 
+Implementace ([D-017](../docs/decisions/017-second-track-and-oncoming-train.md)):
+
+- `OncomingTrain` je parní nebo naftová lokomotiva s 1–5 vagonky, 100–160 u/s, rozložená v měřítku 0,9 hlubší vrstvy.
+- Vyjede jednou, když čelo hráče projde bodem 512 u před levým portálem. Po obnově za tímto bodem nevyjede.
+- Při setkání v otevřeném úseku jednou zahouká. Na píšťalu v dosahu 800 u odpoví nejvýš jednou za 8 s, sám nic dalšího nespouští.
+- Rozsvícení světel zatím chybí.
+
 ## 7. Katalog základních reakcí
 
 | Objekt                  | Spouštěč                                | Reakce                                            | Omezení                                   |

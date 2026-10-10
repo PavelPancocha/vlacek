@@ -43,6 +43,18 @@ describe('emitterWorldPoint: emitters ride on the vehicle model (doc 14 §4)', (
     expect(point.tiltDeg).toBeCloseTo(0, 9);
   });
 
+  it('mirrors and scales the emitter for a train driving left in the deeper layer', () => {
+    const point = emitterWorldPoint(
+      chimney,
+      frame,
+      { centerX: 1000, centerY: 50, angleRad: 0 },
+      { mirrored: true, scale: 0.9 },
+    );
+    // The chimney is ahead of the middle, so left of it when mirrored.
+    expect(point.x).toBeCloseTo(1000 - 50.5 * 0.9, 9);
+    expect(point.y).toBeCloseTo(-(50 + 94 * 0.9), 9);
+  });
+
   it('follows the tilt of a vehicle on a climb', () => {
     const angle = 0.1;
     const point = emitterWorldPoint(chimney, frame, {

@@ -2,6 +2,7 @@ import { gameConfig } from '../../config/gameConfig.ts';
 import { biomeAt } from './Biomes.ts';
 import { chunkObjects } from './ChunkObjects.ts';
 import { hash32 } from './Hash.ts';
+import { PORTAL_HILL_U, secondarySite } from './SecondaryTrack.ts';
 import {
   TRACK_GENERATOR_VERSION,
   generateTrackProfile,
@@ -33,19 +34,27 @@ export interface CrossingSite {
 /**
  * The crossing of a chunk, if any: only in slot 3 of a biome block, on a
  * straight piece of track (constant grade over ± 96 u, so the road meets
- * level rails), away from the interactive animal; the seed picks among
- * the fitting places. Pure: seed and chunk index only, so a crossing is
+ * level rails), away from the interactive animal and from a second
+ * track's portal hill; the seed picks among the fitting places. Pure: seed and chunk index only, so a crossing is
  * known long before its track is streamed in.
  */
 export function crossingSite(
   seed: number,
   chunkIndex: number,
 ): CrossingSite | undefined {
-  if (biomeAt(seed, chunkIndex).slot !== CROSSING_SLOT) return undefined;
+  const place = biomeAt(seed, chunkIndex);
+  if (place.slot !== CROSSING_SLOT) return undefined;
   const profile = generateTrackProfile(seed, chunkIndex);
   const animal = chunkObjects(seed, chunkIndex)[0]?.localXU;
+  // The road stays clear of a second track's left portal hill (slot 4).
+  const lastX = secondarySite(seed, place.block)
+    ? Math.min(
+        CANDIDATE_TO_U,
+        gameConfig.world.chunkWidthU - PORTAL_HILL_U - CROSSING_RESERVE_U,
+      )
+    : CANDIDATE_TO_U;
   const candidates: number[] = [];
-  for (let x = CANDIDATE_FROM_U; x <= CANDIDATE_TO_U; x += CANDIDATE_STEP_U) {
+  for (let x = CANDIDATE_FROM_U; x <= lastX; x += CANDIDATE_STEP_U) {
     if (animal !== undefined && Math.abs(animal - x) < ANIMAL_CLEARANCE_U)
       continue;
     const grade = profileGrade(profile, x);

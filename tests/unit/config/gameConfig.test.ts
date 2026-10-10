@@ -58,6 +58,43 @@ describe('gameConfig', () => {
     ]);
   });
 
+  it('carries the doc 13 second-track and oncoming-train defaults (doc 04 §7, doc 05 §6)', () => {
+    const { world, interaction } = gameConfig;
+    expect([
+      world.secondaryTrackOffsetU,
+      world.secondaryRailProbability,
+      world.forcedSecondaryBiomeBlock,
+      world.npcTriggerBeforeFeatureU,
+      world.npcHiddenPathMarginU,
+    ]).toEqual([64, 1 / 3, 1, 512, 256]);
+    expect(interaction).toEqual({
+      defaultCooldownSeconds: 1.5,
+      hornMinIntervalSeconds: 0.7,
+      npcHornCooldownSeconds: 8,
+      hornResponseRadiusU: 800,
+      npcTrainMaxWagons: 5,
+      npcTrainMinSpeedUPerSec: 100,
+      npcTrainMaxSpeedUPerSec: 160,
+    });
+  });
+
+  it('rejects an oncoming train faster at its slowest than at its fastest', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      world: { ...gameConfig.world, secondaryRailProbability: 1.5 },
+      interaction: {
+        ...gameConfig.interaction,
+        npcTrainMinSpeedUPerSec: 200,
+        npcTrainMaxWagons: 0,
+      },
+    };
+    expect(validateGameConfig(broken)).toEqual([
+      'interaction.npcTrainMaxWagons',
+      'interaction.npcTrainSpeedUPerSec',
+      'world.secondaryRailProbability',
+    ]);
+  });
+
   it('carries the doc 13 quality profiles with their particle budgets', () => {
     expect(gameConfig.quality).toEqual({
       low: { maxDpr: 1, targetFps: 30, maxDecorativeParticles: 96 },

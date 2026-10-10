@@ -8,6 +8,11 @@ import {
   type ChunkScenery,
 } from '../../../src/domain/world/Scenery.ts';
 import { LOCALITIES } from '../../../src/domain/world/sceneryTemplates.ts';
+import { CROSSING_RESERVE_U } from '../../../src/domain/world/Crossings.ts';
+import {
+  SECONDARY_CLEAR_DEPTH,
+  secondaryClearRanges,
+} from '../../../src/domain/world/SecondaryTrack.ts';
 import {
   generateTrackProfile,
   profileGrade,
@@ -220,6 +225,32 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
       expect(scenery.animal.depth).toBeLessThan(pond.depth);
       expect(scenery.animal.depth).toBeGreaterThan(pond.depth - 0.1);
     });
+  });
+
+  it('keeps the second track and its portal hills clear of near back scenery (doc 04 §7)', () => {
+    let guarded = 0;
+    each((scenery, seed) => {
+      const ranges = secondaryClearRanges(seed, scenery.chunkIndex);
+      if (ranges.length === 0) return;
+      guarded += 1;
+      const inside = (from: number, to: number) =>
+        ranges.some((range) => from < range.toX && to > range.fromX);
+      for (const prop of scenery.props) {
+        if (prop.layer !== 'back' || prop.depth >= SECONDARY_CLEAR_DEPTH)
+          continue;
+        const reach = (prop.motion?.rangeU ?? 0) / 2;
+        expect(inside(prop.xU - reach, prop.xU + reach), prop.id).toBe(false);
+      }
+      for (const basin of scenery.water)
+        if (inside(basin.fromX, basin.toX))
+          expect(basin.nearDepth).toBeGreaterThanOrEqual(SECONDARY_CLEAR_DEPTH);
+      const road = scenery.crossing?.localXU;
+      if (road !== undefined)
+        expect(
+          inside(road - CROSSING_RESERVE_U, road + CROSSING_RESERVE_U),
+        ).toBe(false);
+    });
+    expect(guarded).toBeGreaterThan(20);
   });
 
   it('covers the whole chunk with near and back ground', () => {

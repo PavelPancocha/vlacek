@@ -47,6 +47,21 @@ export interface DebugSnapshot {
     /** How far the drawn pantograph head misses the wire, u. */
     pantographGapU: number | undefined;
   };
+  /** Oncoming trains on second tracks (doc 05 §6, D-017). */
+  oncoming: {
+    trains: {
+      id: string;
+      /** World x interval of the whole train. */
+      minX: number;
+      maxX: number;
+      /** Its second track's visible stretch, between the portals. */
+      fromX: number;
+      toX: number;
+      vehicles: number;
+    }[];
+    /** Its vehicles drawn out in the open, between the portals. */
+    drawnInOpen: number;
+  };
   /** Level crossings the ride simulates (doc 05 §4, D-015). */
   crossings: {
     id: string;

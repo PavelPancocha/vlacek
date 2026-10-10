@@ -319,3 +319,31 @@ Snímky ze skutečné aplikace:
 - [detail: sběrač na troleji](img/2026-10-10-elektricka-pantograf.jpg).
 
 Fyzický tablet, telefon a Tesla: **NEOVĚŘENO**.
+
+## G3 — druhá kolej a protijedoucí vlak
+
+Rozhodnutí: [D-017](../decisions/017-second-track-and-oncoming-train.md). Ve slotech 4–6 bloku 1 a asi třetiny dalších bloků vede za hlavní tratí druhá kolej mezi dvěma tunelovými portály. Když se hráč přiblíží, vyjede z pravého portálu protijedoucí parní nebo naftový vlak. Projede krajinou, vozidlo po vozidle zajede do levého portálu a na píšťalu odpoví s rozumným odstupem.
+
+| Test                                                                                                                                                                                           | Red                                                                                                                                                                    | Green                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Unit konfigurace druhé koleje a protijedoucího vlaku dokumentu 13 a její validace                                                                                                              | 2 FAIL (chybí klíče a validace)                                                                                                                                        | 12 PASS                                                        |
+| Unit místa souběhu (blok 1 vždy, blok 0 nikdy, jinak asi třetina), trať o 64 u hlouběji se skrytými konci                                                                                      | 2 FAIL proti stubům (1 triviálně PASS)                                                                                                                                 | 3 PASS                                                         |
+| Unit protijedoucí vlak: složení, rychlost, výjezd celý zevnitř pravého portálu, jízda doleva po existující geometrii, konec až po skrytí posledního vozu, vagony vpravo od lokomotivy (SCN-09) | 2 FAIL proti stubu (1 triviálně PASS)                                                                                                                                  | 3 PASS                                                         |
+| Unit jízda: jediný výjezd u bodu 512 u, dojede i se stojícím hráčem; po obnově za bodem nevyjede; odpovědi na píšťalu nejvýš po 8 s; jediné zahoukání při setkání (SCN-10)                     | 3 FAIL proti stubům (1 triviálně PASS)                                                                                                                                 | 18 PASS                                                        |
+| Mutace: odpověď bez vlastního cooldownu                                                                                                                                                        | FAIL testu odpovědí                                                                                                                                                    | obnoveno                                                       |
+| Unit volné místo: pás tratě a portálové kopce bez blízkých zadních rekvizit, voda za tratí, přejezd mimo kopec                                                                                 | 1 FAIL (`g1:chunk:11:prop:17` na pásu druhé koleje); rozsahy 1 FAIL proti stubu                                                                                        | PASS                                                           |
+| Unit zrcadlený emitor kouře protijedoucího vlaku                                                                                                                                               | 1 FAIL                                                                                                                                                                 | PASS                                                           |
+| E2E SCN-09: vlak vyjede jednou, ukáže se v krajině, vozidla přibývají a mizí po jednom, zruší se až po skrytí posledního                                                                       | 1 FAIL proti buildu G2 (`914a3b3`, diagnostika bez `oncoming`); po implementaci 1 FAIL na chybné kontrole testu (vlak mezitím ujel 50 u; přesný start hlídá unit test) | PASS                                                           |
+| `npm run check`, celé `npm run test:e2e`                                                                                                                                                       | —                                                                                                                                                                      | 437 unit PASS; E2E 100 PASS / 4 skipped (po opravě testu níže) |
+
+Výkon (`PERF_SECONDS=30 npm run measure:perf`, nejdelší souprava; jízda projede souběhem bloku 1): medián 30 FPS, p95 50 ms, nejhorší snímek 67 ms.
+
+Snímky ze skutečné aplikace:
+
+- [souběh: protijedoucí parní vlak vyjel z tunelu, hráčův vlak stojí u přejezdu](img/2026-10-10-protijedouci-soubeh.jpg);
+- [protijedoucí vlak zajíždí do levého portálu](img/2026-10-10-protijedouci-portal.jpg);
+- [detail: lokomotiva mizí v oblouku, vagony za ní](img/2026-10-10-protijedouci-detail.jpg).
+
+Fyzický tablet, telefon a Tesla: **NEOVĚŘENO**.
+
+Oprava testu nalezená při ověření G3: `tests/e2e/render.spec.ts` otevíral v každém testu dvě stránky s jízdou a nezavíral je. Čtyři stránky dál kreslily v softwarovém WebGL a zpomalily všechny další testy v tomtéž prohlížeči. Kouřový test bootu pak na plném běhu dvakrát překročil 10 s (samostatně PASS). Měření: kouřový test po testech vykreslování trval 9,7 s, po zavření stránek 2,1 s; druhý test vykreslování se zkrátil z 13,8 na 9,0 s.

@@ -39,6 +39,7 @@ import {
 import { glintAlpha, swayAmplitudeRad, swayAngle } from './ambientMotion.ts';
 import { frameOrigin } from './atlasPacking.ts';
 import { chunkCatenary } from './CatenaryView.ts';
+import { chunkSecondaryTrack } from './SecondaryView.ts';
 import { CrossingView, type CrossingState } from './CrossingView.ts';
 import { roadHalfWidthU, roadPointY } from './crossingLayout.ts';
 import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
@@ -86,6 +87,17 @@ const GROUND_SAMPLE_STRIDE = 4;
 const GROUND_MAX_PX_PER_U = 1;
 /** Meadow below the last band is a plain rectangle, not texture. */
 const NEAR_TAIL_U = 24;
+
+/**
+ * Second-track layers above the back props: tiles, tunnel mouths, the
+ * oncoming train and the portal hills over it (doc 04 §7).
+ */
+export const SECONDARY_DEPTH = {
+  track: 0.2,
+  mouth: 0.25,
+  train: 0.3,
+  hill: 0.35,
+} as const;
 
 let bakedSerial = 0;
 
@@ -350,6 +362,15 @@ export class ChunkView {
         },
       );
     }
+    // The second track behind the main one, its tunnel mouths and portal
+    // hills; the oncoming train is drawn between them (doc 04 §7).
+    this.#objects.push(
+      ...chunkSecondaryTrack(scene, art, table, seed, {
+        track: depths.backProps + SECONDARY_DEPTH.track,
+        mouth: depths.backProps + SECONDARY_DEPTH.mouth,
+        hill: depths.backProps + SECONDARY_DEPTH.hill,
+      }),
+    );
     if (electrified) {
       const catenary = chunkCatenary(scene, art, table, seed, {
         poles: depths.backProps + 0.6,

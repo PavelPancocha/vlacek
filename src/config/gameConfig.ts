@@ -90,11 +90,30 @@ export interface WorldConfig {
    */
   catenaryPoleSpacingU: number;
   catenaryContactHeightU: number;
+  /**
+   * Second track (doc 04 §7): this far behind the main track, in a share
+   * of the biome blocks (always in `forcedSecondaryBiomeBlock`); the
+   * oncoming train starts when the player's front is this close before its
+   * visible stretch, and its hidden ends are its length plus this margin.
+   */
+  secondaryTrackOffsetU: number;
+  secondaryRailProbability: number;
+  forcedSecondaryBiomeBlock: number;
+  npcTriggerBeforeFeatureU: number;
+  npcHiddenPathMarginU: number;
 }
 
 export interface InteractionConfig {
   defaultCooldownSeconds: number;
   hornMinIntervalSeconds: number;
+  /** The oncoming train answers the horn at most this often (doc 05 §8). */
+  npcHornCooldownSeconds: number;
+  /** A horn reaches answering actors this far, u. */
+  hornResponseRadiusU: number;
+  /** The oncoming train (doc 05 §6): wagons and speed range. */
+  npcTrainMaxWagons: number;
+  npcTrainMinSpeedUPerSec: number;
+  npcTrainMaxSpeedUPerSec: number;
 }
 
 export interface SaveConfig {
@@ -189,7 +208,15 @@ export const gameConfig: GameConfig = {
     maxBytes: 524288,
     maxRuntimeComponents: 512,
   },
-  interaction: { defaultCooldownSeconds: 1.5, hornMinIntervalSeconds: 0.7 },
+  interaction: {
+    defaultCooldownSeconds: 1.5,
+    hornMinIntervalSeconds: 0.7,
+    npcHornCooldownSeconds: 8,
+    hornResponseRadiusU: 800,
+    npcTrainMaxWagons: 5,
+    npcTrainMinSpeedUPerSec: 100,
+    npcTrainMaxSpeedUPerSec: 160,
+  },
   train: {
     maxConsistLengthU: 1600,
     maxVehicleLengthU: 220,
@@ -231,6 +258,11 @@ export const gameConfig: GameConfig = {
     spawnLocalXU: 512,
     catenaryPoleSpacingU: 256,
     catenaryContactHeightU: 160,
+    secondaryTrackOffsetU: 64,
+    secondaryRailProbability: 1 / 3,
+    forcedSecondaryBiomeBlock: 1,
+    npcTriggerBeforeFeatureU: 512,
+    npcHiddenPathMarginU: 256,
   },
   camera: {
     trainWidthFraction: 0.72,
@@ -304,6 +336,24 @@ export function validateGameConfig(config: GameConfig): string[] {
     [
       'interaction.hornMinIntervalSeconds',
       positive(interaction.hornMinIntervalSeconds),
+    ],
+    [
+      'interaction.npcHornCooldownSeconds',
+      positive(interaction.npcHornCooldownSeconds),
+    ],
+    [
+      'interaction.hornResponseRadiusU',
+      positive(interaction.hornResponseRadiusU),
+    ],
+    [
+      'interaction.npcTrainMaxWagons',
+      positiveInteger(interaction.npcTrainMaxWagons),
+    ],
+    [
+      'interaction.npcTrainSpeedUPerSec',
+      positive(interaction.npcTrainMinSpeedUPerSec) &&
+        interaction.npcTrainMinSpeedUPerSec <=
+          interaction.npcTrainMaxSpeedUPerSec,
     ],
     [
       'train.maxConsistLengthU',
@@ -405,6 +455,22 @@ export function validateGameConfig(config: GameConfig): string[] {
         world.chunkWidthU % world.catenaryPoleSpacingU === 0,
     ],
     ['world.catenaryContactHeightU', positive(world.catenaryContactHeightU)],
+    ['world.secondaryTrackOffsetU', positive(world.secondaryTrackOffsetU)],
+    [
+      'world.secondaryRailProbability',
+      Number.isFinite(world.secondaryRailProbability) &&
+        world.secondaryRailProbability >= 0 &&
+        world.secondaryRailProbability <= 1,
+    ],
+    [
+      'world.forcedSecondaryBiomeBlock',
+      Number.isSafeInteger(world.forcedSecondaryBiomeBlock),
+    ],
+    [
+      'world.npcTriggerBeforeFeatureU',
+      positive(world.npcTriggerBeforeFeatureU),
+    ],
+    ['world.npcHiddenPathMarginU', positive(world.npcHiddenPathMarginU)],
     ['input.maxPointers', positiveInteger(input.maxPointers)],
     ['input.leftSwipeDistanceCssPx', positive(input.leftSwipeDistanceCssPx)],
     ['input.leftSwipeMaxDurationMs', positive(input.leftSwipeMaxDurationMs)],

@@ -8,6 +8,10 @@ import {
 } from './Crossings.ts';
 import { hash32, unitRandom } from './Hash.ts';
 import {
+  SECONDARY_CLEAR_DEPTH,
+  secondaryClearRanges,
+} from './SecondaryTrack.ts';
+import {
   LOCALITIES,
   type AnimalKind,
   type BackGround,
@@ -80,6 +84,8 @@ export interface WaterBasin {
  * them the water spans the basin's whole depth range.
  */
 export const WATER_END_U = 72;
+/** Water moved behind a second track keeps at least this much depth. */
+const SHALLOWEST_WATER = 0.12;
 
 export interface ChunkScenery {
   chunkIndex: number;
@@ -424,6 +430,33 @@ export function chunkScenery(seed: number, chunkIndex: number): ChunkScenery {
           placement.xU - reach >= piece.fromX + WATER_END_U &&
           placement.xU + reach <= piece.toX - WATER_END_U,
       );
+    });
+  }
+  // A second track and its portal hills keep the near back ground clear
+  // (doc 04 §7): nearer props leave, water lies behind its band.
+  const clear = secondaryClearRanges(seed, chunkIndex);
+  if (clear.length > 0) {
+    const inside = (from: number, to: number) =>
+      clear.some((range) => from < range.toX && to > range.fromX);
+    const shifted = water.map((basin) => {
+      if (!inside(basin.fromX, basin.toX)) return basin;
+      const nearDepth = Math.max(basin.nearDepth, SECONDARY_CLEAR_DEPTH);
+      return {
+        ...basin,
+        nearDepth,
+        farDepth: Math.max(basin.farDepth, nearDepth + SHALLOWEST_WATER),
+      };
+    });
+    water.length = 0;
+    water.push(...shifted);
+    kept = kept.filter((placement) => {
+      if (
+        placement.layer !== 'back' ||
+        placement.depth >= SECONDARY_CLEAR_DEPTH
+      )
+        return true;
+      const reach = (placement.motion?.rangeU ?? 0) / 2;
+      return !inside(placement.xU - reach, placement.xU + reach);
     });
   }
   // In the transition chunk the animal belongs to the half it stands in.

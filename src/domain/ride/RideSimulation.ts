@@ -16,6 +16,7 @@ import {
   type VehicleGeometry,
   type VehiclePose,
 } from '../train/TrainGeometry.ts';
+import { OncomingTrain, type NpcFleet } from '../interaction/OncomingTrain.ts';
 import {
   motionParams,
   stepMotion,
@@ -24,6 +25,7 @@ import {
 import type { TrackSample } from '../world/ArcLengthTable.ts';
 import { chunkObjects, chunkOfEntityId } from '../world/ChunkObjects.ts';
 import { crossingSite, crossingWorldX } from '../world/Crossings.ts';
+import { secondarySite } from '../world/SecondaryTrack.ts';
 import { generateTrackProfile } from '../world/TrackProfile.ts';
 import { TrackWindow, type TrackCursor } from '../world/TrackWindow.ts';
 
@@ -36,6 +38,11 @@ export interface RideSetup {
   config: GameConfig;
   /** Saved head position; a new journey spawns per doc 13 `world.spawn*`. */
   head?: TrackCursor;
+  /**
+   * Vehicles for oncoming trains on second tracks (doc 05 §6); without a
+   * fleet no oncoming train runs.
+   */
+  npcFleet?: NpcFleet;
   /**
    * The locomotive needs catenary: the whole journey is electrified
    * (doc 03 §9), for every kept and newly generated chunk.
@@ -51,7 +58,9 @@ export interface PlacedObject {
 }
 
 export type RideEvent =
-  { type: 'objectReacted'; id: string } | { type: 'horn' };
+  | { type: 'objectReacted'; id: string }
+  | { type: 'horn' }
+  | { type: 'npcHorn'; id: string };
 
 const MAX_PENDING_EVENTS = 64;
 /** Crossings stay alive this far behind the tail (until well clear). */
@@ -79,6 +88,15 @@ export class RideSimulation {
   /** Live level crossings by id (doc 05 §4), ahead and under the train. */
   readonly #crossings = new Map<string, LevelCrossing>();
   readonly #crossingRules: CrossingRules;
+  readonly #npcFleet: NpcFleet | undefined;
+  /** Oncoming trains on their way, by second-track id. */
+  readonly #oncoming = new Map<string, OncomingTrain>();
+  /** Second tracks whose train has already been sent (once each). */
+  readonly #oncomingSent = new Set<string>();
+  readonly #oncomingGreeted = new Set<string>();
+  readonly #npcHorn: CooldownGate;
+  /** The front's x after the previous step, to catch the trigger point. */
+  #lastFrontX: number;
   #events: RideEvent[] = [];
   speedUPerSec = 0;
   simulationTick: number;
@@ -106,6 +124,12 @@ export class RideSimulation {
         config.interaction.hornMinIntervalSeconds * config.simulation.fixedHz,
       ),
     );
+    this.#npcHorn = new CooldownGate(
+      Math.round(
+        config.interaction.npcHornCooldownSeconds * config.simulation.fixedHz,
+      ),
+    );
+    this.#npcFleet = setup.npcFleet;
     this.layout = layoutConsist(setup.vehicles, config.train.couplerGapU);
     this.#crossingRules = {
       crossing: config.crossing,
@@ -140,6 +164,62 @@ export class RideSimulation {
     // Crossings exist before the first frame; one under the train starts
     // closed (SCN-08).
     this.#updateCrossings(0);
+    // A restored ride past a trigger point sends no train (no pop-in).
+    this.#lastFrontX = this.track.sample(this.frontS).x;
+  }
+
+  /** Oncoming trains on their way along second tracks (doc 05 §6). */
+  get oncomingTrains(): readonly OncomingTrain[] {
+    return [...this.#oncoming.values()];
+  }
+
+  /**
+   * Sends a second track's train once, when the front comes within
+   * `npcTriggerBeforeFeatureU` of its visible stretch; moves the trains
+   * and lets each greet the player once when they meet in view.
+   */
+  #updateOncoming(dtSec: number): void {
+    const frontX = this.track.sample(this.frontS).x;
+    const { world } = this.#config;
+    const fleet = this.#npcFleet;
+    if (fleet) {
+      const block = Math.floor(
+        frontX / (world.chunksPerBiomeBlock * world.chunkWidthU),
+      );
+      for (const b of [block, block + 1]) {
+        const site = secondarySite(this.#seed, b);
+        if (!site || this.#oncomingSent.has(site.id)) continue;
+        const trigger = site.fromX - world.npcTriggerBeforeFeatureU;
+        if (this.#lastFrontX < trigger && frontX >= trigger) {
+          this.#oncomingSent.add(site.id);
+          this.#oncoming.set(
+            site.id,
+            new OncomingTrain(this.#seed, site, fleet, this.#config),
+          );
+        }
+      }
+    }
+    for (const [id, train] of this.#oncoming) {
+      train.step(dtSec);
+      const head = train.xSpan().minX;
+      if (
+        !this.#oncomingGreeted.has(id) &&
+        head <= frontX &&
+        head >= train.site.fromX &&
+        head <= train.site.toX
+      ) {
+        this.#oncomingGreeted.add(id);
+        this.#npcAnswer(train);
+      }
+      if (train.done) this.#oncoming.delete(id);
+    }
+    this.#lastFrontX = frontX;
+  }
+
+  /** The oncoming train horns, at most every `npcHornCooldownSeconds`. */
+  #npcAnswer(train: OncomingTrain): void {
+    if (this.#npcHorn.tryPass(this.simulationTick))
+      this.#emit({ type: 'npcHorn', id: train.id });
   }
 
   /** Level crossings from behind the train to beyond Dclose ahead. */
@@ -242,6 +322,7 @@ export class RideSimulation {
     this.headS += motion.distanceU;
     this.#streamTrack();
     this.#updateCrossings(this.#dtSec);
+    this.#updateOncoming(this.#dtSec);
     this.simulationTick += 1;
     this.#reactions.prune(this.simulationTick);
   }
@@ -291,6 +372,18 @@ export class RideSimulation {
   requestHorn(): boolean {
     if (!this.#horn.tryPass(this.simulationTick)) return false;
     this.#emit({ type: 'horn' });
+    // At most one answer (doc 05 §8): an oncoming train in view and reach.
+    const frontX = this.track.sample(this.frontS).x;
+    const reach = this.#config.interaction.hornResponseRadiusU;
+    for (const train of this.#oncoming.values()) {
+      const span = train.xSpan();
+      const inView = span.minX < train.site.toX && span.maxX > train.site.fromX;
+      const near = Math.max(span.minX - frontX, frontX - span.maxX, 0) <= reach;
+      if (inView && near) {
+        this.#npcAnswer(train);
+        break;
+      }
+    }
     return true;
   }
 
