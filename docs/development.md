@@ -96,7 +96,7 @@ volta run npm run test:e2e
 
 Pokud prostředí nastavuje `PLAYWRIGHT_BROWSERS_PATH` na adresář se starší revizí prohlížeče (například předinstalovaný kontejner), nainstaluj správnou revizi jinam a stejnou cestu předej i testům, např. `PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright`. Spouštění se starším Chromiem přes `executablePath` není podporovaná konfigurace. Testy mají `forbidOnly` a žádné retries; dotykový projekt používá `hasTouch`. Emulace není test fyzického zařízení.
 
-Celá uživatelská cesta (`tests/e2e/game.spec.ts`) čte stav přes diagnostické API `window.__vlacek.snapshot()`, které existuje jen s `?debug=1`. Vícedotykové testy posílají `Input.dispatchTouchEvent` přes CDP: `touchEnd` uvolní právě uvedené prsty. Časy gest se předávají explicitním `timestamp`, protože automatizační kanál doručuje události se zpožděním až stovek milisekund. Měření `*.perf.ts` má vlastní konfiguraci `tests/e2e/perf.config.ts` a běží jen přes `npm run measure:perf`.
+Celá uživatelská cesta (`tests/e2e/game.spec.ts`) čte stav přes diagnostické API `window.__vlacek.snapshot()`, které existuje jen s `?debug=1`. Chybu světa reprodukuj otevřením `?debug=1&seed=N` se seedem z pauzy nebo ze snapshotu a stejným buildem ([D-007](decisions/007-world-seed-in-url.md)). Vícedotykové testy posílají `Input.dispatchTouchEvent` přes CDP: `touchEnd` uvolní právě uvedené prsty. Časy gest se předávají explicitním `timestamp`, protože automatizační kanál doručuje události se zpožděním až stovek milisekund. Měření `*.perf.ts` má vlastní konfiguraci `tests/e2e/perf.config.ts` a běží jen přes `npm run measure:perf`.
 
 ## Kontrola dokumentace
 

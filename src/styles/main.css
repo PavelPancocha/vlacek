@@ -279,6 +279,7 @@ h1 {
 
 .hint,
 .notices,
+.world-id,
 .build-id {
   font-size: 0.85rem;
   margin: 0;
@@ -288,6 +289,7 @@ h1 {
   margin: 4px 0;
 }
 
+.world-id,
 .build-id {
   opacity: 0.6;
 }

@@ -188,6 +188,7 @@ export class AppController {
       notices: session.notices,
       fullSignals: session.fullSignals,
       hasJourney: session.ride !== undefined,
+      seed: session.journeySeed,
       portrait: this.#portrait,
       buildId: this.#options.buildId,
       locomotives,

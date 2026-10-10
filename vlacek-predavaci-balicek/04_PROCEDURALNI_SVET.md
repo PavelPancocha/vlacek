@@ -172,4 +172,4 @@ Roční období se v první verzi globálně nesimuluje. Sníh v horách je vlas
 
 Vývojový overlay ukáže seed, generatorVersion, chunkIndex, počet zachovaných chunků, počet renderovaných entit, délku vlaku, režim vstupu, v, simulační tick a profil kvality. Barevné švy a rezervace lze zapnout pouze v debug režimu.
 
-Musí existovat deterministické testovací seedy a profil, který postupně předvede stanici, přejezd, most, tunel a druhou kolej. Debug zkratky nejsou součást dětského menu. Chyby layoutu se mají dát reprodukovat seedem a indexem chunku.
+Musí existovat deterministické testovací seedy a profil, který postupně předvede stanici, přejezd, most, tunel a druhou kolej. Debug zkratky nejsou součást dětského menu. Chyby layoutu se mají dát reprodukovat seedem a indexem chunku. Pauza ukazuje drobně číslo světa (seed) pro dospělého a parametr adresy `?seed=N` založí každou novou cestu s tímto seedem; uloženou cestu nemění (rozhodnutí [D-007](../docs/decisions/007-world-seed-in-url.md)).

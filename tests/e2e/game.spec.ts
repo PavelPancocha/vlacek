@@ -174,6 +174,30 @@ test.describe('user path', () => {
     expect((await snapshot(page)).vehicles).toBe(2);
   });
 
+  test('?seed pins the world of new journeys; pause shows the world number', async ({
+    page,
+  }) => {
+    await startRide(page, ['cargo_box'], '?debug=1&seed=123');
+    expect((await snapshot(page)).seed).toBe(123);
+    await tapAction(page, 'pause');
+    await expect(page.locator('.world-id')).toHaveText('Svět 123');
+    // A new journey from the depot stays in the pinned world (doc 04 §11).
+    await tapAction(page, 'open-depot');
+    await tapAction(page, 'add:fun_balloons');
+    await tapAction(page, 'depart');
+    await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+    expect((await snapshot(page)).seed).toBe(123);
+  });
+
+  test('without ?seed the pause screen names the random world', async ({
+    page,
+  }) => {
+    await startRide(page);
+    await tapAction(page, 'pause');
+    const seed = (await snapshot(page)).seed;
+    await expect(page.locator('.world-id')).toHaveText(`Svět ${seed}`);
+  });
+
   test('INP-13/UI-06: portrait shows the rotate prompt and pauses the ride', async ({
     page,
   }) => {

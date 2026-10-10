@@ -21,6 +21,8 @@ export interface UiModel {
   notices: readonly SessionNotice[];
   fullSignals: number;
   hasJourney: boolean;
+  /** World seed of the current journey, shown small on the pause screen. */
+  seed: number | undefined;
   portrait: boolean;
   buildId: string;
   locomotives: readonly CatalogLocomotive[];
@@ -104,6 +106,7 @@ export class UiLayer {
       model.notices,
       model.fullSignals,
       model.hasJourney,
+      model.seed,
       model.portrait,
     ]);
     if (signature === this.#signature) return;
@@ -479,6 +482,9 @@ export class UiLayer {
         ),
       ),
       notices(model),
+      model.seed === undefined
+        ? undefined
+        : el('p', { class: 'world-id' }, `Svět ${model.seed}`),
       el('p', { class: 'build-id' }, `Build ${model.buildId}`),
     );
   }
