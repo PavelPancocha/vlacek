@@ -44,3 +44,15 @@ export function trainInTunnel(
     ? 'inside'
     : 'partly';
 }
+
+/**
+ * The cover's opacity for this frame: eased towards the target, or right
+ * at it on the first frame (a journey restored with the train inside).
+ */
+export function nextCoverAlpha(
+  current: number | undefined,
+  target: number,
+  dtSec: number,
+): number {
+  return current === undefined ? target : easeAlpha(current, target, dtSec);
+}

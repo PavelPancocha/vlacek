@@ -4,7 +4,7 @@ import { tunnelParts, worldParts } from '../content/worldArt.ts';
 import type { TunnelSite } from '../domain/world/Structures.ts';
 import { frameOrigin } from './atlasPacking.ts';
 import {
-  easeAlpha,
+  nextCoverAlpha,
   trainInTunnel,
   tunnelCoverTarget,
   type TrainInTunnel,
@@ -76,7 +76,8 @@ export class TunnelView {
   readonly #cover: Phaser.GameObjects.Container;
   readonly #worldFrom: number;
   readonly #worldTo: number;
-  #alpha = 1;
+  /** Unset until the first update, which puts it right at its target. */
+  #alpha: number | undefined;
   #train: TrainInTunnel = 'outside';
 
   constructor(
@@ -369,7 +370,7 @@ export class TunnelView {
 
   /** Opacity of the cover (1 opaque … see-through while the train passes). */
   get alpha(): number {
-    return this.#alpha;
+    return this.#alpha ?? 1;
   }
 
   /** Where the train was at the last update. */
@@ -388,7 +389,7 @@ export class TunnelView {
     const tunnel = { fromX: this.#worldFrom, toX: this.#worldTo };
     this.#train = train ? trainInTunnel(train, tunnel) : 'outside';
     const target = train ? tunnelCoverTarget(train, tunnel) : 1;
-    this.#alpha = easeAlpha(this.#alpha, target, dtSec);
+    this.#alpha = nextCoverAlpha(this.#alpha, target, dtSec);
     this.#cover.setAlpha(this.#alpha);
   }
 }

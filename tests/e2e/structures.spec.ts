@@ -7,7 +7,11 @@ import { snapshot, tapAction } from './helpers.ts';
  * chunk 4 and the tunnel of chunk 6 (biome block 0 always has both,
  * doc 04 §6), as a v1 save.
  */
-async function continueBeforeBridge(page: Page): Promise<void> {
+async function continueBeforeBridge(
+  page: Page,
+  head = { chunkIndex: 4, arcOffsetU: 100 },
+  resume = true,
+): Promise<void> {
   const consist = {
     locomotiveId: 'electric_retro',
     wagons: [
@@ -32,7 +36,7 @@ async function continueBeforeBridge(page: Page): Promise<void> {
       seed: 123,
       generatorVersion: TRACK_GENERATOR_VERSION,
       consist,
-      head: { chunkIndex: 4, arcOffsetU: 100 },
+      head,
       simulationTick: 0,
       activeEntities: [],
     },
@@ -45,6 +49,7 @@ async function continueBeforeBridge(page: Page): Promise<void> {
   }, save);
   await page.goto('./?debug=1');
   await tapAction(page, 'continue');
+  if (!resume) return;
   await tapAction(page, 'resume');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
 }
@@ -97,5 +102,22 @@ test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () =>
         { timeout: 5_000 },
       )
       .toBeGreaterThan(0.95);
+  });
+
+  test('a journey restored inside the tunnel shows the train at once, even while paused', async ({
+    page,
+  }) => {
+    // The front deep in the chunk 6 tunnel (world 6272 to 6720).
+    await continueBeforeBridge(page, { chunkIndex: 6, arcOffsetU: 520 }, false);
+    expect((await snapshot(page)).screen).toBe('PAUSED');
+    const tunnelId = `g${TRACK_GENERATOR_VERSION}:chunk:6:tunnel:0`;
+    await expect
+      .poll(async () => {
+        const tunnel = (await snapshot(page)).tunnels.find(
+          (t) => t.id === tunnelId,
+        );
+        return tunnel && tunnel.train !== 'outside' ? tunnel.alpha : 1;
+      })
+      .toBeLessThan(0.5);
   });
 });

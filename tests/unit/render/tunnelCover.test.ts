@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   TUNNEL_SEE_THROUGH_ALPHA,
   easeAlpha,
+  nextCoverAlpha,
   trainInTunnel,
   tunnelCoverTarget,
 } from '../../../src/render/tunnelCover.ts';
@@ -46,5 +47,16 @@ describe('tunnel cover (doc 14 §2, doc 03 §8)', () => {
     expect(trainInTunnel({ minX: 1400, maxX: 1800 }, tunnel)).toBe('partly');
     expect(trainInTunnel({ minX: 1000, maxX: 1448 }, tunnel)).toBe('inside');
     expect(trainInTunnel({ minX: 1100, maxX: 1300 }, tunnel)).toBe('inside');
+  });
+
+  it('starts at its target, so a restored train inside is never hidden', () => {
+    // First frame of a restored, paused journey: no time passes.
+    expect(nextCoverAlpha(undefined, TUNNEL_SEE_THROUGH_ALPHA, 0)).toBe(
+      TUNNEL_SEE_THROUGH_ALPHA,
+    );
+    expect(nextCoverAlpha(undefined, 1, 0)).toBe(1);
+    // Later frames ease as before.
+    expect(nextCoverAlpha(1, TUNNEL_SEE_THROUGH_ALPHA, 0)).toBe(1);
+    expect(nextCoverAlpha(1, TUNNEL_SEE_THROUGH_ALPHA, 1 / 60)).toBeLessThan(1);
   });
 });

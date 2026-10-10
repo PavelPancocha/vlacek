@@ -36,6 +36,7 @@ Dokument 14 §5 chce v krajině potoky, mosty a tunely. Podle §2 dítě v tunel
    - **Průhlednost** (dokument 14 §2).
      - Kryt zprůsvitní na 0,3, když je kterákoli část vlaku v tunelu nebo do 80 u od portálu. Po odjezdu se vrátí na 1.
      - Mění se plynule (6/s) v čase simulace, takže ho pauza drží.
+     - Při prvním vykreslení se nastaví rovnou na cílovou hodnotu. Jízda obnovená s vlakem v tunelu ho tak ukáže hned, i v pauze (Codex review PR #2).
    - **Ztmavení (TRN-06).** Ztmavení je pás v prostoru tunelu s měkkým přechodem 40 u u portálů. Každé vozidlo je tedy tmavé podle vlastní polohy. Celou soupravu nepřepíná žádná maska ani přepínač, Canvas fallback kreslí totéž.
 5. **Vedení.**
    - Stožár stojí 80 u od středu potoka, tedy vedle opěr mostu.
