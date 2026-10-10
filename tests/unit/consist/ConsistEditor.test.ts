@@ -130,6 +130,16 @@ describe('ConsistEditor', () => {
     });
   });
 
+  it('undo after a locomotive change keeps the new locomotive', () => {
+    const draft = withWagons('cargo_box', 'cargo_coal');
+    const second = draft.consist.wagons[1]?.instanceId ?? 'missing';
+    const removed = removeSelected(selectWagon(draft, second));
+    const switched = selectLocomotive(removed, 'magic_stars');
+    const restored = undoLastChange(switched);
+    expect(restored.consist.locomotiveId).toBe('magic_stars');
+    expect(order(restored)).toEqual(['cargo_box', 'cargo_coal']);
+  });
+
   it('continues instance numbering for a restored consist without collisions', () => {
     const original = withWagons('cargo_box', 'cargo_coal');
     const restored = draftFromConsist(original.consist);

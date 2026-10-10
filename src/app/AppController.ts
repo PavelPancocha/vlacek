@@ -194,7 +194,12 @@ export class AppController {
       wagons,
       maxWagons: gameConfig.train.maxWagons,
     });
-    if (this.#uiRoot.dataset['screen'] !== before) this.#measureBrake();
+    const now = this.#uiRoot.dataset['screen'];
+    if (now !== before) {
+      this.#measureBrake();
+      // Pause freezes sounds too (doc 02 §6); the resume tap unlocks again.
+      if (now === 'PAUSED') this.#audio.suspend();
+    }
   }
 
   #measureBrake(): void {

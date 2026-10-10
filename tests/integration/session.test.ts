@@ -298,3 +298,39 @@ describe('GameSession: UI-only actions', () => {
     expect(seen).toEqual(['strip-start']);
   });
 });
+
+describe('GameSession: restoring a saved depot draft', () => {
+  function editDraftThenReload() {
+    const storage = new MemoryStorage();
+    const first = createSession(storage);
+    buildAndDepart(first, ['cargo_box']);
+    tap(first, 'pause');
+    tap(first, 'open-depot');
+    tap(first, 'add:fun_balloons');
+    // The debounced edit save is written on the next frames.
+    runFor(first, 0.5, 10_000);
+    return createSession(storage);
+  }
+
+  it('reopening the depot after a reload shows the saved draft, not the journey copy', () => {
+    const later = editDraftThenReload();
+    expect(later.screen).toEqual({ name: 'HOME' });
+    tap(later, 'continue');
+    tap(later, 'open-depot');
+    expect(later.draft.consist.wagons.map((w) => w.definitionId)).toEqual([
+      'cargo_box',
+      'fun_balloons',
+    ]);
+    expect(later.journeyConsist?.wagons).toHaveLength(1);
+    // Used once: "Zpět" discards it and the next copy comes from the journey.
+    tap(later, 'back');
+    tap(later, 'open-depot');
+    expect(later.draft.consist.wagons).toHaveLength(1);
+  });
+
+  it('Postavit vlak on HOME also continues the saved draft', () => {
+    const later = editDraftThenReload();
+    tap(later, 'build-new');
+    expect(later.draft.consist.wagons).toHaveLength(2);
+  });
+});

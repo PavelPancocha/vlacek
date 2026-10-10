@@ -84,6 +84,8 @@ export class GameSession {
   #events: SessionEvent[] = [];
   #notices = new Set<SessionNotice>();
   #fullSignals = 0;
+  /** Depot draft loaded from the save; continued once by the next depot visit. */
+  #restoredDraft: ConsistDraft | undefined;
   /** Wall-clock time of the latest frame, for debouncing edits. */
   #nowMs = 0;
 
@@ -161,6 +163,9 @@ export class GameSession {
       this.#settings = save.settings;
       this.#lastConsist = save.lastConsist;
       this.#draft = draftFromConsist(save.builderDraft ?? save.lastConsist);
+      // With a journey the app opens HOME; the draft waits for the next depot
+      // visit. Without one it is already the selection screen's draft.
+      if (save.builderDraft && save.journey) this.#restoredDraft = this.#draft;
       if (save.journey) {
         try {
           this.#journey = {
@@ -299,6 +304,7 @@ export class GameSession {
       return;
     }
     this.#notices.delete('start-failed');
+    this.#restoredDraft = undefined;
     this.#journey = journey;
     this.#lastConsist = journey.consist;
     this.#apply({ type: 'depart' });
@@ -312,6 +318,12 @@ export class GameSession {
     if (draft === this.#draft) return;
     this.#draft = draft;
     this.#scheduler.noteEdit(this.#nowMs);
+  }
+
+  #takeRestoredDraft(): ConsistDraft | undefined {
+    const draft = this.#restoredDraft;
+    this.#restoredDraft = undefined;
+    return draft;
   }
 
   #onAction(action: string): void {
@@ -339,12 +351,15 @@ export class GameSession {
         this.#apply({ type: 'continueJourney' });
         return;
       case 'build-new':
-        this.#draft = draftFromConsist(this.#lastConsist);
+        this.#draft =
+          this.#takeRestoredDraft() ?? draftFromConsist(this.#lastConsist);
         this.#apply({ type: 'buildNew' });
         return;
       case 'open-depot':
         if (this.#journey) {
-          this.#draft = draftFromConsist(this.#journey.consist);
+          this.#draft =
+            this.#takeRestoredDraft() ??
+            draftFromConsist(this.#journey.consist);
           this.#apply({ type: 'openDepot' });
         }
         return;

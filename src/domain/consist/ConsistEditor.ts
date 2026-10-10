@@ -39,7 +39,16 @@ export function selectLocomotive(
   draft: ConsistDraft,
   locomotiveId: string,
 ): ConsistDraft {
-  return { ...draft, consist: { ...draft.consist, locomotiveId } };
+  // Undo covers wagon removal/reorder only: keep the newly chosen locomotive.
+  const undo = draft.undo && {
+    ...draft.undo,
+    consist: { ...draft.undo.consist, locomotiveId },
+  };
+  return {
+    ...draft,
+    consist: { ...draft.consist, locomotiveId },
+    ...(undo ? { undo } : {}),
+  };
 }
 
 export function isFull(draft: ConsistDraft, maxWagons: number): boolean {

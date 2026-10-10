@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { gameConfig } from '../config/gameConfig.ts';
 import {
   OBJECT_RADIUS_U,
   OBJECT_SHAPES,
@@ -30,10 +31,13 @@ const LOCO_ANCHOR_X = 0.3;
 const RAIL_ANCHOR_Y = 0.65;
 /** Render origin step; keeps GPU coordinates small on endless rides. */
 const ORIGIN_STEP_U = 4096;
-const CHUNK_WIDTH_U = 1024;
+/** Chunk width shared with the generator and TrackWindow (doc 13). */
+const CHUNK_WIDTH_U = gameConfig.world.chunkWidthU;
 const GROUND_DEPTH_U = 1200;
 const REACTION_TICKS = 40;
 const HILLS_HEIGHT = 560;
+/** Width of the repeating background hills texture (not a chunk width). */
+const HILLS_WIDTH = 1024;
 
 const DEPTH = { hills: 1, ground: 5, train: 7, objects: 9 } as const;
 
@@ -118,7 +122,21 @@ export class RideScene extends Phaser.Scene {
     // Seamless tile: the outline starts and ends at the same height and
     // the fill reaches the texture bottom, so no sky shows below the hills.
     const outline = [
-      0, 170, 120, 140, 260, 220, 420, 90, 600, 200, 760, 120, 900, 210, 1024,
+      0,
+      170,
+      120,
+      140,
+      260,
+      220,
+      420,
+      90,
+      600,
+      200,
+      760,
+      120,
+      900,
+      210,
+      HILLS_WIDTH,
       170,
     ];
     const hills = this.make.graphics({}, false);
@@ -130,14 +148,14 @@ export class RideScene extends Phaser.Scene {
       );
     }
     points.push(
-      new Phaser.Math.Vector2(1024, HILLS_HEIGHT),
+      new Phaser.Math.Vector2(HILLS_WIDTH, HILLS_HEIGHT),
       new Phaser.Math.Vector2(0, HILLS_HEIGHT),
     );
     hills.fillPoints(points, true);
-    hills.generateTexture('hills', 1024, HILLS_HEIGHT);
+    hills.generateTexture('hills', HILLS_WIDTH, HILLS_HEIGHT);
     hills.destroy();
     this.#hills = this.add
-      .tileSprite(0, 0, 1024, 300, 'hills')
+      .tileSprite(0, 0, HILLS_WIDTH, HILLS_HEIGHT, 'hills')
       .setDepth(DEPTH.hills)
       .setOrigin(0, 1);
   }
@@ -245,7 +263,7 @@ export class RideScene extends Phaser.Scene {
       // Distant hills scroll slower than the track (parallax, doc 07 §3).
       this.#hills.setPosition(this.#view.left, this.#view.top + viewH);
       this.#hills.setSize(viewW + 2, HILLS_HEIGHT);
-      this.#hills.tilePositionX = (head.x * 0.3) % 1024;
+      this.#hills.tilePositionX = (head.x * 0.3) % HILLS_WIDTH;
     }
 
     const leftX = head.x - LOCO_ANCHOR_X * viewW - 64;

@@ -84,6 +84,31 @@ test.describe('user path', () => {
     await page.mouse.up();
   });
 
+  test('pausing from the HUD suspends sound; resuming needs a new gesture', async ({
+    page,
+  }) => {
+    await startRide(page);
+    await driveUntilMoving(page, 10);
+    await page.mouse.up();
+    await expect.poll(async () => (await snapshot(page)).audio).toBe('running');
+    await tapAction(page, 'pause');
+    await expect
+      .poll(async () => (await snapshot(page)).audio)
+      .toBe('suspended');
+    await tapAction(page, 'resume');
+    await expect.poll(async () => (await snapshot(page)).audio).toBe('running');
+  });
+
+  test('Space on a keyboard-focused HUD button activates it instead of driving', async ({
+    page,
+  }) => {
+    await startRide(page);
+    await page.locator('[data-action="pause"]').focus();
+    await page.keyboard.press('Space');
+    await expect.poll(async () => (await snapshot(page)).screen).toBe('PAUSED');
+    expect((await snapshot(page)).speedUPerSec).toBe(0);
+  });
+
   test('INP-10: losing focus pauses and clears input', async ({ page }) => {
     await startRide(page);
     await driveUntilMoving(page);
