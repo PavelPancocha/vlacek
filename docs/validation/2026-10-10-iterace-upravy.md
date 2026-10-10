@@ -432,3 +432,11 @@ Při prvním úplném běhu E2E pod zátěží jednou selhaly dva testy:
 - zvířata na telefonu (tablet): `buildLongestTrain` čekal na kliknutí 60 s.
 
 Druhý úplný běh, 24 samostatných běhů i 6 běhů při 8× zpomaleném CPU prošly. Příčinu ukázal až další běh krajinného spec souboru, kde 2 ze 4 běhů selhaly stejně. Snímek stránky ukázal plný vlak a zakázaná tlačítka „Přidat“, test přesto čekal na kliknutí. UI se po ťuknutí překreslovalo až v dalším snímku animace, takže `buildLongestTrain` přečetl tlačítko jako povolené ze starého DOM a pak čekal na tlačítko, které mezitím zakázalo překreslení. Totéž vysvětluje prázdný `boundingBox`. Oprava v aplikaci: UI se překreslí hned po zpracování gesta (`onGesture`), takže obrazovka už nikdy nenabízí tlačítko, které ťuknutí právě zakázalo. Po opravě krajinný spec 36 PASS ve 3 opakováních, UI a smoke 76 PASS.
+
+## Codex review PR #2 (`30ed30a`)
+
+| Nález                                                                   | Red                                                                                                                                                  | Green                 |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| Vzdálené kopce poskočí při posunu počátku vykreslování (každých 4096 u) | E2E přes x 4096 ve světě 123: střední kopce poskočily o 207 u (odhad 4096 × 0,55 mod 1020 = 213)                                                     | 14 E2E PASS (krajina) |
+| Řazení rekvizit nebylo konzistentní mezi vrstvami                       | unit: svět 0, chunk 7, zadní rekvizita v hloubce 0,81 kreslená po 0,67                                                                               | 63 PASS (svět)        |
+| Zvíře na 568 × 320 stálo mezi ovládáním                                 | E2E telefonu i na 568 × 320: zvíře v y 172,3 pod horní hranou brzdy 172; starý unit test očekával hloubku 0 v rozporu s dokumentem 02 a byl nahrazen | 5 unit + E2E PASS     |
