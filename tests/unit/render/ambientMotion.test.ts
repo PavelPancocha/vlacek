@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   glintAlpha,
+  motionScale,
   swayAmplitudeRad,
   swayAngle,
 } from '../../../src/render/ambientMotion.ts';
@@ -45,5 +46,20 @@ describe('ambient motion of the scenery (doc 14 §4: grass, branches, water)', (
     expect(samples.filter((a) => a > 0.1).length).toBeLessThan(
       samples.length / 2,
     );
+  });
+
+  it('reduced effects calm the sway, the glints and the breathing (doc 07 §9)', () => {
+    expect(motionScale('standard')).toBe(1);
+    const calm = motionScale('low');
+    expect(calm).toBeGreaterThan(0);
+    expect(calm).toBeLessThanOrEqual(0.3);
+    for (let t = 0; t < 10; t += 0.13) {
+      expect(
+        Math.abs(swayAngle('near.grass-a', t, 0.2, calm)),
+      ).toBeLessThanOrEqual(calm * swayAmplitudeRad('near.grass-a') + 1e-12);
+      expect(glintAlpha(t, 0.4, calm)).toBeLessThanOrEqual(
+        calm * glintAlpha(t, 0.4) + 1e-12,
+      );
+    }
   });
 });

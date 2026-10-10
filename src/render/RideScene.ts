@@ -58,6 +58,7 @@ import {
 import { Backdrop } from './Backdrop.ts';
 import { ChunkView, SECONDARY_DEPTH } from './ChunkView.ts';
 import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
+import { motionScale } from './ambientMotion.ts';
 import { pantographReachU } from './pantograph.ts';
 import type { TrainInTunnel } from './tunnelCover.ts';
 import {
@@ -731,6 +732,8 @@ export class RideScene extends Phaser.Scene {
     for (const index of this.#scenery.keys())
       if (index < first || index > last) this.#scenery.delete(index);
     const crossings = new Map(ride.crossings.map((c) => [c.id, c]));
+    // Reduced effects calm the decorative motion (doc 07 §9).
+    const motion = motionScale(this.#host.effectsQuality());
     // The whole train's x interval and the simulation time since the last
     // frame, for the tunnels' see-through cover (0 while paused).
     const trainSpan = {
@@ -773,7 +776,7 @@ export class RideScene extends Phaser.Scene {
       }
       chunk.setX(k * CHUNK_WIDTH_U - this.#originX);
       const site = this.#sceneryOf(ride.seed, k).crossing;
-      chunk.update(timeSec, site && crossings.get(site.id));
+      chunk.update(timeSec, site && crossings.get(site.id), motion);
       chunk.tunnel?.update(trainSpan, tunnelDtSec);
     }
     this.stats.tunnels = [...this.#chunks.values()].flatMap((chunk) =>
@@ -848,6 +851,7 @@ export class RideScene extends Phaser.Scene {
       const breath =
         1 -
         ANIMAL_BREATH *
+          motionScale(this.#host.effectsQuality()) *
           (0.5 +
             0.5 *
               Math.sin(

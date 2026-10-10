@@ -607,7 +607,8 @@ export class ChunkView {
    * Moves patrolling props (tractor, car, boats) to simulation time and
    * shows the chunk's crossing as the simulation holds it.
    */
-  update(timeSec: number, crossing?: CrossingState): void {
+  /** `motion` scales the decorative sway and glints (doc 07 §9). */
+  update(timeSec: number, crossing?: CrossingState, motion = 1): void {
     this.#crossing?.update(crossing, timeSec);
     for (const { image, prop } of this.#moving) {
       const motion = prop.motion;
@@ -625,9 +626,9 @@ export class ChunkView {
     }
     // Grass, flowers and branches in the wind; glints on the water.
     for (const { image, kind, phase } of this.#swaying)
-      image.setRotation(swayAngle(kind, timeSec, phase));
+      image.setRotation(swayAngle(kind, timeSec, phase, motion));
     for (const { image, phase } of this.#glints)
-      image.setAlpha(glintAlpha(timeSec, phase));
+      image.setAlpha(glintAlpha(timeSec, phase, motion));
   }
 
   destroy(): void {

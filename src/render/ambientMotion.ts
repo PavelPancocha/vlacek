@@ -31,19 +31,31 @@ export function swayAngle(
   kind: string,
   timeSec: number,
   phase: number,
+  scale = 1,
 ): number {
-  const amplitude = swayAmplitudeRad(kind);
+  const amplitude = swayAmplitudeRad(kind) * scale;
   if (amplitude === 0) return 0;
   const slow = Math.sin(2 * Math.PI * (0.35 * timeSec + phase));
   const fast = Math.sin(2 * Math.PI * (1.1 * timeSec + phase * 3));
   return amplitude * (0.75 * slow + 0.25 * fast);
 }
 
+/** Share of the decorative motion left with reduced effects. */
+const REDUCED_MOTION = 0.25;
+
 /** Peak opacity of a water glint. */
 const GLINT_PEAK = 0.8;
 
 /** Opacity of a water glint now: short flashes, dark most of the time. */
-export function glintAlpha(timeSec: number, phase: number): number {
+export function glintAlpha(timeSec: number, phase: number, scale = 1): number {
   const wave = Math.sin(2 * Math.PI * (0.45 * timeSec + phase));
-  return wave <= 0.6 ? 0 : GLINT_PEAK * ((wave - 0.6) / 0.4) ** 2;
+  return wave <= 0.6 ? 0 : scale * GLINT_PEAK * ((wave - 0.6) / 0.4) ** 2;
+}
+
+/**
+ * How much of the decorative motion plays: all of it normally, a little
+ * with reduced effects (doc 07 §9). Functional signals never use this.
+ */
+export function motionScale(effects: 'low' | 'standard'): number {
+  return effects === 'low' ? REDUCED_MOTION : 1;
 }

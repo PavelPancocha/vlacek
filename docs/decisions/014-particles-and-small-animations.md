@@ -49,7 +49,8 @@ Emitery mají sedět na modelu se sklonem a vypuštěné částice se nesmí poh
 6. **Kvalita.** `gameConfig.quality` převádí profily dokumentu 13 do typované konfigurace s validací.
    - Efekty profilu `low` platí při `settings.quality = 'low'` nebo při omezených efektech. Snižují strop částic na 96 a hustotu emisí na polovinu; událostí života je méně.
    - Samotné `settings.quality = 'low'` navíc snižuje hustotu vykreslování na 1 a omezí snímky na 30 za sekundu (`renderProfile`, Phaser `fps.limit`). Standardní profil snímky neomezuje: limit na úrovni obnovovací frekvence by Phaser nechal snímky vynechávat. Profil platí od startu hry; nastavení, které by ho za běhu měnilo, zatím ve hře není (Codex review PR #2).
-   - Funkční signalizace se tím neomezuje.
+   - Omezené efekty (a profil `low`) zmenší na čtvrtinu také houpání rostlin a větví, odlesky na vodě a dýchání zvířat (`motionScale`, dokument 07 §9; Codex review PR #2).
+   - Funkční signalizace se tím neomezuje: světla přejezdu blikají dál naplno a zatřesení plného vlaku v depu zůstává.
 7. **Kresba částic.** Šestnáct malých SVG dílů `fx.*` v `assets/world/` s pivotem uprostřed, ve stejném atlasu jako vozidla:
    - kouř, pára a výfuk;
    - hvězdička a jiskra;
