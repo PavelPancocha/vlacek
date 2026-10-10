@@ -391,3 +391,17 @@ Kde v přechodovém chunku (slot 7, od x = 512) začínala lesní lokalita, měn
 | Unit prolnutí palet louky: na krajích přesně levá a pravá paleta, mezi nimi barvy každého odsazení | 2 FAIL proti stubu (vrací levou)                       | 2 PASS                                  |
 | Řádek pixelů přes přechod ve světě 123 (chunk 7)                                                   | skok o 20–48 úrovní kanálu na jednom pixelu (build G3) | kroky po jedné úrovni zhruba každé 2 px |
 | `npm test`, E2E krajiny a vykreslování (WebGL i Canvas stejně)                                     | —                                                      | 451 unit PASS; 14 E2E PASS              |
+
+## CI: přejezdový E2E nezachytil fázi OPENING (`1d563ec`)
+
+Na GitHub Actions selhal desktopový test „the barriers are down before the train arrives and rise only after the last wagon“. Viděl fáze `OPEN, WARNING, CLOSING, CLOSED, OPEN`, chyběla `OPENING`. Ostatních 101 testů prošlo.
+
+- **Příčina.** Automat přejezdu je v pořádku: fáze OPENING trvá vždy, dokud se závory nezvednou, asi 0,8 s (48 kroků). Pořadí fází hlídají unit testy. Test ale fázi četl jen asi po 100 ms skutečného času přes `page.evaluate`. Na pomalém CI stačí jedna prodleva nad 0,8 s (snímek obrazovky, pečení chunku) a celá fáze proběhne mezi dvěma čteními. Simulace přitom za snímek dožene nejvýš 5 kroků, takže záznam po snímcích fázi minout nemůže.
+- **Oprava bez čekání a opakování.** S `?debug=1` aplikace každý snímek zaznamená fáze každého přejezdu (`crossings[].phases`). Záznam má nejvýš 8 fází na přejezd a přejezd, který z jízdy zmizel, z něj vypadne. Test ověří pořadí WARNING → CLOSED → OPENING → OPEN z tohoto záznamu a kontroly během průjezdu zůstávají.
+
+| Test                                                                 | Red                                               | Green  |
+| -------------------------------------------------------------------- | ------------------------------------------------- | ------ |
+| Reprodukce: původní test při 6× zpomaleném CPU (CDP), 3 běhy         | 1 FAIL se stejnými fázemi jako na CI              | —      |
+| Unit záznam fází: každá fáze jednou a v pořadí, omezená délka, úklid | 2 FAIL proti stubu                                | 2 PASS |
+| Upravený E2E                                                         | FAIL proti buildu `1d563ec` (snímek bez `phases`) | 4 PASS |
+| Upravený E2E při 6× zpomaleném CPU, 5 běhů                           | —                                                 | 5 PASS |

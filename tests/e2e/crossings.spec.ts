@@ -74,12 +74,13 @@ test.describe('level crossings (doc 05 §4, doc 14 §5, D-015)', () => {
     expect(first?.barrier).toBe(0);
     await page.mouse.move(700, 300);
     await page.mouse.down();
-    const phases: string[] = [];
+    let phases: string[] = [];
     let occupiedSamples = 0;
     for (let i = 0; i < 200; i++) {
       const { state, crossing } = await find();
-      if (crossing && phases.at(-1) !== crossing.phase)
-        phases.push(crossing.phase);
+      // The app records every phase each frame; polling here could miss
+      // the short OPENING phase on a slow machine.
+      if (crossing) phases = crossing.phases;
       if (crossing?.occupied) {
         occupiedSamples += 1;
         expect(crossing.barrier).toBe(1);
@@ -95,10 +96,17 @@ test.describe('level crossings (doc 05 §4, doc 14 §5, D-015)', () => {
     }
     await page.mouse.up();
     expect(occupiedSamples).toBeGreaterThan(0);
-    expect(phases).toEqual(
-      expect.arrayContaining(['WARNING', 'CLOSED', 'OPENING', 'OPEN']),
-    );
-    expect(phases.indexOf('CLOSED')).toBeLessThan(phases.lastIndexOf('OPEN'));
+    // In this order, other phases (such as CLEARING) may come between.
+    const order = ['WARNING', 'CLOSED', 'OPENING', 'OPEN'];
+    let from = 0;
+    for (const phase of order) {
+      const at = phases.indexOf(phase, from);
+      expect(
+        at,
+        `${phase} after ${phases.slice(0, from).join(', ')}`,
+      ).toBeGreaterThanOrEqual(from);
+      from = at + 1;
+    }
   });
 
   test('road traffic waits at the closed crossing and drives on after the train', async ({

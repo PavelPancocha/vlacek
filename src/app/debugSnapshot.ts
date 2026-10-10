@@ -75,6 +75,8 @@ export interface DebugSnapshot {
   crossings: {
     id: string;
     phase: string;
+    /** Every distinct phase so far, recorded each frame, newest last. */
+    phases: string[];
     /** 0 barriers up … 1 down. */
     barrier: number;
     /** Some part of the train is on the road. */

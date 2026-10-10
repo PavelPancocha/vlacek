@@ -14,6 +14,7 @@ import { createGameHost, type GameHost } from '../render/GameHost.ts';
 import { RideScene } from '../render/RideScene.ts';
 import { BRAKE_HIT_MARGIN_PX, UiLayer } from '../ui/UiLayer.ts';
 import type { DebugSnapshot } from './debugSnapshot.ts';
+import { PhaseLog } from './phaseLog.ts';
 import type { GameSession, SessionEvent } from './GameSession.ts';
 
 export interface AppControllerOptions {
@@ -45,6 +46,8 @@ export class AppController {
   readonly #ui: UiLayer;
   readonly #audio = new AudioManager();
   readonly #frames = new FrameStats(600);
+  /** Every crossing phase of the ride, recorded each frame (debug only). */
+  readonly #crossingPhases = new PhaseLog();
   readonly #scene: RideScene;
   readonly #host: GameHost;
   readonly #input: DomInputAdapter;
@@ -153,6 +156,8 @@ export class AppController {
   #frame(deltaSec: number, nowMs: number): number {
     this.#frames.add(deltaSec * 1000);
     const alpha = this.#session.frame(deltaSec, nowMs);
+    if (this.#options.debug)
+      this.#crossingPhases.record(this.#session.ride?.crossings ?? []);
     for (const event of this.#session.drainEvents()) this.#feedback(event);
     this.#refreshUi();
     if (this.#diagnostics && nowMs - this.#lastDiagnosticsMs > 250) {
@@ -344,6 +349,7 @@ export class AppController {
     return ride.crossings.map((crossing) => ({
       id: crossing.id,
       phase: crossing.phase,
+      phases: [...this.#crossingPhases.phases(crossing.id)],
       barrier: crossing.barrier,
       occupied: crossing.trainInConflict(train),
       actors: crossing.actors.length,
