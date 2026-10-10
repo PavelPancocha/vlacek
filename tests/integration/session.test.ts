@@ -328,6 +328,30 @@ describe('GameSession: restoring a saved depot draft', () => {
     expect(later.draft.consist.wagons).toHaveLength(1);
   });
 
+  it('keeps the saved draft through ride checkpoints until the depot uses it', () => {
+    const storage = new MemoryStorage();
+    const first = createSession(storage);
+    buildAndDepart(first, ['cargo_box']);
+    tap(first, 'pause');
+    tap(first, 'open-depot');
+    tap(first, 'add:fun_balloons');
+    runFor(first, 0.5, 10_000);
+    // Reload, keep riding past a 5 s checkpoint, reload again.
+    const second = createSession(storage);
+    tap(second, 'continue');
+    tap(second, 'resume');
+    const finger = touchWorld(second);
+    runFor(second, 6, 20_000);
+    release(second, finger);
+    const third = createSession(storage);
+    tap(third, 'continue');
+    tap(third, 'open-depot');
+    expect(third.draft.consist.wagons.map((w) => w.definitionId)).toEqual([
+      'cargo_box',
+      'fun_balloons',
+    ]);
+  });
+
   it('Postavit vlak on HOME also continues the saved draft', () => {
     const later = editDraftThenReload();
     tap(later, 'build-new');

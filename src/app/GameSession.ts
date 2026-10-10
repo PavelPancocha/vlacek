@@ -433,6 +433,9 @@ export class GameSession {
     const screen = this.#screen.name;
     if (screen === 'SELECT_LOCO' || screen === 'BUILD_TRAIN') {
       envelope.builderDraft = this.#draft.consist;
+    } else if (this.#restoredDraft) {
+      // Not yet used by the depot: keep it across ride checkpoints.
+      envelope.builderDraft = this.#restoredDraft.consist;
     }
     const journey = this.#journey;
     if (journey) {
