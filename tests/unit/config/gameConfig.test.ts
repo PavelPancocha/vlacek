@@ -17,6 +17,26 @@ describe('gameConfig', () => {
     });
   });
 
+  it('doc 14 §6: the ride feels snappy on screen yet easy to follow', () => {
+    const { train, camera } = gameConfig;
+    // Screen widths per second at full speed: the scale fits the longest
+    // train into trainWidthFraction of the width on every screen.
+    const widthsPerSecond =
+      (train.maxSpeedUPerSec * camera.trainWidthFraction) /
+      train.maxConsistLengthU;
+    expect(widthsPerSecond).toBeGreaterThanOrEqual(0.18);
+    expect(widthsPerSecond).toBeLessThanOrEqual(0.3);
+    // Smooth start and coast: seconds from standstill to full speed and back.
+    const toFull = train.maxSpeedUPerSec / train.accelerationUPerSec2;
+    const coast = train.maxSpeedUPerSec / train.coastDecelerationUPerSec2;
+    const brake = train.maxSpeedUPerSec / train.brakeDecelerationUPerSec2;
+    expect(toFull).toBeGreaterThanOrEqual(2);
+    expect(toFull).toBeLessThanOrEqual(4);
+    expect(coast).toBeGreaterThanOrEqual(4);
+    expect(coast).toBeLessThanOrEqual(7);
+    expect(brake).toBeLessThan(coast / 3);
+  });
+
   it('is valid as shipped', () => {
     expect(validateGameConfig(gameConfig)).toEqual([]);
   });

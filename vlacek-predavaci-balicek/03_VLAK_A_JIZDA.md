@@ -12,20 +12,20 @@ Doménový svět má osu `x` doprava, `y` nahoru. Phaser má obrazovou osu `y` d
 
 Nepoužívat rigid-body fyziku, pružinová spřáhla ani výpočet tažné síly podle hmotnosti. Vlak je geometricky vedená souprava. Neexistuje prokluz, vykolejení, zlomení spřáhla ani neschopnost vyjet kopec.
 
-Základní hodnoty: maximální rychlost 180 u/s, rozjezd 65 u/s², dojezdové zpomalení 30 u/s², brzda 180 u/s². Z maximální rychlosti tedy prostý dojezd trvá přibližně 6 s a aktivní brzda přibližně 1 s. Jde o laditelné návrhové hodnoty.
+Základní hodnoty (dokument 14 §6): maximální rychlost 480 u/s, rozjezd 160 u/s², dojezdové zpomalení 96 u/s², brzda 480 u/s². Rozjezd na plnou rychlost trvá 3 s, prostý dojezd 5 s a aktivní brzda 1 s. Na obrazovce to odpovídá asi 0,22 šířky za sekundu na každém zařízení, protože měřítko vychází z nejdelší soupravy ([D-008](../docs/decisions/008-whole-train-in-view.md)); obrazovku vlak přejede asi za 4,6 s. Verze 0.1 měla 180 u/s při větším měřítku (0,14 šířky za sekundu na 16:9). Hodnoty jsou laditelné; jejich zamýšlený pocit hlídá test `gameConfig` (0,18–0,30 šířky/s, rozjezd 2–4 s, dojezd 4–7 s).
 
 ### Aktualizace rychlosti
 
 ```text
 g = clamp(sklon koleje pod lokomotivou / 0.12, -1, 1)
 vTarget = nastavené maximum * (1 - 0.10 * max(g, 0))
-aDrive = 65 * (1 - 0.25 * g)
+aDrive = accelerationUPerSec2 * (1 - 0.25 * g)
 
 THROTTLE: posuň v směrem k vTarget;
           při zrychlování nejvýše aDrive * dt,
-          při snižování cílové rychlosti nejvýše 30 * dt
-COAST:    posuň v směrem k 0 nejvýše 30 * dt
-BRAKE:    posuň v směrem k 0 nejvýše 180 * dt
+          při snižování cílové rychlosti nejvýše coastDecelerationUPerSec2 * dt
+COAST:    posuň v směrem k 0 nejvýše coastDecelerationUPerSec2 * dt
+BRAKE:    posuň v směrem k 0 nejvýše brakeDecelerationUPerSec2 * dt
 ```
 
 `moveTowards` nikdy nepřekročí cílovou rychlost. Výsledné `v` omezit na interval `[0, nastavené maximum]`. Hodnoty pod 0.5 u/s nastavit na nulu. Z kopce vlak při puštěném prstu **stále zpomaluje**. Sklon vytváří jen lehký pocit námahy při jízdě, nikoli reálnou gravitaci.

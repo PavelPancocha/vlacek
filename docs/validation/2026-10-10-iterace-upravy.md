@@ -41,3 +41,7 @@ Známá omezení po B:
 
 - Ve WebGL se části dočasných tvarů některých vozů (rameno jeřábu, občas kontejner) vykreslují chybně; Canvas je kreslí správně. Podezření padá na `Graphics.generateTexture` dočasných tvarů. Grafická iterace tuto cestu nahradí assety se samostatnými koly, takže se dočasné tvary neopravují.
 - Scéna je při menším vlaku prázdnější a kopce působí velké; řeší grafická iterace a krajina (§3, §5).
+
+## C1 — svižnější jízda (§6)
+
+Rychlost na obrazovce je v novém měřítku `maxSpeedUPerSec × trainWidthFraction / maxConsistLengthU` šířky za sekundu, stejně na každém zařízení. Test `gameConfig` „the ride feels snappy on screen yet easy to follow“: red se 180 u/s (**0,081** šířky/s, pomaleji než 0,14 ve verzi 0.1 na 16:9), green s 480 u/s (0,216 šířky/s), rozjezd 160 u/s² (3 s), dojezd 96 u/s² (5 s), brzda 480 u/s² (1 s). Testy fyziky pohybu nově používají pevné referenční hodnoty místo laditelného výchozího nastavení; 283 unit/integračních PASS, E2E 54 PASS / 4 skipped.

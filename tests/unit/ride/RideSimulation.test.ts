@@ -52,8 +52,9 @@ describe('RideSimulation', () => {
       ride.step('THROTTLE');
       top = Math.max(top, ride.speedUPerSec);
     }
-    expect(top).toBeLessThanOrEqual(117 + 1e-9);
-    expect(top).toBeGreaterThan(105);
+    const limit = gameConfig.train.maxSpeedUPerSec * 0.65;
+    expect(top).toBeLessThanOrEqual(limit + 1e-9);
+    expect(top).toBeGreaterThan(limit * 0.9);
   });
 
   it('stops immediately when motion is reset (pause/resume) without moving', () => {
