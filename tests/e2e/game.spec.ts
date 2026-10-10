@@ -207,6 +207,106 @@ test.describe('user path', () => {
     await expect.poll(async () => (await snapshot(page)).screen).toBe('PAUSED');
   });
 
+  test('the Canvas renderer draws chunk ground without seams', async ({
+    page,
+  }) => {
+    // Abutting chunk polygons used to leave a lighter anti-aliased column at
+    // every chunk boundary on Canvas. Sample frames while moving so the
+    // boundary crosses sub-pixel positions; seed 123 keeps the world fixed.
+    await startRide(page, ['cargo_box'], '?debug=1&renderer=canvas&seed=123');
+    await driveUntilMoving(page, 60);
+    const seams = await page.evaluate(async () => {
+      const canvas =
+        document.querySelector<HTMLCanvasElement>('#game-root canvas');
+      const context = canvas?.getContext('2d');
+      if (!canvas || !context) throw new Error('no 2D game canvas');
+      // Ground fill #8cbf6a. Compositing two anti-aliased edges of the same
+      // colour may round by one level; the seam was 4–7 levels lighter.
+      const ground = [140, 191, 106];
+      const isGround = (
+        data: Uint8ClampedArray,
+        x: number,
+        tolerance: number,
+      ) =>
+        ground.every(
+          (value, channel) =>
+            Math.abs((data[4 * x + channel] ?? 0) - value) <= tolerance,
+        );
+      const found: string[] = [];
+      for (let frame = 0; frame < 30; frame++) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        for (const fraction of [0.8, 0.9]) {
+          const y = Math.round(canvas.height * fraction);
+          const row = context.getImageData(0, y, canvas.width, 1).data;
+          for (let x = 1; x < canvas.width - 1; x++) {
+            if (
+              isGround(row, x - 1, 0) &&
+              isGround(row, x + 1, 0) &&
+              !isGround(row, x, 2)
+            )
+              found.push(
+                `frame ${frame} x ${x} y ${y}: ${row.slice(4 * x, 4 * x + 3).join()}`,
+              );
+          }
+        }
+      }
+      return found;
+    });
+    await page.mouse.up();
+    expect(seams).toEqual([]);
+  });
+
+  for (const renderer of ['auto', 'canvas'] as const) {
+    test(`no line across the sky at a fractional zoom (${renderer})`, async ({
+      page,
+    }) => {
+      // Phone landscape: zoom 390/720. The repeating hills texture used to
+      // wrap its solid bottom row onto its top edge as a full-width line.
+      await page.setViewportSize({ width: 844, height: 390 });
+      await startRide(
+        page,
+        ['cargo_box'],
+        `?debug=1&seed=123${renderer === 'canvas' ? '&renderer=canvas' : ''}`,
+      );
+      const png = await page.locator('#game-root canvas').screenshot({
+        style: '#ui-layer, #diagnostics { visibility: hidden; }',
+      });
+      const lines = await page.evaluate(async (base64) => {
+        const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+        const bitmap = await createImageBitmap(
+          new Blob([bytes], { type: 'image/png' }),
+        );
+        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('no 2D context');
+        context.drawImage(bitmap, 0, 0);
+        const { data, width, height } = context.getImageData(
+          0,
+          0,
+          bitmap.width,
+          bitmap.height,
+        );
+        // First row that is not sky (#bfe3f2) in each column: the hill
+        // outline varies along x, a wrapped edge is one row for all.
+        const sky = [191, 227, 242];
+        const firstNonSky = new Map<number, number>();
+        for (let x = 0; x < width; x++) {
+          for (let y = 0; y < height; y++) {
+            const i = 4 * (y * width + x);
+            if (sky.some((value, c) => data[i + c] !== value)) {
+              firstNonSky.set(y, (firstNonSky.get(y) ?? 0) + 1);
+              break;
+            }
+          }
+        }
+        return [...firstNonSky]
+          .filter(([, columns]) => columns > width / 2)
+          .map(([y, columns]) => `row ${y}: ${columns}/${width} columns`);
+      }, png.toString('base64'));
+      expect(lines).toEqual([]);
+    });
+  }
+
   test('the Canvas renderer path plays the same ride', async ({ page }) => {
     await startRide(page, ['cargo_box'], '?debug=1&renderer=canvas');
     expect((await snapshot(page)).renderer).toBe('canvas');

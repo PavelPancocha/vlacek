@@ -34,10 +34,21 @@ const ORIGIN_STEP_U = 4096;
 /** Chunk width shared with the generator and TrackWindow (doc 13). */
 const CHUNK_WIDTH_U = gameConfig.world.chunkWidthU;
 const GROUND_DEPTH_U = 1200;
+/**
+ * Each chunk's ground reaches this far into the next one: abutting
+ * anti-aliased polygon edges leave a light seam column on Canvas.
+ */
+const GROUND_OVERLAP_U = 4;
 const REACTION_TICKS = 40;
 const HILLS_HEIGHT = 560;
 /** Width of the repeating background hills texture (not a chunk width). */
 const HILLS_WIDTH = 1024;
+/**
+ * Transparent texture rows under the hills fill. The WebGL tile shader wraps
+ * the bottom row onto the sprite's top edge at fractional zoom; a solid
+ * bottom row drew a line across the sky. The ground always hides these rows.
+ */
+const HILLS_CLEAR_BOTTOM = 4;
 
 const DEPTH = { hills: 1, ground: 5, train: 7, objects: 9 } as const;
 
@@ -119,8 +130,8 @@ export class RideScene extends Phaser.Scene {
     drawShapes(object, OBJECT_SHAPES, 32, 44);
     object.generateTexture('object-sheep', 64, 48);
     object.destroy();
-    // Seamless tile: the outline starts and ends at the same height and
-    // the fill reaches the texture bottom, so no sky shows below the hills.
+    // Seamless tile: the outline starts and ends at the same height and the
+    // fill reaches below the ground line, so no sky shows under the hills.
     const outline = [
       0,
       170,
@@ -148,8 +159,8 @@ export class RideScene extends Phaser.Scene {
       );
     }
     points.push(
-      new Phaser.Math.Vector2(HILLS_WIDTH, HILLS_HEIGHT),
-      new Phaser.Math.Vector2(0, HILLS_HEIGHT),
+      new Phaser.Math.Vector2(HILLS_WIDTH, HILLS_HEIGHT - HILLS_CLEAR_BOTTOM),
+      new Phaser.Math.Vector2(0, HILLS_HEIGHT - HILLS_CLEAR_BOTTOM),
     );
     hills.fillPoints(points, true);
     hills.generateTexture('hills', HILLS_WIDTH, HILLS_HEIGHT);
@@ -297,8 +308,13 @@ export class RideScene extends Phaser.Scene {
         const ground = table.xs.map(
           (x, i) => new Phaser.Math.Vector2(x - x0, -(table.ys[i] ?? 0) + 4),
         );
+        const endY = -(table.ys[table.ys.length - 1] ?? 0) + 4;
         ground.push(
-          new Phaser.Math.Vector2(CHUNK_WIDTH_U, GROUND_DEPTH_U),
+          new Phaser.Math.Vector2(CHUNK_WIDTH_U + GROUND_OVERLAP_U, endY),
+          new Phaser.Math.Vector2(
+            CHUNK_WIDTH_U + GROUND_OVERLAP_U,
+            GROUND_DEPTH_U,
+          ),
           new Phaser.Math.Vector2(0, GROUND_DEPTH_U),
         );
         graphics.fillStyle(0x8cbf6a, 1).fillPoints(ground, true);
