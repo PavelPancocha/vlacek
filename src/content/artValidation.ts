@@ -2,10 +2,11 @@ import type { EffectId, VehicleBase } from '../domain/types.ts';
 import type { ArtPart, VehicleArt } from './artManifest.ts';
 
 export interface ArtValidationInput {
-  /** Locomotives carry their `effect`; wagons have none. */
+  /** Locomotives carry their `effect` and catenary need; wagons neither. */
   vehicles: readonly (VehicleBase & {
     placeholder?: unknown;
     effect?: EffectId;
+    requiresCatenary?: boolean;
   })[];
   parts: Readonly<Record<string, ArtPart>>;
   art: Readonly<Partial<Record<string, VehicleArt>>>;
@@ -41,7 +42,7 @@ function partErrors(key: string, part: ArtPart, text: string): string[] {
 }
 
 function vehicleErrors(
-  vehicle: VehicleBase & { effect?: EffectId },
+  vehicle: VehicleBase & { effect?: EffectId; requiresCatenary?: boolean },
   art: VehicleArt,
   parts: Readonly<Record<string, ArtPart>>,
 ): string[] {
@@ -65,6 +66,22 @@ function vehicleErrors(
       error(
         `emitter at ${emitter.xU}, ${emitter.yU} is outside the ${length} × ${art.heightU} u frame`,
       );
+  // An electric locomotive reaches the wire with its pantograph.
+  const pantograph = art.pantograph;
+  if (vehicle.requiresCatenary === true && !pantograph)
+    error('needs catenary but has no pantograph');
+  if (vehicle.requiresCatenary !== true && pantograph)
+    error('pantograph without catenary');
+  if (
+    pantograph &&
+    (pantograph.xU < 0 ||
+      pantograph.xU > length ||
+      pantograph.yU < 0 ||
+      pantograph.yU > art.heightU)
+  )
+    error(
+      `pantograph at ${pantograph.xU}, ${pantograph.yU} is outside the ${length} × ${art.heightU} u frame`,
+    );
   for (const key of [art.body, art.overlay]) {
     if (key === undefined) continue;
     const frame = parts[key];
@@ -204,6 +221,8 @@ export function validateVehicleArt(input: ArtValidationInput): string[] {
       art.steamGear?.couplingRod,
       art.steamGear?.connectingRod,
       art.steamGear?.crosshead,
+      art.pantograph?.arms,
+      art.pantograph?.head,
     ])
       if (key !== undefined) usedParts.add(key);
   }

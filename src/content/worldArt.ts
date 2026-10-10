@@ -415,6 +415,18 @@ export const worldParts = {
     heightU: 70,
     pivotU: { x: 100, y: 70 },
   },
+  'catenary.pole': {
+    file: 'catenary.pole.svg',
+    widthU: 30,
+    heightU: 192,
+    pivotU: { x: 8, y: 192 },
+  },
+  'catenary.span': {
+    file: 'catenary.span.svg',
+    widthU: 256,
+    heightU: 28,
+    pivotU: { x: 0, y: 26 },
+  },
   'crossing.boom': {
     file: 'crossing.boom.svg',
     widthU: 38,
@@ -996,6 +1008,23 @@ export const crossingPostAnchors: Readonly<
     white: { x: 17, y: 30 },
     hinge: { x: 17, y: 39 },
   },
+};
+
+/** Catenary of an electric journey (doc 03 §9): mast and wire span. */
+export const catenaryParts = {
+  pole: 'catenary.pole',
+  span: 'catenary.span',
+} as const satisfies Record<string, WorldPartKey>;
+
+/** A mast's foot stands this far behind the rail (back ground depth, u). */
+export const CATENARY_POLE_DEPTH_U = 12;
+
+/** Where a mast holds the contact and messenger wires (part units). */
+export const catenaryAnchors: Readonly<
+  Record<'contact' | 'messenger', ArtPoint>
+> = {
+  contact: { x: 16, y: 44 },
+  messenger: { x: 16, y: 20 },
 };
 
 /** Road traffic at crossings, seen from the front and from behind. */

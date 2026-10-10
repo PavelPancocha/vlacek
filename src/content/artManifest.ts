@@ -80,6 +80,30 @@ export const artParts = {
     heightU: 86,
     pivotU: { x: 98, y: 86 },
   },
+  'electric_retro.body': {
+    file: 'electric_retro.body.svg',
+    widthU: 188,
+    heightU: 92,
+    pivotU: { x: 94, y: 92 },
+  },
+  'electric_retro.overlay': {
+    file: 'electric_retro.overlay.svg',
+    widthU: 188,
+    heightU: 92,
+    pivotU: { x: 94, y: 92 },
+  },
+  'electric_retro.pantograph': {
+    file: 'electric_retro.pantograph.svg',
+    widthU: 40,
+    heightU: 60,
+    pivotU: { x: 20, y: 60 },
+  },
+  'electric_retro.pantograph-head': {
+    file: 'electric_retro.pantograph-head.svg',
+    widthU: 48,
+    heightU: 8,
+    pivotU: { x: 24, y: 8 },
+  },
   'magic_stars.body': {
     file: 'magic_stars.body.svg',
     widthU: 164,
@@ -266,6 +290,21 @@ export interface VehicleArt {
    * in the frame (x from the rear coupler, y down from the top), doc 14 §4.
    */
   emitters?: readonly { xU: number; yU: number }[];
+  /** The raised pantograph of an electric locomotive (doc 03 §9). */
+  pantograph?: PantographArt;
+}
+
+/**
+ * A pantograph stretched up to the contact wire: its arms stand on the
+ * roof at (xU, yU) in the frame and are scaled in height; the head sits
+ * on top unscaled, touching the wire `headContactU` above its pivot.
+ */
+export interface PantographArt {
+  xU: number;
+  yU: number;
+  arms: ArtPartKey;
+  head: ArtPartKey;
+  headContactU: number;
 }
 
 /** Art by catalog vehicle id; vehicles missing here keep their placeholder. */
@@ -290,6 +329,26 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
     },
     // Top of the chimney cap.
     emitters: [{ xU: 130.5, yU: 6 }],
+  },
+  electric_retro: {
+    heightU: 92,
+    body: 'electric_retro.body',
+    overlay: 'electric_retro.overlay',
+    // Two two-axle bogies at the vehicle middle ± 58 (bogieOffsetU).
+    wheels: [
+      { part: 'wheel.diesel', xU: 21 },
+      { part: 'wheel.diesel', xU: 51 },
+      { part: 'wheel.diesel', xU: 137 },
+      { part: 'wheel.diesel', xU: 167 },
+    ],
+    // The rear pantograph is raised, the front one lies folded.
+    pantograph: {
+      xU: 50,
+      yU: 6,
+      arms: 'electric_retro.pantograph',
+      head: 'electric_retro.pantograph-head',
+      headContactU: 7,
+    },
   },
   magic_stars: {
     heightU: 100,

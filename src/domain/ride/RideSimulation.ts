@@ -36,6 +36,11 @@ export interface RideSetup {
   config: GameConfig;
   /** Saved head position; a new journey spawns per doc 13 `world.spawn*`. */
   head?: TrackCursor;
+  /**
+   * The locomotive needs catenary: the whole journey is electrified
+   * (doc 03 §9), for every kept and newly generated chunk.
+   */
+  electrified?: boolean;
   simulationTick?: number;
 }
 
@@ -62,6 +67,8 @@ const CROSSING_AHEAD_U = 512;
 export class RideSimulation {
   readonly track: TrackWindow;
   readonly layout: ConsistLayout;
+  /** Catenary along the whole route (doc 03 §9); fixed for the journey. */
+  readonly electrified: boolean;
   readonly #seed: number;
   readonly #vehicles: readonly VehicleGeometry[];
   readonly #config: GameConfig;
@@ -85,6 +92,7 @@ export class RideSimulation {
     const world = config.world;
     this.#seed = setup.seed;
     this.#vehicles = setup.vehicles;
+    this.electrified = setup.electrified ?? false;
     this.#config = config;
     this.#motion = motionParams(config, setup.speedFactor);
     this.#dtSec = 1 / config.simulation.fixedHz;

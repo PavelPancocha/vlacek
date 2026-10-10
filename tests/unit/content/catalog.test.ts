@@ -18,6 +18,7 @@ describe('temporary vehicle catalog (0.1)', () => {
     expect(locomotives.map((l) => [l.id, l.lengthU])).toEqual([
       ['steam_local', 156],
       ['diesel_mainline', 196],
+      ['electric_retro', 188],
       ['magic_stars', 164],
     ]);
     expect(wagons.map((w) => [w.id, w.group, w.lengthU])).toEqual([
@@ -31,8 +32,14 @@ describe('temporary vehicle catalog (0.1)', () => {
     ]);
   });
 
-  it('offers no electric locomotive before catenary exists (M2)', () => {
-    expect(locomotives.filter((l) => l.power === 'electric')).toEqual([]);
+  it('offers the boxy electric locomotive, which brings its catenary (doc 06, doc 03 §9)', () => {
+    const electric = locomotives.filter((l) => l.power === 'electric');
+    expect(electric.map((l) => l.id)).toEqual(['electric_retro']);
+    for (const locomotive of electric) {
+      expect(locomotive.requiresCatenary).toBe(true);
+      // No smoke: at most a spark at the pantograph (doc 14 §4).
+      expect(locomotive.effect).toBe('none');
+    }
   });
 });
 

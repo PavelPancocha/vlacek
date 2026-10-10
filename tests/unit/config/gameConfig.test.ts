@@ -38,6 +38,26 @@ describe('gameConfig', () => {
     expect(brake).toBeLessThan(coast / 3);
   });
 
+  it('carries the doc 13 catenary spacing and contact height (doc 03 §9)', () => {
+    expect(gameConfig.world.catenaryPoleSpacingU).toBe(256);
+    expect(gameConfig.world.catenaryContactHeightU).toBe(160);
+  });
+
+  it('rejects poles that would not keep one phase across chunks', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      world: {
+        ...gameConfig.world,
+        catenaryPoleSpacingU: 300,
+        catenaryContactHeightU: 0,
+      },
+    };
+    expect(validateGameConfig(broken)).toEqual([
+      'world.catenaryPoleSpacingU',
+      'world.catenaryContactHeightU',
+    ]);
+  });
+
   it('carries the doc 13 quality profiles with their particle budgets', () => {
     expect(gameConfig.quality).toEqual({
       low: { maxDpr: 1, targetFps: 30, maxDecorativeParticles: 96 },

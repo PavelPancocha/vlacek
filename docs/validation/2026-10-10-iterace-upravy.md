@@ -290,3 +290,32 @@ Snímky ze skutečné aplikace:
 - [detail: vysoký výstražník za tratí, nízký před ní, svítí červená, břevna dole](img/2026-10-10-prejezd-detail.jpg).
 
 Fyzický tablet, telefon a Tesla: **NEOVĚŘENO**.
+
+## G2 — elektrická lokomotiva a trolejové vedení
+
+Rozhodnutí: [D-016](../decisions/016-electric-locomotive-and-catenary.md). Katalog má hranatou elektrickou lokomotivu `electric_retro`. Za ní vede celou trasou trolejové vedení: stožáry v jedné globální fázi a drát 160 u nad kolejí. Pantograf se drátu dotýká i na sklonu; v depu leží sklopený. Lokomotiva nekouří, jen občas odletí jiskra od troleje.
+
+| Test                                                                                                                                                         | Red                                                                                                          | Green                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| Unit konfigurace vedení dokumentu 13 a její validace (rozteč dělí šířku chunku)                                                                              | 2 FAIL (chybí klíče, chybí validace)                                                                         | 10 PASS                                |
+| Unit stožáry v globální fázi, mimo silnice přejezdů, drát u stožárů ve výšce kontaktu a bez zlomu na švech (TRN-08)                                          | 3 FAIL proti stubu (1 triviálně PASS); první implementace 1 FAIL (stožár na ose silnice mimo hledaný rozsah) | 4 PASS                                 |
+| Unit katalog: elektrická lokomotiva vyžaduje vedení a nekouří; manifest: pantograf právě u lokomotiv s vedením, v rámu                                       | FAIL (chybí `electric_retro`, nové SVG hlášené jako soubory mimo manifest)                                   | 38 PASS                                |
+| Integrace: elektrická cesta je elektrifikovaná celá i po obnově, parní není                                                                                  | 1 FAIL (`electrified` chybí)                                                                                 | PASS                                   |
+| Unit pantograf: sklopený bez drátu, ramena natažená na dosah, sběrač nenatažený, omezené přizpůsobení; výška koleje podle x                                  | 4 FAIL proti stubům                                                                                          | 14 PASS                                |
+| Unit dosah pantografu k drátu z nakloněné střechy                                                                                                            | 2 FAIL proti stubu                                                                                           | 2 PASS                                 |
+| Unit úchyty drátu na stožáru odpovídají výšce kontaktu                                                                                                       | 1 FAIL proti stubu                                                                                           | 10 PASS                                |
+| Unit občasná jiskra na pantografu, ve stání žádná, nikdy kouř                                                                                                | 1 FAIL                                                                                                       | 29 PASS                                |
+| E2E TRN-08: stožáry v každém vykresleném chunku, sběrač na drátu (mezera < 0,5 u), celý vlak v obraze; parní jízda bez vedení; obnovená elektrická s vedením | 3 FAIL proti buildu G1 (`6002845`: chybí lokomotiva i diagnostika `catenary`)                                | 3 PASS                                 |
+| `npm run check`, celé `npm run test:e2e`                                                                                                                     | —                                                                                                            | 422 unit PASS; E2E 98 PASS / 4 skipped |
+
+Výkon (`PERF_SECONDS=30 npm run measure:perf`, nejdelší souprava): s parní lokomotivou medián 30 FPS, p95 50 ms, nejhorší snímek 133 ms; s elektrickou (`PERF_LOCOMOTIVE=electric_retro`, vedení po celé trase) medián 30 FPS, p95 50 ms, nejhorší snímek 83 ms.
+
+Snímky ze skutečné aplikace:
+
+- [výběr mašinky se čtyřmi lokomotivami](img/2026-10-10-elektricka-vyber.jpg);
+- [depo: elektrická lokomotiva se sklopeným pantografem](img/2026-10-10-elektricka-depo.jpg);
+- [elektrická souprava u přejezdu pod vedením](img/2026-10-10-elektricka-prejezd.jpg);
+- [u rybníků a nádraží, stožáry za tratí](img/2026-10-10-elektricka-kopce.jpg);
+- [detail: sběrač na troleji](img/2026-10-10-elektricka-pantograf.jpg).
+
+Fyzický tablet, telefon a Tesla: **NEOVĚŘENO**.

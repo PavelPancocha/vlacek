@@ -193,6 +193,25 @@ describe('GameSession: depot, saving and restoring', () => {
     expect(session.fullSignals).toBe(before + 1);
   });
 
+  it('doc 03 §9: a journey behind the electric locomotive is electrified throughout, also after a reload', () => {
+    const steam = createSession();
+    buildAndDepart(steam);
+    expect(steam.ride?.electrified).toBe(false);
+
+    const storage = new MemoryStorage();
+    const first = createSession(storage);
+    tap(first, 'loco:electric_retro');
+    tap(first, 'to-depot');
+    tap(first, 'add:cargo_box');
+    tap(first, 'depart');
+    expect(first.ride?.electrified).toBe(true);
+    runFor(first, 1);
+    tap(first, 'pause');
+    const later = createSession(storage);
+    tap(later, 'continue');
+    expect(later.ride?.electrified).toBe(true);
+  });
+
   it('DATA-01/08: a reload continues the same stopped journey without adding real time', () => {
     const storage = new MemoryStorage();
     const first = createSession(storage);

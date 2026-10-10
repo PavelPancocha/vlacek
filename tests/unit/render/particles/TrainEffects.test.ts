@@ -118,6 +118,20 @@ describe('TrainEffects (doc 14 §4)', () => {
     expect([...counts.values()].reduce((a, b) => a + b, 0)).toBe(0);
   });
 
+  it('sparks now and then where the pantograph touches the wire, never standing (electric)', () => {
+    const pantograph = { x: 5, y: -160 };
+    const still = run({ pantograph }, 20).counts;
+    const moving = run(
+      { pantograph, speedUPerSec: MAX, intent: 'THROTTLE' },
+      20,
+    ).counts;
+    expect(still.get('spark') ?? 0).toBe(0);
+    expect(moving.get('spark') ?? 0).toBeGreaterThan(0);
+    // Only now and then: a handful in twenty seconds.
+    expect(moving.get('spark') ?? 0).toBeLessThan(30);
+    expect(moving.get('smoke') ?? 0).toBe(0);
+  });
+
   it('throws an occasional spark only when braking hard', () => {
     const coast = run({ speedUPerSec: MAX }).counts;
     const brakeSlow = run({ speedUPerSec: MAX * 0.2, intent: 'BRAKE' }).counts;

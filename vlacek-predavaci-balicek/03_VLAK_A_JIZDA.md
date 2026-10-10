@@ -117,6 +117,14 @@ Výchozí rozteč běžných podpěr je 256 u a kontakt vedení 160 u nad kolej�
 
 Parní, naftové a fantazijní lokomotivy vedení ve V1 automaticky nedostávají. Na jejich druhé koleji proto generovat parní či naftový protijedoucí vlak. V elektrifikované jízdě může být elektrifikovaná i souběžná trať. Geometrie ani seed krajiny se změnou pohonu jinak nemění.
 
+Implementace ([D-016](../docs/decisions/016-electric-locomotive-and-catenary.md)):
+
+- Jízda za `electric_retro` je elektrifikovaná celá, i po obnově ze save.
+- Stožáry stojí v globální fázi po 256 u. Stožár, který by padl na silnici přejezdu, se posune 48 u vedle ní.
+- Drát vede rovně mezi stožáry, u každého 160 u nad kolejí. Od této výšky se odchyluje nejvýš o 3,2 u.
+- Pantograf natahuje ramena k drátu v bodě dotyku, v mezích 0,07–1,6 násobku kresby. V depu leží sklopený.
+- Portálové podpěry, mostní konzoly a tunelové závěsy zatím chybějí.
+
 ## 10. Nekonečná jízda bez ztráty přesnosti
 
 Trvalá identita polohy je `chunkIndex + offset po oblouku v daném chunku`. Pro běžnou simulaci používat lokální rozsah s a renderovací origin poblíž vlaku. Při překročení 16 384 u lokálního posunu provést konzistentní rebase všech lokálních souřadnic; seed ani indexy chunků se nemění.

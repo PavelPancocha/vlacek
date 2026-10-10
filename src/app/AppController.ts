@@ -274,6 +274,11 @@ export class AppController {
         localities: [...this.#scene.stats.localities],
         ...this.#nearPropCheck(),
       },
+      catenary: {
+        electrified: ride?.electrified ?? false,
+        poles: this.#scene.stats.catenaryPoles,
+        pantographGapU: this.#scene.stats.pantographGapU,
+      },
       crossings: ride ? this.#crossings(ride) : [],
       consistLengthU: ride
         ? ride.layout.frontOffsetU + ride.layout.tailOffsetU

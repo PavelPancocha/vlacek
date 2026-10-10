@@ -19,6 +19,8 @@ import {
 } from '../content/worldArt.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import type { Biome } from '../domain/world/Biomes.ts';
+import { heightAtX } from '../domain/world/ArcLengthTable.ts';
+import { contactWireHeightU } from '../domain/world/Catenary.ts';
 import { chunkOfEntityId } from '../domain/world/ChunkObjects.ts';
 import { hash32 } from '../domain/world/Hash.ts';
 import {
@@ -55,6 +57,7 @@ import {
 import { Backdrop } from './Backdrop.ts';
 import { ChunkView } from './ChunkView.ts';
 import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
+import { pantographReachU } from './pantograph.ts';
 import {
   frameLeftX,
   frameTopY,
@@ -83,6 +86,13 @@ export interface RenderStats {
   biome: Biome | undefined;
   /** Localities of the chunks in view, left to right. */
   localities: string[];
+  /** Catenary masts in the rendered chunks (doc 03 §9). */
+  catenaryPoles: number;
+  /**
+   * How far the drawn pantograph head misses the contact wire, u; undefined
+   * without a raised pantograph in view.
+   */
+  pantographGapU: number | undefined;
 }
 
 const NO_STATS: RenderStats = {
@@ -91,6 +101,8 @@ const NO_STATS: RenderStats = {
   renderedChunks: 0,
   biome: undefined,
   localities: [],
+  catenaryPoles: 0,
+  pantographGapU: undefined,
 };
 
 /** Rail height samples along the train for vertical framing. */
@@ -122,6 +134,7 @@ const DEPTH = {
   ground: 5,
   track: 6,
   train: 7,
+  wires: 7.5,
   nearProps: 8,
   objects: 9,
   effects: 10,
@@ -210,6 +223,8 @@ export class RideScene extends Phaser.Scene {
   /** World y (up) of the top screen edge; eased between frames. */
   #cameraTopY: number | undefined;
   #framing: FramingConfig | undefined;
+  /** Where the drawn pantograph touches the wire this frame (render). */
+  #pantographContact: { x: number; y: number } | undefined;
   /** CSS px covered by controls at the top and bottom of the screen. */
   #insetsCss = { top: 0, bottom: 0, controls: 0 };
   #originX = 0;
@@ -521,8 +536,22 @@ export class RideScene extends Phaser.Scene {
       this.stats = NO_STATS;
       return;
     }
-    const framing = this.#framing;
-    if (!framing) return;
+    const vehicleFraming = this.#framing;
+    if (!vehicleFraming) return;
+    // Per-ride stats; the shared empty record stays untouched.
+    if (this.stats === NO_STATS) this.stats = { ...NO_STATS, localities: [] };
+    this.stats.pantographGapU = undefined;
+    this.#pantographContact = undefined;
+    // The raised pantograph reaches the wire: keep it in view too.
+    const framing = ride.electrified
+      ? {
+          ...vehicleFraming,
+          vehicleHeightU: Math.max(
+            vehicleFraming.vehicleHeightU,
+            gameConfig.world.catenaryContactHeightU + 8,
+          ),
+        }
+      : vehicleFraming;
     const camera = this.cameras.main;
     const gamePerCss =
       this.scale.width / Math.max(1, this.game.canvas.clientWidth);
@@ -698,8 +727,10 @@ export class RideScene extends Phaser.Scene {
             backProps: DEPTH.backProps,
             ground: DEPTH.ground,
             track: DEPTH.track,
+            wires: DEPTH.wires,
             nearProps: DEPTH.nearProps,
           },
+          ride.electrified,
         );
         this.#chunks.set(k, chunk);
       }
@@ -708,6 +739,10 @@ export class RideScene extends Phaser.Scene {
       chunk.update(timeSec, site && crossings.get(site.id));
     }
     this.stats.renderedChunks = this.#chunks.size;
+    this.stats.catenaryPoles = [...this.#chunks.values()].reduce(
+      (sum, chunk) => sum + chunk.catenaryPoles,
+      0,
+    );
   }
 
   #drawObjects(
@@ -872,6 +907,9 @@ export class RideScene extends Phaser.Scene {
       wheels,
       front,
       rateScale,
+      ...(this.#pantographContact
+        ? { pantograph: this.#pantographContact }
+        : {}),
     });
     const middleX = this.#view.left + this.#originX + viewW / 2;
     const k = Math.floor(middleX / CHUNK_WIDTH_U);
@@ -1015,24 +1053,75 @@ export class RideScene extends Phaser.Scene {
     art?.release(replaced);
   }
 
+  /**
+   * Distance from the locomotive's pantograph base up to the contact wire
+   * (doc 03 §9); records how far the drawn head misses the wire.
+   */
+  #pantographReach(
+    ride: RideSimulation,
+    vehicle: ShapedVehicle,
+    pose: { centerX: number; centerY: number; angleRad: number },
+  ): number | undefined {
+    const art = vehicleArt[vehicle.id];
+    const pantograph = art?.pantograph;
+    if (!art || !pantograph) return undefined;
+    const base = emitterWorldPoint(
+      pantograph,
+      { lengthU: vehicle.lengthU, heightU: art.heightU },
+      pose,
+    );
+    const rail = (x: number) =>
+      heightAtX(
+        ride.track.chunkTable(
+          Math.min(
+            ride.track.lastChunkIndex,
+            Math.max(ride.track.firstChunkIndex, Math.floor(x / CHUNK_WIDTH_U)),
+          ),
+        ),
+        x,
+      );
+    const wire = (x: number) => contactWireHeightU(ride.seed, x, rail);
+    const reach = pantographReachU(base, pose.angleRad, wire);
+    this.#pantographContact = {
+      x: base.x - reach * Math.sin(pose.angleRad),
+      y: base.y - reach * Math.cos(pose.angleRad),
+    };
+    // Where the drawn head ends after its limited stretch.
+    const head = vehicleArtLayers(art, vehicle.lengthU, 0, reach).find(
+      (layer) => layer.part === pantograph.head,
+    );
+    if (head) {
+      const drawn =
+        pantograph.yU - art.heightU - head.y + pantograph.headContactU;
+      this.stats.pantographGapU = Math.abs(drawn - reach);
+    }
+    return reach;
+  }
+
   /** Draws a vehicle's art parts; returns the number of images used. */
   #drawArtVehicle(
     slot: VehicleSlot,
     vehicle: ShapedVehicle,
     distanceU: number,
+    pantographReach?: number,
   ): number {
     const art = vehicleArt[vehicle.id];
     const texture = this.#art?.textureKey;
     const pxPerU = this.#art?.info?.pxPerU;
     if (!art || texture === undefined || pxPerU === undefined) return 0;
-    const layers = vehicleArtLayers(art, vehicle.lengthU, distanceU);
+    const layers = vehicleArtLayers(
+      art,
+      vehicle.lengthU,
+      distanceU,
+      pantographReach,
+    );
     layers.forEach((layer, i) => {
       const part = artParts[layer.part];
       const image = this.#image(slot, i, texture, layer.part);
       const origin = frameOrigin(part.pivotU, pxPerU, image.frame);
       image
         .setOrigin(origin.x, origin.y)
-        .setScale(1 / pxPerU)
+        .setScale(1 / pxPerU, (layer.scaleY ?? 1) / pxPerU)
         .setPosition(layer.x, layer.y)
         .setRotation(layer.rotation);
     });
@@ -1091,7 +1180,11 @@ export class RideScene extends Phaser.Scene {
       const distanceU = headS - (ride.layout.centerOffsetsU[i] ?? 0);
       let used = 0;
       if (this.#art) {
-        used = this.#drawArtVehicle(slot, vehicle, distanceU);
+        const reach =
+          i === 0 && ride.electrified
+            ? this.#pantographReach(ride, vehicle, pose)
+            : undefined;
+        used = this.#drawArtVehicle(slot, vehicle, distanceU, reach);
         if (used > 0) art += 1;
       }
       if (used === 0)

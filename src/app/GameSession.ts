@@ -253,9 +253,14 @@ export class GameSession {
       simulationTick: number;
     },
   ): RideSimulation {
+    const locomotive = this.#deps.catalog.locomotives.find(
+      (candidate) => candidate.id === consist.locomotiveId,
+    );
     return new RideSimulation({
       seed,
       vehicles: this.#vehicles(consist),
+      // Changing the locomotive starts a new journey (doc 03 §9).
+      electrified: locomotive?.requiresCatenary === true,
       speedFactor: this.#settings.maxSpeedFactor,
       config: this.#deps.config,
       ...(restore

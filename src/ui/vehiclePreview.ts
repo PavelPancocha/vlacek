@@ -36,6 +36,7 @@ export function vehiclePreview(
       'transform',
       `translate(${layer.x + length / 2} ${layer.y + art.heightU}) ` +
         `rotate(${(layer.rotation * 180) / Math.PI}) ` +
+        `scale(1 ${layer.scaleY ?? 1}) ` +
         `translate(${-part.pivotU.x} ${-part.pivotU.y})`,
     );
     svg.append(image);

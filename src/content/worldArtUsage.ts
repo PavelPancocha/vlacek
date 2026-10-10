@@ -3,6 +3,7 @@ import { LOCALITIES } from '../domain/world/sceneryTemplates.ts';
 import {
   animalParts,
   backdropParts,
+  catenaryParts,
   cloudParts,
   crossingParts,
   effectParts,
@@ -13,7 +14,7 @@ import {
 /**
  * Every world part key the game refers to: track tiles, the kinds the
  * world generator places (localities and stations), animals, backdrops,
- * clouds, effect sprites, crossings and road traffic. `validate:assets` reports parts outside this
+ * clouds, effect sprites, crossings, road traffic and catenary. `validate:assets` reports parts outside this
  * list.
  */
 export function worldUsedKeys(): string[] {
@@ -27,6 +28,7 @@ export function worldUsedKeys(): string[] {
       ...cloudParts,
       ...effectParts,
       ...Object.values(crossingParts),
+      ...Object.values(catenaryParts),
       ...Object.values(roadActorParts).flatMap((p) => [p.front, p.back]),
     ]),
   ];

@@ -83,6 +83,13 @@ export interface WorldConfig {
   geometryTailMarginU: number;
   spawnChunkIndex: number;
   spawnLocalXU: number;
+  /**
+   * Catenary of an electric journey (doc 03 §9): pole spacing in one
+   * global phase (a divisor of the chunk width) and the contact wire's
+   * height above the rail.
+   */
+  catenaryPoleSpacingU: number;
+  catenaryContactHeightU: number;
 }
 
 export interface InteractionConfig {
@@ -222,6 +229,8 @@ export const gameConfig: GameConfig = {
     geometryTailMarginU: 1024,
     spawnChunkIndex: 0,
     spawnLocalXU: 512,
+    catenaryPoleSpacingU: 256,
+    catenaryContactHeightU: 160,
   },
   camera: {
     trainWidthFraction: 0.72,
@@ -390,6 +399,12 @@ export function validateGameConfig(config: GameConfig): string[] {
       'world.spawnLocalXU',
       world.spawnLocalXU >= 0 && world.spawnLocalXU < world.chunkWidthU,
     ],
+    [
+      'world.catenaryPoleSpacingU',
+      positiveInteger(world.catenaryPoleSpacingU) &&
+        world.chunkWidthU % world.catenaryPoleSpacingU === 0,
+    ],
+    ['world.catenaryContactHeightU', positive(world.catenaryContactHeightU)],
     ['input.maxPointers', positiveInteger(input.maxPointers)],
     ['input.leftSwipeDistanceCssPx', positive(input.leftSwipeDistanceCssPx)],
     ['input.leftSwipeMaxDurationMs', positive(input.leftSwipeMaxDurationMs)],

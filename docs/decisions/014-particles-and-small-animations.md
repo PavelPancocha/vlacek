@@ -74,6 +74,6 @@ Save, trať a generátor se nemění. Částice ani jejich stav se neukládají;
 
 ## Dočasná omezení a podmínky odstranění
 
-- **Elektrická lokomotiva** zatím v katalogu není. Pantograf a občasná jiskra na troleji přijdou s ní v kroku G.
+- **Elektrická lokomotiva** přibyla v kroku G2 ([D-016](016-electric-locomotive-and-catenary.md)) i s občasnou jiskrou na pantografu; toto omezení je odstraněné.
 - **Déšť a sníh z počasí** (dokument 07 §5) nejsou součástí této změny, přijdou s počasím. Zde je jen sníh rozvířený koly.
 - **Fyzická zařízení:** NEOVĚŘENO.

@@ -38,6 +38,7 @@ import {
 } from './groundPalette.ts';
 import { glintAlpha, swayAmplitudeRad, swayAngle } from './ambientMotion.ts';
 import { frameOrigin } from './atlasPacking.ts';
+import { chunkCatenary } from './CatenaryView.ts';
 import { CrossingView, type CrossingState } from './CrossingView.ts';
 import { roadHalfWidthU, roadPointY } from './crossingLayout.ts';
 import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
@@ -101,6 +102,8 @@ export interface ChunkDepths {
   backProps: number;
   ground: number;
   track: number;
+  /** Catenary wires: above the train, below the near meadow. */
+  wires: number;
   nearProps: number;
 }
 
@@ -143,6 +146,8 @@ export class ChunkView {
   readonly #glints: { image: Phaser.GameObjects.Image; phase: number }[] = [];
   /** Barriers, lamps and traffic of the chunk's level crossing. */
   #crossing: CrossingView | undefined;
+  /** Catenary masts of an electric journey (doc 03 §9). */
+  readonly #poles: number = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -151,6 +156,7 @@ export class ChunkView {
     scenery: ChunkScenery,
     art: ChunkArt | undefined,
     depths: ChunkDepths,
+    electrified = false,
   ) {
     this.#scene = scene;
     this.#table = table;
@@ -344,6 +350,14 @@ export class ChunkView {
         },
       );
     }
+    if (electrified) {
+      const catenary = chunkCatenary(scene, art, table, seed, {
+        poles: depths.backProps + 0.6,
+        wires: depths.wires,
+      });
+      this.#objects.push(...catenary.containers);
+      this.#poles = catenary.poles;
+    }
     const backProps = scene.add.container(0, 0).setDepth(depths.backProps);
     const nearProps = scene.add.container(0, 0).setDepth(depths.nearProps);
     // Far props first, near ones last; nearer meadow props cover farther.
@@ -380,6 +394,11 @@ export class ChunkView {
   /** Near-meadow props, for the "never covers the train" check. */
   get nearProps(): readonly Phaser.GameObjects.Image[] {
     return [...this.#near, ...(this.#crossing?.nearImages ?? [])];
+  }
+
+  /** Catenary masts of this chunk (0 unless the journey is electric). */
+  get catenaryPoles(): number {
+    return this.#poles;
   }
 
   setX(x: number): void {

@@ -18,7 +18,7 @@ const assets = (id: string) => ({
   previewAsset: `vehicle.${id}.preview`,
 });
 
-/** Temporary subset of doc 06 §2 (stable IDs and lengths; no electric yet). */
+/** Temporary subset of doc 06 §2 (stable IDs and lengths). */
 export const locomotives: readonly CatalogLocomotive[] = [
   {
     kind: 'locomotive',
@@ -45,6 +45,20 @@ export const locomotives: readonly CatalogLocomotive[] = [
     hornAudio: 'audio.horn.diesel_mainline',
     effect: 'diesel',
     ...assets('diesel_mainline'),
+  },
+  {
+    kind: 'locomotive',
+    id: 'electric_retro',
+    labelCs: 'Hranatá elektrická',
+    power: 'electric',
+    // The journey gets its catenary (doc 03 §9, D-016).
+    requiresCatenary: true,
+    lengthU: 188,
+    bogieOffsetU: 58,
+    wheelRadiusU: 13,
+    hornAudio: 'audio.horn.electric_retro',
+    effect: 'none',
+    ...assets('electric_retro'),
   },
   {
     kind: 'locomotive',

@@ -23,6 +23,8 @@ export interface TrainEffectsInput {
   driverRadiusU: number | undefined;
   /** Wheel–rail contact points of drawn vehicles (brake sparks). */
   wheels: readonly { x: number; y: number }[];
+  /** Where an electric locomotive's pantograph touches the wire. */
+  pantograph?: { x: number; y: number };
   /** Front wheels of the locomotive and the ground under them. */
   front: { x: number; y: number; ground: 'snow' | 'leaves' | undefined };
   /** 1 standard, 0.5 for the low quality profile (doc 13). */
@@ -44,6 +46,9 @@ const STARS_PER_SPEED = 4;
 /** Sparks only when braking above this share of the top speed. */
 const SPARK_MIN_SHARE = 0.3;
 const SPARK_EVENTS_PER_SEC = 4;
+/** Now and then a spark at the pantograph, above this speed share. */
+const PANTOGRAPH_SPARK_MIN_SHARE = 0.3;
+const PANTOGRAPH_SPARKS_PER_SEC = 0.35;
 /** Snow and leaves only above this speed (u/s). */
 const STIR_MIN_SPEED = 40;
 const SNOW_PER_SEC = 70;
@@ -55,8 +60,9 @@ const PUFF_INHERIT = 0.3;
  * The train's particles (doc 14 §4): smoke in exhaust beats of the steam
  * locomotive's driving wheels and white steam when it starts off, diesel
  * exhaust under throttle, stars from the fairy-tale chimney, rare sparks
- * when braking hard, and snow or leaves stirred up only where they lie and
- * only while moving. Pure: time, state and randomness come in.
+ * when braking hard or at an electric locomotive's pantograph, and snow or
+ * leaves stirred up only where they lie and only while moving. Pure: time,
+ * state and randomness come in.
  */
 export class TrainEffects {
   readonly #field: ParticleField;
@@ -179,6 +185,17 @@ export class TrainEffects {
         if (wheel)
           emit('spark', wheel.x, wheel.y, 2 + Math.floor(this.#random() * 2));
       }
+    }
+
+    // Now and then a spark where the pantograph slides along the wire.
+    const contact = input.pantograph;
+    if (contact && share > PANTOGRAPH_SPARK_MIN_SHARE) {
+      const events = clock('pantograph').tick(
+        PANTOGRAPH_SPARKS_PER_SEC * share * scale,
+        dt,
+      );
+      for (let e = 0; e < events; e++)
+        emit('spark', contact.x, contact.y, 1 + Math.floor(this.#random() * 2));
     }
 
     // Snow or leaves where they lie, only while moving.

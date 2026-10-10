@@ -10,6 +10,8 @@ import {
 import { snapshot, tapAction } from './helpers.ts';
 
 const SECONDS = Number(process.env['PERF_SECONDS'] ?? 60);
+/** Locomotive of the measured train; `electric_retro` adds the catenary. */
+const LOCOMOTIVE = process.env['PERF_LOCOMOTIVE'] ?? 'steam_local';
 const WAGON_TYPES = [
   'passenger_classic',
   'passenger_open',
@@ -30,7 +32,7 @@ function longestMixedConsist() {
     couplerGapU: gameConfig.train.couplerGapU,
     geometryOf: (id) => vehicles.get(id),
   };
-  let draft = createDraft('steam_local');
+  let draft = createDraft(LOCOMOTIVE);
   for (let i = 0; ; i++) {
     const next = addWagon(
       draft,

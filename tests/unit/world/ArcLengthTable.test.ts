@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
 import {
   buildArcLengthTable,
+  heightAtX,
   sampleArcLengthTable,
 } from '../../../src/domain/world/ArcLengthTable.ts';
 import {
@@ -106,5 +107,29 @@ describe('ArcLengthTable', () => {
         0.1,
       );
     }
+  });
+
+  it('gives the rail height at a chunk-global x, as the samples draw it', () => {
+    for (let i = 0; i < table.xs.length; i += 7)
+      expect(heightAtX(table, table.xs[i] ?? 0)).toBeCloseTo(
+        table.ys[i] ?? 0,
+        9,
+      );
+    const x = ((table.xs[10] ?? 0) + (table.xs[11] ?? 0)) / 2;
+    expect(heightAtX(table, x)).toBeCloseTo(
+      ((table.ys[10] ?? 0) + (table.ys[11] ?? 0)) / 2,
+      9,
+    );
+    // Within the chunk the sampled rail stays on the true profile.
+    for (let local = 0; local <= chunkWidthU; local += 13)
+      expect(
+        Math.abs(
+          heightAtX(table, 3 * chunkWidthU + local) -
+            profileHeightU(extremeHill, local),
+        ),
+      ).toBeLessThan(0.5);
+    // Clamped at the chunk ends.
+    expect(heightAtX(table, 2 * chunkWidthU)).toBe(table.ys[0]);
+    expect(heightAtX(table, 5 * chunkWidthU)).toBe(table.ys.at(-1));
   });
 });

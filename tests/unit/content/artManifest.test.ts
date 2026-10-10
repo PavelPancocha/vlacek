@@ -141,6 +141,51 @@ describe('vehicle art manifest (doc 06 §8, doc 07 §4, CNT-02)', () => {
     ).toEqual([`${wagon.id}: emitters on a vehicle without an effect`]);
   });
 
+  it('raises a pantograph on the roof of every electric locomotive (doc 03 §9)', () => {
+    for (const locomotive of locomotives) {
+      const pantograph = vehicleArt[locomotive.id]?.pantograph;
+      if (locomotive.requiresCatenary)
+        expect(pantograph, locomotive.id).toBeDefined();
+      else expect(pantograph, locomotive.id).toBeUndefined();
+    }
+    const electric = vehicleArt['electric_retro'];
+    const pantograph = electric?.pantograph;
+    if (!electric || !pantograph) throw new Error('no electric art');
+    const withoutPantograph: VehicleArt = {
+      heightU: electric.heightU,
+      body: electric.body,
+      wheels: electric.wheels,
+      ...(electric.overlay ? { overlay: electric.overlay } : {}),
+    };
+    expect(
+      validateVehicleArt({
+        ...shipped,
+        art: { ...vehicleArt, electric_retro: withoutPantograph },
+      }),
+    ).toEqual([
+      'electric_retro: needs catenary but has no pantograph',
+      'electric_retro.pantograph: not used by any vehicle',
+      'electric_retro.pantograph-head: not used by any vehicle',
+    ]);
+    expect(validateVehicleArt(withSteam({ ...steam, pantograph }))).toEqual([
+      'steam_local: pantograph without catenary',
+    ]);
+    expect(
+      validateVehicleArt({
+        ...shipped,
+        art: {
+          ...vehicleArt,
+          electric_retro: {
+            ...electric,
+            pantograph: { ...pantograph, xU: 200 },
+          },
+        },
+      }),
+    ).toEqual([
+      'electric_retro: pantograph at 200, 6 is outside the 188 × 92 u frame',
+    ]);
+  });
+
   it('keeps the drawing exactly as long as the vehicle (length invariant)', () => {
     const vehicles = shipped.vehicles.map((vehicle) =>
       vehicle.id === 'steam_local' ? { ...vehicle, lengthU: 160 } : vehicle,

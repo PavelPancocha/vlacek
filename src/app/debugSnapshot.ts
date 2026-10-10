@@ -39,6 +39,14 @@ export interface DebugSnapshot {
     /** Near-meadow props overlapping a drawn vehicle; always 0. */
     nearPropsOverTrain: number;
   };
+  /** Catenary of an electric journey (doc 03 §9, D-016). */
+  catenary: {
+    electrified: boolean;
+    /** Masts in the rendered chunks. */
+    poles: number;
+    /** How far the drawn pantograph head misses the wire, u. */
+    pantographGapU: number | undefined;
+  };
   /** Level crossings the ride simulates (doc 05 §4, D-015). */
   crossings: {
     id: string;

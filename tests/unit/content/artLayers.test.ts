@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { vehicleArtLayers } from '../../../src/content/artLayers.ts';
-import { vehicleArt } from '../../../src/content/artManifest.ts';
+import {
+  PANTOGRAPH_STRETCH,
+  vehicleArtLayers,
+} from '../../../src/content/artLayers.ts';
+import { artParts, vehicleArt } from '../../../src/content/artManifest.ts';
 import { steamGear } from '../../../src/content/steamGear.ts';
 
 const art = vehicleArt['steam_local'];
@@ -84,5 +87,65 @@ describe('vehicleArtLayers (one layout for the ride and the depot)', () => {
     expect(
       vehicleArtLayers(plain, LENGTH_U, 0).map((p) => p.part),
     ).not.toContain('steam_local.coupling-rod');
+  });
+});
+
+describe('pantograph of the electric locomotive (doc 03 §9)', () => {
+  const electric = vehicleArt['electric_retro'];
+  const pantograph = electric?.pantograph;
+  if (!electric || !pantograph) throw new Error('no electric art');
+  const L = 188;
+  const arms = artParts[pantograph.arms];
+  const baseX = pantograph.xU - L / 2;
+  const baseY = pantograph.yU - electric.heightU;
+  const find = (layers: ReturnType<typeof vehicleArtLayers>, key: string) =>
+    layers.find((layer) => layer.part === key);
+
+  it('lies folded on the roof without a wire (depot), right after the body', () => {
+    const layers = vehicleArtLayers(electric, L, 0);
+    expect(layers.slice(0, 3).map((p) => p.part)).toEqual([
+      'electric_retro.body',
+      pantograph.arms,
+      pantograph.head,
+    ]);
+    const folded = find(layers, pantograph.arms);
+    expect(folded).toMatchObject({ x: baseX, y: baseY, rotation: 0 });
+    expect(folded?.scaleY ?? 1).toBeLessThan(0.12);
+    // The head stays inside the frame.
+    expect(find(layers, pantograph.head)?.y ?? -Infinity).toBeGreaterThan(
+      -electric.heightU,
+    );
+  });
+
+  it('stretches its arms so the head touches the wire, the head itself unscaled', () => {
+    for (const reach of [66, 74, 80]) {
+      const layers = vehicleArtLayers(electric, L, 0, reach);
+      const armsLayer = find(layers, pantograph.arms);
+      const head = find(layers, pantograph.head);
+      expect(armsLayer?.scaleY).toBeCloseTo(
+        (reach - pantograph.headContactU) / arms.heightU,
+        9,
+      );
+      expect(head?.scaleY ?? 1).toBe(1);
+      expect(head?.x).toBe(baseX);
+      // Contact point of the head, vehicle-local (y down).
+      expect((head?.y ?? 0) - pantograph.headContactU).toBeCloseTo(
+        baseY - reach,
+        9,
+      );
+    }
+  });
+
+  it('stretches only so far (limited adaptation)', () => {
+    for (const reach of [0, 1000]) {
+      const scale = find(
+        vehicleArtLayers(electric, L, 0, reach),
+        pantograph.arms,
+      )?.scaleY;
+      expect(scale).toBeGreaterThanOrEqual(PANTOGRAPH_STRETCH[0]);
+      expect(scale).toBeLessThanOrEqual(PANTOGRAPH_STRETCH[1]);
+    }
+    expect(PANTOGRAPH_STRETCH[0]).toBeLessThan(1);
+    expect(PANTOGRAPH_STRETCH[1]).toBeGreaterThan(1.2);
   });
 });
