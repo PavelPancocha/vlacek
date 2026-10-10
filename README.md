@@ -7,7 +7,7 @@
 
 ## Co se má postavit
 
-Jednoduchá 2D webová hra pro malé dítě. Před cestou si dítě vybere jednu z **10 odlišných lokomotiv** a připojí libovolnou kombinaci až **100 vagonků z 32 druhů**. Číselné limity vagonků jsou výchozí návrh, nikoli dříve potvrzené číslo zadavatele. Potom jede zleva doprava po nekonečné, procedurálně skládané trati. Držení prstu v herním světě vlak rozjíždí, puštění jej postupně zastaví. Vlevo dole je velká brzda; doleva lze také zabrzdit gestem.
+Jednoduchá 2D webová hra pro malé dítě. Před cestou si dítě vybere jednu z **10 odlišných lokomotiv** a připojí libovolnou kombinaci vagonků z **32 druhů**. Délka soupravy je omezená tak, aby byl na obrazovce vidět celý vlak ([dokument 14](vlacek-predavaci-balicek/14_UPRAVY_PRVNI_VERZE.md)); původní limit 100 vagonků už neplatí. Potom jede zleva doprava po nekonečné, procedurálně skládané trati. Držení prstu v herním světě vlak rozjíždí, puštění jej postupně zastaví. Vlevo dole je velká brzda; doleva lze také zabrzdit gestem.
 
 Krajina je převážně středoevropská, postupně zahrnuje lesy, pole, vodu, podhůří, hory a pobřeží. Jsou v ní nádraží, mosty, tunely, fungující přejezdy, okolní provoz a zvířata. Dotyk vyvolává jednoduché reakce. Hra nemá skóre, prohru, povinné úkoly ani minihry. Nádraží lze projet. Scénky nezávisí na nákladu nebo složení vagonků. U elektrické lokomotivy se automaticky zobrazí trolejové vedení podél celé použité trasy.
 
@@ -15,26 +15,27 @@ Krajina je převážně středoevropská, postupně zahrnuje lesy, pole, vodu, p
 
 ## Rozcestník
 
-| Soubor                                                                              | Obsah a vlastník rozhodnutí                                       |
-| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| [01_GAME_DESIGN.md](vlacek-predavaci-balicek/01_GAME_DESIGN.md)                     | Záměr, rozsah V1, herní smyčka, co se záměrně nedělá.             |
-| [02_OVLADANI_A_STAVY.md](vlacek-predavaci-balicek/02_OVLADANI_A_STAVY.md)           | Dotyky, brzda, gesta, souběh prstů, menu, pauza, depo.            |
-| [03_VLAK_A_JIZDA.md](vlacek-predavaci-balicek/03_VLAK_A_JIZDA.md)                   | Pohyb, dlouhá souprava, geometrie, kamera, elektrifikace.         |
-| [04_PROCEDURALNI_SVET.md](vlacek-predavaci-balicek/04_PROCEDURALNI_SVET.md)         | Seed, úseky, kontinuita tratě, biomy, streaming, čas a počasí.    |
-| [05_SCENKY_A_INTERAKCE.md](vlacek-predavaci-balicek/05_SCENKY_A_INTERAKCE.md)       | Nádraží, závory, silniční provoz, druhé koleje, zvířata a reakce. |
-| [06_KATALOG_OBSAHU.md](vlacek-predavaci-balicek/06_KATALOG_OBSAHU.md)               | Závazný katalog 10 lokomotiv, 32 vagonků a základních scén.       |
-| [07_VIZUAL_AUDIO_UX.md](vlacek-predavaci-balicek/07_VIZUAL_AUDIO_UX.md)             | Výtvarný směr, vrstvy, assety, zvuk, přístupnost a rozložení.     |
-| [08_ARCHITEKTURA_A_DATA.md](vlacek-predavaci-balicek/08_ARCHITEKTURA_A_DATA.md)     | Moduly, typové kontrakty, ukládání, migrace a struktura projektu. |
-| [09_WEB_PWA_ANDROID_TESLA.md](vlacek-predavaci-balicek/09_WEB_PWA_ANDROID_TESLA.md) | Platformy, offline režim, aktualizace, nasazení a kompatibilita.  |
-| [10_IMPLEMENTACNI_PLAN.md](vlacek-predavaci-balicek/10_IMPLEMENTACNI_PLAN.md)       | Pracovní balíčky, závislosti a definice hotové práce.             |
-| [11_TESTY_A_AKCEPTACE.md](vlacek-predavaci-balicek/11_TESTY_A_AKCEPTACE.md)         | Funkční, generativní, integrační a ruční testy; výkonové cíle.    |
-| [12_ROZHODNUTI_A_ZDROJE.md](vlacek-predavaci-balicek/12_ROZHODNUTI_A_ZDROJE.md)     | Potvrzené požadavky, doplněné výchozí volby, rizika a zdroje.     |
-| [13_VYCHOZI_KONFIGURACE.md](vlacek-predavaci-balicek/13_VYCHOZI_KONFIGURACE.md)     | Centrální číselné parametry a jejich význam.                      |
-| [AGENTS.md](AGENTS.md)                                                              | Pracovní instrukce pro implementátora nebo kódovacího agenta.     |
+| Soubor                                                                              | Obsah a vlastník rozhodnutí                                                                 |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [01_GAME_DESIGN.md](vlacek-predavaci-balicek/01_GAME_DESIGN.md)                     | Záměr, rozsah V1, herní smyčka, co se záměrně nedělá.                                       |
+| [02_OVLADANI_A_STAVY.md](vlacek-predavaci-balicek/02_OVLADANI_A_STAVY.md)           | Dotyky, brzda, gesta, souběh prstů, menu, pauza, depo.                                      |
+| [03_VLAK_A_JIZDA.md](vlacek-predavaci-balicek/03_VLAK_A_JIZDA.md)                   | Pohyb, dlouhá souprava, geometrie, kamera, elektrifikace.                                   |
+| [04_PROCEDURALNI_SVET.md](vlacek-predavaci-balicek/04_PROCEDURALNI_SVET.md)         | Seed, úseky, kontinuita tratě, biomy, streaming, čas a počasí.                              |
+| [05_SCENKY_A_INTERAKCE.md](vlacek-predavaci-balicek/05_SCENKY_A_INTERAKCE.md)       | Nádraží, závory, silniční provoz, druhé koleje, zvířata a reakce.                           |
+| [06_KATALOG_OBSAHU.md](vlacek-predavaci-balicek/06_KATALOG_OBSAHU.md)               | Závazný katalog 10 lokomotiv, 32 vagonků a základních scén.                                 |
+| [07_VIZUAL_AUDIO_UX.md](vlacek-predavaci-balicek/07_VIZUAL_AUDIO_UX.md)             | Výtvarný směr, vrstvy, assety, zvuk, přístupnost a rozložení.                               |
+| [08_ARCHITEKTURA_A_DATA.md](vlacek-predavaci-balicek/08_ARCHITEKTURA_A_DATA.md)     | Moduly, typové kontrakty, ukládání, migrace a struktura projektu.                           |
+| [09_WEB_PWA_ANDROID_TESLA.md](vlacek-predavaci-balicek/09_WEB_PWA_ANDROID_TESLA.md) | Platformy, offline režim, aktualizace, nasazení a kompatibilita.                            |
+| [10_IMPLEMENTACNI_PLAN.md](vlacek-predavaci-balicek/10_IMPLEMENTACNI_PLAN.md)       | Pracovní balíčky, závislosti a definice hotové práce.                                       |
+| [11_TESTY_A_AKCEPTACE.md](vlacek-predavaci-balicek/11_TESTY_A_AKCEPTACE.md)         | Funkční, generativní, integrační a ruční testy; výkonové cíle.                              |
+| [12_ROZHODNUTI_A_ZDROJE.md](vlacek-predavaci-balicek/12_ROZHODNUTI_A_ZDROJE.md)     | Potvrzené požadavky, doplněné výchozí volby, rizika a zdroje.                               |
+| [13_VYCHOZI_KONFIGURACE.md](vlacek-predavaci-balicek/13_VYCHOZI_KONFIGURACE.md)     | Centrální číselné parametry a jejich význam.                                                |
+| [14_UPRAVY_PRVNI_VERZE.md](vlacek-predavaci-balicek/14_UPRAVY_PRVNI_VERZE.md)       | Zadání iterace po verzi 0.1: souprava, kamera, grafika, živý svět. Při rozporu má přednost. |
+| [AGENTS.md](AGENTS.md)                                                              | Pracovní instrukce pro implementátora nebo kódovacího agenta.                               |
 
 ## Jak balíček používat
 
-Nejprve přečíst tento soubor, game design a rozhodnutí. Před implementací vstupů přečíst celý dokument 02; před implementací tratě společně 03 a 04. Plán práce je v dokumentu 10. Dokument 11 je součást zadání od začátku, nikoli až závěrečný seznam přání.
+Nejprve přečíst tento soubor, game design a rozhodnutí. Dokument 14 je pozdější zadání zadavatele; při rozporu má přednost před dokumenty 01–13 a ilustracemi. Před implementací vstupů přečíst celý dokument 02; před implementací tratě společně 03 a 04. Plán práce je v dokumentu 10. Dokument 11 je součást zadání od začátku, nikoli až závěrečný seznam přání.
 
 V tomto repozitáři jsou specifikace ve složce `vlacek-predavaci-balicek/`; tento README je jejich rozcestník. Kořenový [AGENTS.md](AGENTS.md) určuje pracovní postup včetně TDD, povinné dokumentace a pravidel udržitelnosti. Při případném přesunu do `docs/spec/` oprav i odkazy a nevytvářej druhou kopii specifikací. Repozitář obsahuje rozpracovanou hru: průběžnou verzi 0.1 (milníky M0 + M1), vývojové nástroje, lokální hook a workflow GitHub Actions s nasazením na GitHub Pages.
 
