@@ -8,7 +8,8 @@ import {
 } from '../src/content/artValidation.ts';
 import { validateCatalog } from '../src/content/catalogValidation.ts';
 import { locomotives, wagons } from '../src/content/vehicles.ts';
-import { trackTileParts, worldParts } from '../src/content/worldArt.ts';
+import { worldParts } from '../src/content/worldArt.ts';
+import { worldUsedKeys } from '../src/content/worldArtUsage.ts';
 import { validateWorldArt } from '../src/content/worldValidation.ts';
 
 /**
@@ -41,7 +42,7 @@ const errors = [
   ...validateWorldArt({
     parts: worldParts,
     files: svgFiles('world'),
-    usedKeys: trackTileParts,
+    usedKeys: worldUsedKeys(),
   }),
 ];
 const placeholders = vehicles.filter(

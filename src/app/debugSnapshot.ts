@@ -16,6 +16,21 @@ export interface DebugSnapshot {
   artAtlas:
     | { width: number; height: number; frames: number; pxPerU: number }
     | undefined;
+  /** The backdrop atlas (D-013); undefined if the art failed to load. */
+  backdropAtlas:
+    | { width: number; height: number; frames: number; pxPerU: number }
+    | undefined;
+  /** Landscape in view (doc 14 §5). */
+  scenery: {
+    /** Biome of the backdrop, undefined outside a ride. */
+    biome: string | undefined;
+    /** Localities of the chunks in view, left to right. */
+    localities: string[];
+    /** Near-meadow props in view. */
+    nearProps: number;
+    /** Near-meadow props overlapping a drawn vehicle; always 0. */
+    nearPropsOverTrain: number;
+  };
   consistLengthU: number;
   intent: string;
   speedUPerSec: number;
@@ -33,6 +48,8 @@ export interface DebugSnapshot {
   worstFrameMs: number;
   frameSamples: number;
   objects: { id: string; x: number; y: number }[];
+  /** Screen x of the chunk boundaries in view, CSS px (seam checks). */
+  chunkEdges: number[];
   /** Screen box of all drawn vehicles, CSS px (doc 14 §2 checks). */
   trainBox:
     { left: number; top: number; right: number; bottom: number } | undefined;

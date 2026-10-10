@@ -364,16 +364,23 @@ test.describe('user path', () => {
   test('the Canvas renderer draws chunk ground without seams', async ({
     page,
   }) => {
-    // Abutting chunk polygons used to leave a lighter anti-aliased column at
+    // Abutting chunk grounds used to leave a lighter anti-aliased column at
     // every chunk boundary on Canvas. Sample frames while moving so the
     // boundary crosses sub-pixel positions; seed 123 keeps the world fixed.
+    // Only the columns at chunk boundaries count: thin stems of meadow
+    // plants elsewhere look like a seam to the column detector.
     await startRide(page, ['cargo_box'], '?debug=1&renderer=canvas&seed=123');
     await driveUntilMoving(page, 60);
     const seams = await page.evaluate(async () => {
       const canvas =
         document.querySelector<HTMLCanvasElement>('#game-root canvas');
       const context = canvas?.getContext('2d');
-      if (!canvas || !context) throw new Error('no 2D game canvas');
+      const api = (
+        window as unknown as {
+          __vlacek?: { snapshot(): { chunkEdges: number[] } };
+        }
+      ).__vlacek;
+      if (!canvas || !context || !api) throw new Error('no 2D game canvas');
       // A seam is a one-pixel column that differs from its two identical
       // neighbours; compositing two anti-aliased edges of the same colour
       // may round by one level, the seam was 4–7 levels lighter.
@@ -391,31 +398,42 @@ test.describe('user path', () => {
         );
       };
       const found: string[] = [];
+      let edgesChecked = 0;
       for (let frame = 0; frame < 30; frame++) {
         await new Promise((resolve) => requestAnimationFrame(resolve));
+        const rect = canvas.getBoundingClientRect();
+        const toCanvas = canvas.width / Math.max(1, rect.width);
+        const edges = api
+          .snapshot()
+          .chunkEdges.map((x) => Math.round((x - rect.left) * toCanvas));
         for (const fraction of [0.8, 0.9]) {
           const y = Math.round(canvas.height * fraction);
           const row = context.getImageData(0, y, canvas.width, 1).data;
-          for (let x = 1; x < canvas.width - 1; x++) {
-            if (isSeam(row, x))
-              found.push(
-                `frame ${frame} x ${x} y ${y}: ${row.slice(4 * x, 4 * x + 3).join()}`,
-              );
+          for (const edge of edges) {
+            for (let x = edge - 2; x <= edge + 2; x++) {
+              if (x < 1 || x >= canvas.width - 1) continue;
+              edgesChecked += 1;
+              if (isSeam(row, x))
+                found.push(
+                  `frame ${frame} x ${x} y ${y}: ${row.slice(4 * x, 4 * x + 3).join()}`,
+                );
+            }
           }
         }
       }
-      return found;
+      return { found, edgesChecked };
     });
     await page.mouse.up();
-    expect(seams).toEqual([]);
+    expect(seams.edgesChecked).toBeGreaterThan(0);
+    expect(seams.found).toEqual([]);
   });
 
   for (const renderer of ['auto', 'canvas'] as const) {
     test(`no line across the sky at a fractional zoom (${renderer})`, async ({
       page,
     }) => {
-      // Phone landscape: zoom 390/720. The repeating hills texture used to
-      // wrap its solid bottom row onto its top edge as a full-width line.
+      // Phone landscape: zoom 390/720. A repeating hills texture once
+      // wrapped its solid bottom row onto its top edge as a full-width line.
       await page.setViewportSize({ width: 844, height: 390 });
       await startRide(
         page,
@@ -425,39 +443,63 @@ test.describe('user path', () => {
       const png = await page.locator('#game-root canvas').screenshot({
         style: '#ui-layer, #diagnostics { visibility: hidden; }',
       });
-      const lines = await page.evaluate(async (base64) => {
-        const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-        const bitmap = await createImageBitmap(
-          new Blob([bytes], { type: 'image/png' }),
-        );
-        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-        const context = canvas.getContext('2d');
-        if (!context) throw new Error('no 2D context');
-        context.drawImage(bitmap, 0, 0);
-        const { data, width, height } = context.getImageData(
-          0,
-          0,
-          bitmap.width,
-          bitmap.height,
-        );
-        // First row that is not sky (#bfe3f2) in each column: the hill
-        // outline varies along x, a wrapped edge is one row for all.
-        const sky = [191, 227, 242];
-        const firstNonSky = new Map<number, number>();
-        for (let x = 0; x < width; x++) {
-          for (let y = 0; y < height; y++) {
-            const i = 4 * (y * width + x);
-            if (sky.some((value, c) => data[i + c] !== value)) {
-              firstNonSky.set(y, (firstNonSky.get(y) ?? 0) + 1);
-              break;
+      const box = (await snapshot(page)).trainBox;
+      if (!box) throw new Error('no train box');
+      const canvasTop = await page
+        .locator('#game-root canvas')
+        .evaluate((canvas) => canvas.getBoundingClientRect().top);
+      const lines = await page.evaluate(
+        async ({ base64, skyBottom }) => {
+          const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+          const bitmap = await createImageBitmap(
+            new Blob([bytes], { type: 'image/png' }),
+          );
+          const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+          const context = canvas.getContext('2d');
+          if (!context) throw new Error('no 2D context');
+          context.drawImage(bitmap, 0, 0);
+          const image = context.getImageData(0, 0, bitmap.width, bitmap.height);
+          // A line is a row that differs from the rows above and below,
+          // which match each other: the gradient sky changes smoothly and
+          // hill outlines vary along x, a wrapped edge is one row for all.
+          const linesIn = ({ data, width }: ImageData) => {
+            const at = (x: number, y: number, c: number) =>
+              data[4 * (y * width + x) + c] ?? 0;
+            const differ = (x: number, y1: number, y2: number) =>
+              Math.max(
+                ...[0, 1, 2].map((c) => Math.abs(at(x, y1, c) - at(x, y2, c))),
+              );
+            const rows: string[] = [];
+            for (let y = 1; y < Math.min(skyBottom, bitmap.height - 1); y++) {
+              let columns = 0;
+              for (let x = 0; x < width; x++)
+                if (
+                  differ(x, y, y - 1) > 10 &&
+                  differ(x, y, y + 1) > 10 &&
+                  differ(x, y - 1, y + 1) <= 4
+                )
+                  columns += 1;
+              if (columns > width / 2)
+                rows.push(`row ${y}: ${columns}/${width} columns`);
             }
-          }
-        }
-        return [...firstNonSky]
-          .filter(([, columns]) => columns > width / 2)
-          .map(([y, columns]) => `row ${y}: ${columns}/${width} columns`);
-      }, png.toString('base64'));
-      expect(lines).toEqual([]);
+            return rows;
+          };
+          const found = linesIn(image);
+          // The detector itself must see a line drawn into the sky.
+          const probe = context.getImageData(0, 0, bitmap.width, bitmap.height);
+          const y = Math.floor(skyBottom / 2);
+          for (let x = 0; x < probe.width; x++)
+            probe.data.set([170, 210, 160, 255], 4 * (y * probe.width + x));
+          return { found, probe: linesIn(probe) };
+        },
+        {
+          base64: png.toString('base64'),
+          // Sky and backdrop: everything well above the train.
+          skyBottom: Math.floor(box.top - canvasTop - 20),
+        },
+      );
+      expect(lines.probe.length).toBeGreaterThan(0);
+      expect(lines.found).toEqual([]);
     });
   }
 

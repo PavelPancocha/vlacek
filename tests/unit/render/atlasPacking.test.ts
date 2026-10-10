@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { artParts } from '../../../src/content/artManifest.ts';
-import { worldParts } from '../../../src/content/worldArt.ts';
+import { isBackdropPart, worldParts } from '../../../src/content/worldArt.ts';
 import {
   ART_MAX_PX_PER_U,
+  BACKDROP_MAX_PX_PER_U,
   ATLAS_PADDING_PX,
+  FRAME_MARGIN_PX,
   MAX_ATLAS_EDGE_PX,
   artAtlasItems,
   artScaleFor,
+  frameOrigin,
+  framesWithMargin,
   packAtlas,
 } from '../../../src/render/atlasPacking.ts';
 
@@ -81,10 +85,16 @@ describe('vehicle art atlas', () => {
     // Clamped: tiny windows stay legible, huge ones stay within the atlas.
     expect(artScaleFor(0.1)).toBe(0.5);
     expect(artScaleFor(9)).toBe(ART_MAX_PX_PER_U);
+    // Backdrops are distant: never rasterised finer than 1 px/u.
+    expect(artScaleFor(1.73, BACKDROP_MAX_PX_PER_U)).toBe(1);
+    expect(artScaleFor(0.576, BACKDROP_MAX_PX_PER_U)).toBe(0.75);
   });
 
-  it('fits every vehicle and world part into one atlas at the largest raster scale (doc 13 budget)', () => {
-    const parts = { ...artParts, ...worldParts };
+  it('fits vehicles, track and props into one atlas at the largest raster scale (doc 13 budget)', () => {
+    const world = Object.fromEntries(
+      Object.entries(worldParts).filter(([key]) => !isBackdropPart(key)),
+    );
+    const parts = { ...artParts, ...world };
     const items = artAtlasItems(parts, ART_MAX_PX_PER_U);
     expect(items.map((item) => item.key).sort()).toEqual(
       Object.keys(parts).sort(),
@@ -100,5 +110,67 @@ describe('vehicle art atlas', () => {
       paddingPx: ATLAS_PADDING_PX,
     });
     expect(atlas.frames.size).toBe(items.length);
+  });
+
+  it('fits the backdrops and clouds into their own atlas at 1 px/u', () => {
+    const backdrops = Object.fromEntries(
+      Object.entries(worldParts).filter(([key]) => isBackdropPart(key)),
+    );
+    expect(Object.keys(backdrops).length).toBe(15);
+    const items = artAtlasItems(backdrops, BACKDROP_MAX_PX_PER_U);
+    expect(
+      packAtlas(items, {
+        maxSize: MAX_ATLAS_EDGE_PX,
+        paddingPx: ATLAS_PADDING_PX,
+      }).frames.size,
+    ).toBe(15);
+  });
+
+  it('gives every frame a transparent margin for smooth edges without MSAA (D-013)', () => {
+    const items = sizes(40, 3);
+    const atlas = packAtlas(items, {
+      maxSize: 2048,
+      paddingPx: ATLAS_PADDING_PX,
+    });
+    const frames = framesWithMargin(atlas, items);
+    expect(FRAME_MARGIN_PX).toBeGreaterThanOrEqual(1);
+    for (const item of items) {
+      const frame = frames.get(item.key);
+      const at = atlas.frames.get(item.key);
+      if (!frame || !at) throw new Error(item.key);
+      expect(frame).toEqual({
+        x: at.x - FRAME_MARGIN_PX,
+        y: at.y - FRAME_MARGIN_PX,
+        width: item.width + 2 * FRAME_MARGIN_PX,
+        height: item.height + 2 * FRAME_MARGIN_PX,
+      });
+      expect(frame.x).toBeGreaterThanOrEqual(0);
+      expect(frame.y).toBeGreaterThanOrEqual(0);
+      expect(frame.x + frame.width).toBeLessThanOrEqual(atlas.width);
+      expect(frame.y + frame.height).toBeLessThanOrEqual(atlas.height);
+      // A frame's margin never reaches another part's pixels.
+      for (const other of items) {
+        if (other === item) continue;
+        const o = atlas.frames.get(other.key);
+        if (!o) throw new Error(other.key);
+        const apart =
+          frame.x + frame.width <= o.x ||
+          o.x + other.width <= frame.x ||
+          frame.y + frame.height <= o.y ||
+          o.y + other.height <= frame.y;
+        expect(apart, `${item.key} / ${other.key}`).toBe(true);
+      }
+    }
+  });
+
+  it('puts the pivot origin inside the margin-grown frame', () => {
+    // Part 30 × 10 u, pivot at its bottom middle, rasterised at 2 px/u.
+    const frame = {
+      width: 60 + 2 * FRAME_MARGIN_PX,
+      height: 20 + 2 * FRAME_MARGIN_PX,
+    };
+    const origin = frameOrigin({ x: 15, y: 10 }, 2, frame);
+    expect(origin.x * frame.width).toBeCloseTo(30 + FRAME_MARGIN_PX, 9);
+    expect(origin.y * frame.height).toBeCloseTo(20 + FRAME_MARGIN_PX, 9);
   });
 });

@@ -17,7 +17,7 @@ const table = (seed: number, k: number) =>
 describe('trackTilePlacements (track art along the profile)', () => {
   it('lays a tile every step from the chunk start, on the rail top', () => {
     const t = table(123, 5);
-    const tiles = trackTilePlacements(t, PARTS, 64);
+    const tiles = trackTilePlacements(t, () => PARTS, 64);
     expect(tiles).toHaveLength(chunkWidthU / 64);
     tiles.forEach((tile, i) => {
       expect(tile.x).toBeCloseTo(i * 64, 9);
@@ -28,7 +28,7 @@ describe('trackTilePlacements (track art along the profile)', () => {
 
   it('turns each tile along its chord, so it ends on the next tile start', () => {
     for (const k of [0, 3, 9, 14]) {
-      const tiles = trackTilePlacements(table(77, k), PARTS, 64);
+      const tiles = trackTilePlacements(table(77, k), () => PARTS, 64);
       for (const [i, tile] of tiles.slice(0, -1).entries()) {
         const next = tiles[i + 1];
         if (!next) throw new Error('missing tile');
@@ -46,8 +46,12 @@ describe('trackTilePlacements (track art along the profile)', () => {
   });
 
   it('picks variants deterministically per chunk and mixes them', () => {
-    const a = trackTilePlacements(table(1, 7), PARTS, 64).map((t) => t.part);
-    const b = trackTilePlacements(table(1, 7), PARTS, 64).map((t) => t.part);
+    const a = trackTilePlacements(table(1, 7), () => PARTS, 64).map(
+      (t) => t.part,
+    );
+    const b = trackTilePlacements(table(1, 7), () => PARTS, 64).map(
+      (t) => t.part,
+    );
     expect(a).toEqual(b);
     expect(new Set(a).size).toBe(PARTS.length);
     expect(a.every((part) => PARTS.includes(part))).toBe(true);

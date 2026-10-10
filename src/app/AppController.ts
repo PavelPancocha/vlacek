@@ -234,6 +234,8 @@ export class AppController {
       this.#scene.setReservedInsets(
         corner.getBoundingClientRect().bottom - canvas.top + HUD_GAP_PX,
         canvas.bottom - brake.getBoundingClientRect().top + HUD_GAP_PX,
+        // Animals stay clear of the brake's whole touch area (doc 02).
+        canvas.bottom - (this.#brakeRect?.top ?? canvas.bottom),
       );
     }
   }
@@ -256,6 +258,12 @@ export class AppController {
       renderedVehicles: this.#scene.stats.renderedVehicles,
       artVehicles: this.#scene.stats.artVehicles,
       artAtlas: this.#scene.artAtlas,
+      backdropAtlas: this.#scene.backdropAtlas,
+      scenery: {
+        biome: this.#scene.stats.biome,
+        localities: [...this.#scene.stats.localities],
+        ...this.#nearPropCheck(),
+      },
       consistLengthU: ride
         ? ride.layout.frontOffsetU + ride.layout.tailOffsetU
         : 0,
@@ -277,12 +285,20 @@ export class AppController {
       objects: canvas
         ? this.#scene.objectScreenPositions(canvas.getBoundingClientRect())
         : [],
+      chunkEdges: canvas
+        ? this.#scene.chunkEdgesScreenX(canvas.getBoundingClientRect())
+        : [],
       trainBox: canvas
         ? this.#scene.trainScreenBox(canvas.getBoundingClientRect())
         : undefined,
       brakeRect: this.#brakeRect,
       audio: this.#audio.state,
     };
+  }
+
+  #nearPropCheck(): { nearProps: number; nearPropsOverTrain: number } {
+    const check = this.#scene.nearPropCheck();
+    return { nearProps: check.inView, nearPropsOverTrain: check.overTrain };
   }
 
   dispose(): void {

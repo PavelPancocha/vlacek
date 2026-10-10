@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="28" viewBox="0 0 60 28">
+  <!-- Osobní auto: small blue car, faces right (drives along the village road). Foot centre (30, 28). -->
+  <defs><linearGradient id="blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5dade2"/><stop offset="1" stop-color="#1f618d"/></linearGradient>
+  </defs>
+  <ellipse cx="30" cy="27" rx="28" ry="1.8" fill="#1d2a14" fill-opacity="0.18"/>
+  <path d="M4 22 V15 Q4 12 8 12 L18 11 L24 4 H42 Q46 4 48 8 L52 12 Q57 13 57 17 V22 Z" fill="url(#blue)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M25.6 6 H33 V12 H20 Z M35 6 H41.6 Q44 6 45.4 9 L46.8 12 H35 Z" fill="#cfe4f1" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M27 11 L31 6.4 M37 11 L41 6.4" stroke="#ffffff" stroke-width="0.6"/>
+  <path d="M34 12 V21" stroke="#1a4a73" stroke-width="0.5"/>
+  <rect x="54" y="14.4" width="3" height="2.4" rx="0.6" fill="#fff3c4" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="3.4" y="14.6" width="2.4" height="2.2" rx="0.6" fill="#e74c3c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle cx="15" cy="22" r="5" fill="#2a2d33" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><circle cx="15" cy="22" r="2.2" fill="#c3c8cf"/>
+  <circle cx="46" cy="22" r="5" fill="#2a2d33" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><circle cx="46" cy="22" r="2.2" fill="#c3c8cf"/>
+</svg>

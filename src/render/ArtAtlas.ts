@@ -5,11 +5,18 @@ import {
   MAX_ATLAS_EDGE_PX,
   artAtlasItems,
   artScaleFor,
+  framesWithMargin,
   packAtlas,
 } from './atlasPacking.ts';
 
-const SOURCE_PREFIX = 'vehicle-art-source:';
-const TEXTURE_PREFIX = 'vehicle-art@';
+const SOURCE_PREFIX = 'art-source:';
+
+export interface ArtAtlasOptions {
+  /** Finest raster scale, px per u. */
+  maxPxPerU: number;
+  /** Texture key prefix; one prefix per atlas. */
+  texturePrefix: string;
+}
 
 export interface ArtAtlasInfo {
   width: number;
@@ -37,23 +44,29 @@ export interface ArtSource {
 export function preloadArt(
   scene: Phaser.Scene,
   sources: readonly ArtSource[],
+  maxPxPerU: number = ART_MAX_PX_PER_U,
 ): void {
   for (const source of sources) {
     scene.load.svg(`${SOURCE_PREFIX}${source.key}`, source.url, {
-      scale: ART_MAX_PX_PER_U,
+      scale: maxPxPerU,
     });
   }
+  // Keys are frame names in an atlas: never twice.
+  if (new Set(sources.map((s) => s.key)).size !== sources.length)
+    throw new Error('duplicate art keys');
 }
 
 /**
- * All vehicle art in one canvas texture (doc 07 §4/§10): one texture keeps
- * every vehicle quad in one batch (D-010). The decoded SVG sources stay in
+ * Art parts in one canvas texture (doc 07 §4/§10): one texture keeps every
+ * vehicle, track and prop quad in one batch (D-010); backdrops have their
+ * own, coarser atlas (D-013). The decoded SVG sources stay in
  * memory, so the atlas is re-rasterised at the camera's scale step after a
  * resize (D-011); the old texture is removed only after the scene has moved
  * its images to the new one.
  */
 export class ArtAtlas {
   readonly #scene: Phaser.Scene;
+  readonly #options: ArtAtlasOptions;
   readonly #parts: Readonly<Record<string, ArtSource>>;
   readonly #sources = new Map<string, SourceImage>();
   #version = 0;
@@ -61,8 +74,13 @@ export class ArtAtlas {
   #info: ArtAtlasInfo | undefined;
 
   /** Takes over the loaded sources; throws if a part did not load. */
-  constructor(scene: Phaser.Scene, sources: readonly ArtSource[]) {
+  constructor(
+    scene: Phaser.Scene,
+    sources: readonly ArtSource[],
+    options: ArtAtlasOptions,
+  ) {
     this.#scene = scene;
+    this.#options = options;
     this.#parts = Object.fromEntries(
       sources.map((source) => [source.key, source]),
     );
@@ -98,7 +116,7 @@ export class ArtAtlas {
    * removes with `release` once nothing shows it.
    */
   update(zoom: number): string | undefined {
-    const pxPerU = artScaleFor(zoom);
+    const pxPerU = artScaleFor(zoom, this.#options.maxPxPerU);
     if (this.#info?.pxPerU === pxPerU) return undefined;
     const items = artAtlasItems(this.#parts, pxPerU);
     const plan = packAtlas(items, {
@@ -118,13 +136,12 @@ export class ArtAtlas {
         context.drawImage(image, at.x, at.y, item.width, item.height);
     }
     this.#version += 1;
-    const key = `${TEXTURE_PREFIX}${this.#version}`;
+    const key = `${this.#options.texturePrefix}${this.#version}`;
     const texture = this.#scene.textures.addCanvas(key, canvas);
     if (!texture) throw new Error('art atlas texture not created');
-    for (const item of items) {
-      const at = plan.frames.get(item.key);
-      if (at) texture.add(item.key, 0, at.x, at.y, item.width, item.height);
-    }
+    // Frames include a transparent margin (no MSAA, D-013).
+    for (const [key, frame] of framesWithMargin(plan, items))
+      texture.add(key, 0, frame.x, frame.y, frame.width, frame.height);
     const previous = this.#textureKey;
     this.#textureKey = key;
     this.#info = {

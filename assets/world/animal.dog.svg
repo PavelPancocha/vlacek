@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" viewBox="0 0 30 24">
+  <!-- Pes: friendly brown dog with floppy ears, faces right. Foot centre (15, 24). -->
+  <defs><linearGradient id="dog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c49a6c"/><stop offset="1" stop-color="#8b5a2b"/></linearGradient>
+  </defs>
+  <ellipse cx="15" cy="23.4" rx="12" ry="1.2" fill="#1d2a14" fill-opacity="0.18"/>
+  <path d="M7 23.4 V16 M11 23.4 V17 M19 23.4 V17 M23 23.4 V16" stroke="#8b5a2b" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M4 12 Q4 8 9 8 H20 Q24 8 24 13 Q24 18 19 18 H9 Q4 18 4 12 Z" fill="url(#dog)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M4.4 11 Q0 7 1.6 3.6" stroke="#8b5a2b" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <path d="M21 6 Q22 0.6 27 2 Q30 3.4 29 7.4 Q28 10 24.6 10 Q21 10 21 6 Z" fill="url(#dog)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M23 2.6 Q20 4 21 9 Q23 8 23.6 4 Z" fill="#5a3a1a" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle cx="29.2" cy="6.2" r="0.9" fill="#1b1b1b"/>
+  <path d="M23 12 Q25 14 27 12" stroke="#c0392b" stroke-width="1.4" fill="none"/>
+  <circle cx="26.2" cy="4.6" r="0.75" fill="#1b1b1b"/><circle cx="26.46" cy="4.34" r="0.26" fill="#ffffff"/>
+</svg>

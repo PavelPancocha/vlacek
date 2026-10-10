@@ -11,8 +11,24 @@ import {
   type Shape,
   type ShapedVehicle,
 } from '../content/placeholderShapes.ts';
-import { TRACK_BED_DEPTH_U, worldParts } from '../content/worldArt.ts';
+import {
+  TRACK_BED_DEPTH_U,
+  animalParts,
+  isBackdropPart,
+  worldParts,
+} from '../content/worldArt.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
+import type { Biome } from '../domain/world/Biomes.ts';
+import { chunkOfEntityId } from '../domain/world/ChunkObjects.ts';
+import { hash32 } from '../domain/world/Hash.ts';
+import {
+  ANIMAL_HOP_U,
+  ANIMAL_SCALE,
+  NEAR_DEPTH_RANGE_U,
+  chunkScenery,
+  nearDepthScale,
+  type ChunkScenery,
+} from '../domain/world/Scenery.ts';
 import { embankmentU } from '../domain/world/Terrain.ts';
 import {
   ArtAtlas,
@@ -20,7 +36,14 @@ import {
   type ArtAtlasInfo,
   type ArtSource,
 } from './ArtAtlas.ts';
-import { ChunkView } from './ChunkView.ts';
+import {
+  ART_MAX_PX_PER_U,
+  BACKDROP_MAX_PX_PER_U,
+  frameOrigin,
+} from './atlasPacking.ts';
+import { placeAnimal } from './animalPlacement.ts';
+import { Backdrop } from './Backdrop.ts';
+import { BACK_PLANE_U, ChunkView, NEAR_FOOT_OFFSET_U } from './ChunkView.ts';
 import {
   frameLeftX,
   frameTopY,
@@ -43,32 +66,52 @@ export interface RenderStats {
   /** Rendered vehicles drawn from their art (the rest are placeholders). */
   artVehicles: number;
   renderedChunks: number;
+  /** Biome of the backdrop (the landscape ahead of the train). */
+  biome: Biome | undefined;
+  /** Localities of the chunks in view, left to right. */
+  localities: string[];
 }
 
-/** Hills cover the same share of the screen as at 720 u of view height. */
-const HILLS_REFERENCE_VIEW_U = 720;
+const NO_STATS: RenderStats = {
+  renderedVehicles: 0,
+  artVehicles: 0,
+  renderedChunks: 0,
+  biome: undefined,
+  localities: [],
+};
+
 /** Rail height samples along the train for vertical framing. */
 const SPAN_STEP_U = 32;
 /** Render origin step; keeps GPU coordinates small on endless rides. */
 const ORIGIN_STEP_U = 4096;
 /** Chunk width shared with the generator and TrackWindow (doc 13). */
 const CHUNK_WIDTH_U = gameConfig.world.chunkWidthU;
-/** Interactive objects stand this far into the meadow below the bank. */
-const OBJECT_MEADOW_DEPTH_U = 12;
 const REACTION_TICKS = 40;
-const HILLS_HEIGHT = 560;
-/** Width of the repeating background hills texture (not a chunk width). */
-const HILLS_WIDTH = 1024;
-/**
- * Transparent texture rows under the hills fill. The WebGL tile shader wraps
- * the bottom row onto the sprite's top edge at fractional zoom; a solid
- * bottom row drew a line across the sky. The ground always hides these rows.
- */
-const HILLS_CLEAR_BOTTOM = 4;
+/** Animals keep this far above the controls' strip (u). */
+const FREE_BAND_MARGIN_U = 6;
+/** Transparent border of the generated placeholder textures (px = u). */
+const PLACEHOLDER_MARGIN_PX = 2;
+/** The backdrop shows the biome at this share of the view width. */
+const BIOME_AHEAD_SHARE = 0.65;
+/** Time constant of the backdrop following the rails up and down (s). */
+const HORIZON_EASE_SEC = 0.8;
 
-const DEPTH = { hills: 1, ground: 5, track: 6, train: 7, objects: 9 } as const;
+/** Drawing order (doc 07 §3): sky at the back, objects at the front. */
+const DEPTH = {
+  sky: 0,
+  clouds: 0.5,
+  far: 1,
+  mid: 2,
+  backGround: 3,
+  backProps: 4,
+  ground: 5,
+  track: 6,
+  train: 7,
+  nearProps: 8,
+  objects: 9,
+} as const;
 
-/** Every vehicle and world part, for the one art atlas. */
+/** Vehicles, track, props and animals: the main art atlas. */
 const ART_SOURCES: readonly ArtSource[] = [
   ...Object.entries(artParts).map(([key, part]) => ({
     key,
@@ -76,13 +119,25 @@ const ART_SOURCES: readonly ArtSource[] = [
     widthU: part.widthU,
     heightU: part.heightU,
   })),
-  ...Object.entries(worldParts).map(([key, part]) => ({
+  ...Object.entries(worldParts)
+    .filter(([key]) => !isBackdropPart(key))
+    .map(([key, part]) => ({
+      key,
+      url: worldFileUrl(part.file),
+      widthU: part.widthU,
+      heightU: part.heightU,
+    })),
+];
+
+/** Backdrops and clouds: their own, coarser atlas (D-013). */
+const BACKDROP_SOURCES: readonly ArtSource[] = Object.entries(worldParts)
+  .filter(([key]) => isBackdropPart(key))
+  .map(([key, part]) => ({
     key,
     url: worldFileUrl(part.file),
     widthU: part.widthU,
     heightU: part.heightU,
-  })),
-];
+  }));
 
 function hex(color: string): number {
   return Number.parseInt(color.replace('#', ''), 16);
@@ -105,6 +160,17 @@ function drawShapes(
   }
 }
 
+interface VisibleObject {
+  id: string;
+  x: number;
+  /** Foot of the drawing (render y). */
+  y: number;
+  /** Middle of the drawing, where a tap aims. */
+  centerY: number;
+  /** Tap radius around the middle, covering the drawing. */
+  radiusU: number;
+}
+
 interface VehicleSlot {
   container: Phaser.GameObjects.Container;
   /** Images in drawing order; slots are reused for any vehicle type. */
@@ -123,33 +189,47 @@ export class RideScene extends Phaser.Scene {
   readonly #chunks = new Map<number, ChunkView>();
   readonly #objectImages = new Map<string, Phaser.GameObjects.Image>();
   readonly #slots: VehicleSlot[] = [];
-  #hills: Phaser.GameObjects.TileSprite | undefined;
+  /** Scenery of the chunks around the view; pure, so cached per chunk. */
+  readonly #scenery = new Map<number, ChunkScenery>();
   /** World y (up) of the top screen edge; eased between frames. */
   #cameraTopY: number | undefined;
   #framing: FramingConfig | undefined;
   /** CSS px covered by controls at the top and bottom of the screen. */
-  #insetsCss = { top: 0, bottom: 0 };
+  #insetsCss = { top: 0, bottom: 0, controls: 0 };
   #originX = 0;
   #rideRef: RideSimulation | undefined;
   /** Visible world rectangle (render-local units) of the latest frame. */
   #view = { left: 0, top: 0, zoom: 1 };
-  #visibleObjects: { id: string; x: number; y: number }[] = [];
-  /** Vehicle art; undefined if it failed to load (placeholders drawn). */
+  #visibleObjects: VisibleObject[] = [];
+  /** Vehicle and world art; undefined if it failed (placeholders drawn). */
   #art: ArtAtlas | undefined;
-  stats: RenderStats = {
-    renderedVehicles: 0,
-    artVehicles: 0,
-    renderedChunks: 0,
-  };
+  /** Backdrop art; undefined if it failed (plain sky only). */
+  #backdropArt: ArtAtlas | undefined;
+  #backdrop: Backdrop | undefined;
+  /** Render y of the rails the backdrop stands on; eased. */
+  #horizonY: number | undefined;
+  /** Render y the animals' feet stay above (free of the controls). */
+  #freeBottomY = Infinity;
+  /** Backdrop atlas texture the backdrop currently shows. */
+  #backdropTexture: string | undefined;
+  stats: RenderStats = NO_STATS;
 
   constructor(host: RideSceneHost) {
     super('ride');
     this.#host = host;
   }
 
-  /** Strips covered by HUD controls; the whole train stays between them. */
-  setReservedInsets(topCss: number, bottomCss: number): void {
-    this.#insetsCss = { top: topCss, bottom: bottomCss };
+  /**
+   * Strips covered by HUD controls; the whole train stays between them.
+   * `controlsCss` is the height of the bottom strip including the brake's
+   * enlarged touch area, which the interactive animals stay above.
+   */
+  setReservedInsets(
+    topCss: number,
+    bottomCss: number,
+    controlsCss: number = bottomCss,
+  ): void {
+    this.#insetsCss = { top: topCss, bottom: bottomCss, controls: controlsCss };
   }
 
   /** Size of the art atlas, for diagnostics; undefined if it failed. */
@@ -157,20 +237,47 @@ export class RideScene extends Phaser.Scene {
     return this.#art?.info;
   }
 
+  /** Size of the backdrop atlas, for diagnostics. */
+  get backdropAtlas(): ArtAtlasInfo | undefined {
+    return this.#backdropArt?.info;
+  }
+
   preload(): void {
-    preloadArt(this, ART_SOURCES);
+    preloadArt(this, ART_SOURCES, ART_MAX_PX_PER_U);
+    preloadArt(this, BACKDROP_SOURCES, BACKDROP_MAX_PX_PER_U);
   }
 
   create(): void {
     this.cameras.main.setBackgroundColor('#bfe3f2');
+    // A failed download must not stop the ride (PWA-10): vehicles fall
+    // back to their marked placeholder silhouettes, the backdrop to sky.
     try {
-      this.#art = new ArtAtlas(this, ART_SOURCES);
-      this.events.once('destroy', () => this.#art?.destroy());
+      this.#art = new ArtAtlas(this, ART_SOURCES, {
+        maxPxPerU: ART_MAX_PX_PER_U,
+        texturePrefix: 'art@',
+      });
     } catch (error) {
-      // A failed download must not stop the ride (PWA-10): vehicles fall
-      // back to their marked placeholder silhouettes.
       console.error(error);
     }
+    try {
+      this.#backdropArt = new ArtAtlas(this, BACKDROP_SOURCES, {
+        maxPxPerU: BACKDROP_MAX_PX_PER_U,
+        texturePrefix: 'backdrop@',
+      });
+    } catch (error) {
+      console.error(error);
+    }
+    this.#backdrop = new Backdrop(this, {
+      sky: DEPTH.sky,
+      clouds: DEPTH.clouds,
+      far: DEPTH.far,
+      mid: DEPTH.mid,
+    });
+    this.events.once('destroy', () => {
+      this.#backdrop?.destroy();
+      this.#art?.destroy();
+      this.#backdropArt?.destroy();
+    });
     let tallestU = 0;
     for (const vehicle of this.#host.catalogVehicles()) {
       const art = vehicleArt[vehicle.id];
@@ -179,68 +286,36 @@ export class RideScene extends Phaser.Scene {
         tallestU,
         art && this.#art ? art.heightU : height + vehicle.wheelRadiusU * 1.3,
       );
+      // A transparent margin keeps rotated edges smooth without MSAA.
       const g = this.make.graphics({}, false);
-      drawShapes(g, vehicleShapes(vehicle), 0, height);
+      drawShapes(
+        g,
+        vehicleShapes(vehicle),
+        PLACEHOLDER_MARGIN_PX,
+        height + PLACEHOLDER_MARGIN_PX,
+      );
       g.generateTexture(
         `vehicle-${vehicle.id}`,
-        Math.ceil(vehicle.lengthU),
-        Math.ceil(height),
+        Math.ceil(vehicle.lengthU) + 2 * PLACEHOLDER_MARGIN_PX,
+        Math.ceil(height) + 2 * PLACEHOLDER_MARGIN_PX,
       );
       g.destroy();
     }
     this.#framing = { ...gameConfig.camera, vehicleHeightU: tallestU + 8 };
     const wheel = this.make.graphics({}, false);
-    wheel.fillStyle(0x222222, 1).fillCircle(16, 16, 16);
-    wheel.fillStyle(0x7f8c8d, 1).fillCircle(16, 16, 6);
+    const hub = 16 + PLACEHOLDER_MARGIN_PX;
+    wheel.fillStyle(0x222222, 1).fillCircle(hub, hub, 16);
+    wheel.fillStyle(0x7f8c8d, 1).fillCircle(hub, hub, 6);
     wheel
       .lineStyle(3, 0x7f8c8d, 1)
-      .lineBetween(16, 2, 16, 30)
-      .lineBetween(2, 16, 30, 16);
-    wheel.generateTexture('wheel', 32, 32);
+      .lineBetween(hub, hub - 14, hub, hub + 14)
+      .lineBetween(hub - 14, hub, hub + 14, hub);
+    wheel.generateTexture('wheel', 2 * hub, 2 * hub);
     wheel.destroy();
     const object = this.make.graphics({}, false);
     drawShapes(object, OBJECT_SHAPES, 32, 44);
     object.generateTexture('object-sheep', 64, 48);
     object.destroy();
-    // Seamless tile: the outline starts and ends at the same height and the
-    // fill reaches below the ground line, so no sky shows under the hills.
-    const outline = [
-      0,
-      170,
-      120,
-      140,
-      260,
-      220,
-      420,
-      90,
-      600,
-      200,
-      760,
-      120,
-      900,
-      210,
-      HILLS_WIDTH,
-      170,
-    ];
-    const hills = this.make.graphics({}, false);
-    hills.fillStyle(0xa9d18e, 1);
-    const points: Phaser.Math.Vector2[] = [];
-    for (let i = 0; i < outline.length; i += 2) {
-      points.push(
-        new Phaser.Math.Vector2(outline[i] ?? 0, outline[i + 1] ?? 0),
-      );
-    }
-    points.push(
-      new Phaser.Math.Vector2(HILLS_WIDTH, HILLS_HEIGHT - HILLS_CLEAR_BOTTOM),
-      new Phaser.Math.Vector2(0, HILLS_HEIGHT - HILLS_CLEAR_BOTTOM),
-    );
-    hills.fillPoints(points, true);
-    hills.generateTexture('hills', HILLS_WIDTH, HILLS_HEIGHT);
-    hills.destroy();
-    this.#hills = this.add
-      .tileSprite(0, 0, HILLS_WIDTH, HILLS_HEIGHT, 'hills')
-      .setDepth(DEPTH.hills)
-      .setOrigin(0, 1);
   }
 
   /** CSS px → render-local world point for the latest drawn frame. */
@@ -264,14 +339,11 @@ export class RideScene extends Phaser.Scene {
     canvasRect: DOMRect,
   ): string | undefined {
     const world = this.#toWorld(cssX, cssY, canvasRect);
-    // At least ~40 CSS px around the object, larger than the drawing itself.
-    const radius = Math.max(OBJECT_RADIUS_U * 1.4, 40 * world.unitsPerCss);
     let best: { id: string; distance: number } | undefined;
     for (const object of this.#visibleObjects) {
-      const distance = Math.hypot(
-        world.x - object.x,
-        world.y - (object.y - OBJECT_RADIUS_U),
-      );
+      // At least ~40 CSS px around the object, larger than the drawing.
+      const radius = Math.max(object.radiusU, 40 * world.unitsPerCss);
+      const distance = Math.hypot(world.x - object.x, world.y - object.centerY);
       if (distance <= radius && (!best || distance < best.distance)) {
         best = { id: object.id, distance };
       }
@@ -317,6 +389,24 @@ export class RideScene extends Phaser.Scene {
     return box;
   }
 
+  /** Screen x (CSS px) of the chunk boundaries in view, for E2E. */
+  chunkEdgesScreenX(canvasRect: DOMRect): number[] {
+    const cssPerGame = Math.max(1, canvasRect.width) / this.scale.width;
+    const left = this.#view.left + this.#originX;
+    const right = left + this.scale.width / this.#view.zoom;
+    const edges: number[] = [];
+    for (
+      let k = Math.ceil(left / CHUNK_WIDTH_U);
+      k * CHUNK_WIDTH_U <= right;
+      k++
+    )
+      edges.push(
+        canvasRect.left +
+          (k * CHUNK_WIDTH_U - left) * this.#view.zoom * cssPerGame,
+      );
+    return edges;
+  }
+
   /** Screen positions (CSS px) of visible objects, for diagnostics and E2E. */
   objectScreenPositions(
     canvasRect: DOMRect,
@@ -329,20 +419,63 @@ export class RideScene extends Phaser.Scene {
         (object.x - this.#view.left) * this.#view.zoom * cssPerGame,
       y:
         canvasRect.top +
-        (object.y - OBJECT_RADIUS_U - this.#view.top) *
-          this.#view.zoom *
-          cssPerGame,
+        (object.centerY - this.#view.top) * this.#view.zoom * cssPerGame,
     }));
+  }
+
+  /**
+   * Near-meadow props in view, and those whose drawing overlaps a drawn
+   * vehicle: always 0 (doc 14 §5: the scenery never covers the train).
+   * Diagnostics and E2E.
+   */
+  nearPropCheck(): { inView: number; overTrain: number } {
+    const view = this.cameras.main.worldView;
+    const train = this.#slots
+      .filter((slot) => slot.container.visible)
+      .flatMap((slot) => slot.images.filter((image) => image.visible))
+      .map((image) => image.getBounds());
+    let inView = 0;
+    let overTrain = 0;
+    const near = [
+      ...[...this.#chunks.values()].flatMap((chunk) => chunk.nearProps),
+      // The interactive animals stand in the near meadow too.
+      ...this.#objectImages.values(),
+    ];
+    {
+      for (const prop of near) {
+        const bounds = prop.getBounds();
+        if (!Phaser.Geom.Rectangle.Overlaps(view, bounds)) continue;
+        inView += 1;
+        if (train.some((box) => Phaser.Geom.Rectangle.Overlaps(box, bounds)))
+          overTrain += 1;
+      }
+    }
+    return { inView, overTrain };
   }
 
   #reset(): void {
     this.#destroyChunks();
-    for (const image of this.#objectImages.values()) image.destroy();
-    this.#objectImages.clear();
+    this.#destroyObjects();
+    this.#scenery.clear();
     for (const slot of this.#slots) slot.container.destroy();
     this.#slots.length = 0;
     this.#cameraTopY = undefined;
+    this.#horizonY = undefined;
     this.#visibleObjects = [];
+  }
+
+  #destroyObjects(): void {
+    for (const image of this.#objectImages.values()) image.destroy();
+    this.#objectImages.clear();
+  }
+
+  #sceneryOf(seed: number, chunkIndex: number): ChunkScenery {
+    let scenery = this.#scenery.get(chunkIndex);
+    if (!scenery) {
+      scenery = chunkScenery(seed, chunkIndex);
+      this.#scenery.set(chunkIndex, scenery);
+    }
+    return scenery;
   }
 
   override update(time: number, delta: number): void {
@@ -353,7 +486,7 @@ export class RideScene extends Phaser.Scene {
       this.#rideRef = ride;
     }
     if (!ride) {
-      this.stats = { renderedVehicles: 0, artVehicles: 0, renderedChunks: 0 };
+      this.stats = NO_STATS;
       return;
     }
     const framing = this.#framing;
@@ -382,7 +515,6 @@ export class RideScene extends Phaser.Scene {
 
     const headS =
       ride.previousHeadS + (ride.headS - ride.previousHeadS) * alpha;
-    const head = ride.sample(headS);
     const front = ride.sample(headS + layout.frontOffsetU);
     this.#originX = Math.floor(front.x / ORIGIN_STEP_U) * ORIGIN_STEP_U;
     // Rail heights under the whole train, so slopes never cut it off.
@@ -421,20 +553,68 @@ export class RideScene extends Phaser.Scene {
       top: centerY - viewH / 2,
       zoom,
     };
-    if (this.#hills) {
-      // Distant hills scroll slower than the track (parallax, doc 07 §3).
-      const scale = viewH / HILLS_REFERENCE_VIEW_U;
-      this.#hills.setScale(scale);
-      this.#hills.setPosition(this.#view.left, this.#view.top + viewH);
-      this.#hills.setSize(viewW / scale + 2, HILLS_HEIGHT);
-      this.#hills.tilePositionX = ((head.x * 0.3) / scale) % HILLS_WIDTH;
-    }
+    // Scenery moves by simulation time, so a paused ride stands still.
+    const timeSec = ride.simulationTick / gameConfig.simulation.fixedHz;
 
     const leftX = leftWorldX - 64;
     const rightX = leftWorldX + viewW + 64;
-    this.#drawTrack(ride, leftX, rightX);
+    this.#drawTrack(ride, leftX, rightX, timeSec);
+    // Animals stay above the controls in the bottom corners (doc 02).
+    this.#freeBottomY =
+      this.#view.top +
+      (this.scale.height - this.#insetsCss.controls * gamePerCss) / zoom -
+      FREE_BAND_MARGIN_U;
     this.#drawObjects(ride, leftX, rightX);
     this.#drawTrain(ride, headS, leftX, rightX);
+
+    const horizonTarget = -(minRailY + maxRailY) / 2;
+    this.#horizonY =
+      this.#horizonY === undefined
+        ? horizonTarget
+        : this.#horizonY +
+          (horizonTarget - this.#horizonY) *
+            (1 - Math.exp(-delta / 1000 / HORIZON_EASE_SEC));
+    const aheadX = leftWorldX + viewW * BIOME_AHEAD_SHARE;
+    const biome = this.#sceneryOf(
+      ride.seed,
+      Math.floor(aheadX / CHUNK_WIDTH_U),
+    ).biome;
+    // Lowest top edge of the ground behind the track in view.
+    let groundTopY = -Infinity;
+    for (
+      let s = Math.max(
+        ride.track.startS,
+        headS + layout.frontOffsetU - viewW * 1.1,
+      );
+      s < Math.min(ride.track.endS, headS + layout.frontOffsetU + viewW * 0.5);
+      s += 64
+    ) {
+      const point = ride.sample(s);
+      if (point.x >= leftX && point.x <= rightX)
+        groundTopY = Math.max(groundTopY, -point.y - BACK_PLANE_U);
+    }
+    this.#backdrop?.update(
+      {
+        left: this.#view.left,
+        top: this.#view.top,
+        width: viewW,
+        height: viewH,
+      },
+      this.#horizonY,
+      groundTopY,
+      biome,
+      timeSec,
+      delta / 1000,
+    );
+    const localities: string[] = [];
+    for (
+      let k = Math.floor(leftWorldX / CHUNK_WIDTH_U);
+      k * CHUNK_WIDTH_U < leftWorldX + viewW;
+      k++
+    )
+      localities.push(this.#sceneryOf(ride.seed, k).locality);
+    this.stats.biome = biome;
+    this.stats.localities = localities;
   }
 
   #destroyChunks(): void {
@@ -442,7 +622,12 @@ export class RideScene extends Phaser.Scene {
     this.#chunks.clear();
   }
 
-  #drawTrack(ride: RideSimulation, leftX: number, rightX: number): void {
+  #drawTrack(
+    ride: RideSimulation,
+    leftX: number,
+    rightX: number,
+    timeSec: number,
+  ): void {
     const first = Math.max(
       ride.track.firstChunkIndex,
       Math.floor(leftX / CHUNK_WIDTH_U) - 1,
@@ -457,6 +642,8 @@ export class RideScene extends Phaser.Scene {
         this.#chunks.delete(index);
       }
     }
+    for (const index of this.#scenery.keys())
+      if (index < first || index > last) this.#scenery.delete(index);
     const texture = this.#art?.textureKey;
     const pxPerU = this.#art?.info?.pxPerU;
     const art =
@@ -466,13 +653,24 @@ export class RideScene extends Phaser.Scene {
     for (let k = first; k <= last; k++) {
       let chunk = this.#chunks.get(k);
       if (!chunk) {
-        chunk = new ChunkView(this, ride.track.chunkTable(k), ride.seed, art, {
-          ground: DEPTH.ground,
-          track: DEPTH.track,
-        });
+        chunk = new ChunkView(
+          this,
+          ride.track.chunkTable(k),
+          ride.seed,
+          this.#sceneryOf(ride.seed, k),
+          art,
+          {
+            backGround: DEPTH.backGround,
+            backProps: DEPTH.backProps,
+            ground: DEPTH.ground,
+            track: DEPTH.track,
+            nearProps: DEPTH.nearProps,
+          },
+        );
         this.#chunks.set(k, chunk);
       }
       chunk.setX(k * CHUNK_WIDTH_U - this.#originX);
+      chunk.update(timeSec);
     }
     this.stats.renderedChunks = this.#chunks.size;
   }
@@ -487,28 +685,49 @@ export class RideScene extends Phaser.Scene {
       const point = ride.sample(object.s);
       if (point.x < leftX || point.x > rightX) continue;
       visible.add(object.id);
+      const chunkIndex = chunkOfEntityId(object.id);
+      if (chunkIndex === undefined) continue;
+      const animal = this.#sceneryOf(ride.seed, chunkIndex).animal;
+      const part = worldParts[animalParts[animal.kind]];
+      const x = point.x - this.#originX;
+      // The animal stands in the near meadow, at its depth (doc 05 §2).
+      const meadowY =
+        -point.y +
+        TRACK_BED_DEPTH_U +
+        embankmentU(ride.seed, point.x) +
+        NEAR_FOOT_OFFSET_U;
+      const { depth, fit } = placeAnimal(
+        animal.depth,
+        part.heightU,
+        (this.#freeBottomY - meadowY) / NEAR_DEPTH_RANGE_U,
+      );
+      const scale = fit * ANIMAL_SCALE * nearDepthScale(depth);
       let image = this.#objectImages.get(object.id);
       if (!image) {
-        image = this.add
-          .image(0, 0, 'object-sheep')
-          .setOrigin(0.5, 1)
-          .setDepth(DEPTH.objects);
+        image = this.#animalImage(animalParts[animal.kind], part);
+        // Animals face either way along the track, fixed per animal.
+        image.setFlipX(hash32('animal-facing', object.id) % 2 === 1);
         this.#objectImages.set(object.id, image);
       }
       const age = ride.reactionAge(object.id);
       const hop =
         age !== undefined && age < REACTION_TICKS
-          ? Math.sin((age / REACTION_TICKS) * Math.PI) * 24
+          ? Math.sin((age / REACTION_TICKS) * Math.PI) * ANIMAL_HOP_U * fit
           : 0;
-      const x = point.x - this.#originX;
-      // Objects stand on the meadow in front of the track bed.
-      const y =
-        -point.y +
-        TRACK_BED_DEPTH_U +
-        embankmentU(ride.seed, point.x) +
-        OBJECT_MEADOW_DEPTH_U;
-      image.setPosition(x, y - hop);
-      this.#visibleObjects.push({ id: object.id, x, y });
+      const y = meadowY + depth * NEAR_DEPTH_RANGE_U;
+      const pxPerU = this.#art?.info?.pxPerU;
+      const drawn =
+        pxPerU !== undefined && image.texture.key !== 'object-sheep';
+      const heightU = drawn ? part.heightU * scale : OBJECT_RADIUS_U * 2;
+      const widthU = drawn ? part.widthU * scale : OBJECT_RADIUS_U * 2;
+      image.setScale(drawn ? scale / pxPerU : 1).setPosition(x, y - hop);
+      this.#visibleObjects.push({
+        id: object.id,
+        x,
+        y,
+        centerY: y - heightU / 2,
+        radiusU: Math.max(heightU, widthU) * 0.6,
+      });
     }
     for (const [id, image] of this.#objectImages) {
       if (!visible.has(id)) {
@@ -516,6 +735,23 @@ export class RideScene extends Phaser.Scene {
         this.#objectImages.delete(id);
       }
     }
+  }
+
+  /** An animal from the art atlas, or the marked placeholder without it. */
+  #animalImage(
+    key: string,
+    part: { pivotU: { x: number; y: number } },
+  ): Phaser.GameObjects.Image {
+    const texture = this.#art?.textureKey;
+    const pxPerU = this.#art?.info?.pxPerU;
+    if (texture === undefined || pxPerU === undefined)
+      return this.add
+        .image(0, 0, 'object-sheep')
+        .setOrigin(0.5, 1)
+        .setDepth(DEPTH.objects);
+    const image = this.add.image(0, 0, texture, key).setDepth(DEPTH.objects);
+    const origin = frameOrigin(part.pivotU, pxPerU, image.frame);
+    return image.setOrigin(origin.x, origin.y);
   }
 
   #slot(index: number): VehicleSlot {
@@ -549,12 +785,27 @@ export class RideScene extends Phaser.Scene {
 
   /** Re-rasterises the art for a new zoom step and moves every image over. */
   #updateArtScale(zoom: number): void {
+    const backdropArt = this.#backdropArt;
+    const replacedBackdrop = backdropArt?.update(zoom);
+    const backdropKey = backdropArt?.textureKey;
+    const backdropPxPerU = backdropArt?.info?.pxPerU;
+    if (
+      backdropKey !== undefined &&
+      backdropPxPerU !== undefined &&
+      backdropKey !== this.#backdropTexture
+    ) {
+      this.#backdrop?.setAtlas(backdropKey, backdropPxPerU);
+      this.#backdropTexture = backdropKey;
+      if (replacedBackdrop !== undefined)
+        backdropArt?.release(replacedBackdrop);
+    }
     const art = this.#art;
     const replaced = art?.update(zoom);
     const key = art?.textureKey;
     if (replaced === undefined || key === undefined) return;
-    // Chunks are rebuilt from the new atlas on this frame's draw.
+    // Chunks and animals are rebuilt from the new atlas on this frame's draw.
     this.#destroyChunks();
+    this.#destroyObjects();
     for (const slot of this.#slots) {
       slot.images.forEach((image, i) => {
         const shown = slot.frames[i];
@@ -581,11 +832,9 @@ export class RideScene extends Phaser.Scene {
     layers.forEach((layer, i) => {
       const part = artParts[layer.part];
       const image = this.#image(slot, i, texture, layer.part);
+      const origin = frameOrigin(part.pivotU, pxPerU, image.frame);
       image
-        .setOrigin(
-          (part.pivotU.x * pxPerU) / image.frame.width,
-          (part.pivotU.y * pxPerU) / image.frame.height,
-        )
+        .setOrigin(origin.x, origin.y)
         .setScale(1 / pxPerU)
         .setPosition(layer.x, layer.y)
         .setRotation(layer.rotation);
@@ -601,7 +850,11 @@ export class RideScene extends Phaser.Scene {
   ): number {
     const lift = vehicle.wheelRadiusU * 1.3;
     this.#image(slot, 0, `vehicle-${vehicle.id}`)
-      .setOrigin(0.5, 1)
+      .setOrigin(
+        0.5,
+        (PLACEHOLDER_BODY_HEIGHT_U + PLACEHOLDER_MARGIN_PX) /
+          (PLACEHOLDER_BODY_HEIGHT_U + 2 * PLACEHOLDER_MARGIN_PX),
+      )
       .setScale(1)
       .setRotation(0)
       .setPosition(0, -lift);

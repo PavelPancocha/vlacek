@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="40" viewBox="0 0 16 40">
+  <!-- Výpravčí: red cap, dark blue uniform, signal paddle (plácačka). Foot centre (8, 40). -->
+  <defs>
+  </defs>
+  <ellipse cx="8" cy="39" rx="6" ry="1" fill="#1d2a14" fill-opacity="0.18"/>
+  <path d="M3.2 39.6 L3.65 23.95 L6.55 23.95 L6.33 39.6 Z M7.67 39.6 L7.45 23.95 L10.35 23.95 L10.8 39.6 Z" fill="#1b2631" stroke="#1d2a14" stroke-width="0.5"/><path d="M2.31 39.82 H6.55 V38.04 H2.31 Z M7.45 39.82 H12.14 V38.04 H7.45 Z" fill="#2a2d33"/><path d="M2.08 25.07 Q1.64 12.78 7 11.66 Q12.36 12.78 11.92 25.07 Z" fill="#1f4e79" stroke="#1d2a14" stroke-width="0.5"/><path d="M11.02 13.89 Q13.26 19.48 12.36 24.4" stroke="#1f4e79" stroke-width="2.46" fill="none" stroke-linecap="round"/><circle cx="12.36" cy="24.85" r="1.23" fill="#f1c7a5"/><rect x="5.99" y="9.42" width="2.01" height="2.68" fill="#f1c7a5"/><circle cx="7" cy="6.07" r="3.8" fill="#f1c7a5" stroke="#1d2a14" stroke-width="0.45"/><path d="M3.09 6.07 Q2.75 1.15 7 0.93 Q11.25 1.15 10.8 5.4 Q7.67 3.16 3.09 6.07 Z" fill="#3e2723" stroke="#1d2a14" stroke-width="0.35"/><path d="M1.41 3.39 H12.59 V2.27 H10.58 Q10.58 -1.75 7 -1.75 Q3.42 -1.75 3.42 2.27 H1.41 Z" fill="#c0392b" stroke="#1d2a14" stroke-width="0.45"/>
+  <path d="M11.6 25 L14 17" stroke="#2a2d33" stroke-width="0.8"/>
+  <circle cx="14.4" cy="14.600000000000001" r="2.6" fill="#ffffff" stroke="#c0392b" stroke-width="1.2"/>
+</svg>

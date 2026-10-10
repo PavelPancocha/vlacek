@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="66" height="24" viewBox="0 0 66 24">
-  <!-- Track tile tile-c: rail (top at y = 1), fastenings, wooden sleeper
+  <!-- Track tile tile-c (grass verge): rail (top at y = 1), fastenings, wooden sleeper
        ends every 16 u, ballast and grass verge. Laid every 64 u along the
        track, so x 64–66 overlaps the next tile; the edges hold only
        x-invariant bands. The bottom row matches the embankment colour. -->

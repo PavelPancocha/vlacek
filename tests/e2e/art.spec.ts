@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { artParts } from '../../src/content/artManifest.ts';
+import { isBackdropPart, worldParts } from '../../src/content/worldArt.ts';
 import { snapshot, startRide, tapAction } from './helpers.ts';
+
+/** Vehicles, track, props and animals share the main atlas (D-013). */
+const MAIN_FRAMES =
+  Object.keys(artParts).length +
+  Object.keys(worldParts).filter((key) => !isBackdropPart(key)).length;
 
 test.describe('vehicle art (doc 14 §3)', () => {
   test('the ride draws every vehicle from its art in one atlas', async ({
@@ -9,7 +16,7 @@ test.describe('vehicle art (doc 14 §3)', () => {
     await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(3);
     const state = await snapshot(page);
     expect(state.renderedVehicles).toBe(3);
-    expect(state.artAtlas?.frames).toBe(36);
+    expect(state.artAtlas?.frames).toBe(MAIN_FRAMES);
     expect(state.artAtlas?.width).toBeLessThanOrEqual(2048);
     expect(state.artAtlas?.height).toBeLessThanOrEqual(2048);
   });

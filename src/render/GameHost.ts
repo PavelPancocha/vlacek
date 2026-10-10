@@ -55,7 +55,9 @@ export function createGameHost(options: GameHostOptions): GameHost {
     },
     // One texture per batch: Phaser 4.2.1's WebGL multi-texture batching
     // drew rotated quads of interleaved textures as sheared wedges (D-010).
-    render: { maxTextures: 1 },
+    // No MSAA: every edge comes from texture filtering (atlas frame margins,
+    // baked ground), and MSAA halved the frame rate on software GL (D-013).
+    render: { maxTextures: 1, antialiasGL: false },
     autoFocus: false,
     banner: false,
     audio: { noAudio: true },

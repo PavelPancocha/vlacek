@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="46" height="50" viewBox="0 0 46 50">
+  <!-- Srnka: roe deer with a white rump, faces right. Foot centre (23, 50). -->
+  <defs><linearGradient id="deer" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c08a52"/><stop offset="1" stop-color="#8a5a32"/></linearGradient>
+  </defs>
+  <ellipse cx="23" cy="49.4" rx="16" ry="1.6" fill="#1d2a14" fill-opacity="0.18"/>
+  <path d="M14 49.4 L15 34 M18 49.4 L18 35 M30 49.4 L29 35 M34 49.4 L32 34" stroke="#8a5a32" stroke-width="2" stroke-linecap="round"/>
+  <path d="M9 30 Q9 22 18 22 H30 Q36 22 36 29 Q36 36 29 37 H16 Q9 37 9 30 Z" fill="url(#deer)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M10 26 Q8 28 9 32 Q12 30 12 27 Z" fill="#f4f1ea"/>
+  <path d="M31 24 L35 12 Q36 9 39 10 L42 12 Q44 14 42 16 L38 16 L36 26 Z" fill="url(#deer)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M37 10 Q35 6 34 7 Q34.6 9 36.4 10.6 M39.6 9.6 Q41 5.6 42.4 6.6 Q41.4 8.4 40.4 10" fill="#a0683a" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle cx="43" cy="14.6" r="0.9" fill="#1b1b1b"/>
+  <circle cx="39.4" cy="12" r="0.8" fill="#1b1b1b"/><circle cx="39.68" cy="11.72" r="0.28" fill="#ffffff"/>
+</svg>

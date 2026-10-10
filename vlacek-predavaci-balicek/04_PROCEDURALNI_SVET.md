@@ -90,6 +90,12 @@ Tohle je výchozí gramatika, nikoli tvrzení, že celá mapa je unikátní bez 
 
 Poslední chunk biomového bloku provádí postupný vizuální přechod k dalšímu biomu. Krajinu míchat prostorově, ne časovým přepnutím celé obrazovky. Vzdálené hory či moře se objeví před hlavním přechodem. Nesmí následovat okamžitý skok ze zasněženého tunelu do tropické džungle.
 
+Implementace ([D-013](../docs/decisions/013-landscape-localities-and-backdrops.md)) má tři části.
+
+- **Biom a lokalita.** `biomeAt(seed, k)` počítá biom z gramatiky pro libovolný, i záporný chunk. `chunkScenery(seed, k)` vybere lokalitu ze šablon v `sceneryTemplates.ts`, například pastvinu, pole, farmu, vesnici, les, paseku, rybník, mlýn, přístav nebo horskou chatu. Pak rozmístí její rekvizity se stabilními ID `g1:chunk:k:prop:n`.
+- **Sloty.** Slot 0 je klidný, nádraží stojí ve slotu 1 nebo 2 na rovině aspoň 448 u. Slot 7 přepíná od x = 512 na klidnou lokalitu dalšího biomu, takže přechod je prostorový. Pozadí navíc změnu biomu prolne.
+- **Voda.** Je to rovná nádrž v rámci jednoho chunku se zaoblenými konci. Lodě i se svou trasou zůstávají na vodě, stavby a stromy na suchu, nádraží je suché. Traktor, auto a lodě nejezdí v polovině přechodového chunku.
+
 ## 6. Rozvržení výrazných motivů
 
 Generovat v pořadí: **biome → profil → rezervace velkých objektů → komunikace → vegetace → zvířata → drobné interakce**.

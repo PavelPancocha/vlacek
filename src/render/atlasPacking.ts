@@ -53,11 +53,13 @@ export function packAtlas(
 }
 
 /**
- * Largest raster scale of vehicle art, px per u: above the camera zoom of
- * common screens (≈ 1.7 on a 2560 CSS px wide window at the capped DPR,
- * D-008). The atlas must fit at this scale.
+ * Largest raster scale of vehicle and world art, px per u: above the
+ * camera zoom of common screens (≈ 1.7 on a 2560 CSS px wide window at the
+ * capped DPR, D-008). Vehicles, track and props must fit one atlas at it.
  */
-export const ART_MAX_PX_PER_U = 2.5;
+export const ART_MAX_PX_PER_U = 2;
+/** Backdrops are distant and soft: their own atlas stops at 1 px/u (D-013). */
+export const BACKDROP_MAX_PX_PER_U = 1;
 const ART_MIN_PX_PER_U = 0.5;
 /** Raster scale steps; a resize within one step keeps the atlas. */
 const ART_SCALE_STEP = 0.25;
@@ -67,13 +69,61 @@ const ART_SCALE_STEP = 0.25;
  * above it, so the browser's vector rasteriser anti-aliases the art at
  * nearly the drawn size instead of the GPU shrinking a large bitmap.
  */
-export function artScaleFor(zoom: number): number {
+export function artScaleFor(
+  zoom: number,
+  maxPxPerU: number = ART_MAX_PX_PER_U,
+): number {
   const step = Math.ceil(zoom / ART_SCALE_STEP - 1e-9) * ART_SCALE_STEP;
-  return Math.min(ART_MAX_PX_PER_U, Math.max(ART_MIN_PX_PER_U, step));
+  return Math.min(maxPxPerU, Math.max(ART_MIN_PX_PER_U, step));
 }
 /** Doc 13 `assetBudgets.preferredMaxAtlasEdgePx`. */
 export const MAX_ATLAS_EDGE_PX = 2048;
 export const ATLAS_PADDING_PX = 2;
+/**
+ * Transparent pixels each atlas frame includes around its part (D-013):
+ * the game draws without MSAA, so the edge of a rotated quad must fall on
+ * transparent texels for texture filtering to smooth it. At most half the
+ * padding, so a margin never reaches a neighbour's pixels.
+ */
+export const FRAME_MARGIN_PX = 1;
+
+export interface FrameRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Atlas frame of each packed item, grown by FRAME_MARGIN_PX. */
+export function framesWithMargin(
+  plan: PackedAtlas,
+  items: readonly AtlasItem[],
+): Map<string, FrameRect> {
+  const frames = new Map<string, FrameRect>();
+  for (const item of items) {
+    const at = plan.frames.get(item.key);
+    if (!at) continue;
+    frames.set(item.key, {
+      x: at.x - FRAME_MARGIN_PX,
+      y: at.y - FRAME_MARGIN_PX,
+      width: item.width + 2 * FRAME_MARGIN_PX,
+      height: item.height + 2 * FRAME_MARGIN_PX,
+    });
+  }
+  return frames;
+}
+
+/** Origin (0 … 1) of a part's pivot (u) in its margin-grown frame (px). */
+export function frameOrigin(
+  pivotU: { x: number; y: number },
+  pxPerU: number,
+  frame: { width: number; height: number },
+): { x: number; y: number } {
+  return {
+    x: (pivotU.x * pxPerU + FRAME_MARGIN_PX) / frame.width,
+    y: (pivotU.y * pxPerU + FRAME_MARGIN_PX) / frame.height,
+  };
+}
 
 /** Atlas frames for art parts sized in u, rasterised at `pxPerU`. */
 export function artAtlasItems(

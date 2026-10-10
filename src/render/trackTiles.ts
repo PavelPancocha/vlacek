@@ -16,12 +16,13 @@ export interface TilePlacement<K extends string = string> {
  * the chunk start, its rail on the chunk's own samples and turned along
  * the chord to the next tile start. Grades change slowly (D-009), so the
  * chords stay within a fraction of a unit of the curve and the tiles'
- * overlap hides the joints. Variants are a cosmetic choice per chunk and
- * tile, the same on every visit.
+ * overlap hides the joints. `parts` gives the tile set at a chunk-local x
+ * (the verge follows the ground); variants are a cosmetic choice per
+ * chunk and tile, the same on every visit.
  */
 export function trackTilePlacements<K extends string>(
   table: ArcLengthTable,
-  parts: readonly K[],
+  parts: (localX: number) => readonly K[],
   stepU: number,
 ): TilePlacement<K>[] {
   const x0 = table.xs[0] ?? 0;
@@ -33,8 +34,8 @@ export function trackTilePlacements<K extends string>(
     const y = -(table.ys[i] ?? 0);
     const nextX = (table.xs[i + stride] ?? x0) - x0;
     const nextY = -(table.ys[i + stride] ?? 0);
-    const part =
-      parts[hash32('track-tile', table.chunkIndex, i) % parts.length];
+    const set = parts(x);
+    const part = set[hash32('track-tile', table.chunkIndex, i) % set.length];
     if (part === undefined) throw new RangeError('no track tile parts');
     tiles.push({
       part,

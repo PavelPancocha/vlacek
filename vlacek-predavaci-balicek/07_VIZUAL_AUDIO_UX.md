@@ -42,6 +42,14 @@ Pozadí používá dvě až tři parallax rychlosti. Nejbližší fyzický teré
 
 Implementace vrstev 5 a 6 ([D-012](../docs/decisions/012-track-tiles-and-terrain.md)): kolej tvoří vektorové dlaždice z atlasu, pokládané po 64 u a otočené podle profilu. Pod nimi je svah náspu a louka v pásech, které k divákovi tmavnou. Zem každého chunku přesahuje do dalšího, aby na Canvasu nevznikl šev.
 
+Implementace vrstev 1–5 a 8–9 ([D-013](../docs/decisions/013-landscape-localities-and-backdrops.md)):
+
+- **Obloha a mraky.** Obloha je přechod barev. Mraky se posouvají rychlostí 0,06 a unášejí se podle simulačního času, takže v pauze stojí.
+- **Pozadí biomu.** Vzdálené pozadí se posouvá rychlostí 0,25, střední 0,55. Při změně biomu se prolne za 1,2 s.
+- **Zem za tratí.** Pole mají šikmé hranice ubíhající k obzoru a nádrže rovnou hladinu. Silnice je pod autem. Celá zem chunku se jednou vykreslí do textury.
+- **Rekvizity.** Zadní rekvizity se s hloubkou zmenšují, blízké se zvětšují. Žádná blízká rekvizita ani zvíře nepřesahuje do vlaku.
+- **Bez MSAA.** Hra se kreslí bez MSAA, protože hrany vznikají z textur: snímky atlasu mají 1 px průhledného okraje a zem je předkreslená. Bez MSAA běží jízda v softwarovém WebGL dvakrát rychleji.
+
 ## 4. Specifikace vozidlových assetů
 
 Každý vozidlový typ musí být rozpoznatelný při běžné velikosti a mít náhled pro katalog. Obrázky se připravují alespoň pro základní a vyšší hustotu nebo ve zdrojovém vektoru; runtime nemusí pracovat s velkým SVG DOM.
@@ -111,6 +119,17 @@ Výchozí cíle, které se měří na skutečném buildu:
 - Úplný offline balík se všemi lokomotivami, vozy, prostředími a zvuky cílit do 45 MiB přenášených souborů.
 - Odhad dekódovaných textur: do 96 MiB v úsporném profilu, do 192 MiB ve standardním. To není totéž jako velikost PNG na disku.
 - Běžné atlasy nejvýše 2048 × 2048, skutečný limit respektuje zjištěná kapacita rendereru. Není nutné mít všech šest biomů současně na GPU.
+
+Stav ([D-013](../docs/decisions/013-landscape-localities-and-backdrops.md)): hra má dva atlasy, oba do 2048 × 2048:
+
+- hlavní atlas pro vozidla, kolej, rekvizity a zvířata, do 2 px/u;
+- atlas pozadí a mraků všech šesti biomů, do 1 px/u.
+
+Dekódované textury se odhadují asi na 60 MiB:
+
+- atlasy;
+- zdrojové obrázky dílů;
+- zem nejvýše šesti živých chunků v nejvýše 1 px/u.
 
 Přepínání biome nesmí na hlavním vlákně najednou dekódovat velkou novou sadu a zadrhnout řízení. Přednačíst aktuální a následující prostředí; po odjezdu a uvolnění referencí odložit nepotřebné textury. Dlouhý vlak za kamerou potřebuje geometrii, ne všechny dekódované obrázky minulého lesa.
 

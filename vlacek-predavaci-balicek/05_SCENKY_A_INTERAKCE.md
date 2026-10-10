@@ -28,6 +28,12 @@ Během `playing` další dotyk animaci nevrací na první frame. Lze přidat dro
 
 Hit oblasti jsou větší než malé obrázky. Při překryvu vyhrává vrchní viditelná interaktivní vrstva, pak bližší střed. Objekty za plnou překážkou, pod UI nebo mimo renderovací výřez nejsou aktivní dotykové cíle.
 
+Implementace zvířete v louce ([D-013](../docs/decisions/013-landscape-localities-and-backdrops.md)) má tři pravidla.
+
+- **Druh.** Druh určí lokalita: ovce a kráva na pastvině, kachna na rybníčku, srnec a liška v lese, racek na pláži.
+- **Velikost.** Zvíře se kreslí dvakrát větší než okolní dekorace. Hloubku v louce volí generátor tak, aby kresba i se skokem reakce zůstala pod vlakem.
+- **Ovládání.** Zvíře nikdy nestojí pod brzdou ani houkačkou. Kde je pruh mezi vlakem a tlačítky užší, například na telefonu naležato, kreslí se menší. Hit-test míří na střed kresby s poloměrem podle její velikosti, nejméně 40 CSS px.
+
 ## 3. Nádraží bez povinné zastávky
 
 Stanice má ploché nástupiště, budovu, světla a několik lidí. Při přiblížení nebo houkání může výpravčí zamávat. Jízda se nikdy automaticky nezmění.

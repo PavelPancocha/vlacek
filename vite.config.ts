@@ -44,10 +44,14 @@ export default defineConfig({
     // Phaser is one ~1.4 MB chunk that cannot be split meaningfully; the real
     // limit is the doc 13 transfer budget checked by `npm run report:budgets`.
     chunkSizeWarningLimit: 1600,
-    // Vehicle art stays real files: Phaser's loader decodes every data: URI
-    // as base64, so Vite's URL-encoded inline SVGs failed to load (D-011).
+    // Vehicle and world art stay real files: Phaser's loader decodes every
+    // data: URI as base64, so Vite's URL-encoded inline SVGs failed to load
+    // and froze the ride (D-011, D-013).
     assetsInlineLimit: (filePath) =>
-      filePath.includes('/assets/vehicles/') ? false : undefined,
+      filePath.includes('/assets/vehicles/') ||
+      filePath.includes('/assets/world/')
+        ? false
+        : undefined,
   },
   define: { __APP_BUILD_ID__: JSON.stringify(buildId) },
   plugins: [

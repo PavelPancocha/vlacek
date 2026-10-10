@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="46" height="26" viewBox="0 0 46 26">
+  <!-- Hračky na písku: a blue bucket, a yellow spade and a little sandcastle with a flag. Foot centre (23, 26). -->
+  <defs><linearGradient id="bucket" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5dade2"/><stop offset="1" stop-color="#2e86c1"/></linearGradient>
+  </defs>
+  <ellipse cx="23" cy="25" rx="22" ry="1.8" fill="#1d2a14" fill-opacity="0.16"/>
+  <path d="M24 25 V17 H27 V14 H29 V17 H33 V14 H35 V17 H38 V25 Z" fill="#e8cf8e" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M28 11 V6 L32 8 L28 10" fill="#e74c3c" stroke="#5a3e2b" stroke-width="0.6"/>
+  <path d="M28 14 V6" stroke="#5a3e2b" stroke-width="0.7"/>
+  <rect x="29.6" y="20" width="2.6" height="5" rx="1.3" fill="#a5894e"/>
+  <path d="M3 13 L5 25 H16 L18 13 Z" fill="url(#bucket)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M3 13 Q10.5 4 18 13" stroke="#1f5f8f" stroke-width="0.9" fill="none"/>
+  <path d="M4.2 17 H16.8" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.8"/>
+  <path d="M40 25 L44 8" stroke="#f1c40f" stroke-width="1.6" stroke-linecap="round"/><path d="M38 23 q2 4 5 2 l-1 -4 Z" fill="#f1c40f" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+</svg>

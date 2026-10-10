@@ -68,10 +68,16 @@ export interface TerrainConfig {
 
 export interface WorldConfig {
   chunkWidthU: number;
+  /** Chunks of one biome block (doc 04 §5–6). */
+  chunksPerBiomeBlock: number;
+  /** Biome blocks of one route itinerary (doc 04 §5). */
+  blocksPerRouteCycle: number;
   /** Absolute grade bound for validation and the motion model. */
   maxTrackGrade: number;
   profile: TrackProfileConfig;
   terrain: TerrainConfig;
+  /** Tries per scenery prop before it is left out (doc 04 §6). */
+  maxPlacementAttempts: number;
   arcSampleSpacingU: number;
   geometryLookAheadU: number;
   geometryTailMarginU: number;
@@ -144,6 +150,8 @@ export const gameConfig: GameConfig = {
   },
   world: {
     chunkWidthU: 1024,
+    chunksPerBiomeBlock: 8,
+    blocksPerRouteCycle: 8,
     maxTrackGrade: 0.12,
     profile: {
       blockChunks: 8,
@@ -159,6 +167,7 @@ export const gameConfig: GameConfig = {
       lengthStepU: 64,
     },
     terrain: { latticeU: 512, maxEmbankmentU: 40 },
+    maxPlacementAttempts: 8,
     arcSampleSpacingU: 8,
     geometryLookAheadU: 2048,
     geometryTailMarginU: 1024,
@@ -237,6 +246,12 @@ export function validateGameConfig(config: GameConfig): string[] {
       positive(train.slowModeSpeedFactor) && train.slowModeSpeedFactor <= 1,
     ],
     ['world.chunkWidthU', positive(world.chunkWidthU)],
+    ['world.chunksPerBiomeBlock', positiveInteger(world.chunksPerBiomeBlock)],
+    [
+      'world.blocksPerRouteCycle',
+      // One block per biome of the itinerary (doc 04 §5).
+      world.blocksPerRouteCycle === 8,
+    ],
     [
       'camera.trainWidthFraction',
       // It sets the zoom, so 0 would divide the viewport by zero.
@@ -272,6 +287,7 @@ export function validateGameConfig(config: GameConfig): string[] {
     ['world.profile.transitionU', positive(world.profile.transitionU)],
     ['world.profile.lengthStepU', positive(world.profile.lengthStepU)],
     ['world.terrain.latticeU', positive(world.terrain.latticeU)],
+    ['world.maxPlacementAttempts', positiveInteger(world.maxPlacementAttempts)],
     [
       'world.terrain.maxEmbankmentU',
       Number.isFinite(world.terrain.maxEmbankmentU) &&
