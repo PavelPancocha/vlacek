@@ -41,7 +41,7 @@ Vlastník zvolil „vektory a vyřezaná scenérie“. Referenční listy ale ni
    4. Střední pozadí: posun 0,55.
    5. Zem za tratí: pole se šikmými hranicemi, skvrny, voda, silnice pod autem.
    6. Zadní rekvizity.
-   7. Násep a louka.
+   7. Násep a louka. Kde se v přechodovém chunku mění styl louky (třeba louka a lesní půda), barvy pásů i náspu přecházejí plynule přes 192 u (`blendNearPalette`), bez svislého švu.
    8. Kolej.
    9. Vlak.
    10. Blízké rekvizity.

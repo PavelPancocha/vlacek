@@ -36,6 +36,8 @@ import {
   BACK_PALETTE,
   NEAR_PALETTE,
   WATER_PALETTE,
+  blendNearPalette,
+  type NearPalette,
   type WaterPalette,
 } from './groundPalette.ts';
 import { glintAlpha, swayAmplitudeRad, swayAngle } from './ambientMotion.ts';
@@ -139,6 +141,41 @@ export interface ChunkDepths {
 interface MovingProp {
   image: Phaser.GameObjects.Image;
   prop: SceneryProp;
+}
+
+/** Half the width of the fade where the near ground changes style, u. */
+const NEAR_BLEND_HALF_U = 96;
+const NEAR_BLEND_STEP_U = 4;
+
+/** Places where the near ground changes style, with both styles. */
+function nearEdges(
+  spans: readonly GroundSpan<NearGround>[],
+): { x: number; left: NearGround; right: NearGround }[] {
+  const edges: { x: number; left: NearGround; right: NearGround }[] = [];
+  for (let i = 1; i < spans.length; i++) {
+    const left = spans[i - 1];
+    const right = spans[i];
+    if (left && right && left.style !== right.style)
+      edges.push({ x: right.fromX, left: left.style, right: right.style });
+  }
+  return edges;
+}
+
+/** Strips across a style edge at x, each with its share of the right style. */
+function blendStrips(x: number): { fromX: number; toX: number; t: number }[] {
+  const strips: { fromX: number; toX: number; t: number }[] = [];
+  const start = x - NEAR_BLEND_HALF_U;
+  for (
+    let from = Math.max(0, start);
+    from < Math.min(CHUNK_WIDTH_U, x + NEAR_BLEND_HALF_U);
+    from += NEAR_BLEND_STEP_U
+  )
+    strips.push({
+      fromX: from,
+      toX: Math.min(CHUNK_WIDTH_U, from + NEAR_BLEND_STEP_U),
+      t: (from + NEAR_BLEND_STEP_U / 2 - start) / (2 * NEAR_BLEND_HALF_U),
+    });
+  return strips;
 }
 
 /**
@@ -245,6 +282,21 @@ export class ChunkView {
     const ground = this.#bake(
       (g) => {
         for (const span of scenery.near) this.#paintNear(g, span, bandsEnd);
+        // Where the ground changes style it fades over, without a seam.
+        for (const edge of nearEdges(scenery.near))
+          for (const strip of blendStrips(edge.x))
+            this.#paintNearBands(
+              g,
+              blendNearPalette(
+                NEAR_PALETTE[edge.left],
+                NEAR_PALETTE[edge.right],
+                strip.t,
+              ),
+              strip.fromX,
+              strip.toX,
+              bandsEnd,
+            );
+        for (const span of scenery.near) this.#paintNearShade(g, span);
         if (scenery.crossing)
           this.#paintCrossingRoad(
             g,
@@ -275,6 +327,23 @@ export class ChunkView {
           )
           .setOrigin(0, 0),
       );
+    for (const edge of nearEdges(scenery.near))
+      for (const strip of blendStrips(edge.x))
+        ground.add(
+          scene.add
+            .rectangle(
+              strip.fromX,
+              bandsEnd - 1,
+              strip.toX - strip.fromX + GROUND_OVERLAP_U,
+              GROUND_DEPTH_U,
+              blendNearPalette(
+                NEAR_PALETTE[edge.left],
+                NEAR_PALETTE[edge.right],
+                strip.t,
+              ).bands.at(-1)?.color ?? 0x74b448,
+            )
+            .setOrigin(0, 0),
+        );
     if (scenery.crossing) {
       // The road runs on below the painted meadow.
       const x = scenery.crossing.localXU;
@@ -691,15 +760,31 @@ export class ChunkView {
     span: GroundSpan<NearGround>,
     bandsEnd: number,
   ): void {
-    const palette = NEAR_PALETTE[span.style];
+    this.#paintNearBands(
+      g,
+      NEAR_PALETTE[span.style],
+      span.fromX,
+      span.toX,
+      bandsEnd,
+    );
+  }
+
+  /** Embankment face and meadow bands of a palette over [fromX, toX]. */
+  #paintNearBands(
+    g: Phaser.GameObjects.Graphics,
+    palette: NearPalette,
+    fromX: number,
+    toX: number,
+    bandsEnd: number,
+  ): void {
     const rail = (x: number) => -this.#railAt(x);
     const meadow = (x: number) => this.#meadowTop(x);
     // Embankment face from under the track tiles down to the meadow.
     g.fillStyle(palette.bank, 1);
     g.fillPoints(
       this.#band(
-        span.fromX,
-        span.toX,
+        fromX,
+        toX,
         (x) => rail(x) + TRACK_BED_DEPTH_U - 2,
         (x) => meadow(x) + 1,
       ),
@@ -711,19 +796,25 @@ export class ChunkView {
       g.fillStyle(stripe.color, 1);
       g.fillPoints(
         this.#band(
-          span.fromX,
-          span.toX,
+          fromX,
+          toX,
           (x) => meadow(x) + stripe.fromU,
           (x) => (next ? meadow(x) + next.fromU + 1 : bandsEnd + 2),
         ),
         true,
       );
     });
-    // Soft shadow where the bank meets the meadow.
-    g.lineStyle(1.6, palette.bankShade, 0.7);
+  }
+
+  /** Soft shadow where the bank meets the meadow. */
+  #paintNearShade(
+    g: Phaser.GameObjects.Graphics,
+    span: GroundSpan<NearGround>,
+  ): void {
+    g.lineStyle(1.6, NEAR_PALETTE[span.style].bankShade, 0.7);
     g.strokePoints(
       this.#samples(span.fromX, span.toX).map(
-        (x) => new Phaser.Math.Vector2(x, meadow(x)),
+        (x) => new Phaser.Math.Vector2(x, this.#meadowTop(x)),
       ),
       false,
       false,

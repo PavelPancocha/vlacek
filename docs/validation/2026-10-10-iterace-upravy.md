@@ -381,3 +381,13 @@ Snímky ze skutečné aplikace:
 Známá vada mimo G4: kde začíná lesní lokalita, mění se barva blízké louky ostrým svislým okrajem. Vada je už v buildu G3; oprava je další samostatný krok.
 
 Fyzický tablet, telefon a Tesla: **NEOVĚŘENO**.
+
+## Oprava: ostrý okraj louky na přechodu biomů
+
+Kde v přechodovém chunku (slot 7, od x = 512) začínala lesní lokalita, měnila se barva blízké louky a náspu ostrým svislým okrajem přes celou výšku obrazu. Vada vznikla v E2 ([D-013](../decisions/013-landscape-localities-and-backdrops.md)) a byla vidět i v buildu G3, viz [před opravou](img/2026-10-10-prechod-louky-pred.jpg). Teď louka i násep přecházejí plynule přes 192 u, viz [po opravě](img/2026-10-10-prechod-louky-po.jpg). Okraje polí za tratí zůstávají záměrně ostré a šikmé.
+
+| Test                                                                                               | Red                                                    | Green                                   |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | --------------------------------------- |
+| Unit prolnutí palet louky: na krajích přesně levá a pravá paleta, mezi nimi barvy každého odsazení | 2 FAIL proti stubu (vrací levou)                       | 2 PASS                                  |
+| Řádek pixelů přes přechod ve světě 123 (chunk 7)                                                   | skok o 20–48 úrovní kanálu na jednom pixelu (build G3) | kroky po jedné úrovni zhruba každé 2 px |
+| `npm test`, E2E krajiny a vykreslování (WebGL i Canvas stejně)                                     | —                                                      | 451 unit PASS; 14 E2E PASS              |

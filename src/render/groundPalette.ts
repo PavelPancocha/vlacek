@@ -146,3 +146,44 @@ export const WATER_PALETTE: Readonly<Record<'lake' | 'sea', WaterPalette>> = {
     ripple: 0xffffff,
   },
 };
+
+/**
+ * A near-ground palette part way from `left` (t = 0) to `right` (t = 1),
+ * for the soft edge where the ground changes style: the bands cut at
+ * both palettes' offsets, each coloured between the two at its offset.
+ */
+export function blendNearPalette(
+  left: NearPalette,
+  right: NearPalette,
+  t: number,
+): NearPalette {
+  const cuts = [
+    ...new Set([...left.bands, ...right.bands].map((band) => band.fromU)),
+  ].sort((a, b) => a - b);
+  return {
+    bank: mixColour(left.bank, right.bank, t),
+    bankShade: mixColour(left.bankShade, right.bankShade, t),
+    bands: cuts.map((fromU) => ({
+      fromU,
+      color: mixColour(bandColour(left, fromU), bandColour(right, fromU), t),
+    })),
+  };
+}
+
+/** Colour of the band a palette has at an offset below the bank foot. */
+function bandColour(palette: NearPalette, u: number): number {
+  let colour = palette.bands[0]?.color ?? 0;
+  for (const band of palette.bands) if (band.fromU <= u) colour = band.color;
+  return colour;
+}
+
+/** Each RGB channel from `a` (t = 0) to `b` (t = 1), rounded. */
+function mixColour(a: number, b: number, t: number): number {
+  let mixed = 0;
+  for (const shift of [16, 8, 0]) {
+    const from = (a >> shift) & 255;
+    const to = (b >> shift) & 255;
+    mixed |= Math.round(from + (to - from) * t) << shift;
+  }
+  return mixed;
+}
