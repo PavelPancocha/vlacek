@@ -58,6 +58,8 @@ export interface DebugSnapshot {
     alpha: number;
     train: 'outside' | 'partly' | 'inside';
   }[];
+  /** Parallax: the first mid backdrop tile's x from the view's left, u. */
+  backdropMidOffsetU: number;
   /** Oncoming trains on second tracks (doc 05 §6, D-017). */
   oncoming: {
     trains: {

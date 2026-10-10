@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { artParts } from '../../src/content/artManifest.ts';
 import { isBackdropPart, worldParts } from '../../src/content/worldArt.ts';
+import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 import {
   buildLongestTrain,
   driveUntilMoving,
@@ -92,4 +93,83 @@ test.describe('landscape (doc 14 §5, D-013)', () => {
       await page.mouse.up();
       expect(seen).toBeGreaterThan(0);
     });
+
+  test('the distant hills glide on smoothly when the render origin moves (every 4096 u)', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const consist = {
+      locomotiveId: 'steam_local',
+      wagons: [{ instanceId: 'w1', definitionId: 'cargo_box', visualSeed: 0 }],
+    };
+    const save = JSON.stringify({
+      schemaVersion: 1,
+      contentVersion: 1,
+      savedAtIso: '2026-10-10T00:00:00.000Z',
+      appBuildId: 'parallax-test',
+      settings: {
+        sfxEnabled: false,
+        musicEnabled: false,
+        reducedEffects: false,
+        maxSpeedFactor: 1,
+        quality: 'auto',
+      },
+      lastConsist: consist,
+      journey: {
+        seed: 123,
+        generatorVersion: TRACK_GENERATOR_VERSION,
+        consist,
+        // The front just before x 4096, where the render origin moves.
+        head: { chunkIndex: 3, arcOffsetU: 700 },
+        simulationTick: 0,
+        activeEntities: [],
+      },
+    });
+    await page.addInitScript((json) => {
+      if (!sessionStorage.getItem('parallax-seeded')) {
+        localStorage.setItem('vlacek.save.v1', json);
+        sessionStorage.setItem('parallax-seeded', '1');
+      }
+    }, save);
+    await page.goto('./?debug=1');
+    await tapAction(page, 'continue');
+    await tapAction(page, 'resume');
+    await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+    await page.mouse.move(700, 300);
+    await page.mouse.down();
+    // Every frame: the mid hills' tile offset and the chunk of the front.
+    const samples = await page.evaluate(async () => {
+      const api = (
+        window as unknown as {
+          __vlacek: {
+            snapshot(): { backdropMidOffsetU: number; headChunk?: number };
+          };
+        }
+      ).__vlacek;
+      const out: { offset: number; chunk: number }[] = [];
+      for (let i = 0; i < 240; i++) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        const state = api.snapshot();
+        out.push({
+          offset: state.backdropMidOffsetU,
+          chunk: state.headChunk ?? -1,
+        });
+      }
+      return out;
+    });
+    await page.mouse.up();
+    // The ride crossed x 4096 (chunk 4) while sampling.
+    expect(samples.some((sample) => sample.chunk <= 3)).toBe(true);
+    expect(samples.some((sample) => sample.chunk >= 4)).toBe(true);
+    // Tile width 1020 u: compare offsets modulo the tile, never a jump.
+    const TILE = 1020;
+    let worst = 0;
+    for (let i = 1; i < samples.length; i++) {
+      const a = samples[i - 1]?.offset ?? 0;
+      const b = samples[i]?.offset ?? 0;
+      const d = ((((b - a) % TILE) + TILE * 1.5) % TILE) - TILE / 2;
+      worst = Math.max(worst, Math.abs(d));
+    }
+    expect(worst).toBeLessThan(40);
+  });
 });

@@ -7,7 +7,13 @@ import { BACKDROP_FILL } from './groundPalette.ts';
 
 /** Visible world rectangle, render coordinates (y down). */
 export interface ViewRect {
+  /** Left edge from the render origin, for placing objects. */
   left: number;
+  /**
+   * The same edge in absolute world x: parallax phases come from it, so
+   * they do not jump when the render origin moves.
+   */
+  worldLeft: number;
   top: number;
   width: number;
   height: number;
@@ -59,6 +65,8 @@ export class Backdrop {
   readonly #depths: BackdropDepths;
   readonly #sky: Phaser.GameObjects.Image;
   readonly #clouds: Phaser.GameObjects.Image[] = [];
+  /** Diagnostics: the first mid tile's x from the view's left edge, u. */
+  #midOffsetU = 0;
   readonly #layers: [Layer, Layer];
   #texture: string | undefined;
   #pxPerU = 1;
@@ -121,6 +129,10 @@ export class Backdrop {
    * rails under the train, `groundTopY` the lowest top edge of the ground
    * behind the track in view, `biome` the biome ahead of the train.
    */
+  get midOffsetU(): number {
+    return this.#midOffsetU;
+  }
+
   update(
     view: ViewRect,
     horizonY: number,
@@ -224,8 +236,10 @@ export class Backdrop {
       ['far', FAR_BASE_U],
       ['mid', MID_BASE_U],
     ] as const) {
-      const shift = view.left * PARALLAX[which];
+      const shift = view.worldLeft * PARALLAX[which];
       const first = Math.floor(shift / BACKDROP_WIDTH_U);
+      if (which === 'mid' && alpha > 0)
+        this.#midOffsetU = first * BACKDROP_WIDTH_U - shift;
       this.#tiles(layer, which, count).forEach((image, i) => {
         const x = view.left + (first + i) * BACKDROP_WIDTH_U - shift;
         image
@@ -267,7 +281,9 @@ export class Backdrop {
     this.#clouds.forEach((cloud, i) => {
       const home = ((i * 0.37) % 1) * span;
       const travel =
-        home - view.left * PARALLAX.clouds + timeSec * CLOUD_DRIFT_U_PER_SEC;
+        home -
+        view.worldLeft * PARALLAX.clouds +
+        timeSec * CLOUD_DRIFT_U_PER_SEC;
       const x = view.left - 300 + (((travel % span) + span) % span);
       const y = view.top + view.height * (0.1 + ((i * 0.29) % 1) * 0.22);
       cloud

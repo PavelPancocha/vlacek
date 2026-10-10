@@ -93,6 +93,8 @@ export interface RenderStats {
   catenaryPoles: number;
   /** Level crossings drawn in the rendered chunks (art or plain). */
   crossingViews: number;
+  /** The first mid backdrop tile's x from the view's left edge, u. */
+  backdropMidOffsetU: number;
   /**
    * How far the drawn pantograph head misses the contact wire, u; undefined
    * without a raised pantograph in view.
@@ -112,6 +114,7 @@ const NO_STATS: RenderStats = {
   localities: [],
   catenaryPoles: 0,
   crossingViews: 0,
+  backdropMidOffsetU: 0,
   pantographGapU: undefined,
   oncomingVehicles: 0,
   tunnels: [],
@@ -686,6 +689,7 @@ export class RideScene extends Phaser.Scene {
     this.#backdrop?.update(
       {
         left: this.#view.left,
+        worldLeft: this.#view.left + this.#originX,
         top: this.#view.top,
         width: viewW,
         height: viewH,
@@ -696,6 +700,7 @@ export class RideScene extends Phaser.Scene {
       timeSec,
       delta / 1000,
     );
+    this.stats.backdropMidOffsetU = this.#backdrop?.midOffsetU ?? 0;
     const localities: string[] = [];
     for (
       let k = Math.floor(leftWorldX / CHUNK_WIDTH_U);
