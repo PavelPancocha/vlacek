@@ -419,3 +419,16 @@ Sedm nálezů P2, všechny skutečné, každý opravený samostatným commitem s
 | Obnovená jízda v tunelu ukáže vlak hned                  | unit 1 FAIL; E2E obnova v tunelu, v pauze: kopec neprůhledný (1)                                                                                                   | 4 unit + 4 E2E PASS                  |
 | Výběr mašinky se vejde na telefon naležato               | E2E 3 FAIL: tlačítko do depa končilo na 451 px (při 568 × 320 celé pod okrajem); první verze testu falešně prošla, Playwright posouval ořezanou obrazovku skriptem | 6 PASS                               |
 | Přejezd, trolej, most a tunel fungují i bez grafiky      | E2E s jedním nenačteným SVG: 0 stožárů                                                                                                                             | 24 E2E PASS                          |
+
+Celá brána po opravách (`9dd085f` a tento zápis):
+
+- `npm run check`: 460 unit testů PASS.
+- `npm run test:e2e`: 116 PASS / 4 skipped.
+- `PERF_SECONDS=30 npm run measure:perf` s nejdelší soupravou: parní i elektrická medián 30 FPS a p95 33 ms, nejhorší snímek 50 a 67 ms, celý vlak ve všech vzorcích.
+
+Při prvním úplném běhu E2E pod zátěží jednou selhaly dva testy:
+
+- depo na telefonu 844 × 390 (desktop): `boundingBox` tlačítka Zpět vrátil prázdno;
+- zvířata na telefonu (tablet): `buildLongestTrain` čekal na kliknutí 60 s.
+
+Druhý úplný běh, 24 samostatných běhů i 6 běhů při 8× zpomaleném CPU prošly. Podezření je zpoždění překreslení UI o jeden snímek po ťuknutí. Starý stav tlačítka by pak test přečetl jako platný. Zpomalení CPU to nepotvrdilo, takže kód beze změny; když se selhání vrátí na CI, rozhodne trace z GitHub Actions.
