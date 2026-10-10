@@ -47,6 +47,7 @@ const NOTICE_TEXT: Record<SessionNotice, string> = {
     'Uložená hra je z novější verze. Hrajeme bez ukládání, aby se nepřepsala.',
   'start-failed': 'Novou cestu se nepodařilo spustit. Původní cesta zůstává.',
   'journey-unavailable': 'Uloženou cestu se nepodařilo obnovit.',
+  'track-changed': 'Trať se změnila, vlak vyjede na novou cestu.',
   'train-too-long':
     'Vláček je delší, než se vejde na obrazovku. Všechny vagonky zůstaly v depu; po ubrání může vyjet.',
 };

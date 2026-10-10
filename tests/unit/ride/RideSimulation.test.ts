@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
+import { TRACK_GENERATOR_VERSION } from '../../../src/domain/world/TrackProfile.ts';
 import {
   RideSimulation,
   type RideSetup,
@@ -102,7 +103,10 @@ describe('RideSimulation', () => {
     const objects = ride.objectsBetween(ride.track.startS, ride.track.endS);
     const chunks = ride.track.lastChunkIndex - ride.track.firstChunkIndex + 1;
     expect(objects).toHaveLength(chunks);
-    expect(objects[0]?.id).toMatch(/^g0:chunk:-?\d+:object:0$/);
+    // Entity ids carry the generator version (doc 04 §3).
+    expect(objects[0]?.id).toMatch(
+      new RegExp(`^g${TRACK_GENERATOR_VERSION}:chunk:-?\\d+:object:0$`),
+    );
     const again = new RideSimulation(setup(0)).objectsBetween(
       ride.track.startS,
       ride.track.endS,

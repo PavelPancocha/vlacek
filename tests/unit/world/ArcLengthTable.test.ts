@@ -9,16 +9,11 @@ import {
   profileHeightU,
   type TrackProfile,
 } from '../../../src/domain/world/TrackProfile.ts';
+import { steepHill } from './steepHill.ts';
 
 const { chunkWidthU, arcSampleSpacingU } = gameConfig.world;
 
-/** Steep valid hill: 32.768 u over 512 u ramps, the doc 04 grade limit. */
-const extremeHill: TrackProfile = {
-  kind: 'hill',
-  startHeightU: 0,
-  endHeightU: 0,
-  middleHeightU: (0.12 * 512) / 1.875,
-};
+const extremeHill = steepHill;
 
 function referencePoint(profile: TrackProfile, arcU: number) {
   // Fine numerical arc length as an independent reference.

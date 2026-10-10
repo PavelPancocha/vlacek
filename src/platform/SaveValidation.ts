@@ -5,7 +5,6 @@ import type {
   WagonDefinition,
   WagonInstance,
 } from '../domain/types.ts';
-import { TEST_TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import type { TrackCursor } from '../domain/world/TrackWindow.ts';
 
 /** Save contracts of doc 08 §6, schema version 1. */
@@ -53,7 +52,6 @@ export interface SaveRules {
   locomotiveIds: ReadonlySet<string>;
   wagonIds: ReadonlySet<string>;
   /** Generator versions this build can continue (0.1: provisional v0). */
-  generatorVersions: ReadonlySet<number>;
 }
 
 export type ParseResult =
@@ -79,7 +77,6 @@ export function saveRules(
     maxRuntimeComponents: config.save.maxRuntimeComponents,
     locomotiveIds: new Set(locomotives.map((loco) => loco.id)),
     wagonIds: new Set(wagons.map((wagon) => wagon.id)),
-    generatorVersions: new Set([TEST_TRACK_GENERATOR_VERSION]),
   };
 }
 
@@ -219,9 +216,6 @@ function journey(value: unknown, rules: SaveRules): JourneySave {
     0,
     1_000,
   );
-  if (!rules.generatorVersions.has(generatorVersion)) {
-    throw new Invalid('journey.generatorVersion: unsupported');
-  }
   const head = object(raw['head'], 'journey.head');
   const entities = raw['activeEntities'];
   if (

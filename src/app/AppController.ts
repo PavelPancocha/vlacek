@@ -1,7 +1,7 @@
 import type { ShapedVehicle } from '../content/placeholderShapes.ts';
 import { locomotives, wagons } from '../content/vehicles.ts';
 import type { Consist } from '../domain/types.ts';
-import { TEST_TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
+import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import { AudioManager, type SoundId } from '../platform/AudioManager.ts';
 import { isPortrait } from '../platform/browserEnvironment.ts';
 import type { RendererPreference } from '../platform/CapabilityProbe.ts';
@@ -244,7 +244,7 @@ export class AppController {
       renderer: this.#renderer,
       screen: session.screen.name,
       seed: session.journeySeed,
-      generatorVersion: TEST_TRACK_GENERATOR_VERSION,
+      generatorVersion: TRACK_GENERATOR_VERSION,
       headChunk: ride?.headCursor().chunkIndex,
       liveChunks: ride?.track.chunkCount ?? 0,
       renderedChunks: this.#scene.stats.renderedChunks,

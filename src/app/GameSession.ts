@@ -24,7 +24,7 @@ import {
 } from '../domain/sim/FixedStep.ts';
 import type { VehicleGeometry } from '../domain/train/TrainGeometry.ts';
 import type { Consist } from '../domain/types.ts';
-import { TEST_TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
+import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import { InputRouter } from '../platform/InputRouter.ts';
 import type { SaveNotice, SaveRepository } from '../platform/SaveRepository.ts';
 import {
@@ -55,7 +55,8 @@ export type SessionNotice =
   | 'storage-limited'
   | 'start-failed'
   | 'journey-unavailable'
-  | 'train-too-long';
+  | 'train-too-long'
+  | 'track-changed';
 
 /** Session-level events for audio/visual feedback, alongside ride events. */
 export type SessionEvent =
@@ -198,14 +199,25 @@ export class GameSession {
         this.#restoredDraft = undefined;
         this.#notices.add('train-too-long');
       } else if (save.journey) {
+        // Another generator would put the train on different track (D-005):
+        // keep the train and world number, start fresh and say so.
+        const sameTrack =
+          save.journey.generatorVersion === TRACK_GENERATOR_VERSION;
+        if (!sameTrack) this.#notices.add('track-changed');
         try {
           this.#journey = {
             seed: save.journey.seed,
             consist: save.journey.consist,
-            ride: this.#createRide(save.journey.seed, save.journey.consist, {
-              head: save.journey.head,
-              simulationTick: save.journey.simulationTick,
-            }),
+            ride: this.#createRide(
+              save.journey.seed,
+              save.journey.consist,
+              sameTrack
+                ? {
+                    head: save.journey.head,
+                    simulationTick: save.journey.simulationTick,
+                  }
+                : undefined,
+            ),
           };
         } catch {
           this.#notices.add('journey-unavailable');
@@ -342,6 +354,7 @@ export class GameSession {
     }
     this.#notices.delete('start-failed');
     this.#notices.delete('train-too-long');
+    this.#notices.delete('track-changed');
     this.#restoredDraft = undefined;
     this.#journey = journey;
     this.#lastConsist = journey.consist;
@@ -475,7 +488,7 @@ export class GameSession {
     if (journey) {
       envelope.journey = {
         seed: journey.seed,
-        generatorVersion: TEST_TRACK_GENERATOR_VERSION,
+        generatorVersion: TRACK_GENERATOR_VERSION,
         consist: journey.consist,
         head: journey.ride.headCursor(),
         simulationTick: journey.ride.simulationTick,

@@ -44,40 +44,20 @@ Příklady klíčů: `terrain-boundary`, `route-template`, `major-feature`, `tre
 
 ID entity má podobu `g1:chunk:42:animal:3`; není to náhodné UUID při každém vykreslení. Kosmetické částice mohou mít vlastní omezený generátor a neovlivňují layout ani save.
 
-## 4. Kontinuita kolejí: referenční proveditelný profil
+## 4. Kontinuita kolejí: profil generátoru v1
 
-Pro V1 stačí monotónní trať s hladkým výškovým profilem, bez 2D fyzikálního solveru. Níže uvedená konstrukce dává nezávislé chunky a předem omezený sklon.
+Zadání [14 §6](14_UPRAVY_PRVNI_VERZE.md) mění charakter tratě: roviny a delší rovná stoupání a klesání spojená krátkými plynulými přechody, bez souvislého vlnění. Původní konstrukce tohoto oddílu (hraniční výšky `H(k)` v ±32 u a smootherstep přechody s nulovým sklonem na každé hranici chunku) zůstává jen jako generátor v0 verze 0.1. Měření ukázalo, že v ní se sklon mění na 91–95 % délky ([D-009](../docs/decisions/009-track-generator-v1.md)).
 
-Definovat `r(k) = 2 * unitRandom(seed, version, 'terrain-boundary', k) - 1` a výšku společné hranice:
+Generátor v1 (`src/domain/world/TrackProfile.ts`, parametry `world.profile` v dokumentu 13):
 
-```text
-H(k) = 8 * [r(k-1) + 2*r(k) + r(k+1)]
-```
+- **Bloky.** Trať se plánuje po blocích `blockChunks` (8) chunků. Každý blok začíná a končí rovinou ve výšce hranice bloku, kterou určuje klíč `block-height`; výška leží v intervalu ±`blockHeightRangeU` (160 u). Chunk se tak počítá jen ze svého bloku, nezávisle na pořadí a i daleko od startu.
+- **Plán bloku.** Lomená čára rovina → sklon → rovina → … → rovina. Roviny mají `flatMinU`–`flatMaxU` (384–1536 u), sklony `slopeMinU`–`slopeMaxU` (768–2304 u) v násobcích `lengthStepU` (64 u). Sklon se volí mezi `gradeRangeMin` a `gradeRangeMax` (0.03–0.08), směr nahoru nebo dolů podle seedu (klíče `flat`, `slope`, `grade`, `direction`). Výška nikdy nepřekročí ±`maxHeightU` (400 u): sklon, který by ji překročil, se otočí.
+- **Proveditelnost bez losování naslepo.** Náhodný sklon se přijme jen tehdy, když zbytek bloku ještě pojme rovinu a jediný závěrečný sklon na výšku další hranice při `gradeRangeMax`. Jinak plán skončí závěrečným sklonem a minimální rovinou. Validace konfigurace ověřuje, že blok vždy pojme nejdelší počáteční rovinu a nejdelší závěrečný sklon.
+- **Přechody.** Každý zlom lomené čáry nahrazuje parabola (výškový oblouk) délky `transitionU` (192 u). Sklon se v ní mění lineárně, takže výška i sklon jsou spojité a nevzniká ostrý zlom. Každý úsek plánu je alespoň tak dlouhý jako přechod, takže se oblouky nepřekrývají.
 
-Platí `H ∈ [-32,32]` a rozdíl sousedních hranic je nejvýše 32 u. Všechny hranice mají nulovou první a druhou derivaci. Terén a vzdálené hory mají větší výškový rozsah než samotná kolej; jejich výška není omezena na těchto 64 u.
+Výška a sklon jsou spojité na každém švu chunku i bloku. Sklon nikdy nepřekročí `gradeRangeMax`, a tedy ani absolutní mez `world.maxTrackGrade` (0.12), se kterou počítá model pohybu. Změna kteréhokoli parametru `world.profile` mění geometrii a vyžaduje nové `generatorVersion`.
 
-Pro hladký přechod použít:
-
-```text
-q(t) = 6t^5 - 15t^4 + 10t^3,  t ∈ [0,1]
-y(x) = y0 + (y1-y0) * q((x-x0)/délka)
-```
-
-Maximální derivace q je 1.875. Proto pro požadovaný maximální sklon g musí platit `abs(y1-y0) <= g * délka / 1.875`. Toto pravidlo využít při výběru každého profilu.
-
-### Tři profily V1
-
-| Profil         | Konstrukce                                                                                                        |
-| -------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `smooth`       | Jeden přechod H(k) → H(k+1) přes celých 1 024 u.                                                                  |
-| `hill` / `dip` | Dva přechody po 512 u přes společný střed M; M vybrat z průniku dovolených výšek pro oba úseky při sklonu ≤ 0.12. |
-| `flat-middle`  | 256 u přechod H(k) → M, 512 u rovina M, 256 u přechod M → H(k+1), kde M je průměr hraničních výšek.               |
-
-`flat-middle` je vždy proveditelný: největší výškový rozdíl jedné rampy je 16 u, takže sklon nepřekročí 0.1172. Používá se pro stanici a přejezd. Most nebo tunel mohou využít `smooth`; některé varianty mají plochý střed.
-
-Nevybírat M opakovaným neomezeným losováním. Spočítat přípustný interval analyticky a uvnitř něj vybrat hodnotu podle seedu. Pokud umělecký template porušuje geometrii, přejít na validní jednoduchý profil. Švy nesmí opravovat fyzika vlaku.
-
-Další členitost lze získat strukturami, terénem pod mostem a delšími sledy profilů. První verze nemusí simulovat skutečné převýšení stovek metrů.
+Nádraží a přejezdy (M2) se umístí na existující roviny plánu, mosty a tunely na terén kolem tratě, který může být členitější než kolejové těleso. Geometrie v1 se kvůli nim nemá měnit.
 
 ## 5. Biomy a návaznost krajiny
 

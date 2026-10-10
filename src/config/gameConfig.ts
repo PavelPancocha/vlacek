@@ -35,10 +35,34 @@ export interface TrainConfig {
   slowModeSpeedFactor: number;
 }
 
+/**
+ * Track profile of generator v1 (doc 14 §6, D-009): blocks of chunks made of
+ * flats and long constant grades joined by short parabolic transitions.
+ * Every value is a geometry input: changing one needs a new generator version.
+ */
+export interface TrackProfileConfig {
+  blockChunks: number;
+  /** Track height stays within ±maxHeightU. */
+  maxHeightU: number;
+  /** Block boundary heights are seeded within ±blockHeightRangeU. */
+  blockHeightRangeU: number;
+  flatMinU: number;
+  flatMaxU: number;
+  slopeMinU: number;
+  slopeMaxU: number;
+  gradeRangeMin: number;
+  gradeRangeMax: number;
+  /** Length of one grade transition (vertical curve). */
+  transitionU: number;
+  /** Segment lengths are multiples of this. */
+  lengthStepU: number;
+}
+
 export interface WorldConfig {
   chunkWidthU: number;
+  /** Absolute grade bound for validation and the motion model. */
   maxTrackGrade: number;
-  boundaryHeightScale: number;
+  profile: TrackProfileConfig;
   arcSampleSpacingU: number;
   geometryLookAheadU: number;
   geometryTailMarginU: number;
@@ -112,7 +136,19 @@ export const gameConfig: GameConfig = {
   world: {
     chunkWidthU: 1024,
     maxTrackGrade: 0.12,
-    boundaryHeightScale: 8,
+    profile: {
+      blockChunks: 8,
+      maxHeightU: 400,
+      blockHeightRangeU: 160,
+      flatMinU: 384,
+      flatMaxU: 1536,
+      slopeMinU: 768,
+      slopeMaxU: 2304,
+      gradeRangeMin: 0.03,
+      gradeRangeMax: 0.08,
+      transitionU: 192,
+      lengthStepU: 64,
+    },
     arcSampleSpacingU: 8,
     geometryLookAheadU: 2048,
     geometryTailMarginU: 1024,
@@ -201,7 +237,41 @@ export function validateGameConfig(config: GameConfig): string[] {
     ['camera.bandAnchor', fraction(camera.bandAnchor)],
     ['camera.verticalFollowPerSec', positive(camera.verticalFollowPerSec)],
     ['world.maxTrackGrade', positive(world.maxTrackGrade)],
-    ['world.boundaryHeightScale', positive(world.boundaryHeightScale)],
+    ['world.profile.blockChunks', positiveInteger(world.profile.blockChunks)],
+    [
+      'world.profile.maxHeightU',
+      world.profile.maxHeightU > world.profile.blockHeightRangeU,
+    ],
+    [
+      'world.profile.flatMinU',
+      world.profile.flatMinU >= world.profile.transitionU &&
+        world.profile.flatMaxU >= world.profile.flatMinU,
+    ],
+    [
+      'world.profile.slopeMinU',
+      world.profile.slopeMinU >= world.profile.transitionU &&
+        world.profile.slopeMaxU >= world.profile.slopeMinU,
+    ],
+    [
+      'world.profile.gradeRangeMax',
+      positive(world.profile.gradeRangeMin) &&
+        world.profile.gradeRangeMax >= world.profile.gradeRangeMin &&
+        world.profile.gradeRangeMax <= world.maxTrackGrade,
+    ],
+    ['world.profile.transitionU', positive(world.profile.transitionU)],
+    ['world.profile.lengthStepU', positive(world.profile.lengthStepU)],
+    [
+      // A block can always go from one boundary height to the next.
+      'world.profile.blockLength',
+      world.profile.blockChunks * world.chunkWidthU >=
+        world.profile.flatMaxU +
+          world.profile.flatMinU +
+          world.profile.lengthStepU +
+          Math.max(
+            world.profile.slopeMinU,
+            (2 * world.profile.blockHeightRangeU) / world.profile.gradeRangeMax,
+          ),
+    ],
     [
       'world.arcSampleSpacingU',
       positive(world.arcSampleSpacingU) && world.arcSampleSpacingU <= 8,

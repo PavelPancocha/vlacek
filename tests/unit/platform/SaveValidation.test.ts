@@ -103,9 +103,10 @@ describe('parseSave', () => {
         (s) => ((s['journey'] as Record<string, unknown>)['seed'] = 2 ** 32),
       ],
       [
-        'unknown generator',
+        // Any known or newer generator is readable; GameSession decides.
+        'invalid generator version',
         (s) =>
-          ((s['journey'] as Record<string, unknown>)['generatorVersion'] = 1),
+          ((s['journey'] as Record<string, unknown>)['generatorVersion'] = -1),
       ],
       [
         'unknown locomotive',
