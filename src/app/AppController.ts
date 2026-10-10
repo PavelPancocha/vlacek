@@ -122,6 +122,9 @@ export class AppController {
         // A gesture that leaves the game paused keeps the sound frozen
         // (doc 02 §6); the one that resumes unlocks after routing.
         if (this.#session.screen.name !== 'PAUSED') this.#audio.unlock();
+        // Show what the tap changed right away, not a frame later: the
+        // screen never offers a button the tap has just disabled.
+        this.#refreshUi();
       },
       onInterrupt: () => {
         session.interrupt();
