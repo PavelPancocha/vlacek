@@ -3,20 +3,22 @@ import { LOCALITIES } from '../domain/world/sceneryTemplates.ts';
 import {
   animalParts,
   backdropParts,
+  bridgeParts,
   catenaryParts,
   cloudParts,
   crossingParts,
   effectParts,
-  secondaryParts,
   roadActorParts,
+  secondaryParts,
   trackTileSets,
+  tunnelParts,
 } from './worldArt.ts';
 
 /**
  * Every world part key the game refers to: track tiles, the kinds the
  * world generator places (localities and stations), animals, backdrops,
  * clouds, effect sprites, crossings, road traffic,
- * catenary and second-track portals. `validate:assets` reports parts outside this
+ * catenary, second-track portals, bridges and tunnels. `validate:assets` reports parts outside this
  * list.
  */
 export function worldUsedKeys(): string[] {
@@ -32,6 +34,8 @@ export function worldUsedKeys(): string[] {
       ...Object.values(crossingParts),
       ...Object.values(catenaryParts),
       ...Object.values(secondaryParts),
+      ...Object.values(bridgeParts),
+      ...Object.values(tunnelParts),
       ...Object.values(roadActorParts).flatMap((p) => [p.front, p.back]),
     ]),
   ];

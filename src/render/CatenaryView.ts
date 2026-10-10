@@ -10,7 +10,7 @@ import {
   heightAtX,
   type ArcLengthTable,
 } from '../domain/world/ArcLengthTable.ts';
-import { catenaryPoleXs } from '../domain/world/Catenary.ts';
+import { catenaryPoleXs, catenarySupport } from '../domain/world/Catenary.ts';
 import { frameOrigin } from './atlasPacking.ts';
 
 const { chunkWidthU, catenaryPoleSpacingU, catenaryContactHeightU } =
@@ -38,6 +38,7 @@ export interface ChunkCatenary {
  * each pole of the chunk and the wire span from it to the next pole, which
  * may stand in the next chunk. The wire is attached at the pole's x, where
  * `contactWireHeightU` holds it, so the pantograph touches the drawn wire.
+ * In a tunnel the wire hangs from the ceiling: no masts there.
  * Chunk-local coordinates like the ChunkView that owns the containers.
  */
 export function chunkCatenary(
@@ -61,17 +62,23 @@ export function chunkCatenary(
     return object.setOrigin(origin.x, origin.y);
   };
   const xs = catenaryPoleXs(seed, x0, x0 + chunkWidthU);
+  let masts = 0;
   for (const x of xs) {
     const railY = -heightAtX(table, x);
-    // The mast stands so that its contact clamp is right at the pole's x.
-    poles.add(
-      image(catenaryParts.pole)
-        .setPosition(
-          x - x0 - (catenaryAnchors.contact.x - pole.pivotU.x),
-          railY - CATENARY_POLE_DEPTH_U,
-        )
-        .setScale(1 / art.pxPerU),
-    );
+    const local = x - x0;
+    // The mast stands so that its contact clamp is right at the pole's x;
+    // at a tunnel its ceiling holds the wire (TunnelView draws the hanger).
+    if (catenarySupport(seed, x) === 'mast') {
+      masts += 1;
+      poles.add(
+        image(catenaryParts.pole)
+          .setPosition(
+            local - (catenaryAnchors.contact.x - pole.pivotU.x),
+            railY - CATENARY_POLE_DEPTH_U,
+          )
+          .setScale(1 / art.pxPerU),
+      );
+    }
     const next = catenaryPoleXs(seed, x + 1, x + 2 * catenaryPoleSpacingU)[0];
     if (next === undefined) continue;
     const dx = next - x;
@@ -83,5 +90,5 @@ export function chunkCatenary(
         .setRotation(Math.atan2(dy, dx)),
     );
   }
-  return { containers: [poles, wires], poles: xs.length };
+  return { containers: [poles, wires], poles: masts };
 }

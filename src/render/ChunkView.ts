@@ -4,6 +4,7 @@ import type { ArtPart } from '../content/artManifest.ts';
 import {
   TRACK_BED_DEPTH_U,
   TRACK_TILE_STEP_U,
+  bridgeParts,
   crossingParts,
   trackTileSets,
   worldParts,
@@ -29,7 +30,8 @@ import type {
   GroundSpan,
   NearGround,
 } from '../domain/world/sceneryTemplates.ts';
-import { embankmentU } from '../domain/world/Terrain.ts';
+import { bankHeightU } from '../domain/world/Terrain.ts';
+import { RIVER_HALF_U } from '../domain/world/Structures.ts';
 import {
   BACK_PALETTE,
   NEAR_PALETTE,
@@ -39,8 +41,14 @@ import {
 import { glintAlpha, swayAmplitudeRad, swayAngle } from './ambientMotion.ts';
 import { frameOrigin } from './atlasPacking.ts';
 import { chunkCatenary } from './CatenaryView.ts';
+import {
+  TUNNEL_MAST_CLEARANCE_U,
+  catenaryPoleXs,
+  catenarySupport,
+} from '../domain/world/Catenary.ts';
 import { chunkSecondaryTrack } from './SecondaryView.ts';
 import { CrossingView, type CrossingState } from './CrossingView.ts';
+import { TunnelView } from './TunnelView.ts';
 import { roadHalfWidthU, roadPointY } from './crossingLayout.ts';
 import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
 import { trackTilePlacements } from './trackTiles.ts';
@@ -61,6 +69,14 @@ const WATER_SIDE_U = 10;
 const ROAD_ASPHALT = 0x7d7b77;
 const ROAD_SHOULDER = 0xb8a682;
 const ROAD_LINE = 0xe9e6dc;
+/** Stream under a bridge: muddy bank, water, the lighter current. */
+const STREAM_BANK = 0x8a7a55;
+const STREAM_WATER = 0x5b9cc9;
+const STREAM_CURRENT = 0x86c0e2;
+/** How far the stream meanders to either side away from the bridge. */
+const STREAM_MEANDER_U = 14;
+/** The bridge's far railing stands this much behind the rail head. */
+const BRIDGE_RAILING_BEHIND_U = 6;
 const ROAD_DASH = 0xf4f1e6;
 /** Middle line: a dash every 20 u; the near road starts on the bank. */
 const ROAD_DASH_EVERY_U = 20;
@@ -114,6 +130,7 @@ export interface ChunkDepths {
   backProps: number;
   ground: number;
   track: number;
+  train: number;
   /** Catenary wires: above the train, below the near meadow. */
   wires: number;
   nearProps: number;
@@ -158,6 +175,8 @@ export class ChunkView {
   readonly #glints: { image: Phaser.GameObjects.Image; phase: number }[] = [];
   /** Barriers, lamps and traffic of the chunk's level crossing. */
   #crossing: CrossingView | undefined;
+  /** The chunk's tunnel, whose hill clears while the train is inside. */
+  #tunnel: TunnelView | undefined;
   /** Catenary masts of an electric journey (doc 03 §9). */
   readonly #poles: number = 0;
 
@@ -200,6 +219,8 @@ export class ChunkView {
           if (prop.kind === 'back.car' && prop.motion) this.#paintRoad(g, prop);
         if (scenery.crossing)
           this.#paintCrossingRoad(g, scenery.crossing.localXU, 'back', 0);
+        if (scenery.bridge)
+          this.#paintStream(g, scenery.bridge.localXU, 'back', 0);
       },
       {
         left: -reach,
@@ -231,6 +252,8 @@ export class ChunkView {
             'near',
             bandsEnd,
           );
+        if (scenery.bridge)
+          this.#paintStream(g, scenery.bridge.localXU, 'near', bandsEnd);
       },
       {
         left: -4,
@@ -306,6 +329,28 @@ export class ChunkView {
             .setOrigin(0.5, 0),
         );
     }
+    if (scenery.bridge) {
+      // The stream runs on below the painted meadow.
+      const bottomU = this.#roadUAt(scenery.bridge.localXU, bandsEnd);
+      const x = scenery.bridge.localXU + this.#streamBend(bottomU);
+      const half = roadHalfWidthU(bottomU, RIVER_HALF_U);
+      for (const [grow, color] of [
+        [5, STREAM_BANK],
+        [0, STREAM_WATER],
+        [-0.65 * half, STREAM_CURRENT],
+      ] as const)
+        ground.add(
+          scene.add
+            .rectangle(
+              x - half - grow,
+              bandsEnd - 1,
+              2 * (half + grow),
+              GROUND_DEPTH_U,
+              color,
+            )
+            .setOrigin(0, 0),
+        );
+    }
     this.#objects.push(back, ground);
     if (!art) {
       // Baked too: without MSAA a live line would alias (D-013).
@@ -362,6 +407,63 @@ export class ChunkView {
         },
       );
     }
+    if (scenery.bridge) {
+      // The stone bridge over the stream, rail head on its deck; its far
+      // railing behind the train.
+      const x = scenery.bridge.localXU;
+      const rotation = Math.atan2(
+        -(this.#railAt(x + 16) - this.#railAt(x - 16)),
+        32,
+      );
+      track.add(
+        this.#image(scene, art, bridgeParts.bridge, false)
+          .setPosition(x, -this.#railAt(x))
+          .setScale(1 / art.pxPerU)
+          .setRotation(rotation),
+      );
+      const railing = scene.add
+        .container(0, 0)
+        .setDepth(depths.track - 0.05)
+        .add(
+          this.#image(scene, art, bridgeParts.railing, false)
+            .setPosition(x, -this.#railAt(x) - BRIDGE_RAILING_BEHIND_U)
+            .setScale(1 / art.pxPerU)
+            .setRotation(rotation),
+        );
+      this.#objects.push(railing);
+    }
+    if (scenery.tunnel) {
+      // An electric journey's wire hangs from the tunnel's ceiling there.
+      const x0 = table.chunkIndex * CHUNK_WIDTH_U;
+      const hangerXs = electrified
+        ? catenaryPoleXs(
+            seed,
+            x0 + scenery.tunnel.fromX - TUNNEL_MAST_CLEARANCE_U,
+            x0 + scenery.tunnel.toX + TUNNEL_MAST_CLEARANCE_U,
+          )
+            .filter((x) => catenarySupport(seed, x) === 'hanger')
+            .map((x) => x - x0)
+        : [];
+      this.#tunnel = new TunnelView(
+        scene,
+        art,
+        scenery.tunnel,
+        {
+          railY: (x) => -this.#railAt(x),
+          meadowY: (x) => this.#meadowTop(x),
+        },
+        (paint, bounds) => this.#bake(paint, bounds, groundScale),
+        {
+          // In front of the second track's hills, behind the masts.
+          flanks: depths.backProps + 0.5,
+          interior: depths.backProps + 0.55,
+          shade: depths.train + 0.05,
+          cover: depths.train + 0.6,
+        },
+        hangerXs,
+      );
+      this.#objects.push(...this.#tunnel.containers);
+    }
     // The second track behind the main one, its tunnel mouths and portal
     // hills; the oncoming train is drawn between them (doc 04 §7).
     this.#objects.push(
@@ -417,6 +519,11 @@ export class ChunkView {
     return [...this.#near, ...(this.#crossing?.nearImages ?? [])];
   }
 
+  /** The chunk's tunnel, if any. */
+  get tunnel(): TunnelView | undefined {
+    return this.#tunnel;
+  }
+
   /** Catenary masts of this chunk (0 unless the journey is electric). */
   get catenaryPoles(): number {
     return this.#poles;
@@ -457,6 +564,7 @@ export class ChunkView {
   destroy(): void {
     this.#crossing?.destroy();
     this.#crossing = undefined;
+    this.#tunnel = undefined;
     for (const object of this.#objects) object.destroy();
     this.#objects.length = 0;
     for (const key of this.#textures) this.#scene.textures.remove(key);
@@ -547,7 +655,7 @@ export class ChunkView {
   #meadowTop(x: number): number {
     const x0 = this.#table.xs[0] ?? 0;
     return (
-      -this.#railAt(x) + TRACK_BED_DEPTH_U + embankmentU(this.#seed, x0 + x)
+      -this.#railAt(x) + TRACK_BED_DEPTH_U + bankHeightU(this.#seed, x0 + x)
     );
   }
 
@@ -828,6 +936,94 @@ export class ChunkView {
     g.lineStyle(2.6, 0xffffff, 0.95);
     if (part === 'back') g.lineBetween(x - half + 2, y, x - 1, y);
     else g.lineBetween(x + 1, y, x + half - 2, y);
+  }
+
+  /**
+   * Sideways meander of the stream at a road position: none under the
+   * bridge, growing gently away from the track on both sides.
+   */
+  #streamBend(roadU: number): number {
+    const away = Math.max(0, Math.abs(roadU) - ROAD_CONFLICT_U);
+    const amplitude = STREAM_MEANDER_U * Math.min(1, away / 90);
+    const phase = (hash32('stream', this.#table.chunkIndex) % 628) / 100;
+    return amplitude * Math.sin(roadU / 52 + phase);
+  }
+
+  /**
+   * The stream under a bridge (doc 03 §8), painted into the ground like a
+   * crossing road: from the horizon behind the track, under the bridge's
+   * arch and down the near meadow, wider towards the viewer. Muddy banks
+   * with tufts, water with a lighter current and ripples; dark under the
+   * bridge.
+   */
+  #paintStream(
+    g: Phaser.GameObjects.Graphics,
+    x: number,
+    part: 'back' | 'near',
+    bottomY: number,
+  ): void {
+    const frame = { railY: -this.#railAt(x), meadowY: this.#meadowTop(x) };
+    const from = part === 'back' ? ROAD_FAR_END_U : -ROAD_CONFLICT_U;
+    const to =
+      part === 'back' ? -ROAD_CONFLICT_U + 10 : this.#roadUAt(x, bottomY) + 2;
+    const rs: number[] = [];
+    for (let r = from; r < to; r += 8) rs.push(r);
+    rs.push(to);
+    const half = (r: number) => roadHalfWidthU(r, RIVER_HALF_U);
+    const bend = (r: number) => this.#streamBend(r);
+    const edge = (side: number, scale: number, grow: number) =>
+      rs.map(
+        (r) =>
+          new Phaser.Math.Vector2(
+            x + bend(r) + side * (half(r) * scale + grow),
+            roadPointY(frame, r),
+          ),
+      );
+    const strip = (scale: number, grow: number) => [
+      ...edge(-1, scale, grow),
+      ...edge(1, scale, grow).reverse(),
+    ];
+    g.fillStyle(STREAM_BANK, 1);
+    g.fillPoints(strip(1, 5), true);
+    g.fillStyle(STREAM_WATER, 1);
+    g.fillPoints(strip(1, 0), true);
+    g.fillStyle(STREAM_CURRENT, 0.8);
+    g.fillPoints(strip(0.35, 0), true);
+    // Shade under the bridge, across the track.
+    if (part === 'near') {
+      const top = roadPointY(frame, -ROAD_CONFLICT_U);
+      const bottom = roadPointY(frame, 0);
+      g.fillStyle(0x1f3f5a, 0.55);
+      g.fillRect(x - RIVER_HALF_U - 2, top, 2 * RIVER_HALF_U + 4, bottom - top);
+    }
+    // Ripples drifting along the current, and tufts on the banks.
+    g.lineStyle(1, 0xe8f4fb, 0.8);
+    for (let i = 0; i + 1 < rs.length; i += 2) {
+      const r = rs[i] ?? 0;
+      const y = roadPointY(frame, r);
+      const w = half(r);
+      const shift = bend(r) + (((r * 37) % 11) / 11 - 0.5) * w;
+      g.lineBetween(x + shift - w * 0.18, y, x + shift + w * 0.12, y);
+    }
+    for (let i = 0; i < rs.length; i += 3) {
+      const r = rs[i] ?? 0;
+      if (r > -ROAD_CONFLICT_U && r < ROAD_CONFLICT_U) continue;
+      const y = roadPointY(frame, r);
+      for (const side of [-1, 1]) {
+        const bx = x + bend(r) + side * (half(r) + 4);
+        g.fillStyle(0x4f8a2e, 1);
+        g.fillTriangle(bx - 2, y, bx, y - 6, bx + 2, y);
+        g.fillStyle(0x6aa63d, 1);
+        g.fillTriangle(
+          bx + side * 2,
+          y,
+          bx + side * 3,
+          y - 4,
+          bx + side * 4,
+          y,
+        );
+      }
+    }
   }
 
   /**

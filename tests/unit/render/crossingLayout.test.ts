@@ -152,4 +152,12 @@ describe('crossing road in the picture (doc 05 §4)', () => {
     expect(white).toBeGreaterThan(60);
     expect(white).toBeLessThan(180);
   });
+
+  it('lets a stream under a bridge widen the same way from its own width', () => {
+    for (const r of [ROAD_FAR_END_U, -100, 0, 100, ROAD_NEAR_END_U])
+      expect(roadHalfWidthU(r, 40)).toBeCloseTo(
+        (roadHalfWidthU(r) * 40) / roadHalfWidthU(0),
+        9,
+      );
+  });
 });

@@ -1,5 +1,6 @@
 import { gameConfig } from '../../config/gameConfig.ts';
 import { crossingSite, crossingWorldX } from './Crossings.ts';
+import { BRIDGE_HALF_U, bridgeSite, tunnelSite } from './Structures.ts';
 
 const { chunkWidthU, catenaryPoleSpacingU, catenaryContactHeightU } =
   gameConfig.world;
@@ -10,17 +11,52 @@ const { chunkWidthU, catenaryPoleSpacingU, catenaryContactHeightU } =
  */
 export const POLE_ROAD_CLEARANCE_U = 48;
 
-/** A pole moved off a crossing road, to the side it stood on. */
+/** A pole off a stream under a bridge, beside the abutments. */
+export const POLE_STREAM_CLEARANCE_U = BRIDGE_HALF_U + 8;
+
+/** No mast stands in a tunnel or this close to its portals (u). */
+export const TUNNEL_MAST_CLEARANCE_U = 72;
+
+/**
+ * What holds the wire at a pole (world x): a mast beside the track, or in
+ * and right at a tunnel a hanger from its ceiling (doc 03 §9). Pure.
+ */
+export function catenarySupport(
+  seed: number,
+  poleX: number,
+): 'mast' | 'hanger' {
+  const k = Math.floor(poleX / chunkWidthU);
+  for (const chunk of [k - 1, k, k + 1]) {
+    const tunnel = tunnelSite(seed, chunk);
+    if (!tunnel) continue;
+    const local = poleX - chunk * chunkWidthU;
+    if (
+      local > tunnel.fromX - TUNNEL_MAST_CLEARANCE_U &&
+      local < tunnel.toX + TUNNEL_MAST_CLEARANCE_U
+    )
+      return 'hanger';
+  }
+  return 'mast';
+}
+
+/** A pole moved off a crossing road or a stream, to the side it stood on. */
 function poleX(seed: number, x: number): number {
   const k = Math.floor(x / chunkWidthU);
+  const aside = (middle: number, clearance: number) =>
+    x < middle ? middle - clearance : middle + clearance;
   for (const chunk of [k - 1, k, k + 1]) {
-    const site = crossingSite(seed, chunk);
-    if (!site) continue;
-    const road = crossingWorldX(site);
-    if (Math.abs(x - road) < POLE_ROAD_CLEARANCE_U)
-      return x < road
-        ? road - POLE_ROAD_CLEARANCE_U
-        : road + POLE_ROAD_CLEARANCE_U;
+    const crossing = crossingSite(seed, chunk);
+    if (crossing) {
+      const road = crossingWorldX(crossing);
+      if (Math.abs(x - road) < POLE_ROAD_CLEARANCE_U)
+        return aside(road, POLE_ROAD_CLEARANCE_U);
+    }
+    const bridge = bridgeSite(seed, chunk);
+    if (bridge) {
+      const stream = chunk * chunkWidthU + bridge.localXU;
+      if (Math.abs(x - stream) < POLE_STREAM_CLEARANCE_U)
+        return aside(stream, POLE_STREAM_CLEARANCE_U);
+    }
   }
   return x;
 }
@@ -29,7 +65,7 @@ function poleX(seed: number, x: number): number {
  * World x of the catenary poles in [fromX, toX), ascending (doc 03 §9):
  * every `catenaryPoleSpacingU` in one global phase, so any chunk's poles
  * are the same whichever range asks; a pole that would stand on a
- * crossing road moves just beside it. Pure: seed and x only.
+ * crossing road or in a stream under a bridge moves just beside it. Pure: seed and x only.
  */
 export function catenaryPoleXs(
   seed: number,
@@ -38,11 +74,11 @@ export function catenaryPoleXs(
 ): number[] {
   const poles: number[] = [];
   const first = Math.ceil(
-    (fromX - POLE_ROAD_CLEARANCE_U) / catenaryPoleSpacingU,
+    (fromX - POLE_STREAM_CLEARANCE_U) / catenaryPoleSpacingU,
   );
   for (
     let n = first;
-    n * catenaryPoleSpacingU < toX + POLE_ROAD_CLEARANCE_U;
+    n * catenaryPoleSpacingU < toX + POLE_STREAM_CLEARANCE_U;
     n++
   ) {
     const x = poleX(seed, n * catenaryPoleSpacingU);
@@ -62,7 +98,7 @@ export function contactWireHeightU(
   railHeightU: (x: number) => number,
 ): number {
   // Neighbours are at most a spacing apart plus a shift on each side.
-  const reach = catenaryPoleSpacingU + 2 * POLE_ROAD_CLEARANCE_U;
+  const reach = catenaryPoleSpacingU + 2 * POLE_STREAM_CLEARANCE_U;
   const near = catenaryPoleXs(seed, x - reach, x + reach);
   let left: number | undefined;
   let right: number | undefined;

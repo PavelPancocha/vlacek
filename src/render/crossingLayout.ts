@@ -35,13 +35,22 @@ export function roadPointY(frame: RoadFrame, roadU: number): number {
   return nearTop + (roadU - ROAD_CONFLICT_U);
 }
 
-/** Half the road width at a road position: narrower far, wider near. */
-export function roadHalfWidthU(roadU: number): number {
+/**
+ * Half the road width at a road position: narrower far, wider near. A
+ * stream under a bridge runs the same way from its own half width.
+ */
+export function roadHalfWidthU(
+  roadU: number,
+  halfAtTrackU: number = ROAD_HALF_U,
+): number {
   if (roadU <= -ROAD_CONFLICT_U)
-    return ROAD_HALF_U * (1 - (0.55 * (-roadU - ROAD_CONFLICT_U)) / FAR_SPAN_U);
-  if (roadU < ROAD_CONFLICT_U) return ROAD_HALF_U;
+    return (
+      halfAtTrackU * (1 - (0.55 * (-roadU - ROAD_CONFLICT_U)) / FAR_SPAN_U)
+    );
+  if (roadU < ROAD_CONFLICT_U) return halfAtTrackU;
   return (
-    ROAD_HALF_U * nearDepthScale((roadU - ROAD_CONFLICT_U) / NEAR_DEPTH_RANGE_U)
+    halfAtTrackU *
+    nearDepthScale((roadU - ROAD_CONFLICT_U) / NEAR_DEPTH_RANGE_U)
   );
 }
 

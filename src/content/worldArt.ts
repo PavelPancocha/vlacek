@@ -415,6 +415,18 @@ export const worldParts = {
     heightU: 70,
     pivotU: { x: 100, y: 70 },
   },
+  'bridge.railing': {
+    file: 'bridge.railing.svg',
+    widthU: 160,
+    heightU: 20,
+    pivotU: { x: 80, y: 19 },
+  },
+  'bridge.stone': {
+    file: 'bridge.stone.svg',
+    widthU: 160,
+    heightU: 84,
+    pivotU: { x: 80, y: 2 },
+  },
   'catenary.pole': {
     file: 'catenary.pole.svg',
     widthU: 30,
@@ -787,6 +799,12 @@ export const worldParts = {
     heightU: 110,
     pivotU: { x: 38, y: 104 },
   },
+  'tunnel.portal': {
+    file: 'tunnel.portal.svg',
+    widthU: 160,
+    heightU: 240,
+    pivotU: { x: 80, y: 236 },
+  },
   'track.sand-a': {
     file: 'track.sand-a.svg',
     widthU: 66,
@@ -1048,6 +1066,23 @@ export const secondaryParts = {
   hill: 'secondary.portal-hill',
   mouth: 'secondary.portal-mouth',
 } as const satisfies Record<string, WorldPartKey>;
+
+/**
+ * Stone bridge over a stream (doc 03 §8): the bridge from the rail head
+ * down to the valley floor (the arch is see-through), the far railing.
+ */
+export const bridgeParts = {
+  bridge: 'bridge.stone',
+  railing: 'bridge.railing',
+} as const satisfies Record<string, WorldPartKey>;
+
+/** Tunnel portal of the main track; its hill is painted per chunk. */
+export const tunnelParts = {
+  portal: 'tunnel.portal',
+} as const satisfies Record<string, WorldPartKey>;
+
+/** Inner height of the portal's arch over the rail head, as drawn (u). */
+export const TUNNEL_CLEARANCE_U = 186;
 
 /** Road traffic at crossings, seen from the front and from behind. */
 export const roadActorParts: Readonly<

@@ -47,6 +47,15 @@ export interface DebugSnapshot {
     /** How far the drawn pantograph head misses the wire, u. */
     pantographGapU: number | undefined;
   };
+  /**
+   * Tunnels in view, the opacity of their hills (1 opaque) and whether the
+   * train is outside, partly or wholly inside (doc 03 §8, TRN-06, D-018).
+   */
+  tunnels: {
+    id: string;
+    alpha: number;
+    train: 'outside' | 'partly' | 'inside';
+  }[];
   /** Oncoming trains on second tracks (doc 05 §6, D-017). */
   oncoming: {
     trains: {

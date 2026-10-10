@@ -14,6 +14,11 @@ import {
   secondaryClearRanges,
 } from '../../../src/domain/world/SecondaryTrack.ts';
 import {
+  BRIDGE_RESERVE_U,
+  bridgeSite,
+  tunnelSite,
+} from '../../../src/domain/world/Structures.ts';
+import {
   generateTrackProfile,
   profileGrade,
 } from '../../../src/domain/world/TrackProfile.ts';
@@ -251,6 +256,35 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
         ).toBe(false);
     });
     expect(guarded).toBeGreaterThan(20);
+  });
+
+  it('keeps the stream under each bridge clear and names its bridge and tunnel (doc 03 §8)', () => {
+    let bridges = 0;
+    each((scenery, seed) => {
+      expect(scenery.bridge).toEqual(bridgeSite(seed, scenery.chunkIndex));
+      expect(scenery.tunnel).toEqual(tunnelSite(seed, scenery.chunkIndex));
+      const site = scenery.bridge;
+      if (!site) return;
+      bridges += 1;
+      const c = site.localXU;
+      for (const prop of scenery.props) {
+        const reach = (prop.motion?.rangeU ?? 0) / 2;
+        // The stream widens towards the viewer like the near props grow.
+        const keep =
+          prop.layer === 'near'
+            ? BRIDGE_RESERVE_U * (1 + 0.5 * prop.depth)
+            : BRIDGE_RESERVE_U;
+        expect(Math.abs(prop.xU - c), prop.id).toBeGreaterThanOrEqual(
+          keep + reach,
+        );
+      }
+      for (const basin of scenery.water)
+        expect(
+          basin.toX <= c - BRIDGE_RESERVE_U ||
+            basin.fromX >= c + BRIDGE_RESERVE_U,
+        ).toBe(true);
+    });
+    expect(bridges).toBeGreaterThan(10);
   });
 
   it('covers the whole chunk with near and back ground', () => {

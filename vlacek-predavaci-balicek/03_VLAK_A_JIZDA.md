@@ -105,6 +105,14 @@ Stav „uvnitř tunelu“ se vyhodnocuje podle vlastní polohy každého vozidla
 
 Kolej má souvislý průběh, mostní konstrukce ho podpírá. Voda a údolí jsou pod tratí. Sloupy a zábradlí patří do různých vrstev, aby mohl vlak projet uvěřitelně mezi nimi. Nebudovat fyzikální pružnost mostu. Mostní stín není důležitější než čitelný vlak.
 
+Implementace ([D-018](../docs/decisions/018-bridges-and-tunnels.md)):
+
+- Kamenný mostek nese kolej přes potok v údolí 56 u pod tratí. Zábradlí na vzdálené straně je za vlakem, oblouk s potokem pod kolejí.
+- Tunel má kamenné portály, boky kopce a tmavý vnitřek se světly za vlakem a kryt kopce před ním.
+- Když je kterákoli část vlaku v tunelu nebo u portálu, kryt plynule zprůsvitní na 0,3 a po odjezdu se vrátí.
+- Ztmavení je pás v prostoru tunelu, takže každé vozidlo je tmavé podle vlastní polohy (TRN-06). Canvas fallback kreslí totéž.
+- Zvuk a světla lokomotivy se v tunelu zatím nemění.
+
 ## 9. Elektrifikace
 
 Při vytvoření jízdy se stanoví `electrified = locomotive.power === 'electric'`. Hodnota platí pro celou cestu a **všechny zachované i nově generované chunky**. Výměna lokomotivy zahajuje novou cestu, takže se nemusí za jízdy přepínat infrastruktura.
@@ -123,7 +131,8 @@ Implementace ([D-016](../docs/decisions/016-electric-locomotive-and-catenary.md)
 - Stožáry stojí v globální fázi po 256 u. Stožár, který by padl na silnici přejezdu, se posune 48 u vedle ní.
 - Drát vede rovně mezi stožáry, u každého 160 u nad kolejí. Od této výšky se odchyluje nejvýš o 3,2 u.
 - Pantograf natahuje ramena k drátu v bodě dotyku, v mezích 0,07–1,6 násobku kresby. V depu leží sklopený.
-- Portálové podpěry, mostní konzoly a tunelové závěsy zatím chybějí.
+- Stožár se drží 80 u od středu potoka pod mostem. V tunelu a 72 u kolem něj drží drát závěs ze stropu ([D-018](../docs/decisions/018-bridges-and-tunnels.md)).
+- Portálové podpěry ve stanicích zatím chybějí.
 
 ## 10. Nekonečná jízda bez ztráty přesnosti
 

@@ -12,6 +12,13 @@ import {
   secondaryClearRanges,
 } from './SecondaryTrack.ts';
 import {
+  BRIDGE_RESERVE_U,
+  bridgeSite,
+  tunnelSite,
+  type BridgeSite,
+  type TunnelSite,
+} from './Structures.ts';
+import {
   LOCALITIES,
   type AnimalKind,
   type BackGround,
@@ -97,6 +104,10 @@ export interface ChunkScenery {
   water: WaterBasin[];
   /** The level crossing of this chunk (slot 3), if any. */
   crossing: CrossingSite | undefined;
+  /** The stone bridge over a stream (slot 4), if any. */
+  bridge: BridgeSite | undefined;
+  /** The short tunnel (slot 6), if any. */
+  tunnel: TunnelSite | undefined;
   props: SceneryProp[];
   animal: { kind: AnimalKind; depth: number };
 }
@@ -432,6 +443,28 @@ export function chunkScenery(seed: number, chunkIndex: number): ChunkScenery {
       );
     });
   }
+  // The stream under a bridge runs from the horizon to the viewer: water
+  // splits around it and nothing stands in it, wider towards the viewer.
+  const bridge = bridgeSite(seed, chunkIndex);
+  if (bridge) {
+    const c = bridge.localXU;
+    const pieces = water.flatMap((basin) =>
+      [
+        { ...basin, toX: Math.min(basin.toX, c - BRIDGE_RESERVE_U) },
+        { ...basin, fromX: Math.max(basin.fromX, c + BRIDGE_RESERVE_U) },
+      ].filter((piece) => piece.toX - piece.fromX > 2 * WATER_END_U),
+    );
+    water.length = 0;
+    water.push(...pieces);
+    kept = kept.filter((placement) => {
+      const reach = (placement.motion?.rangeU ?? 0) / 2;
+      const keep =
+        placement.layer === 'near'
+          ? BRIDGE_RESERVE_U * nearDepthScale(placement.depth)
+          : BRIDGE_RESERVE_U;
+      return Math.abs(placement.xU - c) >= keep + reach;
+    });
+  }
   // A second track and its portal hills keep the near back ground clear
   // (doc 04 §7): nearer props leave, water lies behind its band.
   const clear = secondaryClearRanges(seed, chunkIndex);
@@ -473,6 +506,8 @@ export function chunkScenery(seed: number, chunkIndex: number): ChunkScenery {
     back,
     water,
     crossing,
+    bridge,
+    tunnel: tunnelSite(seed, chunkIndex),
     props: kept.map((placement, n) => ({
       id: `g${TRACK_GENERATOR_VERSION}:chunk:${chunkIndex}:prop:${n}`,
       ...placement,

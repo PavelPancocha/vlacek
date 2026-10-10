@@ -116,6 +116,12 @@ Stanice dostane rovinu; přejezd není na otevřeném mostě ani uvnitř tunelu.
 
 Implementace přejezdu ([D-015](../docs/decisions/015-level-crossings.md)): `crossingSite(seed, k)` ve slotu 3 vybere seedem jedno z míst, kde je kolej aspoň 96 u na obě strany rovná a silnice je aspoň 120 u od interaktivního zvířete. Bez takového místa blok přejezd nemá. Pruh silnice ±64 u je rezervovaný: voda se kolem něj rozdělí a žádná rekvizita ani její trasa do něj nezasahuje.
 
+Implementace mostu a tunelu ([D-018](../docs/decisions/018-bridges-and-tunnels.md)):
+
+- `bridgeSite(seed, k)` dává ve slotu 4 každého bloku bez souběhu kamenný mostek přes potok, tedy vždy v bloku 0. Potok drží 192 u od okrajů chunku i od interaktivního zvířete; voda za tratí se kolem něj rozdělí.
+- Louka pod mostem klesá do údolí 56 u hlubokého. Kolej se nemění.
+- `tunnelSite(seed, k)` dává ve slotu 6 krátký tunel (448 u): v bloku 0 vždy, jinde v blocích bez souběhu podle biomu (hory 1, podhůří 0,9, les 0,6, ostatní 0,3, klíč `tunnel`).
+
 Každý template deklaruje rezervované oblasti, rozměry, povolené biomy, případné navazující chunky a bezpečné oblasti pro dotykové cíle. Konfliktní kandidát se odmítne nejvýše osmkrát a pak se použije `safe-meadow` nebo biomová obdoba. Generátor se nikdy nesmí zacyklit ani vytvořit chybějící kolej.
 
 ## 7. Sekundární trať jako vícedílný motiv

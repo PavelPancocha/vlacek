@@ -347,3 +347,37 @@ Snímky ze skutečné aplikace:
 Fyzický tablet, telefon a Tesla: **NEOVĚŘENO**.
 
 Oprava testu nalezená při ověření G3: `tests/e2e/render.spec.ts` otevíral v každém testu dvě stránky s jízdou a nezavíral je. Čtyři stránky dál kreslily v softwarovém WebGL a zpomalily všechny další testy v tomtéž prohlížeči. Kouřový test bootu pak na plném běhu dvakrát překročil 10 s (samostatně PASS). Měření: kouřový test po testech vykreslování trval 9,7 s, po zavření stránek 2,1 s; druhý test vykreslování se zkrátil z 13,8 na 9,0 s.
+
+## G4 — mosty přes potoky a krátké tunely
+
+Rozhodnutí: [D-018](../decisions/018-bridges-and-tunnels.md). Ve slotu 4 bloků bez souběhu vede kolej po kamenném mostku přes potok v mělkém údolí. Ve slotu 6 prvního bloku a podle biomu i dalších bloků projíždí krátkým tunelem. Kopec nad tunelem při průjezdu zprůsvitní a vozidla uvnitř ztmavnou každé podle své polohy. Elektrický vlak má drát i přes most a tunelem, kde visí na závěsech ze stropu.
+
+| Test                                                                                                                                                                       | Red                                                                                 | Green                                   |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------- |
+| Unit místa: most ve slotu 4 bloků bez souběhu (blok 0 vždy), údolí s rovným dnem pod mostem, tunel ve slotu 6 podle biomu                                                  | 3 FAIL proti stubům                                                                 | 3 PASS                                  |
+| Unit výška břehu = max(násep, údolí)                                                                                                                                       | 1 FAIL proti stubu                                                                  | PASS                                    |
+| Unit odstup rekvizit od potoka a stožárů od potoka                                                                                                                         | 2 FAIL (scenérie bez `bridge`; stožár 32 u od potoka)                               | 61 PASS                                 |
+| Unit závěs ze stropu v tunelu a 72 u kolem něj, jinde stožár                                                                                                               | 1 FAIL proti stubu                                                                  | 6 PASS                                  |
+| Unit šířka potoka u trati a rozměry nových dílů (mostek, zábradlí, portál s otvorem pro pantograf)                                                                         | 1 FAIL (šířka potoka); u rozměrů mutace výšky mostku 80 u → FAIL testu i validátoru | PASS                                    |
+| Unit kryt tunelu: průsvitný, když je kterákoli část vlaku v tunelu nebo u něj, plynulá změna v čase simulace; poloha vlaku venku, částečně, uvnitř (TRN-06)                | 2 FAIL a 1 FAIL proti stubům                                                        | 3 PASS                                  |
+| E2E TRN-06 a TRN-08: elektrická souprava přejede most a projede tunelem, sběrač stále na drátu, nic nepřekrývá vlak, kryt při částečném vjezdu průsvitný a pak neprůhledný | 2 FAIL proti buildu G3 (`aaa1817`, diagnostika bez `tunnels`)                       | 2 PASS                                  |
+| `npm run check`, celé `npm run test:e2e`                                                                                                                                   | —                                                                                   | 449 unit PASS; E2E 102 PASS / 4 skipped |
+
+Při vizuální kontrole jsem opravil tři věci, které testy nezachytí:
+
+- Kopec nad tunelem měl nad portály svislé švy a jiný odstín než boky. Kryt teď nad portály pokračuje výš než 214 u a od paty portálu se svažuje k louce. Boky a kryt mají stejný tón i mřížku keřů a kvítí.
+- Stožáry vedle tunelu byly za boky kopce. Boky jsou teď pod stožáry.
+- Kopec dostal keře a kameny.
+
+Výkon (`PERF_SECONDS=30 npm run measure:perf`, nejdelší souprava; jízda do chunku 15 projede mostem i tunelem bloku 0): s parní lokomotivou medián 30 FPS, p95 50 ms, nejhorší snímek 67 ms. S elektrickou (`PERF_LOCOMOTIVE=electric_retro`) medián 30 FPS, p95 50 ms, nejhorší snímek 67 ms.
+
+Snímky ze skutečné aplikace:
+
+- [parní souprava na mostku přes potok](img/2026-10-10-most-potok.jpg);
+- [detail mostku: oblouk, římsa, zábradlí za vlakem](img/2026-10-10-most-detail.jpg);
+- [elektrická souprava před tunelem](img/2026-10-10-tunel-pred.jpg);
+- [průjezd tunelem: průsvitný kopec, ztmavená vozidla uvnitř, závěs drátu](img/2026-10-10-tunel-prujezd.jpg).
+
+Známá vada mimo G4: kde začíná lesní lokalita, mění se barva blízké louky ostrým svislým okrajem. Vada je už v buildu G3; oprava je další samostatný krok.
+
+Fyzický tablet, telefon a Tesla: **NEOVĚŘENO**.

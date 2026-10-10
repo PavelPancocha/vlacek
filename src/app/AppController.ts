@@ -293,6 +293,7 @@ export class AppController {
         pantographGapU: this.#scene.stats.pantographGapU,
       },
       crossings: ride ? this.#crossings(ride) : [],
+      tunnels: this.#scene.stats.tunnels.map((tunnel) => ({ ...tunnel })),
       oncoming: {
         trains: (ride?.oncomingTrains ?? []).map((train) => ({
           id: train.id,

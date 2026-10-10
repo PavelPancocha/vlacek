@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
-import { embankmentU } from '../../../src/domain/world/Terrain.ts';
+import { bankHeightU, embankmentU } from '../../../src/domain/world/Terrain.ts';
+import {
+  VALLEY_DEPTH_U,
+  bridgeSite,
+} from '../../../src/domain/world/Structures.ts';
 
 const { latticeU, maxEmbankmentU } = gameConfig.world.terrain;
 const width = gameConfig.world.chunkWidthU;
@@ -48,6 +52,25 @@ describe('embankmentU: the near meadow below the track bed (doc 14 §6)', () => 
           6,
         );
       }
+    }
+  });
+});
+
+describe('bankHeightU: the near meadow with the valleys of streams (doc 03 §8)', () => {
+  it('follows the embankment, and dips into the valley under each bridge', () => {
+    for (const seed of [1, 77, 123]) {
+      for (let x = -4 * width; x < 40 * width; x += 13)
+        expect(bankHeightU(seed, x)).toBeGreaterThanOrEqual(
+          embankmentU(seed, x),
+        );
+      const site = bridgeSite(seed, 4);
+      if (!site) throw new Error('block 0 has a bridge');
+      const middle = 4 * width + site.localXU;
+      expect(bankHeightU(seed, middle)).toBe(VALLEY_DEPTH_U);
+      // Far from any bridge it is the embankment alone.
+      expect(bankHeightU(seed, middle + 2 * width)).toBe(
+        embankmentU(seed, middle + 2 * width),
+      );
     }
   });
 });

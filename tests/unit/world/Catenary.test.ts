@@ -2,13 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
 import {
   POLE_ROAD_CLEARANCE_U,
+  POLE_STREAM_CLEARANCE_U,
+  TUNNEL_MAST_CLEARANCE_U,
   catenaryPoleXs,
+  catenarySupport,
   contactWireHeightU,
 } from '../../../src/domain/world/Catenary.ts';
 import {
   crossingSite,
   crossingWorldX,
 } from '../../../src/domain/world/Crossings.ts';
+import {
+  BRIDGE_HALF_U,
+  bridgeSite,
+  tunnelSite,
+} from '../../../src/domain/world/Structures.ts';
 import {
   generateTrackProfile,
   profileHeightU,
@@ -38,11 +46,13 @@ describe('catenary of an electric journey (doc 03 §9, TRN-08)', () => {
       );
       for (let i = 1; i < whole.length; i++) {
         const gap = (whole[i] ?? 0) - (whole[i - 1] ?? 0);
+        // A pole beside a road or a stream moves by at most the larger
+        // clearance.
         expect(gap).toBeGreaterThanOrEqual(
-          catenaryPoleSpacingU - POLE_ROAD_CLEARANCE_U,
+          catenaryPoleSpacingU - POLE_STREAM_CLEARANCE_U,
         );
         expect(gap).toBeLessThanOrEqual(
-          catenaryPoleSpacingU + POLE_ROAD_CLEARANCE_U,
+          catenaryPoleSpacingU + POLE_STREAM_CLEARANCE_U,
         );
       }
     }
@@ -65,6 +75,20 @@ describe('catenary of an electric journey (doc 03 §9, TRN-08)', () => {
     expect(crossings).toBeGreaterThan(10);
     // The clearance keeps the road and its posts free.
     expect(POLE_ROAD_CLEARANCE_U).toBeGreaterThanOrEqual(44);
+  });
+
+  it('keeps every pole out of the streams under bridges', () => {
+    let bridges = 0;
+    for (const seed of SEEDS)
+      for (let k = 0; k < CHUNKS; k++) {
+        const site = bridgeSite(seed, k);
+        if (!site) continue;
+        bridges += 1;
+        const river = k * chunkWidthU + site.localXU;
+        for (const x of catenaryPoleXs(seed, river - 512, river + 512))
+          expect(Math.abs(x - river)).toBeGreaterThanOrEqual(BRIDGE_HALF_U);
+      }
+    expect(bridges).toBeGreaterThan(10);
   });
 
   it('hangs the contact wire at contact height at each pole, without a break at chunk seams', () => {
@@ -102,6 +126,30 @@ describe('catenary of an electric journey (doc 03 §9, TRN-08)', () => {
     // Chords between poles over the generator's gentle transitions.
     expect(worst).toBeGreaterThan(0);
     expect(worst).toBeLessThanOrEqual(PANTOGRAPH_SLACK_U);
+  });
+
+  it('holds the wire by ceiling hangers in and at a tunnel, by masts elsewhere', () => {
+    // World 123: the tunnel of chunk 6 runs from 6272 to 6720.
+    expect(catenarySupport(123, 6400)).toBe('hanger');
+    expect(catenarySupport(123, 6656)).toBe('hanger');
+    expect(catenarySupport(123, 6144)).toBe('mast');
+    expect(catenarySupport(123, 6912)).toBe('mast');
+    for (const seed of SEEDS)
+      for (let k = 0; k < CHUNKS; k++) {
+        const tunnel = tunnelSite(seed, k);
+        for (const x of catenaryPoleXs(
+          seed,
+          k * chunkWidthU,
+          (k + 1) * chunkWidthU,
+        )) {
+          const local = x - k * chunkWidthU;
+          const atTunnel =
+            tunnel !== undefined &&
+            local > tunnel.fromX - TUNNEL_MAST_CLEARANCE_U &&
+            local < tunnel.toX + TUNNEL_MAST_CLEARANCE_U;
+          expect(catenarySupport(seed, x)).toBe(atTunnel ? 'hanger' : 'mast');
+        }
+      }
   });
 });
 

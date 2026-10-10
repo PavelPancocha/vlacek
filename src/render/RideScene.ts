@@ -32,7 +32,7 @@ import {
   nearDepthScale,
   type ChunkScenery,
 } from '../domain/world/Scenery.ts';
-import { embankmentU } from '../domain/world/Terrain.ts';
+import { bankHeightU } from '../domain/world/Terrain.ts';
 import {
   ArtAtlas,
   preloadArt,
@@ -59,6 +59,7 @@ import { Backdrop } from './Backdrop.ts';
 import { ChunkView, SECONDARY_DEPTH } from './ChunkView.ts';
 import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
 import { pantographReachU } from './pantograph.ts';
+import type { TrainInTunnel } from './tunnelCover.ts';
 import {
   frameLeftX,
   frameTopY,
@@ -96,6 +97,8 @@ export interface RenderStats {
   pantographGapU: number | undefined;
   /** Vehicles of oncoming trains drawn out in the open (doc 05 §6). */
   oncomingVehicles: number;
+  /** Tunnels in the rendered chunks, their hills' opacity and the train. */
+  tunnels: { id: string; alpha: number; train: TrainInTunnel }[];
 }
 
 const NO_STATS: RenderStats = {
@@ -107,6 +110,7 @@ const NO_STATS: RenderStats = {
   catenaryPoles: 0,
   pantographGapU: undefined,
   oncomingVehicles: 0,
+  tunnels: [],
 };
 
 /**
@@ -235,6 +239,8 @@ export class RideScene extends Phaser.Scene {
   /** World y (up) of the top screen edge; eased between frames. */
   #cameraTopY: number | undefined;
   #framing: FramingConfig | undefined;
+  /** Simulation tick of the last tunnel update. */
+  #tunnelTick: number | undefined;
   /** Where the drawn pantograph touches the wire this frame (render). */
   #pantographContact: { x: number; y: number } | undefined;
   /** CSS px covered by controls at the top and bottom of the screen. */
@@ -514,6 +520,7 @@ export class RideScene extends Phaser.Scene {
   #reset(): void {
     this.#particles.clear();
     this.#effectsTick = undefined;
+    this.#tunnelTick = undefined;
     this.#destroyChunks();
     this.#destroyObjects();
     this.#scenery.clear();
@@ -554,7 +561,8 @@ export class RideScene extends Phaser.Scene {
     const vehicleFraming = this.#framing;
     if (!vehicleFraming) return;
     // Per-ride stats; the shared empty record stays untouched.
-    if (this.stats === NO_STATS) this.stats = { ...NO_STATS, localities: [] };
+    if (this.stats === NO_STATS)
+      this.stats = { ...NO_STATS, localities: [], tunnels: [] };
     this.stats.pantographGapU = undefined;
     this.#pantographContact = undefined;
     // The raised pantograph reaches the wire: keep it in view too.
@@ -723,6 +731,18 @@ export class RideScene extends Phaser.Scene {
     for (const index of this.#scenery.keys())
       if (index < first || index > last) this.#scenery.delete(index);
     const crossings = new Map(ride.crossings.map((c) => [c.id, c]));
+    // The whole train's x interval and the simulation time since the last
+    // frame, for the tunnels' see-through cover (0 while paused).
+    const trainSpan = {
+      minX: ride.sample(ride.tailS).x,
+      maxX: ride.sample(ride.frontS).x,
+    };
+    const tick = ride.simulationTick;
+    const tunnelDtSec =
+      this.#tunnelTick === undefined
+        ? 0
+        : Math.max(0, tick - this.#tunnelTick) / gameConfig.simulation.fixedHz;
+    this.#tunnelTick = tick;
     const texture = this.#art?.textureKey;
     const pxPerU = this.#art?.info?.pxPerU;
     const art =
@@ -743,6 +763,7 @@ export class RideScene extends Phaser.Scene {
             backProps: DEPTH.backProps,
             ground: DEPTH.ground,
             track: DEPTH.track,
+            train: DEPTH.train,
             wires: DEPTH.wires,
             nearProps: DEPTH.nearProps,
           },
@@ -753,7 +774,19 @@ export class RideScene extends Phaser.Scene {
       chunk.setX(k * CHUNK_WIDTH_U - this.#originX);
       const site = this.#sceneryOf(ride.seed, k).crossing;
       chunk.update(timeSec, site && crossings.get(site.id));
+      chunk.tunnel?.update(trainSpan, tunnelDtSec);
     }
+    this.stats.tunnels = [...this.#chunks.values()].flatMap((chunk) =>
+      chunk.tunnel
+        ? [
+            {
+              id: chunk.tunnel.id,
+              alpha: chunk.tunnel.alpha,
+              train: chunk.tunnel.train,
+            },
+          ]
+        : [],
+    );
     this.stats.renderedChunks = this.#chunks.size;
     this.stats.catenaryPoles = [...this.#chunks.values()].reduce(
       (sum, chunk) => sum + chunk.catenaryPoles,
@@ -785,7 +818,7 @@ export class RideScene extends Phaser.Scene {
       const meadowY =
         -point.y +
         TRACK_BED_DEPTH_U +
-        embankmentU(ride.seed, point.x) +
+        bankHeightU(ride.seed, point.x) +
         NEAR_FOOT_OFFSET_U;
       const { depth, fit } = placeAnimal(
         animal.depth,

@@ -1,5 +1,6 @@
 import { gameConfig } from '../../config/gameConfig.ts';
 import { unitRandom } from './Hash.ts';
+import { valleyDepthU } from './Structures.ts';
 import { TRACK_GENERATOR_VERSION } from './TrackProfile.ts';
 
 const { latticeU, maxEmbankmentU } = gameConfig.world.terrain;
@@ -23,4 +24,13 @@ export function embankmentU(seed: number, worldXU: number): number {
   const blend = t * t * (3 - 2 * t);
   const a = embankmentNodeU(seed, i);
   return a + (embankmentNodeU(seed, i + 1) - a) * blend;
+}
+
+/**
+ * Height of the track bed above the near meadow including the valleys of
+ * streams under bridges (doc 03 §8): the meadow is never higher than the
+ * embankment leaves it, and dips to the valley floor at a bridge.
+ */
+export function bankHeightU(seed: number, worldXU: number): number {
+  return Math.max(embankmentU(seed, worldXU), valleyDepthU(seed, worldXU));
 }

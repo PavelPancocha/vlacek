@@ -6,7 +6,11 @@ import { artParts } from '../../../src/content/artManifest.ts';
 import {
   TRACK_TILE_STEP_U,
   CATENARY_POLE_DEPTH_U,
+  TRACK_BED_DEPTH_U,
+  TUNNEL_CLEARANCE_U,
   animalParts,
+  bridgeParts,
+  tunnelParts,
   catenaryAnchors,
   catenaryParts,
   crossingPostAnchors,
@@ -23,6 +27,10 @@ import {
   nearDepthScale,
   STATION_KINDS,
 } from '../../../src/domain/world/Scenery.ts';
+import {
+  BRIDGE_HALF_U,
+  VALLEY_DEPTH_U,
+} from '../../../src/domain/world/Structures.ts';
 import { LOCALITIES } from '../../../src/domain/world/sceneryTemplates.ts';
 import {
   validateWorldArt,
@@ -156,6 +164,21 @@ describe('world art manifest (D-011)', () => {
       span.pivotU.y - 2,
     );
     expect(catenaryAnchors.contact.x).toBe(catenaryAnchors.messenger.x);
+  });
+
+  it('builds the bridge down to its valley floor and the tunnel high enough for the wire (doc 03 §8–9)', () => {
+    const bridge = worldParts[bridgeParts.bridge];
+    // Rail head on the pivot; abutments to the valley floor below the bed.
+    expect(bridge.heightU - 4 - bridge.pivotU.y).toBe(
+      TRACK_BED_DEPTH_U + VALLEY_DEPTH_U,
+    );
+    expect(bridge.widthU / 2).toBeGreaterThanOrEqual(BRIDGE_HALF_U);
+    expect(bridge.pivotU.x).toBe(bridge.widthU / 2);
+    const portal = worldParts[tunnelParts.portal];
+    expect(TUNNEL_CLEARANCE_U).toBeGreaterThan(
+      gameConfig.world.catenaryContactHeightU + 16,
+    );
+    expect(TUNNEL_CLEARANCE_U).toBeLessThan(portal.pivotU.y);
   });
 
   it('keeps world and vehicle frames apart in the shared atlas', () => {
