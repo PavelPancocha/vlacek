@@ -157,7 +157,7 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
 
 ## Odvozené hodnoty a pravidla
 
-`Dclose` není druhá nezávislá konstanta. Počítá se podle dokumentu 05 z rychlostního limitu a přejezdových časů. Při standardním limitu vychází 890 u. Každý relevantní konflikt má ještě vlastní fyzickou šířku; vzdálenost se měří od čela vlaku k bližšímu okraji rozšířené konfliktní zóny, ne k libovolnému středu budovy.
+`Dclose` není druhá nezávislá konstanta. Počítá se podle dokumentu 05 z rychlostního limitu a přejezdových časů. Při standardním limitu vychází 890 u. Každý relevantní konflikt má ještě vlastní fyzickou šířku; vzdálenost se měří od čela vlaku k bližšímu okraji rozšířené konfliktní zóny, ne k libovolnému středu budovy. Proto `roadClearanceSeconds` nesmí být kratší než nejhorší doba, za kterou silniční aktér za stop čárou opustí zónu (dnes 2,0 s, D-015); kratší hodnotu validace odmítne.
 
 `geometryLookAheadU` je minimum. Zvětší se, pokud širší viewport nebo vícedílná scénka vyžaduje více geometrie. `logicalActivationAheadU` je naopak základ deterministických spouštěčů scén a nesmí náhodně záviset na výkonnosti rendereru. Renderovat daleko viditelné statické objekty lze bez předčasného spuštění jejich scénky.
 

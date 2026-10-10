@@ -100,7 +100,7 @@ Implementace ([D-015](../docs/decisions/015-level-crossings.md)):
 - Automat `LevelCrossing` počítá obsazení z celé soupravy. Konfliktní zóna má ±30 u podél koleje a rezervu 32 u.
 - Při nynější nejvyšší rychlosti 480 u/s (dokument 14) vychází Dclose 2 240 u.
 - Stop čára je 40 u za tratí a 56 u před ní, u paty náspu.
-- Aktér za stop čárou opustí zónu nejpozději za 2,0 s, i když jede za nejpomalejším. Test to hlídá proti `roadClearanceSeconds`.
+- Aktér za stop čárou opustí zónu nejpozději za 2,0 s, i když jede za nejpomalejším. Validace konfigurace odmítne `roadClearanceSeconds` kratší než tato doba.
 - Výstražník za tratí je vysoký, před tratí nízký, aby nezakryl vlak. Polovinová břevna zavírají pravý pruh přijíždějících.
 - Červená světla se střídají po půl sekundě, bílé bliká při volném přejezdu, obojí v simulačním čase.
 

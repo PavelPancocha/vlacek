@@ -1,3 +1,5 @@
+import { worstClearingSeconds } from '../domain/interaction/roadTraffic.ts';
+
 /**
  * Typed default parameters owned by doc 13 (13_VYCHOZI_KONFIGURACE.md).
  * Only sections used by implemented features live here; units are in the
@@ -141,7 +143,10 @@ export interface CameraConfig {
 
 /** Level crossing timings (doc 05 §4, doc 13 `crossing`). */
 export interface CrossingConfig {
-  /** Longest a road actor may take through the conflict zone. */
+  /**
+   * Longest a road actor may take through the conflict zone; at least
+   * `worstClearingSeconds()` (part of Dclose).
+   */
   roadClearanceSeconds: number;
   warningSeconds: number;
   closingSeconds: number;
@@ -488,7 +493,6 @@ export function validateGameConfig(config: GameConfig): string[] {
     ...profile('standard'),
     ...(
       [
-        'roadClearanceSeconds',
         'warningSeconds',
         'closingSeconds',
         'openingSeconds',
@@ -496,6 +500,12 @@ export function validateGameConfig(config: GameConfig): string[] {
         'distanceMarginU',
       ] as const
     ).map((key): Check => [`crossing.${key}`, positive(config.crossing[key])]),
+    // Shorter would leave a committed car on the road and shorten Dclose,
+    // so a train at top speed would meet half-lowered barriers. NaN fails.
+    [
+      'crossing.roadClearanceSeconds',
+      config.crossing.roadClearanceSeconds >= worstClearingSeconds(),
+    ],
     ['crossing.maxQueuedCars', positiveInteger(config.crossing.maxQueuedCars)],
     [
       'crossing.maxQueuedBikes',

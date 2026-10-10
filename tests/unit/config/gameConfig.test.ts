@@ -145,6 +145,25 @@ describe('gameConfig', () => {
     expect(validateGameConfig(gameConfig)).toEqual([]);
   });
 
+  it('rejects a road clearance shorter than the slowest road actor needs (doc 05 §4)', () => {
+    // A shorter clearance also shortens Dclose: a train at top speed would
+    // reach the crossing before the barriers are down.
+    const withClearance = (roadClearanceSeconds: number): GameConfig => ({
+      ...gameConfig,
+      crossing: { ...gameConfig.crossing, roadClearanceSeconds },
+    });
+    expect(validateGameConfig(withClearance(0.1))).toEqual([
+      'crossing.roadClearanceSeconds',
+    ]);
+    expect(validateGameConfig(withClearance(1.9))).toEqual([
+      'crossing.roadClearanceSeconds',
+    ]);
+    expect(validateGameConfig(withClearance(Number.NaN))).toEqual([
+      'crossing.roadClearanceSeconds',
+    ]);
+    expect(validateGameConfig(withClearance(2))).toEqual([]);
+  });
+
   it('reports out-of-range values with their path', () => {
     const broken: GameConfig = {
       ...gameConfig,

@@ -1,6 +1,22 @@
 import type { CrossingConfig } from '../../config/gameConfig.ts';
 import { unitRandom } from '../world/Hash.ts';
 import { TRACK_GENERATOR_VERSION } from '../world/TrackProfile.ts';
+import {
+  FAR_STOP_LINE_U,
+  NEAR_STOP_LINE_U,
+  ROAD_ACTOR_LENGTH_U as LENGTH_U,
+  ROAD_ACTOR_SPEED_U_PER_SEC as SPEED_U_PER_SEC,
+  ROAD_CONFLICT_U,
+  type RoadActorKind,
+} from './roadTraffic.ts';
+
+export {
+  FAR_STOP_LINE_U,
+  NEAR_STOP_LINE_U,
+  ROAD_CONFLICT_U,
+  worstClearingSeconds,
+  type RoadActorKind,
+} from './roadTraffic.ts';
 
 /** Phases of a level crossing (doc 05 §4). */
 export type CrossingPhase =
@@ -18,8 +34,6 @@ export interface CrossingRules {
   closeDistanceU: number;
 }
 
-export type RoadActorKind = 'car' | 'bike';
-
 /**
  * A car or bike on the crossing road. The road runs into the depth: road
  * position 0 is the track, negative behind it (towards the horizon),
@@ -36,15 +50,6 @@ export interface RoadActor {
   waiting: boolean;
 }
 
-/** Half the track bed along the road: the road actors' conflict zone. */
-export const ROAD_CONFLICT_U = 30;
-/**
- * Stop lines, measured from the track. Behind the track the road meets the
- * rails level; in front of it the road climbs the bank, so its barrier and
- * stop line stand at the bank's foot, further out (D-015).
- */
-export const FAR_STOP_LINE_U = 40;
-export const NEAR_STOP_LINE_U = 56;
 /** Where traffic appears and disappears on the road. */
 export const ROAD_FAR_END_U = -220;
 export const ROAD_NEAR_END_U = 320;
@@ -58,28 +63,11 @@ const OCCUPANCY_MARGIN_U = 32;
  */
 export const CROSSING_ZONE_HALF_U = TRACK_CONFLICT_U + OCCUPANCY_MARGIN_U;
 
-const LENGTH_U: Readonly<Record<RoadActorKind, number>> = { car: 26, bike: 14 };
-const SPEED_U_PER_SEC: Readonly<Record<RoadActorKind, number>> = {
-  car: 70,
-  bike: 56,
-};
 /** Gap kept to the actor ahead in the same lane. */
 const FOLLOW_GAP_U = 8;
 /** Stop line of traffic coming from the far (+1) or near (−1) side. */
 function stopLineU(direction: 1 | -1): number {
   return direction === 1 ? FAR_STOP_LINE_U : NEAR_STOP_LINE_U;
-}
-
-/**
- * Longest time a road actor just past its stop line needs until it is
- * clear of the conflict zone, also stuck behind the slowest actor. It must
- * fit `crossing.roadClearanceSeconds` (a test checks the default).
- */
-export function worstClearingSeconds(): number {
-  const longest = Math.max(...Object.values(LENGTH_U));
-  const slowest = Math.min(...Object.values(SPEED_U_PER_SEC));
-  const stop = Math.max(FAR_STOP_LINE_U, NEAR_STOP_LINE_U);
-  return (stop + ROAD_CONFLICT_U + longest) / slowest;
 }
 
 const SPAWN_EVERY_SEC: readonly [number, number] = [3, 8];

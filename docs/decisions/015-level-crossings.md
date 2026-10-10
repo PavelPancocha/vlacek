@@ -32,7 +32,7 @@ Dokument 04 §6 přejezdu dává slot 3 bloku biomu.
    - Aktéři přijíždějí podle seedu každé 3–8 s, střídavě z obou stran.
    - Každá strana má frontu s rozestupem 8 u a stropem z dokumentu 13.
    - Stop čára je za tratí 40 u od koleje. Před tratí je 56 u od koleje, u paty náspu: tam musí stát nízké zařízení, aby nezakrylo vlak.
-   - `worstClearingSeconds()` vrací nejdelší dobu, za kterou aktér za stop čárou opustí zónu, i za nejpomalejším aktérem: `(56 + 30 + 26) / 56 = 2,0 s`. Test hlídá, že nepřekročí `crossing.roadClearanceSeconds`. Proto mají kola 56 u/s místo původních 46.
+   - `worstClearingSeconds()` vrací nejdelší dobu, za kterou aktér za stop čárou opustí zónu, i za nejpomalejším aktérem: `(56 + 30 + 26) / 56 = 2,0 s`. Nesmí překročit `crossing.roadClearanceSeconds`: kratší hodnota by zkrátila i Dclose a vlak v plné rychlosti by dojel k napůl spuštěným závorám. Proto ji `validateGameConfig` odmítne a hra s takovou konfigurací nenaběhne. Výpočet je v listovém modulu `roadTraffic.ts` bez importů, aby ho konfigurace mohla použít bez importního cyklu přes moduly světa. Proto mají kola 56 u/s místo původních 46.
 4. **Kresba.**
    - **Silnice** je zapečená do země chunku: za tratí stoupá k obzoru a zužuje se, před tratí se dolů rozšiřuje. Má asfalt na štěrkové krajnici, postranní čáry, přerušovanou osu a stop čáry; pod pásy louky pokračuje obdélníky. Přes kolej vedou betonové panely `crossing.deck` v kontejneru koleje.
    - **`CrossingView`** (vlastní ho `ChunkView` a ruší se s ním) jen čte stav přejezdu. Rozměry počítá čistý modul `crossingLayout.ts`, body světel a kloubů jsou v `crossingPostAnchors`.
