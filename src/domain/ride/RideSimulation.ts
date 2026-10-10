@@ -59,6 +59,8 @@ export class RideSimulation {
   #events: RideEvent[] = [];
   speedUPerSec = 0;
   simulationTick: number;
+  /** Intent of the latest step, for the drive effects (doc 14 §4). */
+  lastIntent: MotionIntent = 'COAST';
   headS: number;
   previousHeadS: number;
 
@@ -150,6 +152,7 @@ export class RideSimulation {
   }
 
   step(intent: MotionIntent): void {
+    this.lastIntent = intent;
     this.previousHeadS = this.headS;
     const grade = this.track.sample(this.headS).grade;
     const motion = stepMotion(
@@ -168,6 +171,7 @@ export class RideSimulation {
 
   /** After pause, focus loss or restore: stopped, no catch-up movement. */
   resetMotion(): void {
+    this.lastIntent = 'COAST';
     this.speedUPerSec = 0;
     this.previousHeadS = this.headS;
   }

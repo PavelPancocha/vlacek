@@ -91,6 +91,16 @@ Lokální hlasitost se může mírně měnit podle vzdálenosti, ale důležitá
 
 Režim omezených efektů sníží dekorativní pohyb, částice a houpání UI. Nezruší funkční signalizaci ani informace o reakci objektu. Veškeré důležité ovládání funguje i se zcela vypnutým zvukem.
 
+Implementace částic a drobných animací ([D-014](../docs/decisions/014-particles-and-small-animations.md)):
+
+- **Pole částic.** Vrstva 10 kreslí částice z omezeného, znovupoužívaného pole ve světových souřadnicích. Pole se posouvá simulačním časem, takže v pauze stojí.
+- **Zdroje částic.** Kouř, pára, výfuk a hvězdičky vycházejí z emitorů v manifestu vozidla, se sklonem modelu.
+  - Kouř jde v taktech hnacích kol.
+  - Jiskry přicházejí jen při prudkém brzdění.
+  - Sníh a listí víří kola jen nad sněhem či lesní půdou a jen za jízdy.
+- **Drobné pohyby.** Tráva a stromy se houpou, voda občas zableskne, zvířata jemně dýchají. Jen jednou za čas přeletí ptáci nebo motýli.
+- **Úsporný profil.** Profil `low` i omezené efekty snižují strop částic z 240 na 96 a hustotu na polovinu.
+
 Mluvené pojmenovávání věcí, automatický komentátor a další jazyky nejsou součást V1. Případně se později doplní jako volitelná zvuková vrstva, nikoli závislost herní logiky.
 
 ## 8. Rozložení obrazovky

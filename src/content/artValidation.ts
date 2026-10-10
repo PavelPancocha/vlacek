@@ -1,8 +1,12 @@
-import type { VehicleBase } from '../domain/types.ts';
+import type { EffectId, VehicleBase } from '../domain/types.ts';
 import type { ArtPart, VehicleArt } from './artManifest.ts';
 
 export interface ArtValidationInput {
-  vehicles: readonly (VehicleBase & { placeholder?: unknown })[];
+  /** Locomotives carry their `effect`; wagons have none. */
+  vehicles: readonly (VehicleBase & {
+    placeholder?: unknown;
+    effect?: EffectId;
+  })[];
   parts: Readonly<Record<string, ArtPart>>;
   art: Readonly<Partial<Record<string, VehicleArt>>>;
   /** SVG text by file name: every file in `assets/vehicles/`. */
@@ -37,13 +41,30 @@ function partErrors(key: string, part: ArtPart, text: string): string[] {
 }
 
 function vehicleErrors(
-  vehicle: VehicleBase,
+  vehicle: VehicleBase & { effect?: EffectId },
   art: VehicleArt,
   parts: Readonly<Record<string, ArtPart>>,
 ): string[] {
   const errors: string[] = [];
   const error = (message: string) => errors.push(`${vehicle.id}: ${message}`);
   const length = vehicle.lengthU;
+  // The effect leaves the model at its emitters (doc 14 §4).
+  const emitters = art.emitters ?? [];
+  const effect = vehicle.effect ?? 'none';
+  if (effect !== 'none' && emitters.length === 0)
+    error(`effect ${effect} has no emitter on the model`);
+  if (effect === 'none' && emitters.length > 0)
+    error('emitters on a vehicle without an effect');
+  for (const emitter of emitters)
+    if (
+      emitter.xU < 0 ||
+      emitter.xU > length ||
+      emitter.yU < 0 ||
+      emitter.yU > art.heightU
+    )
+      error(
+        `emitter at ${emitter.xU}, ${emitter.yU} is outside the ${length} × ${art.heightU} u frame`,
+      );
   for (const key of [art.body, art.overlay]) {
     if (key === undefined) continue;
     const frame = parts[key];

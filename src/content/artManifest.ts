@@ -261,6 +261,11 @@ export interface VehicleArt {
   overlay?: ArtPartKey;
   wheels: readonly WheelArt[];
   steamGear?: SteamGearArt;
+  /**
+   * Where the locomotive's effect (smoke, exhaust, stars) leaves the model,
+   * in the frame (x from the rear coupler, y down from the top), doc 14 §4.
+   */
+  emitters?: readonly { xU: number; yU: number }[];
 }
 
 /** Art by catalog vehicle id; vehicles missing here keep their placeholder. */
@@ -283,6 +288,8 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       connectingRod: 'steam_local.connecting-rod',
       crosshead: 'steam_local.crosshead',
     },
+    // Top of the chimney cap.
+    emitters: [{ xU: 130.5, yU: 6 }],
   },
   magic_stars: {
     heightU: 100,
@@ -301,6 +308,8 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       connectingRod: 'magic_stars.connecting-rod',
       crosshead: 'magic_stars.crosshead',
     },
+    // Crown of the tulip chimney.
+    emitters: [{ xU: 129.5, yU: 9 }],
   },
   diesel_mainline: {
     heightU: 86,
@@ -313,6 +322,8 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       { part: 'wheel.diesel', xU: 145 },
       { part: 'wheel.diesel', xU: 175 },
     ],
+    // Exhaust stack on the roof.
+    emitters: [{ xU: 99, yU: 5.6 }],
   },
   passenger_classic: {
     heightU: 82,

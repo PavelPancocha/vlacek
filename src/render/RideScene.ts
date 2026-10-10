@@ -42,6 +42,16 @@ import {
   frameOrigin,
 } from './atlasPacking.ts';
 import { placeAnimal } from './animalPlacement.ts';
+import { AmbientLife } from './particles/AmbientLife.ts';
+import { EffectsView } from './particles/EffectsView.ts';
+import { emitterWorldPoint, passEffectAt } from './particles/emission.ts';
+import { ParticleField } from './particles/ParticleField.ts';
+import { PARTICLE_KINDS, kindName } from './particles/particleKinds.ts';
+import {
+  TrainEffects,
+  type PlacedEmitter,
+  type TrainEffectsInput,
+} from './particles/TrainEffects.ts';
 import { Backdrop } from './Backdrop.ts';
 import { BACK_PLANE_U, ChunkView, NEAR_FOOT_OFFSET_U } from './ChunkView.ts';
 import {
@@ -59,6 +69,8 @@ export interface RideSceneHost {
   /** Vehicle definitions of the current journey, locomotive first. */
   journeyVehicles(): readonly ShapedVehicle[];
   catalogVehicles(): readonly ShapedVehicle[];
+  /** Effects density profile (doc 13 `quality`, reduced effects). */
+  effectsQuality(): 'low' | 'standard';
 }
 
 export interface RenderStats {
@@ -87,6 +99,8 @@ const ORIGIN_STEP_U = 4096;
 /** Chunk width shared with the generator and TrackWindow (doc 13). */
 const CHUNK_WIDTH_U = gameConfig.world.chunkWidthU;
 const REACTION_TICKS = 40;
+/** Depth of the animals' idle breathing (share of their height). */
+const ANIMAL_BREATH = 0.03;
 /** Animals keep this far above the controls' strip (u). */
 const FREE_BAND_MARGIN_U = 6;
 /** Transparent border of the generated placeholder textures (px = u). */
@@ -109,6 +123,7 @@ const DEPTH = {
   train: 7,
   nearProps: 8,
   objects: 9,
+  effects: 10,
 } as const;
 
 /** Vehicles, track, props and animals: the main art atlas. */
@@ -210,6 +225,18 @@ export class RideScene extends Phaser.Scene {
   #horizonY: number | undefined;
   /** Render y the animals' feet stay above (free of the controls). */
   #freeBottomY = Infinity;
+  /** Decorative particles (doc 14 §4); capacity from the quality profile. */
+  readonly #particles = new ParticleField(
+    PARTICLE_KINDS,
+    gameConfig.quality.standard.maxDecorativeParticles,
+    Math.random,
+  );
+  readonly #trainEffects = new TrainEffects(this.#particles, Math.random);
+  readonly #ambient = new AmbientLife(this.#particles, Math.random);
+  #effectsView: EffectsView | undefined;
+  #effectsTexture: string | undefined;
+  /** Simulation tick the effects last advanced to. */
+  #effectsTick: number | undefined;
   /** Backdrop atlas texture the backdrop currently shows. */
   #backdropTexture: string | undefined;
   stats: RenderStats = NO_STATS;
@@ -267,6 +294,7 @@ export class RideScene extends Phaser.Scene {
     } catch (error) {
       console.error(error);
     }
+    this.#effectsView = new EffectsView(this, DEPTH.effects);
     this.#backdrop = new Backdrop(this, {
       sky: DEPTH.sky,
       clouds: DEPTH.clouds,
@@ -275,6 +303,7 @@ export class RideScene extends Phaser.Scene {
     });
     this.events.once('destroy', () => {
       this.#backdrop?.destroy();
+      this.#effectsView?.destroy();
       this.#art?.destroy();
       this.#backdropArt?.destroy();
     });
@@ -454,6 +483,8 @@ export class RideScene extends Phaser.Scene {
   }
 
   #reset(): void {
+    this.#particles.clear();
+    this.#effectsTick = undefined;
     this.#destroyChunks();
     this.#destroyObjects();
     this.#scenery.clear();
@@ -564,8 +595,9 @@ export class RideScene extends Phaser.Scene {
       this.#view.top +
       (this.scale.height - this.#insetsCss.controls * gamePerCss) / zoom -
       FREE_BAND_MARGIN_U;
-    this.#drawObjects(ride, leftX, rightX);
+    this.#drawObjects(ride, leftX, rightX, timeSec);
     this.#drawTrain(ride, headS, leftX, rightX);
+    this.#drawEffects(ride, headS, leftX, rightX, viewW, viewH);
 
     const horizonTarget = -(minRailY + maxRailY) / 2;
     this.#horizonY =
@@ -675,7 +707,12 @@ export class RideScene extends Phaser.Scene {
     this.stats.renderedChunks = this.#chunks.size;
   }
 
-  #drawObjects(ride: RideSimulation, leftX: number, rightX: number): void {
+  #drawObjects(
+    ride: RideSimulation,
+    leftX: number,
+    rightX: number,
+    timeSec: number,
+  ): void {
     const visible = new Set<string>();
     this.#visibleObjects = [];
     for (const object of ride.objectsBetween(
@@ -720,7 +757,19 @@ export class RideScene extends Phaser.Scene {
         pxPerU !== undefined && image.texture.key !== 'object-sheep';
       const heightU = drawn ? part.heightU * scale : OBJECT_RADIUS_U * 2;
       const widthU = drawn ? part.widthU * scale : OBJECT_RADIUS_U * 2;
-      image.setScale(drawn ? scale / pxPerU : 1).setPosition(x, y - hop);
+      // Idle breathing: a slight squash, never taller than drawn.
+      const breath =
+        1 -
+        ANIMAL_BREATH *
+          (0.5 +
+            0.5 *
+              Math.sin(
+                2 *
+                  Math.PI *
+                  (0.8 * timeSec + (hash32('breath', object.id) % 1000) / 1000),
+              ));
+      const base = drawn ? scale / pxPerU : 1;
+      image.setScale(base, base * breath).setPosition(x, y - hop);
       this.#visibleObjects.push({
         id: object.id,
         x,
@@ -735,6 +784,141 @@ export class RideScene extends Phaser.Scene {
         this.#objectImages.delete(id);
       }
     }
+  }
+
+  /**
+   * Particles and ambient life for this frame (doc 14 §4), advanced by
+   * simulation time: a paused ride stands still.
+   */
+  #drawEffects(
+    ride: RideSimulation,
+    headS: number,
+    leftX: number,
+    rightX: number,
+    viewW: number,
+    viewH: number,
+  ): void {
+    const tick = ride.simulationTick;
+    const dtSec =
+      this.#effectsTick === undefined
+        ? 0
+        : Math.max(0, tick - this.#effectsTick) / gameConfig.simulation.fixedHz;
+    this.#effectsTick = tick;
+    const quality = this.#host.effectsQuality();
+    this.#particles.setCapacity(
+      gameConfig.quality[quality].maxDecorativeParticles,
+    );
+    const rateScale = quality === 'low' ? 0.5 : 1;
+    const vehicles = this.#host.journeyVehicles();
+    const locomotive = vehicles[0];
+    const art = locomotive ? vehicleArt[locomotive.id] : undefined;
+    const emitters: PlacedEmitter[] = [];
+    const wheels: { x: number; y: number }[] = [];
+    let front: TrainEffectsInput['front'] = { x: 0, y: 0, ground: undefined };
+    if (locomotive) {
+      const pose = ride.vehiclePose(0, headS);
+      const effect = locomotive.effect;
+      const kind =
+        effect === 'steam' || effect === 'diesel'
+          ? effect
+          : effect === 'stars'
+            ? 'stars'
+            : undefined;
+      if (art && kind !== undefined)
+        for (const emitter of art.emitters ?? [])
+          emitters.push({
+            kind,
+            ...emitterWorldPoint(
+              emitter,
+              { lengthU: locomotive.lengthU, heightU: art.heightU },
+              pose,
+            ),
+          });
+      const x =
+        pose.centerX + Math.cos(pose.angleRad) * locomotive.bogieOffsetU;
+      const y =
+        -pose.centerY - Math.sin(pose.angleRad) * locomotive.bogieOffsetU;
+      const k = Math.floor(x / CHUNK_WIDTH_U);
+      front = {
+        x,
+        y,
+        ground: passEffectAt(
+          this.#sceneryOf(ride.seed, k).near,
+          x - k * CHUNK_WIDTH_U,
+        ),
+      };
+    }
+    vehicles.forEach((vehicle, i) => {
+      const pose = ride.vehiclePose(i, headS);
+      if (pose.centerX < leftX || pose.centerX > rightX) return;
+      for (const side of [-1, 1]) {
+        const offset = side * vehicle.bogieOffsetU;
+        wheels.push({
+          x: pose.centerX + Math.cos(pose.angleRad) * offset,
+          y: -pose.centerY - Math.sin(pose.angleRad) * offset,
+        });
+      }
+    });
+    this.#trainEffects.step({
+      dtSec,
+      speedUPerSec: ride.speedUPerSec,
+      maxSpeedUPerSec: gameConfig.train.maxSpeedUPerSec,
+      intent: ride.lastIntent,
+      emitters,
+      driverRadiusU: locomotive?.wheelRadiusU,
+      wheels,
+      front,
+      rateScale,
+    });
+    const middleX = this.#view.left + this.#originX + viewW / 2;
+    const k = Math.floor(middleX / CHUNK_WIDTH_U);
+    const scenery = this.#sceneryOf(ride.seed, k);
+    const nearHere = scenery.near.find(
+      (span) =>
+        middleX - k * CHUNK_WIDTH_U >= span.fromX &&
+        middleX - k * CHUNK_WIDTH_U < span.toX,
+    )?.style;
+    this.#ambient.step({
+      dtSec,
+      view: {
+        left: this.#view.left + this.#originX,
+        top: this.#view.top,
+        width: viewW,
+        height: viewH,
+      },
+      meadowY:
+        -ride.sample(
+          Math.max(ride.track.startS, Math.min(ride.track.endS, headS)),
+        ).y +
+        TRACK_BED_DEPTH_U +
+        NEAR_FOOT_OFFSET_U,
+      meadow: nearHere === 'meadow' && !scenery.locality.startsWith('station'),
+      rateScale,
+    });
+    this.#particles.step(dtSec);
+    this.#effectsView?.draw(this.#particles, this.#originX);
+  }
+
+  /** Particle counts for diagnostics and E2E. */
+  get effectsStats(): {
+    live: number;
+    capacity: number;
+    kinds: Record<string, number>;
+    checksum: number;
+  } {
+    const kinds: Record<string, number> = {};
+    let checksum = 0;
+    for (const particle of this.#particles.particles()) {
+      const name = kindName(particle.kind) ?? 'unknown';
+      kinds[name] = (kinds[name] ?? 0) + 1;
+      checksum += Math.round(particle.x * 10) + Math.round(particle.y * 10);
+    }
+    return {
+      live: this.#particles.live,
+      capacity: this.#particles.capacity,
+      kinds,
+      checksum,
+    };
   }
 
   /** An animal from the art atlas, or the marked placeholder without it. */
@@ -802,10 +986,20 @@ export class RideScene extends Phaser.Scene {
     const art = this.#art;
     const replaced = art?.update(zoom);
     const key = art?.textureKey;
+    const pxPerU = art?.info?.pxPerU;
+    if (
+      key !== undefined &&
+      pxPerU !== undefined &&
+      key !== this.#effectsTexture
+    ) {
+      this.#effectsView?.setAtlas(key, pxPerU);
+      this.#effectsTexture = key;
+    }
     if (replaced === undefined || key === undefined) return;
     // Chunks and animals are rebuilt from the new atlas on this frame's draw.
     this.#destroyChunks();
     this.#destroyObjects();
+
     for (const slot of this.#slots) {
       slot.images.forEach((image, i) => {
         const shown = slot.frames[i];

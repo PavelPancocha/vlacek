@@ -16,6 +16,14 @@ export interface DebugSnapshot {
   artAtlas:
     | { width: number; height: number; frames: number; pxPerU: number }
     | undefined;
+  /** Decorative particles (doc 14 §4, D-014): counts and a position sum. */
+  effects: {
+    live: number;
+    capacity: number;
+    kinds: Record<string, number>;
+    /** Sum of particle positions; unchanged while the ride is paused. */
+    checksum: number;
+  };
   /** The backdrop atlas (D-013); undefined if the art failed to load. */
   backdropAtlas:
     | { width: number; height: number; frames: number; pxPerU: number }

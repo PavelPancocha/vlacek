@@ -37,6 +37,28 @@ describe('gameConfig', () => {
     expect(brake).toBeLessThan(coast / 3);
   });
 
+  it('carries the doc 13 quality profiles with their particle budgets', () => {
+    expect(gameConfig.quality).toEqual({
+      low: { maxDpr: 1, targetFps: 30, maxDecorativeParticles: 96 },
+      standard: { maxDpr: 1.5, targetFps: 60, maxDecorativeParticles: 240 },
+    });
+  });
+
+  it('rejects a quality profile without a particle budget', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      quality: {
+        ...gameConfig.quality,
+        low: { ...gameConfig.quality.low, maxDecorativeParticles: 0 },
+        standard: { ...gameConfig.quality.standard, maxDpr: 0.5 },
+      },
+    };
+    expect(validateGameConfig(broken)).toEqual([
+      'quality.low.maxDecorativeParticles',
+      'quality.standard.maxDpr',
+    ]);
+  });
+
   it('is valid as shipped', () => {
     expect(validateGameConfig(gameConfig)).toEqual([]);
   });

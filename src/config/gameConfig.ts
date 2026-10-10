@@ -113,6 +113,21 @@ export interface CameraConfig {
   verticalFollowPerSec: number;
 }
 
+/** One render quality profile (doc 13 `quality`). */
+export interface QualityProfile {
+  /** Upper bound of the render buffer density. */
+  maxDpr: number;
+  /** Render preference, never the physics rate (doc 13). */
+  targetFps: number;
+  /** Cap of decorative particles; functional actors do not count. */
+  maxDecorativeParticles: number;
+}
+
+export interface QualityConfig {
+  low: QualityProfile;
+  standard: QualityProfile;
+}
+
 export interface GameConfig {
   simulation: SimulationConfig;
   save: SaveConfig;
@@ -121,6 +136,7 @@ export interface GameConfig {
   world: WorldConfig;
   camera: CameraConfig;
   input: InputConfig;
+  quality: QualityConfig;
 }
 
 export const gameConfig: GameConfig = {
@@ -189,6 +205,10 @@ export const gameConfig: GameConfig = {
     minTargetCssPx: 64,
     primaryControlTargetCssPx: 80,
   },
+  quality: {
+    low: { maxDpr: 1, targetFps: 30, maxDecorativeParticles: 96 },
+    standard: { maxDpr: 1.5, targetFps: 60, maxDecorativeParticles: 240 },
+  },
 };
 
 type Check = readonly [path: string, valid: boolean];
@@ -200,6 +220,17 @@ const positive = (value: number) => Number.isFinite(value) && value > 0;
 /** Returns the paths of invalid values; an empty list means valid. */
 export function validateGameConfig(config: GameConfig): string[] {
   const { simulation, save, interaction, train, world, camera, input } = config;
+  const profile = (name: keyof QualityConfig): Check[] => {
+    const q = config.quality[name];
+    return [
+      [`quality.${name}.maxDpr`, Number.isFinite(q.maxDpr) && q.maxDpr >= 1],
+      [`quality.${name}.targetFps`, positiveInteger(q.targetFps)],
+      [
+        `quality.${name}.maxDecorativeParticles`,
+        positiveInteger(q.maxDecorativeParticles),
+      ],
+    ];
+  };
   const fraction = (value: number) =>
     Number.isFinite(value) && value >= 0 && value < 1;
   const checks: Check[] = [
@@ -329,6 +360,8 @@ export function validateGameConfig(config: GameConfig): string[] {
       input.primaryControlTargetCssPx >= 80 &&
         input.primaryControlTargetCssPx >= input.minTargetCssPx,
     ],
+    ...profile('low'),
+    ...profile('standard'),
   ];
   return checks.filter(([, valid]) => !valid).map(([path]) => path);
 }

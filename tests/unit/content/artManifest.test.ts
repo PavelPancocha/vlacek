@@ -111,6 +111,36 @@ describe('vehicle art manifest (doc 06 §8, doc 07 §4, CNT-02)', () => {
     ]);
   });
 
+  it('puts each locomotive effect on a point of its model (doc 14 §4)', () => {
+    for (const locomotive of locomotives) {
+      const emitters = vehicleArt[locomotive.id]?.emitters ?? [];
+      if (locomotive.effect === 'none') expect(emitters).toEqual([]);
+      else expect(emitters.length, locomotive.id).toBeGreaterThan(0);
+    }
+    expect(validateVehicleArt(withSteam({ ...steam, emitters: [] }))).toEqual([
+      'steam_local: effect steam has no emitter on the model',
+    ]);
+    expect(
+      validateVehicleArt(
+        withSteam({ ...steam, emitters: [{ xU: 170, yU: 6 }] }),
+      ),
+    ).toEqual([
+      'steam_local: emitter at 170, 6 is outside the 156 × 100 u frame',
+    ]);
+    const wagon = wagons[0];
+    const wagonArt = wagon && vehicleArt[wagon.id];
+    if (!wagon || !wagonArt) throw new Error('no wagon art');
+    expect(
+      validateVehicleArt({
+        ...shipped,
+        art: {
+          ...vehicleArt,
+          [wagon.id]: { ...wagonArt, emitters: [{ xU: 10, yU: 10 }] },
+        },
+      }),
+    ).toEqual([`${wagon.id}: emitters on a vehicle without an effect`]);
+  });
+
   it('keeps the drawing exactly as long as the vehicle (length invariant)', () => {
     const vehicles = shipped.vehicles.map((vehicle) =>
       vehicle.id === 'steam_local' ? { ...vehicle, lengthU: 160 } : vehicle,

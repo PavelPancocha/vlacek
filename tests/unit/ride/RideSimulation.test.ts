@@ -46,6 +46,17 @@ describe('RideSimulation', () => {
     expect(ride.previousHeadS).toBeLessThan(ride.headS);
   });
 
+  it('remembers the intent of its last step for the effects (doc 14 §4)', () => {
+    const ride = new RideSimulation(setup(0));
+    expect(ride.lastIntent).toBe('COAST');
+    ride.step('THROTTLE');
+    expect(ride.lastIntent).toBe('THROTTLE');
+    ride.step('BRAKE');
+    expect(ride.lastIntent).toBe('BRAKE');
+    ride.resetMotion();
+    expect(ride.lastIntent).toBe('COAST');
+  });
+
   it('uses the parent speed factor', () => {
     const ride = new RideSimulation(setup(0, { speedFactor: 0.65 }));
     let top = 0;

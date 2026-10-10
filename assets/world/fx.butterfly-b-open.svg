@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="10" height="8" viewBox="0 0 10 8">
+  <!-- Modrásek s otevřenými křídly. Centre (5, 4). -->
+  <defs>
+  </defs>
+  <path d="M5 4 Q1 -0.4 0.6 2.4 Q0.4 4.6 5 4.4 Z M5 4 Q9 -0.4 9.4 2.4 Q9.6 4.6 5 4.4 Z" fill="#5dade2" stroke="#3a2a1a" stroke-width="0.3"/><path d="M5 4.6 Q2 7.4 1.6 5.8 Q1.6 4.8 5 4.6 Z M5 4.6 Q8 7.4 8.4 5.8 Q8.4 4.8 5 4.6 Z" fill="#5dade2" stroke="#3a2a1a" stroke-width="0.3"/><circle cx="2.4" cy="2.4" r="0.7" fill="#1a5276"/><circle cx="7.6" cy="2.4" r="0.7" fill="#1a5276"/>
+  <ellipse cx="5" cy="4.6" rx="0.45" ry="1.8" fill="#3a2a1a"/>
+  <path d="M5 2.8 Q4.4 1.4 3.8 1.2 M5 2.8 Q5.6 1.4 6.2 1.2" stroke="#3a2a1a" stroke-width="0.25" fill="none"/>
+</svg>

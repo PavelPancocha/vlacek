@@ -29,6 +29,7 @@ import {
   WATER_PALETTE,
   type WaterPalette,
 } from './groundPalette.ts';
+import { glintAlpha, swayAmplitudeRad, swayAngle } from './ambientMotion.ts';
 import { frameOrigin } from './atlasPacking.ts';
 import { trackTilePlacements } from './trackTiles.ts';
 
@@ -48,6 +49,8 @@ export const NEAR_FOOT_OFFSET_U = 8;
 const FIELD_EDGE_LEAN_U = 40;
 /** Water keeps this far from its basin's ends (its shore lies there). */
 const WATER_SIDE_U = 10;
+/** Flashing glints on each water basin. */
+const GLINTS_PER_BASIN = 6;
 /** A road bends away to the horizon over this many u at each end. */
 const ROAD_BEND_U = 90;
 /** Road width at the track (narrower with distance). */
@@ -108,6 +111,20 @@ export class ChunkView {
   readonly #textures: string[] = [];
   readonly #moving: MovingProp[] = [];
   readonly #near: Phaser.GameObjects.Image[] = [];
+  /** Plants and trees that sway in the wind, with their phase. */
+  readonly #swaying: {
+    image: Phaser.GameObjects.Image;
+    kind: string;
+    phase: number;
+  }[] = [];
+  /** Water glints: spots found while painting the basins, then images. */
+  readonly #glintSpots: {
+    x: number;
+    y: number;
+    sizeU: number;
+    phase: number;
+  }[] = [];
+  readonly #glints: { image: Phaser.GameObjects.Image; phase: number }[] = [];
 
   constructor(
     scene: Phaser.Scene,
@@ -236,6 +253,22 @@ export class ChunkView {
       (prop.layer === 'back' ? backProps : nearProps).add(image);
       if (prop.layer === 'near') this.#near.push(image);
       if (prop.motion) this.#moving.push({ image, prop });
+      else if (swayAmplitudeRad(prop.kind) > 0)
+        this.#swaying.push({
+          image,
+          kind: prop.kind,
+          phase: (hash32('sway', prop.id) % 1000) / 1000,
+        });
+    }
+    // Glints flash on the water, under the boats and reeds.
+    for (const spot of this.#glintSpots) {
+      const image = this.#image(scene, art, 'fx.glint', false);
+      image
+        .setPosition(spot.x, spot.y)
+        .setScale(spot.sizeU / (parts['fx.glint']?.widthU ?? 10) / art.pxPerU)
+        .setAlpha(0);
+      backProps.addAt(image, 0);
+      this.#glints.push({ image, phase: spot.phase });
     }
     this.#objects.push(track, backProps, nearProps);
   }
@@ -265,6 +298,11 @@ export class ChunkView {
       // The art faces right; it turns round on the way back.
       image.setFlipX(!forward);
     }
+    // Grass, flowers and branches in the wind; glints on the water.
+    for (const { image, kind, phase } of this.#swaying)
+      image.setRotation(swayAngle(kind, timeSec, phase));
+    for (const { image, phase } of this.#glints)
+      image.setAlpha(glintAlpha(timeSec, phase));
   }
 
   destroy(): void {
@@ -274,6 +312,9 @@ export class ChunkView {
     this.#textures.length = 0;
     this.#moving.length = 0;
     this.#near.length = 0;
+    this.#swaying.length = 0;
+    this.#glints.length = 0;
+    this.#glintSpots.length = 0;
   }
 
   /**
@@ -645,6 +686,22 @@ export class ChunkView {
     g.fillPoints(outline(0.74, 1), true);
     g.fillStyle(palette.farEdge, 0.85);
     g.fillPoints(outline(0, 0.07), true);
+    // Spots for the flashing glints (drawn as images over the texture).
+    for (let i = 0; i < GLINTS_PER_BASIN; i++) {
+      const h = hash32('glint', this.#table.chunkIndex, basin.fromX, i);
+      const x =
+        from +
+        WATER_END_U +
+        ((h % 1000) / 1000) * (to - from - 2 * WATER_END_U);
+      const t = 0.15 + (((h >>> 10) % 1000) / 1000) * 0.7;
+      const top = far(x);
+      this.#glintSpots.push({
+        x,
+        y: top + (near(x) - top) * t,
+        sizeU: 6 + 6 * t,
+        phase: ((h >>> 20) % 1000) / 1000,
+      });
+    }
     // Ripples: short level strokes, longer and brighter nearer the shore.
     const chunk = this.#table.chunkIndex;
     for (let i = 0; i < 34; i++) {

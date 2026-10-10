@@ -415,6 +415,102 @@ export const worldParts = {
     heightU: 70,
     pivotU: { x: 100, y: 70 },
   },
+  'fx.bird-down': {
+    file: 'fx.bird-down.svg',
+    widthU: 15,
+    heightU: 8,
+    pivotU: { x: 7.5, y: 4 },
+  },
+  'fx.bird-up': {
+    file: 'fx.bird-up.svg',
+    widthU: 15,
+    heightU: 8,
+    pivotU: { x: 7.5, y: 4 },
+  },
+  'fx.butterfly-a-closed': {
+    file: 'fx.butterfly-a-closed.svg',
+    widthU: 10,
+    heightU: 8,
+    pivotU: { x: 5, y: 4 },
+  },
+  'fx.butterfly-a-open': {
+    file: 'fx.butterfly-a-open.svg',
+    widthU: 10,
+    heightU: 8,
+    pivotU: { x: 5, y: 4 },
+  },
+  'fx.butterfly-b-closed': {
+    file: 'fx.butterfly-b-closed.svg',
+    widthU: 10,
+    heightU: 8,
+    pivotU: { x: 5, y: 4 },
+  },
+  'fx.butterfly-b-open': {
+    file: 'fx.butterfly-b-open.svg',
+    widthU: 10,
+    heightU: 8,
+    pivotU: { x: 5, y: 4 },
+  },
+  'fx.diesel': {
+    file: 'fx.diesel.svg',
+    widthU: 16,
+    heightU: 16,
+    pivotU: { x: 8, y: 8 },
+  },
+  'fx.glint': {
+    file: 'fx.glint.svg',
+    widthU: 10,
+    heightU: 10,
+    pivotU: { x: 5, y: 5 },
+  },
+  'fx.leaf-a': {
+    file: 'fx.leaf-a.svg',
+    widthU: 10,
+    heightU: 7,
+    pivotU: { x: 5, y: 3.5 },
+  },
+  'fx.leaf-b': {
+    file: 'fx.leaf-b.svg',
+    widthU: 9,
+    heightU: 6,
+    pivotU: { x: 4.5, y: 3 },
+  },
+  'fx.leaf-c': {
+    file: 'fx.leaf-c.svg',
+    widthU: 9,
+    heightU: 8,
+    pivotU: { x: 4.5, y: 4 },
+  },
+  'fx.smoke': {
+    file: 'fx.smoke.svg',
+    widthU: 24,
+    heightU: 24,
+    pivotU: { x: 12, y: 12 },
+  },
+  'fx.snow': {
+    file: 'fx.snow.svg',
+    widthU: 5,
+    heightU: 5,
+    pivotU: { x: 2.5, y: 2.5 },
+  },
+  'fx.spark': {
+    file: 'fx.spark.svg',
+    widthU: 10,
+    heightU: 4,
+    pivotU: { x: 5, y: 2 },
+  },
+  'fx.star': {
+    file: 'fx.star.svg',
+    widthU: 14,
+    heightU: 14,
+    pivotU: { x: 7, y: 7 },
+  },
+  'fx.steam': {
+    file: 'fx.steam.svg',
+    widthU: 24,
+    heightU: 24,
+    pivotU: { x: 12, y: 12 },
+  },
   'near.beach-rocks': {
     file: 'near.beach-rocks.svg',
     widthU: 62,
@@ -760,6 +856,30 @@ export const animalParts: Readonly<Record<AnimalKind, WorldPartKey>> = {
   frog: 'animal.frog',
   gull: 'animal.gull',
 };
+
+/**
+ * Particle and ambient sprites (doc 14 §4, D-014): smoke, steam, exhaust,
+ * stars, sparks, leaves, snow, birds, butterflies and water glints. Their
+ * pivot is the middle.
+ */
+export const effectParts: readonly WorldPartKey[] = [
+  'fx.smoke',
+  'fx.steam',
+  'fx.diesel',
+  'fx.star',
+  'fx.spark',
+  'fx.leaf-a',
+  'fx.leaf-b',
+  'fx.leaf-c',
+  'fx.snow',
+  'fx.bird-up',
+  'fx.bird-down',
+  'fx.butterfly-a-open',
+  'fx.butterfly-a-closed',
+  'fx.butterfly-b-open',
+  'fx.butterfly-b-closed',
+  'fx.glint',
+];
 
 /** Backdrops and clouds go to their own, coarser atlas (D-013). */
 export function isBackdropPart(key: string): boolean {

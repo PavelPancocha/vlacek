@@ -4,13 +4,15 @@ import {
   animalParts,
   backdropParts,
   cloudParts,
+  effectParts,
   trackTileSets,
 } from './worldArt.ts';
 
 /**
  * Every world part key the game refers to: track tiles, the kinds the
- * world generator places (localities and stations), animals, backdrops
- * and clouds. `validate:assets` reports parts outside this list.
+ * world generator places (localities and stations), animals, backdrops,
+ * clouds and effect sprites. `validate:assets` reports parts outside this
+ * list.
  */
 export function worldUsedKeys(): string[] {
   return [
@@ -21,6 +23,7 @@ export function worldUsedKeys(): string[] {
       ...Object.values(animalParts),
       ...Object.values(backdropParts).flatMap((b) => [b.far, b.mid]),
       ...cloudParts,
+      ...effectParts,
     ]),
   ];
 }

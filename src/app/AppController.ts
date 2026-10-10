@@ -1,3 +1,4 @@
+import { gameConfig } from '../config/gameConfig.ts';
 import type { ShapedVehicle } from '../content/placeholderShapes.ts';
 import { locomotives, wagons } from '../content/vehicles.ts';
 import type { Consist } from '../domain/types.ts';
@@ -80,11 +81,18 @@ export class AppController {
       ride: () => this.#session.ride,
       journeyVehicles: () => this.#vehiclesOfJourney(),
       catalogVehicles: () => [...locomotives, ...wagons],
+      // Reduced effects or the low profile halve the particles (doc 07 §9).
+      effectsQuality: () => {
+        const settings = this.#session.settings;
+        return settings.quality === 'low' || settings.reducedEffects
+          ? 'low'
+          : 'standard';
+      },
     });
     this.#host = createGameHost({
       parent: gameRoot,
       renderer: options.renderer,
-      maxDpr: 1.5,
+      maxDpr: gameConfig.quality.standard.maxDpr,
       scenes: [this.#scene],
       onReady: (renderer) => {
         this.#renderer = renderer;
@@ -258,6 +266,7 @@ export class AppController {
       renderedVehicles: this.#scene.stats.renderedVehicles,
       artVehicles: this.#scene.stats.artVehicles,
       artAtlas: this.#scene.artAtlas,
+      effects: this.#scene.effectsStats,
       backdropAtlas: this.#scene.backdropAtlas,
       scenery: {
         biome: this.#scene.stats.biome,

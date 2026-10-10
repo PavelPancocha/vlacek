@@ -1,4 +1,4 @@
-import type { VehicleBase } from '../domain/types.ts';
+import type { EffectId, VehicleBase } from '../domain/types.ts';
 
 /**
  * Marked PLACEHOLDER silhouette for a vehicle without art: a catalog
@@ -55,7 +55,11 @@ function circle(
 export const PLACEHOLDER_BODY_HEIGHT_U = 56;
 
 /** Any vehicle as drawn by the renderer and the depot. */
-export type ShapedVehicle = VehicleBase & { placeholder?: true };
+/** A catalog vehicle as drawn; locomotives carry their effect. */
+export type ShapedVehicle = VehicleBase & {
+  placeholder?: true;
+  effect?: EffectId;
+};
 
 /** The neutral silhouette in the vehicle's length. */
 export function vehicleShapes(vehicle: VehicleBase): Shape[] {

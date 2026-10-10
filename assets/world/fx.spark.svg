@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="10" height="4" viewBox="0 0 10 4">
+  <!-- Jiskra: a short hot streak from the wheel, white core. Centre (5, 2). -->
+  <defs><linearGradient id="hot" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff7a1a" stop-opacity="0"/><stop offset="0.5" stop-color="#ffb02e"/><stop offset="1" stop-color="#fff2b0"/></linearGradient>
+  </defs>
+  <ellipse cx="5" cy="2" rx="4.8" ry="1.5" fill="url(#hot)"/>
+  <ellipse cx="7.2" cy="2" rx="2" ry="0.7" fill="#ffffff"/>
+</svg>
