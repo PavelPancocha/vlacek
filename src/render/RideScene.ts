@@ -53,7 +53,8 @@ import {
   type TrainEffectsInput,
 } from './particles/TrainEffects.ts';
 import { Backdrop } from './Backdrop.ts';
-import { BACK_PLANE_U, ChunkView, NEAR_FOOT_OFFSET_U } from './ChunkView.ts';
+import { ChunkView } from './ChunkView.ts';
+import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
 import {
   frameLeftX,
   frameTopY,
@@ -676,6 +677,7 @@ export class RideScene extends Phaser.Scene {
     }
     for (const index of this.#scenery.keys())
       if (index < first || index > last) this.#scenery.delete(index);
+    const crossings = new Map(ride.crossings.map((c) => [c.id, c]));
     const texture = this.#art?.textureKey;
     const pxPerU = this.#art?.info?.pxPerU;
     const art =
@@ -702,7 +704,8 @@ export class RideScene extends Phaser.Scene {
         this.#chunks.set(k, chunk);
       }
       chunk.setX(k * CHUNK_WIDTH_U - this.#originX);
-      chunk.update(timeSec);
+      const site = this.#sceneryOf(ride.seed, k).crossing;
+      chunk.update(timeSec, site && crossings.get(site.id));
     }
     this.stats.renderedChunks = this.#chunks.size;
   }

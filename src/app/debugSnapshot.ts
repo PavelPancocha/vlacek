@@ -39,6 +39,19 @@ export interface DebugSnapshot {
     /** Near-meadow props overlapping a drawn vehicle; always 0. */
     nearPropsOverTrain: number;
   };
+  /** Level crossings the ride simulates (doc 05 §4, D-015). */
+  crossings: {
+    id: string;
+    phase: string;
+    /** 0 barriers up … 1 down. */
+    barrier: number;
+    /** Some part of the train is on the road. */
+    occupied: boolean;
+    actors: number;
+    waiting: number;
+    /** Road actors that have crossed the track so far. */
+    crossed: number;
+  }[];
   consistLengthU: number;
   intent: string;
   speedUPerSec: number;

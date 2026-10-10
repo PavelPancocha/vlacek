@@ -2,6 +2,7 @@ import { gameConfig } from '../config/gameConfig.ts';
 import type { ShapedVehicle } from '../content/placeholderShapes.ts';
 import { locomotives, wagons } from '../content/vehicles.ts';
 import type { Consist } from '../domain/types.ts';
+import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import { AudioManager, type SoundId } from '../platform/AudioManager.ts';
 import { isPortrait } from '../platform/browserEnvironment.ts';
@@ -273,6 +274,7 @@ export class AppController {
         localities: [...this.#scene.stats.localities],
         ...this.#nearPropCheck(),
       },
+      crossings: ride ? this.#crossings(ride) : [],
       consistLengthU: ride
         ? ride.layout.frontOffsetU + ride.layout.tailOffsetU
         : 0,
@@ -303,6 +305,22 @@ export class AppController {
       brakeRect: this.#brakeRect,
       audio: this.#audio.state,
     };
+  }
+
+  #crossings(ride: RideSimulation): DebugSnapshot['crossings'] {
+    const train = {
+      tailX: ride.sample(ride.tailS).x,
+      frontX: ride.sample(ride.frontS).x,
+    };
+    return ride.crossings.map((crossing) => ({
+      id: crossing.id,
+      phase: crossing.phase,
+      barrier: crossing.barrier,
+      occupied: crossing.trainInConflict(train),
+      actors: crossing.actors.length,
+      waiting: crossing.waitingCount(),
+      crossed: crossing.crossedCount,
+    }));
   }
 
   #nearPropCheck(): { nearProps: number; nearPropsOverTrain: number } {

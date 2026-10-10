@@ -114,6 +114,8 @@ V prvním bloku nové cesty jsou pro rychlé předvedení pevně stanice ve slot
 
 Stanice dostane rovinu; přejezd není na otevřeném mostě ani uvnitř tunelu. Traktor dostane pole nebo cestu, vodní mlýn vodu, maják pobřeží. Jedna dekorace nesmí zabrat rezervovanou obslužnou dráhu silničního provozu.
 
+Implementace přejezdu ([D-015](../docs/decisions/015-level-crossings.md)): `crossingSite(seed, k)` ve slotu 3 vybere seedem jedno z míst, kde je kolej aspoň 96 u na obě strany rovná a silnice je aspoň 120 u od interaktivního zvířete. Bez takového místa blok přejezd nemá. Pruh silnice ±64 u je rezervovaný: voda se kolem něj rozdělí a žádná rekvizita ani její trasa do něj nezasahuje.
+
 Každý template deklaruje rezervované oblasti, rozměry, povolené biomy, případné navazující chunky a bezpečné oblasti pro dotykové cíle. Konfliktní kandidát se odmítne nejvýše osmkrát a pak se použije `safe-meadow` nebo biomová obdoba. Generátor se nikdy nesmí zacyklit ani vytvořit chybějící kolej.
 
 ## 7. Sekundární trať jako vícedílný motiv

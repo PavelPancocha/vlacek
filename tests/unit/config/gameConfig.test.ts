@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  crossingCloseDistanceU,
   gameConfig,
   validateGameConfig,
   type GameConfig,
@@ -57,6 +58,30 @@ describe('gameConfig', () => {
       'quality.low.maxDecorativeParticles',
       'quality.standard.maxDpr',
     ]);
+  });
+
+  it('carries the doc 13 crossing timings and derives Dclose from the top speed (doc 05 §4)', () => {
+    expect(gameConfig.crossing).toEqual({
+      roadClearanceSeconds: 2,
+      warningSeconds: 1.2,
+      closingSeconds: 0.8,
+      openingSeconds: 0.8,
+      safetySeconds: 0.5,
+      distanceMarginU: 80,
+      maxQueuedCars: 6,
+      maxQueuedBikes: 2,
+    });
+    // Doc 05 example: 180 u/s gives 890 u; the ride now tops out at 480 u/s.
+    expect(crossingCloseDistanceU(gameConfig.crossing, 180)).toBeCloseTo(
+      890,
+      9,
+    );
+    expect(
+      crossingCloseDistanceU(
+        gameConfig.crossing,
+        gameConfig.train.maxSpeedUPerSec,
+      ),
+    ).toBeCloseTo(480 * 4.5 + 80, 9);
   });
 
   it('is valid as shipped', () => {

@@ -3,7 +3,7 @@ import type {
   AnimalKind,
   NearGround,
 } from '../domain/world/sceneryTemplates.ts';
-import type { ArtPart } from './artManifest.ts';
+import type { ArtPart, ArtPoint } from './artManifest.ts';
 
 /**
  * World art manifest (D-011, D-012, D-013): track, scenery, animals,
@@ -415,6 +415,42 @@ export const worldParts = {
     heightU: 70,
     pivotU: { x: 100, y: 70 },
   },
+  'crossing.boom': {
+    file: 'crossing.boom.svg',
+    widthU: 38,
+    heightU: 6,
+    pivotU: { x: 3, y: 3 },
+  },
+  'crossing.deck': {
+    file: 'crossing.deck.svg',
+    widthU: 68,
+    heightU: 24,
+    pivotU: { x: 34, y: 2 },
+  },
+  'crossing.glow-red': {
+    file: 'crossing.glow-red.svg',
+    widthU: 16,
+    heightU: 16,
+    pivotU: { x: 8, y: 8 },
+  },
+  'crossing.glow-white': {
+    file: 'crossing.glow-white.svg',
+    widthU: 14,
+    heightU: 14,
+    pivotU: { x: 7, y: 7 },
+  },
+  'crossing.post': {
+    file: 'crossing.post.svg',
+    widthU: 34,
+    heightU: 96,
+    pivotU: { x: 17, y: 96 },
+  },
+  'crossing.post-low': {
+    file: 'crossing.post-low.svg',
+    widthU: 34,
+    heightU: 46,
+    pivotU: { x: 17, y: 46 },
+  },
   'fx.bird-down': {
     file: 'fx.bird-down.svg',
     widthU: 15,
@@ -691,6 +727,42 @@ export const worldParts = {
     heightU: 46,
     pivotU: { x: 17, y: 46 },
   },
+  'road.bike-back': {
+    file: 'road.bike-back.svg',
+    widthU: 16,
+    heightU: 30,
+    pivotU: { x: 8, y: 30 },
+  },
+  'road.bike-front': {
+    file: 'road.bike-front.svg',
+    widthU: 16,
+    heightU: 30,
+    pivotU: { x: 8, y: 30 },
+  },
+  'road.car-a-back': {
+    file: 'road.car-a-back.svg',
+    widthU: 34,
+    heightU: 26,
+    pivotU: { x: 17, y: 26 },
+  },
+  'road.car-a-front': {
+    file: 'road.car-a-front.svg',
+    widthU: 34,
+    heightU: 26,
+    pivotU: { x: 17, y: 26 },
+  },
+  'road.car-b-back': {
+    file: 'road.car-b-back.svg',
+    widthU: 34,
+    heightU: 26,
+    pivotU: { x: 17, y: 26 },
+  },
+  'road.car-b-front': {
+    file: 'road.car-b-front.svg',
+    widthU: 34,
+    heightU: 26,
+    pivotU: { x: 17, y: 26 },
+  },
   'track.sand-a': {
     file: 'track.sand-a.svg',
     widthU: 66,
@@ -880,6 +952,63 @@ export const effectParts: readonly WorldPartKey[] = [
   'fx.butterfly-b-closed',
   'fx.glint',
 ];
+
+/**
+ * Level crossing (doc 05 §4): deck, the tall post behind the track and the
+ * low one in front of it (below the train, D-015), boom and lamp glows.
+ */
+export const crossingParts = {
+  deck: 'crossing.deck',
+  post: 'crossing.post',
+  postLow: 'crossing.post-low',
+  boom: 'crossing.boom',
+  glowRed: 'crossing.glow-red',
+  glowWhite: 'crossing.glow-white',
+} as const satisfies Record<string, WorldPartKey>;
+
+/** Lamps and boom hinge on a crossing post, part units from top left. */
+export interface CrossingPostAnchors {
+  /** The two red lamps, flashing in turn. */
+  red: readonly [ArtPoint, ArtPoint];
+  /** The white lamp, blinking while the crossing is open. */
+  white: ArtPoint;
+  /** Where the boom turns. */
+  hinge: ArtPoint;
+}
+
+/** Lamps and hinges as drawn in the post SVGs. */
+export const crossingPostAnchors: Readonly<
+  Record<'crossing.post' | 'crossing.post-low', CrossingPostAnchors>
+> = {
+  'crossing.post': {
+    red: [
+      { x: 10, y: 34 },
+      { x: 24, y: 34 },
+    ],
+    white: { x: 17, y: 46 },
+    hinge: { x: 17, y: 88 },
+  },
+  'crossing.post-low': {
+    red: [
+      { x: 10.5, y: 20 },
+      { x: 23.5, y: 20 },
+    ],
+    white: { x: 17, y: 30 },
+    hinge: { x: 17, y: 39 },
+  },
+};
+
+/** Road traffic at crossings, seen from the front and from behind. */
+export const roadActorParts: Readonly<
+  Record<
+    'car-a' | 'car-b' | 'bike',
+    { front: WorldPartKey; back: WorldPartKey }
+  >
+> = {
+  'car-a': { front: 'road.car-a-front', back: 'road.car-a-back' },
+  'car-b': { front: 'road.car-b-front', back: 'road.car-b-back' },
+  bike: { front: 'road.bike-front', back: 'road.bike-back' },
+};
 
 /** Backdrops and clouds go to their own, coarser atlas (D-013). */
 export function isBackdropPart(key: string): boolean {

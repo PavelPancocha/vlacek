@@ -4,9 +4,16 @@ import type { ArtPart } from '../content/artManifest.ts';
 import {
   TRACK_BED_DEPTH_U,
   TRACK_TILE_STEP_U,
+  crossingParts,
   trackTileSets,
   worldParts,
 } from '../content/worldArt.ts';
+import {
+  FAR_STOP_LINE_U,
+  NEAR_STOP_LINE_U,
+  ROAD_CONFLICT_U,
+  ROAD_FAR_END_U,
+} from '../domain/interaction/LevelCrossing.ts';
 import type { ArcLengthTable } from '../domain/world/ArcLengthTable.ts';
 import { hash32 } from '../domain/world/Hash.ts';
 import {
@@ -31,6 +38,9 @@ import {
 } from './groundPalette.ts';
 import { glintAlpha, swayAmplitudeRad, swayAngle } from './ambientMotion.ts';
 import { frameOrigin } from './atlasPacking.ts';
+import { CrossingView, type CrossingState } from './CrossingView.ts';
+import { roadHalfWidthU, roadPointY } from './crossingLayout.ts';
+import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
 import { trackTilePlacements } from './trackTiles.ts';
 
 const CHUNK_WIDTH_U = gameConfig.world.chunkWidthU;
@@ -41,14 +51,20 @@ const GROUND_DEPTH_U = 1200;
  * anti-aliased polygon edges leave a light seam column on Canvas.
  */
 const GROUND_OVERLAP_U = 4;
-/** Ground behind the track: from the rails up to its horizon. */
-export const BACK_PLANE_U = 220;
-/** Near props stand at least this far below the bank foot. */
-export const NEAR_FOOT_OFFSET_U = 8;
 /** Field edges lean up to this far over the depth of the back ground. */
 const FIELD_EDGE_LEAN_U = 40;
 /** Water keeps this far from its basin's ends (its shore lies there). */
 const WATER_SIDE_U = 10;
+/** Road surface and gravel shoulder of crossing roads. */
+const ROAD_ASPHALT = 0x7d7b77;
+const ROAD_SHOULDER = 0xb8a682;
+const ROAD_LINE = 0xe9e6dc;
+const ROAD_DASH = 0xf4f1e6;
+/** Middle line: a dash every 20 u; the near road starts on the bank. */
+const ROAD_DASH_EVERY_U = 20;
+const ROAD_NEAR_FROM_U = ROAD_CONFLICT_U - 8;
+/** Below the painted meadow the road's lines go on this far. */
+const ROAD_TAIL_DASHES_U = 600;
 /** Flashing glints on each water basin. */
 const GLINTS_PER_BASIN = 6;
 /** A road bends away to the horizon over this many u at each end. */
@@ -125,6 +141,8 @@ export class ChunkView {
     phase: number;
   }[] = [];
   readonly #glints: { image: Phaser.GameObjects.Image; phase: number }[] = [];
+  /** Barriers, lamps and traffic of the chunk's level crossing. */
+  #crossing: CrossingView | undefined;
 
   constructor(
     scene: Phaser.Scene,
@@ -162,6 +180,8 @@ export class ChunkView {
         // Cars drive on a road (doc 04 §6: a car gets a road).
         for (const prop of scenery.props)
           if (prop.kind === 'back.car' && prop.motion) this.#paintRoad(g, prop);
+        if (scenery.crossing)
+          this.#paintCrossingRoad(g, scenery.crossing.localXU, 'back', 0);
       },
       {
         left: -reach,
@@ -186,6 +206,13 @@ export class ChunkView {
     const ground = this.#bake(
       (g) => {
         for (const span of scenery.near) this.#paintNear(g, span, bandsEnd);
+        if (scenery.crossing)
+          this.#paintCrossingRoad(
+            g,
+            scenery.crossing.localXU,
+            'near',
+            bandsEnd,
+          );
       },
       {
         left: -4,
@@ -207,6 +234,60 @@ export class ChunkView {
           )
           .setOrigin(0, 0),
       );
+    if (scenery.crossing) {
+      // The road runs on below the painted meadow.
+      const x = scenery.crossing.localXU;
+      const bottomU = this.#roadUAt(x, bandsEnd);
+      const half = roadHalfWidthU(bottomU);
+      ground.add([
+        scene.add
+          .rectangle(
+            x - half - 4,
+            bandsEnd - 1,
+            2 * half + 8,
+            GROUND_DEPTH_U,
+            ROAD_SHOULDER,
+          )
+          .setOrigin(0, 0),
+        scene.add
+          .rectangle(
+            x - half,
+            bandsEnd - 1,
+            2 * half,
+            GROUND_DEPTH_U,
+            ROAD_ASPHALT,
+          )
+          .setOrigin(0, 0),
+        ...[-1, 1].map((side) =>
+          scene.add
+            .rectangle(
+              x + side * (half - 2),
+              bandsEnd - 1,
+              1.2,
+              GROUND_DEPTH_U,
+              ROAD_LINE,
+              0.9,
+            )
+            .setOrigin(0.5, 0),
+        ),
+      ]);
+      // The dashed middle line goes on in the painted line's rhythm.
+      const frame = { railY: -this.#railAt(x), meadowY: this.#meadowTop(x) };
+      const first =
+        ROAD_NEAR_FROM_U +
+        ROAD_DASH_EVERY_U *
+          Math.ceil((bottomU - ROAD_NEAR_FROM_U) / ROAD_DASH_EVERY_U);
+      for (
+        let r = first;
+        r < bottomU + ROAD_TAIL_DASHES_U;
+        r += ROAD_DASH_EVERY_U
+      )
+        ground.add(
+          scene.add
+            .rectangle(x, roadPointY(frame, r), 1.4, 8, ROAD_DASH, 0.95)
+            .setOrigin(0.5, 0),
+        );
+    }
     this.#objects.push(back, ground);
     if (!art) {
       // Baked too: without MSAA a live line would alias (D-013).
@@ -239,6 +320,29 @@ export class ChunkView {
         .setScale(1 / art.pxPerU)
         .setRotation(tile.rotation);
       track.add(image);
+    }
+    if (scenery.crossing) {
+      // Crossing panels over the ballast, level with the rail head.
+      const x = scenery.crossing.localXU;
+      const deck = this.#image(scene, art, crossingParts.deck, false);
+      deck
+        .setPosition(x, -this.#railAt(x))
+        .setScale(1 / art.pxPerU)
+        .setRotation(
+          Math.atan2(-(this.#railAt(x + 8) - this.#railAt(x - 8)), 16),
+        );
+      track.add(deck);
+      this.#crossing = new CrossingView(
+        scene,
+        art,
+        x,
+        { railY: -this.#railAt(x), meadowY: this.#meadowTop(x) },
+        {
+          back: depths.backProps + 0.5,
+          deck: depths.track + 0.5,
+          near: depths.nearProps + 0.5,
+        },
+      );
     }
     const backProps = scene.add.container(0, 0).setDepth(depths.backProps);
     const nearProps = scene.add.container(0, 0).setDepth(depths.nearProps);
@@ -275,15 +379,20 @@ export class ChunkView {
 
   /** Near-meadow props, for the "never covers the train" check. */
   get nearProps(): readonly Phaser.GameObjects.Image[] {
-    return this.#near;
+    return [...this.#near, ...(this.#crossing?.nearImages ?? [])];
   }
 
   setX(x: number): void {
     for (const object of this.#objects) object.setPosition(x, 0);
+    this.#crossing?.setX(x);
   }
 
-  /** Moves patrolling props (tractor, car, boats) to simulation time. */
-  update(timeSec: number): void {
+  /**
+   * Moves patrolling props (tractor, car, boats) to simulation time and
+   * shows the chunk's crossing as the simulation holds it.
+   */
+  update(timeSec: number, crossing?: CrossingState): void {
+    this.#crossing?.update(crossing, timeSec);
     for (const { image, prop } of this.#moving) {
       const motion = prop.motion;
       if (!motion) continue;
@@ -306,6 +415,8 @@ export class ChunkView {
   }
 
   destroy(): void {
+    this.#crossing?.destroy();
+    this.#crossing = undefined;
     for (const object of this.#objects) object.destroy();
     this.#objects.length = 0;
     for (const key of this.#textures) this.#scene.textures.remove(key);
@@ -621,6 +732,62 @@ export class ChunkView {
         a.y + ((b.y - a.y) * 18) / 32,
       );
     }
+  }
+
+  /** Road position at a render y in front of the track (crossing x). */
+  #roadUAt(x: number, y: number): number {
+    return y - (this.#meadowTop(x) + NEAR_FOOT_OFFSET_U) + ROAD_CONFLICT_U;
+  }
+
+  /**
+   * The road of a level crossing (doc 05 §4), painted into the ground:
+   * behind the track up to the horizon, in front of it down the meadow,
+   * wider towards the viewer; asphalt on a gravel shoulder with side
+   * lines, a dashed middle line and a stop line in each lane.
+   */
+  #paintCrossingRoad(
+    g: Phaser.GameObjects.Graphics,
+    x: number,
+    part: 'back' | 'near',
+    bottomY: number,
+  ): void {
+    const frame = { railY: -this.#railAt(x), meadowY: this.#meadowTop(x) };
+    const from = part === 'back' ? ROAD_FAR_END_U : ROAD_NEAR_FROM_U;
+    const to =
+      part === 'back' ? -ROAD_CONFLICT_U + 10 : this.#roadUAt(x, bottomY) + 2;
+    const rs: number[] = [];
+    for (let r = from; r < to; r += 8) rs.push(r);
+    rs.push(to);
+    const edge = (side: number, grow: number) =>
+      rs.map(
+        (r) =>
+          new Phaser.Math.Vector2(
+            x + side * (roadHalfWidthU(r) + grow),
+            roadPointY(frame, r),
+          ),
+      );
+    const strip = (grow: number) => [
+      ...edge(-1, grow),
+      ...edge(1, grow).reverse(),
+    ];
+    g.fillStyle(ROAD_SHOULDER, 1);
+    g.fillPoints(strip(4), true);
+    g.fillStyle(ROAD_ASPHALT, 1);
+    g.fillPoints(strip(0), true);
+    g.lineStyle(1.2, ROAD_LINE, 0.9);
+    g.strokePoints(edge(-1, -2), false, false);
+    g.strokePoints(edge(1, -2), false, false);
+    // Dashed middle line.
+    g.lineStyle(1.4, ROAD_DASH, 0.95);
+    for (let r = from; r + 8 < to; r += ROAD_DASH_EVERY_U)
+      g.lineBetween(x, roadPointY(frame, r), x, roadPointY(frame, r + 8));
+    // Stop line across the lane that comes up to the track on this side.
+    const stopU = part === 'back' ? -FAR_STOP_LINE_U : NEAR_STOP_LINE_U;
+    const half = roadHalfWidthU(stopU);
+    const y = roadPointY(frame, stopU);
+    g.lineStyle(2.6, 0xffffff, 0.95);
+    if (part === 'back') g.lineBetween(x - half + 2, y, x - 1, y);
+    else g.lineBetween(x + 1, y, x + half - 2, y);
   }
 
   /**

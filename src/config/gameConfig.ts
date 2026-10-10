@@ -113,6 +113,38 @@ export interface CameraConfig {
   verticalFollowPerSec: number;
 }
 
+/** Level crossing timings (doc 05 §4, doc 13 `crossing`). */
+export interface CrossingConfig {
+  /** Longest a road actor may take through the conflict zone. */
+  roadClearanceSeconds: number;
+  warningSeconds: number;
+  closingSeconds: number;
+  openingSeconds: number;
+  safetySeconds: number;
+  distanceMarginU: number;
+  maxQueuedCars: number;
+  maxQueuedBikes: number;
+}
+
+/**
+ * Dclose (doc 05 §4): how far ahead of the conflict zone a crossing
+ * starts closing, derived from the top speed so a train that sets off at
+ * full throttle can never reach an open crossing.
+ */
+export function crossingCloseDistanceU(
+  crossing: CrossingConfig,
+  maxSpeedUPerSec: number,
+): number {
+  return (
+    maxSpeedUPerSec *
+      (crossing.roadClearanceSeconds +
+        crossing.warningSeconds +
+        crossing.closingSeconds +
+        crossing.safetySeconds) +
+    crossing.distanceMarginU
+  );
+}
+
 /** One render quality profile (doc 13 `quality`). */
 export interface QualityProfile {
   /** Upper bound of the render buffer density. */
@@ -137,6 +169,7 @@ export interface GameConfig {
   camera: CameraConfig;
   input: InputConfig;
   quality: QualityConfig;
+  crossing: CrossingConfig;
 }
 
 export const gameConfig: GameConfig = {
@@ -208,6 +241,16 @@ export const gameConfig: GameConfig = {
   quality: {
     low: { maxDpr: 1, targetFps: 30, maxDecorativeParticles: 96 },
     standard: { maxDpr: 1.5, targetFps: 60, maxDecorativeParticles: 240 },
+  },
+  crossing: {
+    roadClearanceSeconds: 2,
+    warningSeconds: 1.2,
+    closingSeconds: 0.8,
+    openingSeconds: 0.8,
+    safetySeconds: 0.5,
+    distanceMarginU: 80,
+    maxQueuedCars: 6,
+    maxQueuedBikes: 2,
   },
 };
 
@@ -362,6 +405,21 @@ export function validateGameConfig(config: GameConfig): string[] {
     ],
     ...profile('low'),
     ...profile('standard'),
+    ...(
+      [
+        'roadClearanceSeconds',
+        'warningSeconds',
+        'closingSeconds',
+        'openingSeconds',
+        'safetySeconds',
+        'distanceMarginU',
+      ] as const
+    ).map((key): Check => [`crossing.${key}`, positive(config.crossing[key])]),
+    ['crossing.maxQueuedCars', positiveInteger(config.crossing.maxQueuedCars)],
+    [
+      'crossing.maxQueuedBikes',
+      positiveInteger(config.crossing.maxQueuedBikes),
+    ],
   ];
   return checks.filter(([, valid]) => !valid).map(([path]) => path);
 }

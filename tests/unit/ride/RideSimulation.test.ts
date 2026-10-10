@@ -172,4 +172,48 @@ describe('RideSimulation restore guard', () => {
         ),
     ).toThrow(RangeError);
   });
+
+  it('SCN-13: keeps its crossings working over the whole train, before Dclose and after the render window', () => {
+    // Seed 4242's first crossing; the longest consist (≈ 1600 u).
+    const ride = new RideSimulation(setup(8));
+    const crossing = ride.crossings[0];
+    expect(crossing).toBeDefined();
+    if (!crossing) return;
+    // Known from the start, long before the front is within Dclose.
+    expect(crossing.worldX - ride.sample(ride.frontS).x).toBeGreaterThan(1000);
+    let closedSeen = false;
+    for (let i = 0; i < 60 * 60; i++) {
+      ride.step(i % 900 < 700 ? 'THROTTLE' : 'BRAKE');
+      const span = {
+        tailX: ride.sample(ride.tailS).x,
+        frontX: ride.sample(ride.frontS).x,
+      };
+      const same = ride.crossings.find((c) => c.id === crossing.id);
+      if (span.tailX < crossing.worldX + 200) expect(same).toBe(crossing);
+      if (crossing.trainInConflict(span)) {
+        closedSeen = true;
+        expect(crossing.barrier).toBe(1);
+        expect(crossing.roadInConflict()).toBe(false);
+      }
+    }
+    expect(closedSeen).toBe(true);
+  });
+
+  it('SCN-08: a journey restored on a crossing starts with it closed', () => {
+    const first = new RideSimulation(setup(0));
+    const crossing = first.crossings[0];
+    if (!crossing) throw new Error('no crossing');
+    const k = Math.floor(crossing.worldX / gameConfig.world.chunkWidthU);
+    const restored = new RideSimulation(
+      setup(4, {
+        head: {
+          chunkIndex: k,
+          arcOffsetU: crossing.worldX - k * gameConfig.world.chunkWidthU + 300,
+        },
+      }),
+    );
+    const same = restored.crossings.find((c) => c.id === crossing.id);
+    expect(same?.phase).toBe('CLOSED');
+    expect(same?.barrier).toBe(1);
+  });
 });

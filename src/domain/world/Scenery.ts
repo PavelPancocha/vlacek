@@ -1,6 +1,11 @@
 import { gameConfig } from '../../config/gameConfig.ts';
 import { biomeAt, type Biome } from './Biomes.ts';
 import { chunkObjects } from './ChunkObjects.ts';
+import {
+  CROSSING_RESERVE_U,
+  crossingSite,
+  type CrossingSite,
+} from './Crossings.ts';
 import { hash32, unitRandom } from './Hash.ts';
 import {
   LOCALITIES,
@@ -84,6 +89,8 @@ export interface ChunkScenery {
   near: GroundSpan<NearGround>[];
   back: GroundSpan<BackGround>[];
   water: WaterBasin[];
+  /** The level crossing of this chunk (slot 3), if any. */
+  crossing: CrossingSite | undefined;
   props: SceneryProp[];
   animal: { kind: AnimalKind; depth: number };
 }
@@ -391,6 +398,34 @@ export function chunkScenery(seed: number, chunkIndex: number): ChunkScenery {
     // A station stands on dry land.
     if (!station) addWater(ground, [0, chunkWidthU]);
   }
+  // A crossing reserves its road strip (doc 04 §6: reservations first):
+  // water splits around it and nothing stands or drives on it.
+  const crossing = crossingSite(seed, chunkIndex);
+  let kept = placements;
+  if (crossing) {
+    const road = crossing.localXU;
+    const wet = water.length > 0;
+    const pieces = water.flatMap((basin) =>
+      [
+        { ...basin, toX: Math.min(basin.toX, road - CROSSING_RESERVE_U) },
+        { ...basin, fromX: Math.max(basin.fromX, road + CROSSING_RESERVE_U) },
+      ].filter((piece) => piece.toX - piece.fromX > 2 * WATER_END_U),
+    );
+    water.length = 0;
+    water.push(...pieces);
+    kept = placements.filter((placement) => {
+      const reach = (placement.motion?.rangeU ?? 0) / 2;
+      if (Math.abs(placement.xU - road) < CROSSING_RESERVE_U + reach)
+        return false;
+      // A boat keeps to one piece of the split water.
+      if (!placement.motion || !wet) return true;
+      return pieces.some(
+        (piece) =>
+          placement.xU - reach >= piece.fromX + WATER_END_U &&
+          placement.xU + reach <= piece.toX - WATER_END_U,
+      );
+    });
+  }
   // In the transition chunk the animal belongs to the half it stands in.
   const host =
     place.slot === lastSlot && animalX >= TRANSITION_X_U
@@ -404,7 +439,8 @@ export function chunkScenery(seed: number, chunkIndex: number): ChunkScenery {
     near,
     back,
     water,
-    props: placements.map((placement, n) => ({
+    crossing,
+    props: kept.map((placement, n) => ({
       id: `g${TRACK_GENERATOR_VERSION}:chunk:${chunkIndex}:prop:${n}`,
       ...placement,
     })),

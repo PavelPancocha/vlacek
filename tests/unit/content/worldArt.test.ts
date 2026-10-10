@@ -6,6 +6,7 @@ import { artParts } from '../../../src/content/artManifest.ts';
 import {
   TRACK_TILE_STEP_U,
   animalParts,
+  crossingPostAnchors,
   trackTileSets,
   worldParts,
 } from '../../../src/content/worldArt.ts';
@@ -112,6 +113,28 @@ describe('world art manifest (D-011)', () => {
         expect(above, locality.id).toBeGreaterThan(height * 0.25);
         expect(above, locality.id).toBeLessThan(height * 0.75);
       }
+    }
+  });
+
+  it('puts the crossing lamps and the boom hinge on their posts', () => {
+    for (const [key, anchors] of Object.entries(crossingPostAnchors)) {
+      const part = parts[key];
+      const frame =
+        worldParts[
+          key === 'crossing.post' ? 'crossing.post' : 'crossing.post-low'
+        ];
+      expect(part, key).toBeDefined();
+      for (const point of [...anchors.red, anchors.white, anchors.hinge]) {
+        expect(point.x, key).toBeGreaterThan(0);
+        expect(point.x, key).toBeLessThan(frame.widthU);
+        expect(point.y, key).toBeGreaterThan(0);
+        expect(point.y, key).toBeLessThan(frame.heightU);
+      }
+      // Red lamps side by side above the white one; the hinge lowest.
+      expect(anchors.red[0].y).toBe(anchors.red[1].y);
+      expect(anchors.red[0].x).toBeLessThan(anchors.red[1].x);
+      expect(anchors.white.y).toBeGreaterThan(anchors.red[0].y);
+      expect(anchors.hinge.y).toBeGreaterThan(anchors.white.y);
     }
   });
 

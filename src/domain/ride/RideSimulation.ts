@@ -1,6 +1,14 @@
-import type { GameConfig } from '../../config/gameConfig.ts';
+import {
+  crossingCloseDistanceU,
+  type GameConfig,
+} from '../../config/gameConfig.ts';
 import type { MotionIntent } from '../input/InputReducer.ts';
 import { CooldownGate, ObjectReactions } from '../interaction/Cooldowns.ts';
+import {
+  LevelCrossing,
+  type CrossingRules,
+  type TrainSpan,
+} from '../interaction/LevelCrossing.ts';
 import {
   layoutConsist,
   poseVehicle,
@@ -15,6 +23,7 @@ import {
 } from '../train/TrainMotion.ts';
 import type { TrackSample } from '../world/ArcLengthTable.ts';
 import { chunkObjects, chunkOfEntityId } from '../world/ChunkObjects.ts';
+import { crossingSite, crossingWorldX } from '../world/Crossings.ts';
 import { generateTrackProfile } from '../world/TrackProfile.ts';
 import { TrackWindow, type TrackCursor } from '../world/TrackWindow.ts';
 
@@ -40,6 +49,10 @@ export type RideEvent =
   { type: 'objectReacted'; id: string } | { type: 'horn' };
 
 const MAX_PENDING_EVENTS = 64;
+/** Crossings stay alive this far behind the tail (until well clear). */
+const CROSSING_BEHIND_U = 1024;
+/** Crossings are known this far beyond Dclose ahead of the front. */
+const CROSSING_AHEAD_U = 512;
 
 /**
  * The single fixed-step ride simulation (doc 08 §3). Each step: motion from
@@ -56,6 +69,9 @@ export class RideSimulation {
   readonly #dtSec: number;
   readonly #reactions: ObjectReactions;
   readonly #horn: CooldownGate;
+  /** Live level crossings by id (doc 05 §4), ahead and under the train. */
+  readonly #crossings = new Map<string, LevelCrossing>();
+  readonly #crossingRules: CrossingRules;
   #events: RideEvent[] = [];
   speedUPerSec = 0;
   simulationTick: number;
@@ -83,6 +99,13 @@ export class RideSimulation {
       ),
     );
     this.layout = layoutConsist(setup.vehicles, config.train.couplerGapU);
+    this.#crossingRules = {
+      crossing: config.crossing,
+      closeDistanceU: crossingCloseDistanceU(
+        config.crossing,
+        config.train.maxSpeedUPerSec,
+      ),
+    };
     const anchor = setup.head?.chunkIndex ?? world.spawnChunkIndex;
     this.track = new TrackWindow(
       (k) => generateTrackProfile(this.#seed, k),
@@ -106,6 +129,51 @@ export class RideSimulation {
     this.simulationTick = setup.simulationTick ?? 0;
     // The whole consist has track before the first frame (TRN-07).
     this.#streamTrack();
+    // Crossings exist before the first frame; one under the train starts
+    // closed (SCN-08).
+    this.#updateCrossings(0);
+  }
+
+  /** Level crossings from behind the train to beyond Dclose ahead. */
+  get crossings(): readonly LevelCrossing[] {
+    return [...this.#crossings.values()];
+  }
+
+  /** The whole train as an x interval (doc 05 §4). */
+  #trainSpan(): TrainSpan {
+    return {
+      tailX: this.track.sample(this.tailS).x,
+      frontX: this.track.sample(this.frontS).x,
+    };
+  }
+
+  #updateCrossings(dtSec: number): void {
+    const span = this.#trainSpan();
+    const width = this.#config.world.chunkWidthU;
+    const behindX = span.tailX - CROSSING_BEHIND_U;
+    const first = Math.floor(behindX / width);
+    const last = Math.floor(
+      (span.frontX + this.#crossingRules.closeDistanceU + CROSSING_AHEAD_U) /
+        width,
+    );
+    for (let k = first; k <= last; k++) {
+      const site = crossingSite(this.#seed, k);
+      if (site && !this.#crossings.has(site.id))
+        this.#crossings.set(
+          site.id,
+          new LevelCrossing(
+            site.id,
+            crossingWorldX(site),
+            this.#seed,
+            this.#crossingRules,
+            span,
+          ),
+        );
+    }
+    for (const [id, crossing] of this.#crossings) {
+      if (crossing.worldX < behindX) this.#crossings.delete(id);
+      else if (dtSec > 0) crossing.step(dtSec, span);
+    }
   }
 
   get frontS(): number {
@@ -165,6 +233,7 @@ export class RideSimulation {
     this.speedUPerSec = motion.speedUPerSec;
     this.headS += motion.distanceU;
     this.#streamTrack();
+    this.#updateCrossings(this.#dtSec);
     this.simulationTick += 1;
     this.#reactions.prune(this.simulationTick);
   }
