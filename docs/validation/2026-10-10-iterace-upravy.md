@@ -405,3 +405,17 @@ Na GitHub Actions selhal desktopový test „the barriers are down before the tr
 | Unit záznam fází: každá fáze jednou a v pořadí, omezená délka, úklid | 2 FAIL proti stubu                                | 2 PASS |
 | Upravený E2E                                                         | FAIL proti buildu `1d563ec` (snímek bez `phases`) | 4 PASS |
 | Upravený E2E při 6× zpomaleném CPU, 5 běhů                           | —                                                 | 5 PASS |
+
+## Codex review PR #2 (`1d563ec`)
+
+Sedm nálezů P2, všechny skutečné, každý opravený samostatným commitem s testem, který předtím selhal.
+
+| Nález                                                    | Red                                                                                                                                                                | Green                                |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| Save z novější verze generátoru se nesmí přepsat         | unit: save s generátorem 99 se načetl jako platný                                                                                                                  | 56 PASS (platforma)                  |
+| Profil `low` má snížit hustotu vykreslování a snímky     | unit 2 FAIL proti stubu; E2E na 2× obrazovce: `low` kreslil v hustotě 1,5                                                                                          | 15 unit + 18 E2E PASS                |
+| Historie souběhů na nekonečné jízdě nesmí růst           | unit dlouhé jízdy: historie 10 záznamů; mutace bez úklidu: 6 > 4                                                                                                   | 19 PASS, mez ≤ 2 + 2 × jedoucí vlaky |
+| Omezené efekty mají ztlumit i houpání, odlesky a dýchání | unit 1 FAIL proti stubu                                                                                                                                            | 74 PASS (render)                     |
+| Obnovená jízda v tunelu ukáže vlak hned                  | unit 1 FAIL; E2E obnova v tunelu, v pauze: kopec neprůhledný (1)                                                                                                   | 4 unit + 4 E2E PASS                  |
+| Výběr mašinky se vejde na telefon naležato               | E2E 3 FAIL: tlačítko do depa končilo na 451 px (při 568 × 320 celé pod okrajem); první verze testu falešně prošla, Playwright posouval ořezanou obrazovku skriptem | 6 PASS                               |
+| Přejezd, trolej, most a tunel fungují i bez grafiky      | E2E s jedním nenačteným SVG: 0 stožárů                                                                                                                             | 24 E2E PASS                          |
