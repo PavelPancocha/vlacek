@@ -72,11 +72,21 @@ function slopeSave(): string {
   });
 }
 
-/** Screenshot of the standing train with one renderer, plus its box. */
-async function standingTrain(browser: Browser, renderer: 'auto' | 'canvas') {
+/**
+ * Screenshot of the standing train with one renderer, plus its box. With
+ * `placeholders` the art files are blocked, so the train is drawn from the
+ * fallback silhouettes: several textures interleaved in one frame.
+ */
+async function standingTrain(
+  browser: Browser,
+  renderer: 'auto' | 'canvas',
+  placeholders = false,
+) {
   const page = await browser.newPage({
     viewport: { width: 1280, height: 720 },
   });
+  if (placeholders)
+    await page.route(/\/assets\/[^/]*\.svg$/, (route) => route.abort());
   await page.addInitScript((json) => {
     if (!sessionStorage.getItem('render-seeded')) {
       localStorage.setItem('vlacek.save.v1', json);
@@ -98,18 +108,17 @@ async function standingTrain(browser: Browser, renderer: 'auto' | 'canvas') {
   return { page, png: png.toString('base64'), box: state.trainBox, state };
 }
 
-test('WebGL draws rotated vehicles like Canvas (no sheared quads)', async ({
-  browser,
-}) => {
-  test.setTimeout(60_000);
-  const webgl = await standingTrain(browser, 'auto');
-  const canvas = await standingTrain(browser, 'canvas');
+/** Share of pixels inside the WebGL train box that differ from Canvas. */
+async function differingPixels(placeholders: boolean, browser: Browser) {
+  const webgl = await standingTrain(browser, 'auto', placeholders);
+  const canvas = await standingTrain(browser, 'canvas', placeholders);
   expect(webgl.state.renderer).toBe('webgl');
   expect(canvas.state.renderer).toBe('canvas');
+  expect(webgl.state.artVehicles).toBe(placeholders ? 0 : WAGONS.length + 1);
   const box = webgl.box;
   if (!box) throw new Error('no train box');
   // Same deterministic standing frame: compare pixels inside the train box.
-  const differing = await webgl.page.evaluate(
+  return webgl.page.evaluate(
     async ({ a, b, box }) => {
       const decode = async (base64: string) => {
         const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -142,7 +151,23 @@ test('WebGL draws rotated vehicles like Canvas (no sheared quads)', async ({
     },
     { a: webgl.png, b: canvas.png, box },
   );
+}
+
+test('WebGL draws rotated vehicles like Canvas (no sheared quads)', async ({
+  browser,
+}) => {
+  test.setTimeout(60_000);
   // Identical renderers give 0; Phaser's multi-texture batching sheared
   // quads into wedges (1–2 % of the box differed, D-010).
-  expect(differing).toBeLessThan(0.002);
+  expect(await differingPixels(false, browser)).toBeLessThan(0.002);
+});
+
+test('D-010: interleaved textures (art fallback) draw like Canvas too', async ({
+  browser,
+}) => {
+  test.setTimeout(60_000);
+  // With the vehicle atlas the train is one texture; the fallback
+  // silhouettes and wheels interleave textures, which still sheared quads
+  // under Phaser 4.2.1's default batching (≈ 1 % of the box).
+  expect(await differingPixels(true, browser)).toBeLessThan(0.002);
 });

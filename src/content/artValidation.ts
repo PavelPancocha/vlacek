@@ -152,9 +152,38 @@ export function validateVehicleArt(input: ArtValidationInput): string[] {
     if (!used.has(file)) errors.push(`${file}: not in the manifest`);
   }
 
+  // Every type has its own drawing (doc 10 §5: not a recoloured copy).
+  const bodies = new Map<string, string>();
+  const usedParts = new Set<string>();
   for (const vehicle of input.vehicles) {
     const art = input.art[vehicle.id];
-    if (art) errors.push(...vehicleErrors(vehicle, art, input.parts));
+    if (!art) continue;
+    errors.push(...vehicleErrors(vehicle, art, input.parts));
+    const owner = bodies.get(art.body);
+    if (owner !== undefined)
+      errors.push(`${vehicle.id}: shares its body drawing with ${owner}`);
+    else bodies.set(art.body, vehicle.id);
+    for (const key of [
+      art.body,
+      art.overlay,
+      ...art.wheels.map((wheel) => wheel.part),
+      art.steamGear?.couplingRod,
+      art.steamGear?.connectingRod,
+      art.steamGear?.crosshead,
+    ])
+      if (key !== undefined) usedParts.add(key);
+  }
+  for (const key of Object.keys(input.parts)) {
+    if (!usedParts.has(key)) errors.push(`${key}: not used by any vehicle`);
   }
   return errors;
+}
+
+/** A release ships no placeholder (doc 06 §8, CNT-02). */
+export function releaseErrors(
+  vehicles: readonly (VehicleBase & { placeholder?: unknown })[],
+): string[] {
+  return vehicles
+    .filter((vehicle) => vehicle.placeholder !== undefined)
+    .map((vehicle) => `${vehicle.id}: placeholder`);
 }

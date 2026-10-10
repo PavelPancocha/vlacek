@@ -1,18 +1,18 @@
 import {
-  vehicleBodyHeightU,
+  PLACEHOLDER_BODY_HEIGHT_U,
   vehicleShapes,
   type ShapedVehicle,
 } from '../content/placeholderShapes.ts';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-/** DOM preview of a vehicle from the same placeholder shapes as the ride. */
+/** DOM preview of the marked placeholder silhouette, as in the ride. */
 export function vehicleSvg(
   vehicle: ShapedVehicle,
   pixelsPerU: number,
 ): SVGSVGElement {
   const wheelSpace = vehicle.wheelRadiusU * 2;
-  const height = vehicleBodyHeightU(vehicle) + wheelSpace;
+  const height = PLACEHOLDER_BODY_HEIGHT_U + wheelSpace;
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${vehicle.lengthU} ${height}`);
   svg.setAttribute('width', String(Math.round(vehicle.lengthU * pixelsPerU)));

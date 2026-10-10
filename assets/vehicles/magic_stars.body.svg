@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="100" viewBox="0 0 164 100">
+  <!-- Hvězdičková mašinka (magic_stars): a fairy-tale steam engine in the
+       same construction and light as the real ones, with a tulip chimney
+       for the stars (no face, doc 07 §1). Rail top at y = 100, faces
+       right, buffers 30 u above the rail. -->
+  <defs>
+    <linearGradient id="purple" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b2c6f"/>
+      <stop offset="0.18" stop-color="#a569bd"/>
+      <stop offset="0.36" stop-color="#7d3c98"/>
+      <stop offset="0.8" stop-color="#4a235a"/>
+      <stop offset="1" stop-color="#2e1538"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8e44ad"/>
+      <stop offset="0.12" stop-color="#6c3483"/>
+      <stop offset="1" stop-color="#3b1a48"/>
+    </linearGradient>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a4f9a"/>
+      <stop offset="0.5" stop-color="#22306b"/>
+      <stop offset="1" stop-color="#141c45"/>
+    </linearGradient>
+    <linearGradient id="smokebox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b1a48"/>
+      <stop offset="0.2" stop-color="#7d3c98"/>
+      <stop offset="0.42" stop-color="#4a235a"/>
+      <stop offset="1" stop-color="#1f0e27"/>
+    </linearGradient>
+    <linearGradient id="chimney" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2e1538"/>
+      <stop offset="0.3" stop-color="#a569bd"/>
+      <stop offset="0.55" stop-color="#5b2c6f"/>
+      <stop offset="1" stop-color="#1f0e27"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/>
+      <stop offset="0.45" stop-color="#f4d03f"/>
+      <stop offset="1" stop-color="#b7861a"/>
+    </linearGradient>
+    <linearGradient id="goldV" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#9a6f14"/>
+      <stop offset="0.35" stop-color="#fff3c4"/>
+      <stop offset="0.6" stop-color="#f4d03f"/>
+      <stop offset="1" stop-color="#8a6312"/>
+    </linearGradient>
+    <radialGradient id="glass" cx="0.35" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#fdfaf0"/>
+      <stop offset="0.5" stop-color="#b9d9ee"/>
+      <stop offset="1" stop-color="#6c8fb8"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.85" r="0.75">
+      <stop offset="0" stop-color="#ffd6f5" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#c39bd3" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#1f0e27" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lamp" cx="0.4" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#fffbe6"/>
+      <stop offset="0.6" stop-color="#f9e79f"/>
+      <stop offset="1" stop-color="#d4ac0d"/>
+    </radialGradient>
+  </defs>
+
+  <g stroke="#1a0b21" stroke-width="0.6" stroke-linejoin="round">
+    <!-- Frame behind the wheels. -->
+    <rect x="12" y="69.8" width="136" height="12.4" fill="url(#panel)"/>
+    <path d="M12 71.4 H148" stroke="#d2b4de" stroke-width="0.35" fill="none"/>
+    <g fill="#24102e" stroke="none">
+      <ellipse cx="67" cy="76.6" rx="1.6" ry="2.6"/>
+      <ellipse cx="104" cy="77" rx="3" ry="2.2"/>
+      <ellipse cx="114" cy="77" rx="3" ry="2.2"/>
+    </g>
+    <!-- Brake shoes on the leading side of the drivers. -->
+    <g fill="#2e1538" stroke-width="0.4">
+      <path d="M62.93 76.92 A15.25 15.25 0 0 1 62.93 93.08 L63.99 93.74 A16.5 16.5 0 0 0 63.99 76.26 Z"/>
+      <path d="M96.93 76.92 A15.25 15.25 0 0 1 96.93 93.08 L97.99 93.74 A16.5 16.5 0 0 0 97.99 76.26 Z"/>
+      <rect x="63.2" y="70" width="1.2" height="7.4"/>
+      <rect x="97.2" y="70" width="1.2" height="7.4"/>
+    </g>
+
+    <!-- Rear buffer beam with golden buffers, coupling and lamp. -->
+    <rect x="4" y="63.6" width="9" height="16" rx="1.2" fill="url(#panel)"/>
+    <path d="M4.8 65 H12.2" stroke="#f4d03f" stroke-width="0.45" fill="none"/>
+    <rect x="1.6" y="68.6" width="3" height="3.2" fill="url(#gold)"/>
+    <rect x="0.2" y="66.4" width="2" height="7.6" rx="1" fill="url(#gold)"/>
+    <path d="M4 76.2 H2.6 Q1.3 76.2 1.3 77.8 V79 H2.6" fill="none" stroke-width="0.9"/>
+    <path d="M9 79.6 Q9.6 85 6.6 87.4" stroke="#1a0b21" stroke-width="1.5" fill="none"/>
+
+    <!-- Running board: deep purple with gold lining. -->
+    <rect x="8" y="63" width="146" height="3.2" fill="#2e1538"/>
+    <path d="M8.4 63.4 H153.6" stroke="#a569bd" stroke-width="0.4" fill="none"/>
+    <rect x="8" y="66.2" width="146" height="3.6" fill="url(#panel)"/>
+    <path d="M9 68 H153" stroke="#f4d03f" stroke-width="0.45" fill="none"/>
+
+    <!-- Boiler with gold bands and painted stars; bell-shaped dome. -->
+    <path d="M50 58 V33 Q50 30 53 30 H120 V58 Z" fill="url(#purple)"/>
+    <path d="M51 33.4 H119.4" stroke="#ffffff" stroke-opacity="0.3" stroke-width="0.5" fill="none"/>
+    <path d="M51 35 H119.4" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.6" fill="none"/>
+    <g stroke="url(#goldV)" stroke-width="1.3" fill="none">
+      <path d="M66 30.2 V58"/><path d="M93 30.2 V58"/><path d="M117 30.2 V58"/>
+    </g>
+    <path d="M66.9 30.6 V58 M93.9 30.6 V58" stroke="#000000" stroke-opacity="0.3" stroke-width="0.5" fill="none"/>
+    <g fill="url(#gold)" stroke="#8a6312" stroke-width="0.3">
+      <path d="M60.00 37.00 L60.79 38.91 L62.85 39.07 L61.28 40.42 L61.76 42.43 L60.00 41.35 L58.24 42.43 L58.72 40.42 L57.15 39.07 L59.21 38.91 Z"/>
+      <path d="M73.38 45.83 L73.71 47.31 L75.18 47.69 L73.87 48.46 L73.96 49.98 L72.83 48.97 L71.42 49.53 L72.02 48.14 L71.06 46.97 L72.57 47.11 Z"/>
+      <path d="M85.55 35.44 L86.51 36.95 L88.30 36.78 L87.16 38.16 L87.87 39.81 L86.20 39.15 L84.86 40.34 L84.97 38.55 L83.43 37.64 L85.16 37.19 Z"/>
+      <path d="M100.00 43.80 L100.85 45.84 L103.04 46.01 L101.37 47.44 L101.88 49.59 L100.00 48.44 L98.12 49.59 L98.63 47.44 L96.96 46.01 L99.15 45.84 Z"/>
+      <path d="M110.17 35.01 L110.59 36.32 L111.95 36.55 L110.83 37.35 L111.03 38.71 L109.92 37.90 L108.69 38.51 L109.12 37.20 L108.16 36.22 L109.54 36.23 Z"/>
+    </g>
+    <path d="M50.6 57 H119.4" stroke="#000000" stroke-opacity="0.35" stroke-width="2" fill="none"/>
+    <path d="M78 30.4 Q78.6 21.6 82 20 Q82 17 86 16.4 Q90 17 90 20 Q93.4 21.6 94 30.4 Z" fill="url(#gold)"/>
+    <path d="M79.4 26 Q86 24.2 92.6 26" stroke="#8a6312" stroke-width="0.4" fill="none"/>
+    <circle cx="86" cy="15" r="1.6" fill="url(#gold)" stroke-width="0.4"/>
+    <ellipse cx="83" cy="23.6" rx="1" ry="2.6" fill="#ffffff" fill-opacity="0.45" stroke="none"/>
+    <!-- Whistle on the cab front. -->
+    <path d="M53.6 30 V22.6" stroke="#9a6f14" stroke-width="0.8" fill="none"/>
+    <path d="M52.3 22.8 H54.9 L54.5 18.8 Q53.6 18 52.7 18.8 Z" fill="url(#goldV)" stroke-width="0.4"/>
+    <!-- Boiler handrail. -->
+    <path d="M54 32.6 H144" stroke="url(#gold)" stroke-width="0.8" fill="none"/>
+    <g fill="#f4d03f" stroke-width="0.3">
+      <circle cx="58" cy="32.6" r="0.75"/><circle cx="80" cy="32.6" r="0.75"/><circle cx="104" cy="32.6" r="0.75"/><circle cx="125" cy="32.6" r="0.75"/><circle cx="142" cy="32.6" r="0.75"/>
+    </g>
+
+    <!-- Cab with a domed night-sky roof and a star finial. -->
+    <path d="M10 63 V27 H51 V63 Z" fill="url(#panel)"/>
+    <path d="M12.6 63 V38 Q12.6 34.4 16.2 34.4 H19 Q22.6 34.4 22.6 38 V63 Z" fill="#1f0e27"/>
+    <path d="M12.6 63 V38 Q12.6 34.4 16.2 34.4 H19 Q22.6 34.4 22.6 38 V63 Z" fill="url(#glow)" stroke="none"/>
+    <path d="M11.8 38 V61.6 M23.4 38 V61.6" stroke="url(#gold)" stroke-width="0.8" fill="none"/>
+    <circle cx="37" cy="37.6" r="7.6" fill="url(#gold)"/>
+    <circle cx="37" cy="37.6" r="6.2" fill="url(#glass)" stroke-width="0.4"/>
+    <path d="M30.9 36.4 Q33 31.2 37 31.4 Q34.6 34 33.6 38.4 Q32 38.6 30.9 36.4 Z M43.1 36.4 Q41 31.2 37 31.4 Q39.4 34 40.4 38.4 Q42 38.6 43.1 36.4 Z" fill="#f5b7b1" stroke="#c0392b" stroke-width="0.3"/>
+    <path d="M34.6 41.6 L38.6 34.6" stroke="#ffffff" stroke-opacity="0.7" stroke-width="0.6" fill="none"/>
+    <g fill="url(#gold)" stroke="#8a6312" stroke-width="0.25">
+      <circle cx="37" cy="30.4" r="0.5"/><circle cx="37" cy="44.8" r="0.5"/><circle cx="29.8" cy="37.6" r="0.5"/><circle cx="44.2" cy="37.6" r="0.5"/>
+    </g>
+    <rect x="30" y="49" width="14" height="6.2" rx="3.1" fill="url(#gold)" stroke-width="0.45"/>
+    <rect x="30.8" y="49.8" width="12.4" height="4.6" rx="2.3" fill="#3b1a48" stroke="none"/>
+    <path d="M37.00 50.20 L37.47 51.34 L38.71 51.44 L37.77 52.24 L38.06 53.46 L37.00 52.81 L35.94 53.46 L36.23 52.24 L35.29 51.44 L36.53 51.34 Z" fill="url(#gold)" stroke="none"/>
+    <rect x="25.6" y="57" width="23.6" height="3.4" rx="1.7" fill="none" stroke="#f4d03f" stroke-width="0.4"/>
+    <path d="M7.4 27.4 Q7.4 12.2 30.5 11.6 Q53.6 12.2 53.6 27.4 Z" fill="url(#night)"/>
+    <path d="M9 26.4 Q9.6 14 30.5 13.2 Q51.4 14 52 26.4" stroke="#5d6fb8" stroke-width="0.4" fill="none"/>
+    <path d="M7 27 H54" stroke="url(#gold)" stroke-width="1.2" fill="none"/>
+    <g fill="#fff3c4" stroke="none">
+      <path d="M44.00 18.90 L44.29 19.60 L45.05 19.66 L44.47 20.15 L44.65 20.89 L44.00 20.50 L43.35 20.89 L43.53 20.15 L42.95 19.66 L43.71 19.60 Z"/>
+      <path d="M16.00 21.00 L16.26 21.64 L16.95 21.69 L16.43 22.14 L16.59 22.81 L16.00 22.45 L15.41 22.81 L15.57 22.14 L15.05 21.69 L15.74 21.64 Z"/>
+      <circle cx="22" cy="17" r="0.45"/><circle cx="36" cy="16" r="0.5"/><circle cx="48" cy="24" r="0.4"/><circle cx="12" cy="25" r="0.4"/><circle cx="27" cy="22.4" r="0.35"/>
+    </g>
+    <path d="M30.5 11.6 V10" stroke="#9a6f14" stroke-width="0.7"/>
+    <path d="M29.00 6.00 L29.69 7.65 L31.47 7.80 L30.11 8.96 L30.53 10.70 L29.00 9.77 L27.47 10.70 L27.89 8.96 L26.53 7.80 L28.31 7.65 Z" transform="translate(1.5 0)" fill="url(#gold)" stroke="#8a6312" stroke-width="0.35"/>
+
+    <!-- Smokebox with a star on the door. -->
+    <rect x="118" y="27.6" width="22.4" height="32" rx="1.6" fill="url(#smokebox)"/>
+    <path d="M140 29.6 Q144.6 30.4 144.6 43.6 Q144.6 56.8 140 57.6 Z" fill="url(#smokebox)"/>
+    <path d="M141.6 33 Q143.6 43.6 141.6 54.2" stroke="url(#gold)" stroke-width="0.6" fill="none"/>
+    <circle cx="143.6" cy="43.6" r="1.1" fill="url(#gold)" stroke-width="0.35"/>
+    <path d="M119.4 30 V57" stroke="#a569bd" stroke-width="0.45" fill="none"/>
+    <rect x="119" y="59.2" width="20.4" height="4" fill="#24102e"/>
+
+    <!-- Tulip chimney with a golden crown rim. -->
+    <path d="M124.6 28 Q124.4 22 126.2 19.6 L120.2 9 H138.8 L132.8 19.6 Q134.6 22 134.4 28 Z" fill="url(#chimney)"/>
+    <path d="M123.2 28.4 Q129.5 24.6 135.8 28.4 Z" fill="#2e1538"/>
+    <path d="M119 9.4 L120.4 5.6 L122.6 7.6 L124.8 4.2 L127 7 L129.5 3.4 L132 7 L134.2 4.2 L136.4 7.6 L138.6 5.6 L140 9.4 Z" fill="url(#gold)" stroke-width="0.45"/>
+    <path d="M128 11 L130.4 22" stroke="#ffffff" stroke-opacity="0.25" stroke-width="0.9" fill="none"/>
+
+    <!-- Star lamp on the smokebox front. -->
+    <rect x="138.4" y="19.6" width="6.4" height="7.6" rx="1.6" fill="url(#gold)"/>
+    <circle cx="141.6" cy="23.4" r="2.3" fill="url(#lamp)" stroke-width="0.35"/>
+    <path d="M141.50 21.90 L141.92 22.92 L143.02 23.01 L142.18 23.72 L142.44 24.79 L141.50 24.22 L140.56 24.79 L140.82 23.72 L139.98 23.01 L141.08 22.92 Z" fill="#fff3c4" stroke="#d4ac0d" stroke-width="0.2"/>
+
+    <!-- Front buffer beam, golden buffers and a slatted golden pilot. -->
+    <rect x="148" y="63.6" width="9" height="16" rx="1.2" fill="url(#panel)"/>
+    <path d="M148.8 65 H156.2" stroke="#f4d03f" stroke-width="0.45" fill="none"/>
+    <rect x="156.4" y="68.6" width="5" height="3.2" fill="url(#gold)"/>
+    <rect x="161.8" y="66.4" width="2" height="7.6" rx="1" fill="url(#gold)"/>
+    <path d="M157 76.2 H157.4 Q158.8 76.2 158.8 77.8 V79 H157.4" fill="none" stroke-width="0.9"/>
+    <path d="M146 79.6 H157 L161.6 95.4 H146 Z" fill="#2e1538"/>
+    <path d="M148.6 80.2 L149.6 95 M151.6 80.2 L153.4 95 M154.6 80.2 L157.2 95" stroke="url(#gold)" stroke-width="0.9" fill="none"/>
+    <path d="M146 95.4 H161.6" stroke="url(#gold)" stroke-width="1" fill="none"/>
+  </g>
+</svg>

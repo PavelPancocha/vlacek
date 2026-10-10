@@ -2,7 +2,10 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { gameConfig } from '../src/config/gameConfig.ts';
 import { artParts, vehicleArt } from '../src/content/artManifest.ts';
-import { validateVehicleArt } from '../src/content/artValidation.ts';
+import {
+  releaseErrors,
+  validateVehicleArt,
+} from '../src/content/artValidation.ts';
 import { validateCatalog } from '../src/content/catalogValidation.ts';
 import { locomotives, wagons } from '../src/content/vehicles.ts';
 
@@ -28,9 +31,7 @@ const errors = [
 const placeholders = vehicles.filter(
   (vehicle) => vehicle.placeholder !== undefined,
 );
-if (release) {
-  errors.push(...placeholders.map((vehicle) => `${vehicle.id}: placeholder`));
-}
+if (release) errors.push(...releaseErrors(vehicles));
 for (const error of errors) console.error(error);
 if (errors.length > 0) process.exitCode = 1;
 else {

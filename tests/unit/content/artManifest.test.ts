@@ -7,6 +7,7 @@ import {
   type VehicleArt,
 } from '../../../src/content/artManifest.ts';
 import {
+  releaseErrors,
   validateVehicleArt,
   type ArtValidationInput,
 } from '../../../src/content/artValidation.ts';
@@ -48,14 +49,16 @@ describe('vehicle art manifest (doc 06 §8, doc 07 §4, CNT-02)', () => {
   it('requires exactly one look per vehicle: art or a marked placeholder', () => {
     const vehicles = shipped.vehicles.map((vehicle) =>
       vehicle.id === 'steam_local'
-        ? { ...vehicle, placeholder: {} }
-        : vehicle.id === 'cargo_box'
-          ? { ...vehicle, placeholder: undefined }
-          : vehicle,
+        ? { ...vehicle, placeholder: true as const }
+        : vehicle,
     );
-    expect(validateVehicleArt({ ...shipped, vehicles })).toEqual([
+    const art = { ...vehicleArt };
+    delete art['cargo_box'];
+    expect(validateVehicleArt({ ...shipped, vehicles, art })).toEqual([
       'steam_local: art and a placeholder',
       'cargo_box: no art and no placeholder',
+      'cargo_box.body: not used by any vehicle',
+      'cargo_box.overlay: not used by any vehicle',
     ]);
     expect(
       validateVehicleArt({
@@ -63,6 +66,31 @@ describe('vehicle art manifest (doc 06 §8, doc 07 §4, CNT-02)', () => {
         art: { ...vehicleArt, ghost: steam },
       }),
     ).toEqual(['ghost: art for a vehicle not in the catalog']);
+  });
+
+  it('gives every vehicle type its own drawing, not a shared or recoloured body', () => {
+    const coal = vehicleArt['cargo_coal'];
+    if (!coal) throw new Error('cargo_coal has no art');
+    expect(
+      validateVehicleArt({
+        ...shipped,
+        art: { ...vehicleArt, cargo_coal: { ...coal, body: 'cargo_box.body' } },
+      }),
+    ).toEqual([
+      'cargo_coal: cargo_box.body frame is not 152 × 68 u, pivot on the rail',
+      'cargo_coal: shares its body drawing with cargo_box',
+      'cargo_coal.body: not used by any vehicle',
+    ]);
+  });
+
+  it('lets a release ship no placeholder (doc 06 §8)', () => {
+    expect(releaseErrors(shipped.vehicles)).toEqual([]);
+    const vehicles = shipped.vehicles.map((vehicle) =>
+      vehicle.id === 'cargo_box'
+        ? { ...vehicle, placeholder: true as const }
+        : vehicle,
+    );
+    expect(releaseErrors(vehicles)).toEqual(['cargo_box: placeholder']);
   });
 
   it('checks every part file and its size in world units', () => {
@@ -98,6 +126,7 @@ describe('vehicle art manifest (doc 06 §8, doc 07 §4, CNT-02)', () => {
       { part: 'wheel.steam-driver', xU: 10 },
       { part: 'wheel.steam-driver', xU: 76 },
       { part: 'wheel.steam-driver', xU: 100 },
+      { part: 'wheel.steam-pony', xU: 138 },
     ] as const;
     expect(validateVehicleArt(withSteam({ ...steam, wheels }))).toEqual([
       'steam_local: wheel at 10 outside the vehicle',

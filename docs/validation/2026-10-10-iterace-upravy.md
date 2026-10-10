@@ -109,3 +109,49 @@ Rozhodnutí: [D-011](../decisions/011-vector-vehicle-art-and-atlas.md). První v
 Při prvním spuštění E2E se scéna vůbec nenačetla: Phaser 4.2.1 dekóduje každé `data:` URI jako base64, ale Vite vložil malé SVG URL-kódované (`atob` výjimka v konzoli, UI zamrzlé). Soubory vozidel proto zůstávají v buildu samostatně (`assetsInlineLimit`).
 
 Ruční snímky skutečné aplikace (1280 × 720): výběr mašinky, depo a jízda. Atlas 0,75 px/u: mašinka je vyhlazená, s viditelnými táhly a koly. První verze s pevnými 2 px/u byla zubatá (zmenšení 3,5×), proto se měřítko řídí zoomem.
+
+## D1 — detailní grafika všech deseti vozidel (§3)
+
+Všech 10 vozidel současného katalogu má vlastní vektorovou kresbu:
+
+- **Lokomotivy:**
+  - malá parní: tři spřažená kola, pojezdové kolo, spojnice, ojnice, křižák, plamen v kabině;
+  - velká naftová: dvě kabiny, žaluzie, palivová nádrž, dvounápravové podvozky;
+  - hvězdičková: hvězdná kola se zlatými táhly, tulipánový komín, kabina s kulatým oknem.
+- **Vozy:**
+  - osobní vůz s cestujícími v oknech;
+  - výletní vagónek s lavicemi a stříškou;
+  - krytý vůz s posuvnými dveřmi;
+  - uhlák s nákladem uhlí;
+  - kontejnerový vůz se dvěma kontejnery;
+  - jeřábový vůz s obsluhou a ležícím výložníkem;
+  - balónkový vagónek.
+
+Všechny nárazníky jsou 30 u nad kolejnicí, takže na sebe vozy v soupravě navazují. Lesk a stín kol nese neotáčivý překryv. Nikde nejsou loga dopravců ani obličeje lokomotiv. Barevné placeholder vzhledy zmizely; z placeholderu zbyla jedna neutrální silueta se žlutými šrafami pro selhání načtení grafiky (PWA-10).
+
+| Test                                                                                       | Red                                                             | Green                     |
+| ------------------------------------------------------------------------------------------ | --------------------------------------------------------------- | ------------------------- |
+| Unit `validateVehicleArt`: vlastní kresba každého typu, každý díl použit; `releaseErrors`  | 2 FAIL (pravidlo chybělo, stub `releaseErrors`)                 | PASS                      |
+| Tooling `validate:assets` a `--release` se skutečným katalogem                             | starý test čekal 9 placeholderů a selhání release               | 2 PASS (0 placeholderů)   |
+| E2E `art.spec.ts`: všechna vozidla z atlasu (33 rámečků), depo, PWA-10, překreslení        | —                                                               | 8 PASS (desktop i tablet) |
+| E2E `render.spec.ts` „D-010: interleaved textures“ (grafika zablokovaná, fallback siluety) | s výchozím `maxTextures` FAIL, lišilo se 0,98 % a 0,97 % pixelů | PASS s `maxTextures: 1`   |
+
+[D-010](../decisions/010-webgl-single-texture-batches.md) proto zůstává. Původní test s grafikou v jednom atlasu prošel i bez opatření (3 běhy). Chybu ale vyvolá každé střídání textur a krajina a částice je přinesou.
+
+Výkon (`PERF_SECONDS=30 npm run measure:perf`, nejdelší souprava, software WebGL kontejneru):
+
+- medián 20 FPS, stejně jako před grafikou;
+- p95 66,6 ms (dříve 50 ms), nejhorší snímek 83 ms;
+- všech 9 vozidel vykresleno.
+
+Fyzická zařízení: **NEOVĚŘENO**.
+
+Kontaktní list (stejné SVG díly a stejné skládání `vehicleArtLayers` jako ve hře):
+
+![Kontaktní list deseti vozidel](img/2026-10-10-kontaktni-list-vozidel.png)
+
+Skutečná aplikace, 1600 × 900, svět 7: depo se všemi sedmi vozy a stojící souprava po jízdě. Ovečky jsou zatím placeholder scénky (E2).
+
+![Depo se všemi vozy](img/2026-10-10-depo-vsech-vozidel.png)
+
+![Souprava všech vozidel v jízdě](img/2026-10-10-jizda-vsech-vozidel.png)

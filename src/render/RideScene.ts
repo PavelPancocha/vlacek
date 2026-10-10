@@ -5,7 +5,7 @@ import { artParts, vehicleArt } from '../content/artManifest.ts';
 import {
   OBJECT_RADIUS_U,
   OBJECT_SHAPES,
-  vehicleBodyHeightU,
+  PLACEHOLDER_BODY_HEIGHT_U,
   vehicleShapes,
   type Shape,
   type ShapedVehicle,
@@ -153,7 +153,7 @@ export class RideScene extends Phaser.Scene {
     let tallestU = 0;
     for (const vehicle of this.#host.catalogVehicles()) {
       const art = vehicleArt[vehicle.id];
-      const height = vehicleBodyHeightU(vehicle);
+      const height = PLACEHOLDER_BODY_HEIGHT_U;
       tallestU = Math.max(
         tallestU,
         art && this.#art ? art.heightU : height + vehicle.wheelRadiusU * 1.3,

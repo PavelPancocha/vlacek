@@ -2,14 +2,14 @@ import { expect, test } from '@playwright/test';
 import { snapshot, startRide, tapAction } from './helpers.ts';
 
 test.describe('vehicle art (doc 14 §3)', () => {
-  test('the ride draws the steam locomotive from its art in one atlas', async ({
+  test('the ride draws every vehicle from its art in one atlas', async ({
     page,
   }) => {
-    await startRide(page, ['cargo_box']);
-    await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(1);
+    await startRide(page, ['cargo_box', 'fun_balloons']);
+    await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(3);
     const state = await snapshot(page);
-    expect(state.renderedVehicles).toBe(2);
-    expect(state.artAtlas?.frames).toBe(7);
+    expect(state.renderedVehicles).toBe(3);
+    expect(state.artAtlas?.frames).toBe(33);
     expect(state.artAtlas?.width).toBeLessThanOrEqual(2048);
     expect(state.artAtlas?.height).toBeLessThanOrEqual(2048);
   });
@@ -67,7 +67,7 @@ test.describe('vehicle art (doc 14 §3)', () => {
       .poll(async () => (await snapshot(page)).artAtlas?.pxPerU)
       .toBe(1);
     const state = await snapshot(page);
-    expect(state.artVehicles).toBe(1);
+    expect(state.artVehicles).toBe(2);
     expect(state.trainBox).toBeDefined();
     expect(errors).toEqual([]);
   });

@@ -13,3 +13,5 @@ Chyba zmizela s `render.maxTextures: 1`. Příčina je tedy v dávkování více
 **Důsledky.** Víc volání kreslení: přibližně jedno na každé střídání textury, u nejdelší soupravy desítky za snímek. Na výkon se to musí znovu změřit s novou grafikou.
 
 **Podmínka odstranění.** Až budou vozidla a kola v jednom atlasu (grafická iterace, dokument 07 doporučuje atlasy), nebo až to opraví vydání Phaseru, zkusí se výchozí `maxTextures` znovu. Rozhoduje test `render.spec.ts`.
+
+**Opakovaný pokus (2026-10-10, [D-011](011-vector-vehicle-art-and-atlas.md)).** Se všemi vozidly v jednom atlasu prošel původní test i s výchozím `maxTextures` (3 běhy). Při stejném snímku se zablokovanou grafikou ale vlak kreslí z několika textur (fallback siluety a kola) a bez opatření se lišilo 0,98 % a 0,97 % pixelů rámečku. Chyba v Phaseru 4.2.1 tedy trvá. Opatření zůstává, protože krajina a částice budou textury střídat. Nový test „D-010: interleaved textures“ v `render.spec.ts` tento případ hlídá. Zbývající podmínka odstranění je vydání Phaseru s opravou ověřené oběma testy.
