@@ -21,6 +21,7 @@ import {
   NEAR_DEPTH_RANGE_U,
   WATER_END_U,
   nearDepthScale,
+  propDrawOrder,
   type ChunkScenery,
   type SceneryProp,
   type WaterBasin,
@@ -552,11 +553,8 @@ export class ChunkView {
     }
     const backProps = scene.add.container(0, 0).setDepth(depths.backProps);
     const nearProps = scene.add.container(0, 0).setDepth(depths.nearProps);
-    // Far props first, near ones last; nearer meadow props cover farther.
-    const ordered = [...scenery.props].sort((a, b) =>
-      a.layer === 'back' ? b.depth - a.depth : a.depth - b.depth,
-    );
-    for (const prop of ordered) {
+    // Each layer far to near; a nearer prop covers a farther one.
+    for (const prop of propDrawOrder(scenery.props)) {
       if (parts[prop.kind] === undefined) continue;
       const image = this.#image(scene, art, prop.kind, prop.flip);
       this.#placeProp(image, prop, prop.xU);

@@ -523,3 +523,20 @@ export function chunkScenery(seed: number, chunkIndex: number): ChunkScenery {
     },
   };
 }
+
+/**
+ * The order to draw a chunk's props in: the back layer from the horizon
+ * towards the track, then the near meadow from the track towards the
+ * viewer, so a nearer prop always covers a farther one in its layer.
+ */
+export function propDrawOrder(props: readonly SceneryProp[]): SceneryProp[] {
+  // One comparator for both layers is not consistent across them, so each
+  // layer is sorted on its own.
+  const back = props
+    .filter((prop) => prop.layer === 'back')
+    .sort((a, b) => b.depth - a.depth);
+  const near = props
+    .filter((prop) => prop.layer === 'near')
+    .sort((a, b) => a.depth - b.depth);
+  return [...back, ...near];
+}

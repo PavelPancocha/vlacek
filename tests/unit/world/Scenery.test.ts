@@ -5,6 +5,7 @@ import { chunkObjects } from '../../../src/domain/world/ChunkObjects.ts';
 import {
   WATER_END_U,
   chunkScenery,
+  propDrawOrder,
   type ChunkScenery,
 } from '../../../src/domain/world/Scenery.ts';
 import { LOCALITIES } from '../../../src/domain/world/sceneryTemplates.ts';
@@ -304,5 +305,29 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
     const seen = new Set<string>();
     each((scenery) => seen.add(scenery.locality));
     expect(seen.size).toBeGreaterThanOrEqual(14);
+  });
+
+  it('draws each layer from far to near, so nearer props cover farther ones', () => {
+    // Seed 0 chunk 7 mixes back and near props (Codex review PR #2).
+    for (const [seed, k] of [
+      [0, 7],
+      [7, 3],
+      [123, 12],
+      [2026, 40],
+    ] as const) {
+      const ordered = propDrawOrder(chunkScenery(seed, k).props);
+      const back = ordered.filter((prop) => prop.layer === 'back');
+      const near = ordered.filter((prop) => prop.layer === 'near');
+      for (let i = 1; i < back.length; i++)
+        expect(
+          back[i]?.depth ?? 0,
+          `${seed}/${k} back ${i}`,
+        ).toBeLessThanOrEqual(back[i - 1]?.depth ?? 0);
+      for (let i = 1; i < near.length; i++)
+        expect(
+          near[i]?.depth ?? 0,
+          `${seed}/${k} near ${i}`,
+        ).toBeGreaterThanOrEqual(near[i - 1]?.depth ?? 0);
+    }
   });
 });
