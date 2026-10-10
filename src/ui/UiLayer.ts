@@ -16,7 +16,7 @@ import type { WagonGroup } from '../domain/types.ts';
 import type { Settings } from '../platform/SaveValidation.ts';
 import { actionButton, el } from './dom.ts';
 import { icon } from './icons.ts';
-import { vehicleSvg } from './placeholderArt.ts';
+import { vehiclePreview } from './vehiclePreview.ts';
 
 /** Read-only state the DOM screens render. */
 export interface UiModel {
@@ -225,7 +225,7 @@ export class UiLayer {
             `loco:${loco.id}`,
             loco.labelCs,
             [
-              vehicleSvg(loco, 1),
+              vehiclePreview(loco, 1),
               label(loco.labelCs),
               loco.id === selected
                 ? el('span', { class: 'selected-mark' }, icon('check', 32))
@@ -332,7 +332,7 @@ export class UiLayer {
         const selected =
           item.instanceId !== undefined &&
           item.instanceId === draft.selectedInstanceId;
-        const content = [vehicleSvg(item.vehicle, STRIP_PX_PER_U)];
+        const content = [vehiclePreview(item.vehicle, STRIP_PX_PER_U)];
         const node =
           item.instanceId === undefined
             ? el('div', { class: 'strip-item loco' }, ...content)
@@ -454,7 +454,7 @@ export class UiLayer {
                 actionButton(
                   `add:${wagon.id}`,
                   `Přidat: ${wagon.labelCs}`,
-                  [vehicleSvg(wagon, 0.55)],
+                  [vehiclePreview(wagon, 0.55)],
                   {
                     className: 'card small',
                     disabled: !canAddWagon(draft, wagon.id, rules),

@@ -10,6 +10,12 @@ export interface DebugSnapshot {
   renderedChunks: number;
   vehicles: number;
   renderedVehicles: number;
+  /** Rendered vehicles drawn from their art (doc 14 §3). */
+  artVehicles: number;
+  /** The vehicle art atlas (D-011); undefined if the art failed to load. */
+  artAtlas:
+    | { width: number; height: number; frames: number; pxPerU: number }
+    | undefined;
   consistLengthU: number;
   intent: string;
   speedUPerSec: number;

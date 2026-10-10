@@ -49,11 +49,6 @@ export const locomotives: readonly CatalogLocomotive[] = [
     hornAudio: 'audio.horn.steam_local',
     effect: 'steam',
     ...assets('steam_local'),
-    placeholder: {
-      bodyColor: '#2f3640',
-      accentColor: '#c0392b',
-      silhouette: 'steam',
-    },
   },
   {
     kind: 'locomotive',

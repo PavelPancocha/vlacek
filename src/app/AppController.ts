@@ -254,6 +254,8 @@ export class AppController {
       renderedChunks: this.#scene.stats.renderedChunks,
       vehicles: ride?.vehicleCount ?? 0,
       renderedVehicles: this.#scene.stats.renderedVehicles,
+      artVehicles: this.#scene.stats.artVehicles,
+      artAtlas: this.#scene.artAtlas,
       consistLengthU: ride
         ? ride.layout.frontOffsetU + ride.layout.tailOffsetU
         : 0,

@@ -48,6 +48,8 @@ Doporučené části: karoserie, kola či podvozky, volitelné táhlo, světla, 
 
 Manifest definuje pivot a offsety, ne ručně vložené „magické posuny“ ve vykreslovací funkci. Pro každou sadu existuje kontrolní scéna: rovina, kopec, vrchol, tunel a noc. Nad jedním vagónkem nesmí být stín nebo kouř patřící jinému typu kvůli chybně sdílenému stavu.
 
+Implementace ([D-011](../docs/decisions/011-vector-vehicle-art-and-atlas.md)): zdrojem jsou SVG díly v `assets/vehicles/` v jednotkách u. Každé vozidlo má karoserii za koly, překryv před koly a táhly, sdílená kola a u parních lokomotiv spojnici, ojnici a křižák. Světlo dopadá zleva shora a lesk obručí nese neotáčivý překryv. Manifest `src/content/artManifest.ts` určuje rozměry, pivoty, polohy kol a parní rozvod; jízda i depo skládají díly stejnou funkcí `vehicleArtLayers`. Hra díly za běhu rasterizuje do jednoho atlasu v měřítku podle zoomu kamery a po změně velikosti okna atlas překreslí. `npm run validate:assets` kontroluje soubory, rozměry, délkový invariant, kola a táhla.
+
 ## 5. Barevnost, den a noc
 
 Den je jasný, ale ne přeexponovaný. Noc není úplně tmavý filtr přes celý canvas. Udržet minimální čitelnost koleje, vozidel a zvířat; světla a teplá okna dodají atmosféru. Základní noční transformace musí fungovat i bez speciálních WebGL filtrů.

@@ -31,12 +31,6 @@ describe('temporary vehicle catalog (0.1)', () => {
     ]);
   });
 
-  it('marks every vehicle as a placeholder until real assets exist (M4)', () => {
-    expect(
-      [...locomotives, ...wagons].every((v) => v.placeholder !== undefined),
-    ).toBe(true);
-  });
-
   it('offers no electric locomotive before catenary exists (M2)', () => {
     expect(locomotives.filter((l) => l.power === 'electric')).toEqual([]);
   });

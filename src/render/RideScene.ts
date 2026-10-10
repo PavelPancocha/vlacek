@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { gameConfig } from '../config/gameConfig.ts';
+import { vehicleArtLayers } from '../content/artLayers.ts';
+import { artParts, vehicleArt } from '../content/artManifest.ts';
 import {
   OBJECT_RADIUS_U,
   OBJECT_SHAPES,
@@ -9,6 +11,7 @@ import {
   type ShapedVehicle,
 } from '../content/placeholderShapes.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
+import { ArtAtlas, preloadArt, type ArtAtlasInfo } from './ArtAtlas.ts';
 import {
   frameLeftX,
   frameTopY,
@@ -28,6 +31,8 @@ export interface RideSceneHost {
 
 export interface RenderStats {
   renderedVehicles: number;
+  /** Rendered vehicles drawn from their art (the rest are placeholders). */
+  artVehicles: number;
   renderedChunks: number;
 }
 
@@ -81,9 +86,10 @@ function drawShapes(
 
 interface VehicleSlot {
   container: Phaser.GameObjects.Container;
-  body: Phaser.GameObjects.Image;
-  front: Phaser.GameObjects.Image;
-  rear: Phaser.GameObjects.Image;
+  /** Images in drawing order; slots are reused for any vehicle type. */
+  images: Phaser.GameObjects.Image[];
+  /** Texture frame each image shows, to skip redundant texture switches. */
+  frames: string[];
 }
 
 /**
@@ -107,7 +113,13 @@ export class RideScene extends Phaser.Scene {
   /** Visible world rectangle (render-local units) of the latest frame. */
   #view = { left: 0, top: 0, zoom: 1 };
   #visibleObjects: { id: string; x: number; y: number }[] = [];
-  stats: RenderStats = { renderedVehicles: 0, renderedChunks: 0 };
+  /** Vehicle art; undefined if it failed to load (placeholders drawn). */
+  #art: ArtAtlas | undefined;
+  stats: RenderStats = {
+    renderedVehicles: 0,
+    artVehicles: 0,
+    renderedChunks: 0,
+  };
 
   constructor(host: RideSceneHost) {
     super('ride');
@@ -119,12 +131,33 @@ export class RideScene extends Phaser.Scene {
     this.#insetsCss = { top: topCss, bottom: bottomCss };
   }
 
+  /** Size of the art atlas, for diagnostics; undefined if it failed. */
+  get artAtlas(): ArtAtlasInfo | undefined {
+    return this.#art?.info;
+  }
+
+  preload(): void {
+    preloadArt(this, artParts);
+  }
+
   create(): void {
     this.cameras.main.setBackgroundColor('#bfe3f2');
+    try {
+      this.#art = new ArtAtlas(this, artParts);
+      this.events.once('destroy', () => this.#art?.destroy());
+    } catch (error) {
+      // A failed download must not stop the ride (PWA-10): vehicles fall
+      // back to their marked placeholder silhouettes.
+      console.error(error);
+    }
     let tallestU = 0;
     for (const vehicle of this.#host.catalogVehicles()) {
+      const art = vehicleArt[vehicle.id];
       const height = vehicleBodyHeightU(vehicle);
-      tallestU = Math.max(tallestU, height + vehicle.wheelRadiusU * 1.3);
+      tallestU = Math.max(
+        tallestU,
+        art && this.#art ? art.heightU : height + vehicle.wheelRadiusU * 1.3,
+      );
       const g = this.make.graphics({}, false);
       drawShapes(g, vehicleShapes(vehicle), 0, height);
       g.generateTexture(
@@ -232,10 +265,13 @@ export class RideScene extends Phaser.Scene {
     const cssPerGame = Math.max(1, canvasRect.width) / this.scale.width;
     let box:
       { left: number; top: number; right: number; bottom: number } | undefined;
-    for (const slot of this.#slots) {
-      if (!slot.container.visible) continue;
-      // Bounds include rotation and the wheels below the body.
-      const bounds = slot.container.getBounds();
+    for (const image of this.#slots.flatMap((slot) =>
+      slot.container.visible ? slot.images : [],
+    )) {
+      // A container's bounds would include hidden spare images.
+      if (!image.visible) continue;
+      // Bounds include the container's rotation and position.
+      const bounds = image.getBounds();
       const left =
         canvasRect.left +
         (bounds.left - this.#view.left) * this.#view.zoom * cssPerGame;
@@ -297,7 +333,7 @@ export class RideScene extends Phaser.Scene {
       this.#rideRef = ride;
     }
     if (!ride) {
-      this.stats = { renderedVehicles: 0, renderedChunks: 0 };
+      this.stats = { renderedVehicles: 0, artVehicles: 0, renderedChunks: 0 };
       return;
     }
     const framing = this.#framing;
@@ -320,6 +356,7 @@ export class RideScene extends Phaser.Scene {
       framing,
     );
     camera.setZoom(zoom);
+    this.#updateArtScale(zoom);
     const viewW = this.scale.width / zoom;
     const viewH = this.scale.height / zoom;
 
@@ -478,16 +515,97 @@ export class RideScene extends Phaser.Scene {
   #slot(index: number): VehicleSlot {
     let slot = this.#slots[index];
     if (!slot) {
-      const body = this.add.image(0, 0, 'wheel');
-      const front = this.add.image(0, 0, 'wheel');
-      const rear = this.add.image(0, 0, 'wheel');
-      const container = this.add
-        .container(0, 0, [body, front, rear])
-        .setDepth(DEPTH.train);
-      slot = { container, body, front, rear };
+      const container = this.add.container(0, 0).setDepth(DEPTH.train);
+      slot = { container, images: [], frames: [] };
       this.#slots[index] = slot;
     }
     return slot;
+  }
+
+  /** Image `index` of a slot showing `texture`/`frame`, created on demand. */
+  #image(
+    slot: VehicleSlot,
+    index: number,
+    texture: string,
+    frame?: string,
+  ): Phaser.GameObjects.Image {
+    let image = slot.images[index];
+    if (!image) {
+      image = this.add.image(0, 0, texture, frame);
+      slot.container.add(image);
+      slot.images[index] = image;
+    } else if (slot.frames[index] !== `${texture}/${frame ?? ''}`) {
+      image.setTexture(texture, frame);
+    }
+    slot.frames[index] = `${texture}/${frame ?? ''}`;
+    return image.setVisible(true);
+  }
+
+  /** Re-rasterises the art for a new zoom step and moves every image over. */
+  #updateArtScale(zoom: number): void {
+    const art = this.#art;
+    const replaced = art?.update(zoom);
+    const key = art?.textureKey;
+    if (replaced === undefined || key === undefined) return;
+    for (const slot of this.#slots) {
+      slot.images.forEach((image, i) => {
+        const shown = slot.frames[i];
+        if (!shown?.startsWith(`${replaced}/`)) return;
+        const frame = shown.slice(replaced.length + 1);
+        image.setTexture(key, frame);
+        slot.frames[i] = `${key}/${frame}`;
+      });
+    }
+    art?.release(replaced);
+  }
+
+  /** Draws a vehicle's art parts; returns the number of images used. */
+  #drawArtVehicle(
+    slot: VehicleSlot,
+    vehicle: ShapedVehicle,
+    distanceU: number,
+  ): number {
+    const art = vehicleArt[vehicle.id];
+    const texture = this.#art?.textureKey;
+    const pxPerU = this.#art?.info?.pxPerU;
+    if (!art || texture === undefined || pxPerU === undefined) return 0;
+    const layers = vehicleArtLayers(art, vehicle.lengthU, distanceU);
+    layers.forEach((layer, i) => {
+      const part = artParts[layer.part];
+      const image = this.#image(slot, i, texture, layer.part);
+      image
+        .setOrigin(
+          (part.pivotU.x * pxPerU) / image.frame.width,
+          (part.pivotU.y * pxPerU) / image.frame.height,
+        )
+        .setScale(1 / pxPerU)
+        .setPosition(layer.x, layer.y)
+        .setRotation(layer.rotation);
+    });
+    return layers.length;
+  }
+
+  /** Marked placeholder silhouette with two turning wheels. */
+  #drawPlaceholderVehicle(
+    slot: VehicleSlot,
+    vehicle: ShapedVehicle,
+    distanceU: number,
+  ): number {
+    const lift = vehicle.wheelRadiusU * 1.3;
+    this.#image(slot, 0, `vehicle-${vehicle.id}`)
+      .setOrigin(0.5, 1)
+      .setScale(1)
+      .setRotation(0)
+      .setPosition(0, -lift);
+    const wheelScale = (vehicle.wheelRadiusU * 2) / 32;
+    [vehicle.bogieOffsetU, -vehicle.bogieOffsetU].forEach((x, i) => {
+      this.#image(slot, i + 1, 'wheel')
+        .setOrigin(0.5, 0.5)
+        .setPosition(x, -vehicle.wheelRadiusU)
+        .setScale(wheelScale)
+        .setRotation(distanceU / vehicle.wheelRadiusU);
+    });
+    return 3;
   }
 
   #drawTrain(
@@ -498,6 +616,7 @@ export class RideScene extends Phaser.Scene {
   ): void {
     const vehicles = this.#host.journeyVehicles();
     let rendered = 0;
+    let art = 0;
     for (let i = 0; i < vehicles.length; i++) {
       const vehicle = vehicles[i];
       if (!vehicle) break;
@@ -507,30 +626,24 @@ export class RideScene extends Phaser.Scene {
       if (pose.centerX + vehicle.lengthU < leftX) break;
       const slot = this.#slot(rendered);
       rendered += 1;
-      const wheelScale = (vehicle.wheelRadiusU * 2) / 32;
-      const lift = vehicle.wheelRadiusU * 1.3;
       slot.container.setVisible(true);
       slot.container.setPosition(pose.centerX - this.#originX, -pose.centerY);
       slot.container.setRotation(-pose.angleRad);
-      slot.body
-        .setTexture(`vehicle-${vehicle.id}`)
-        .setOrigin(0.5, 1)
-        .setPosition(0, -lift);
-      const centerS = headS - (ride.layout.centerOffsetsU[i] ?? 0);
       // Wheels turn with travelled distance, not with time (doc 03 §3).
-      const spin = -centerS / vehicle.wheelRadiusU;
-      for (const [wheel, x] of [
-        [slot.front, vehicle.bogieOffsetU],
-        [slot.rear, -vehicle.bogieOffsetU],
-      ] as const) {
-        wheel
-          .setPosition(x, -vehicle.wheelRadiusU)
-          .setScale(wheelScale)
-          .setRotation(-spin);
+      const distanceU = headS - (ride.layout.centerOffsetsU[i] ?? 0);
+      let used = 0;
+      if (this.#art) {
+        used = this.#drawArtVehicle(slot, vehicle, distanceU);
+        if (used > 0) art += 1;
       }
+      if (used === 0)
+        used = this.#drawPlaceholderVehicle(slot, vehicle, distanceU);
+      for (let k = used; k < slot.images.length; k++)
+        slot.images[k]?.setVisible(false);
     }
     for (let i = rendered; i < this.#slots.length; i++)
       this.#slots[i]?.container.setVisible(false);
     this.stats.renderedVehicles = rendered;
+    this.stats.artVehicles = art;
   }
 }
