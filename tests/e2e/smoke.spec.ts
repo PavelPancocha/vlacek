@@ -78,6 +78,43 @@ test('canvas fills the game area in CSS pixels at any device pixel ratio', async
   expect(sizes?.canvas[1]).toBeCloseTo(sizes?.root[1] ?? -1, 0);
 });
 
+for (const [deviceScaleFactor, density] of [
+  [1, 1],
+  [2, 1.5],
+] as const)
+  test.describe(`at device pixel ratio ${deviceScaleFactor}`, () => {
+    test.use({ deviceScaleFactor });
+
+    test('the canvas follows a resize of the game area', async ({ page }) => {
+      await page.goto('./');
+      await expect(page.locator('#game-root')).toHaveAttribute(
+        'data-renderer',
+        /.+/,
+      );
+      const canvasSize = () =>
+        page.evaluate(() => {
+          const canvas = document.querySelector('#game-root canvas');
+          if (!(canvas instanceof HTMLCanvasElement)) return null;
+          const box = canvas.getBoundingClientRect();
+          return {
+            css: [Math.round(box.width), Math.round(box.height)],
+            buffer: [canvas.width, canvas.height],
+          };
+        });
+      // Phone rotation and window resizes: the picture must not stretch.
+      for (const size of [
+        { width: 1024, height: 560 },
+        { width: 1440, height: 900 },
+      ]) {
+        await page.setViewportSize(size);
+        await expect.poll(canvasSize).toEqual({
+          css: [size.width, size.height],
+          buffer: [size.width * density, size.height * density],
+        });
+      }
+    });
+  });
+
 test.describe('quality profile (doc 13 quality, D-014)', () => {
   test.use({ deviceScaleFactor: 2 });
 

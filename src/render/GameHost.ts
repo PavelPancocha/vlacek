@@ -76,8 +76,11 @@ export function createGameHost(options: GameHostOptions): GameHost {
   const observer = new ResizeObserver(() => {
     const size = cssSize();
     const d = density();
-    game.scale.setZoom(1 / d);
+    // Resize first: Phaser 4.2.1 `resize` leaves the canvas CSS size alone
+    // at zoom 1 (density 1), and `setZoom` writes it from the game size, so
+    // only this order stretches nothing at every density.
     game.scale.resize(size.width * d, size.height * d);
+    game.scale.setZoom(1 / d);
   });
   observer.observe(parent);
 
