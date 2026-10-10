@@ -186,6 +186,15 @@ export class RideSimulation {
       const block = Math.floor(
         frontX / (world.chunksPerBiomeBlock * world.chunkWidthU),
       );
+      // Only these two blocks can still send a train; forget the rest.
+      const near = new Set<string>();
+      for (const b of [block, block + 1]) {
+        const site = secondarySite(this.#seed, b);
+        if (site) near.add(site.id);
+      }
+      for (const id of this.#oncomingSent)
+        if (!near.has(id) && !this.#oncoming.has(id))
+          this.#oncomingSent.delete(id);
       for (const b of [block, block + 1]) {
         const site = secondarySite(this.#seed, b);
         if (!site || this.#oncomingSent.has(site.id)) continue;
@@ -211,9 +220,20 @@ export class RideSimulation {
         this.#oncomingGreeted.add(id);
         this.#npcAnswer(train);
       }
-      if (train.done) this.#oncoming.delete(id);
+      if (train.done) {
+        this.#oncoming.delete(id);
+        this.#oncomingGreeted.delete(id);
+      }
     }
     this.#lastFrontX = frontX;
+  }
+
+  /**
+   * Diagnostics: how many second-track ids the ride still remembers. It
+   * stays small on an endless ride (doc 10 M2: no growing history).
+   */
+  get oncomingHistorySize(): number {
+    return this.#oncomingSent.size + this.#oncomingGreeted.size;
   }
 
   /** The oncoming train horns, at most every `npcHornCooldownSeconds`. */

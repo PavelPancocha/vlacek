@@ -313,4 +313,20 @@ describe('RideSimulation: the oncoming train (doc 05 §6, SCN-09/10)', () => {
     }
     expect(greetings).toBe(1);
   });
+
+  it('keeps no growing history of the second tracks it has passed (doc 10 M2)', () => {
+    const ride = beforeTrigger(300);
+    const sent = new Set<string>();
+    const blockU = gameConfig.world.chunksPerBiomeBlock * chunkWidthU;
+    const endX = frontX(ride) + 12 * blockU;
+    while (frontX(ride) < endX) {
+      ride.step('THROTTLE');
+      for (const train of ride.oncomingTrains) sent.add(train.id);
+      // Only the next two blocks' sites and the trains still running.
+      expect(ride.oncomingHistorySize).toBeLessThanOrEqual(
+        2 + 2 * ride.oncomingTrains.length,
+      );
+    }
+    expect(sent.size).toBeGreaterThanOrEqual(3);
+  });
 });

@@ -35,6 +35,7 @@ Dokument 14 §5 chce druhou kolej s jiným vlakem, který nikdy nejede po hráč
 4. **Jízda** (`RideSimulation`).
    - Vlak vyjede jednou, když čelo hráče v kroku projde bodem 512 u před levým portálem.
    - Po obnově ze save za tímto bodem nevyjede, takže se v krajině nikdy neobjeví skokem.
+   - Jízda si pamatuje jen místa souběhu aktuálního a příštího bloku a vlaky, které ještě jedou. Starší záznamy zahodí, takže historie na nekonečné jízdě neroste (dokument 10, brána M2; Codex review PR #2).
    - Při setkání v otevřeném úseku jednou zahouká, pokud mu to dovolí vlastní cooldown 8 s.
    - Na hráčovu píšťalu v dosahu 800 u odpoví nejvýš jednou za 8 s. Jeho houkání nic dalšího nespouští.
    - Zvuk je klakson jeho lokomotivy (dočasný syntetizovaný tón).
