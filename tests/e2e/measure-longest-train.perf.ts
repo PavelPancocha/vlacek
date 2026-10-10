@@ -101,12 +101,13 @@ test('measure a ride with the longest allowed train', async ({
   await page.mouse.move(700, 300);
   await page.mouse.down();
   let maxLiveChunks = 0;
-  let maxRendered = 0;
+  // The fewest vehicles drawn on any sample: one culled frame shows here.
+  let minRendered = Infinity;
   for (let second = 0; second < SECONDS; second++) {
     await page.waitForTimeout(1000);
     const state = await snapshot(page);
     maxLiveChunks = Math.max(maxLiveChunks, state.liveChunks);
-    maxRendered = Math.max(maxRendered, state.renderedVehicles);
+    minRendered = Math.min(minRendered, state.renderedVehicles);
   }
   await page.mouse.up();
   const final = await snapshot(page);
@@ -124,7 +125,7 @@ test('measure a ride with the longest allowed train', async ({
     renderer: final.renderer,
     seconds: SECONDS,
     vehicles: final.vehicles,
-    maxRenderedVehicles: maxRendered,
+    minRenderedVehicles: minRendered,
     maxLiveChunks,
     headChunkAtEnd: final.headChunk,
     frames: frames.length,
@@ -139,7 +140,7 @@ test('measure a ride with the longest allowed train', async ({
   expect(errors).toEqual([]);
   expect(final.vehicles).toBe(consist.wagons.length + 1);
   // The whole train is drawn on every sampled second (doc 14 §2).
-  expect(maxRendered).toBe(final.vehicles);
+  expect(minRendered).toBe(final.vehicles);
   expect(final.trackStartS).toBeLessThanOrEqual(final.tailS);
   expect(maxLiveChunks).toBeLessThanOrEqual(30);
 });

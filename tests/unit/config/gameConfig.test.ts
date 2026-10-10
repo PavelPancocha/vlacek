@@ -57,4 +57,12 @@ describe('gameConfig', () => {
       'input.primaryControlTargetCssPx',
     ]);
   });
+
+  it('rejects a train-width fraction of zero (the camera would not zoom)', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      camera: { ...gameConfig.camera, trainWidthFraction: 0 },
+    };
+    expect(validateGameConfig(broken)).toEqual(['camera.trainWidthFraction']);
+  });
 });

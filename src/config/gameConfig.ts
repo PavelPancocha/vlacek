@@ -229,7 +229,8 @@ export function validateGameConfig(config: GameConfig): string[] {
     ['world.chunkWidthU', positive(world.chunkWidthU)],
     [
       'camera.trainWidthFraction',
-      fraction(camera.trainWidthFraction) &&
+      // It sets the zoom, so 0 would divide the viewport by zero.
+      positive(camera.trainWidthFraction) &&
         camera.trainWidthFraction + camera.rearMarginFraction < 1,
     ],
     ['camera.rearMarginFraction', fraction(camera.rearMarginFraction)],
