@@ -1,5 +1,14 @@
 import { hash32 } from '../world/Hash.ts';
+import { layoutConsist, type VehicleGeometry } from '../train/TrainGeometry.ts';
 import type { Consist, WagonInstance } from '../types.ts';
+
+/** Length limit inputs (doc 14 §2): the whole train must fit the screen. */
+export interface ConsistLengthRules {
+  /** Longest allowed train, front of locomotive to end of last wagon. */
+  maxLengthU: number;
+  couplerGapU: number;
+  geometryOf(vehicleId: string): VehicleGeometry | undefined;
+}
 
 /** Depot editing state (doc 02 §7): one selection and one undoable change. */
 export interface ConsistDraft {
@@ -51,8 +60,55 @@ export function selectLocomotive(
   };
 }
 
-export function isFull(draft: ConsistDraft, maxWagons: number): boolean {
-  return draft.consist.wagons.length >= maxWagons;
+/**
+ * Front of the locomotive to the end of the last wagon, couplers included,
+ * from the same layout the ride uses. A vehicle it cannot measure makes the
+ * train infinitely long, so it never passes the limit.
+ */
+export function consistLengthU(
+  consist: Consist,
+  rules: ConsistLengthRules,
+): number {
+  const ids = [
+    consist.locomotiveId,
+    ...consist.wagons.map((wagon) => wagon.definitionId),
+  ];
+  const vehicles: VehicleGeometry[] = [];
+  for (const id of ids) {
+    const geometry = rules.geometryOf(id);
+    if (!geometry) return Number.POSITIVE_INFINITY;
+    vehicles.push(geometry);
+  }
+  const layout = layoutConsist(vehicles, rules.couplerGapU);
+  return layout.frontOffsetU + layout.tailOffsetU;
+}
+
+export function canAddWagon(
+  draft: ConsistDraft,
+  definitionId: string,
+  rules: ConsistLengthRules,
+): boolean {
+  const wagon = rules.geometryOf(definitionId);
+  if (!wagon) return false;
+  const lengthU =
+    consistLengthU(draft.consist, rules) + rules.couplerGapU + wagon.lengthU;
+  return lengthU <= rules.maxLengthU;
+}
+
+/** Only an older, longer save can be here; its wagons are never dropped. */
+export function isOverLimit(
+  draft: ConsistDraft,
+  rules: ConsistLengthRules,
+): boolean {
+  return consistLengthU(draft.consist, rules) > rules.maxLengthU;
+}
+
+export function isFull(
+  draft: ConsistDraft,
+  wagonIds: readonly string[],
+  rules: ConsistLengthRules,
+): boolean {
+  return wagonIds.every((id) => !canAddWagon(draft, id, rules));
 }
 
 function withoutUndo(draft: ConsistDraft): ConsistDraft {
@@ -66,13 +122,13 @@ function withoutUndo(draft: ConsistDraft): ConsistDraft {
   return result;
 }
 
-/** One tap adds one wagon behind the last; nothing changes when full. */
+/** One tap adds one wagon behind the last; nothing changes if it does not fit. */
 export function addWagon(
   draft: ConsistDraft,
   definitionId: string,
-  maxWagons: number,
+  rules: ConsistLengthRules,
 ): { draft: ConsistDraft; added: boolean } {
-  if (isFull(draft, maxWagons)) return { draft, added: false };
+  if (!canAddWagon(draft, definitionId, rules)) return { draft, added: false };
   let number = draft.nextInstanceNumber;
   const taken = new Set(draft.consist.wagons.map((wagon) => wagon.instanceId));
   while (taken.has(`w${number}`)) number++;

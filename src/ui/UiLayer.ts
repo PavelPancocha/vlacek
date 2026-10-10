@@ -2,10 +2,14 @@ import type { Screen } from '../app/AppState.ts';
 import type { SessionNotice } from '../app/GameSession.ts';
 import type { CatalogLocomotive, CatalogWagon } from '../content/vehicles.ts';
 import {
+  canAddWagon,
   canMoveSelected,
   canUndo,
+  consistLengthU,
   isFull,
+  isOverLimit,
   type ConsistDraft,
+  type ConsistLengthRules,
 } from '../domain/consist/ConsistEditor.ts';
 import { layoutConsist } from '../domain/train/TrainGeometry.ts';
 import type { WagonGroup } from '../domain/types.ts';
@@ -28,9 +32,8 @@ export interface UiModel {
   buildId: string;
   locomotives: readonly CatalogLocomotive[];
   wagons: readonly CatalogWagon[];
-  maxWagons: number;
-  /** Same coupler gap as the ride, so the depot shows the real spacing. */
-  couplerGapU: number;
+  /** Length limit and coupler gap shared with every departure (doc 14 §2). */
+  lengthRules: ConsistLengthRules;
 }
 
 const NOTICE_TEXT: Record<SessionNotice, string> = {
@@ -44,6 +47,8 @@ const NOTICE_TEXT: Record<SessionNotice, string> = {
     'Uložená hra je z novější verze. Hrajeme bez ukládání, aby se nepřepsala.',
   'start-failed': 'Novou cestu se nepodařilo spustit. Původní cesta zůstává.',
   'journey-unavailable': 'Uloženou cestu se nepodařilo obnovit.',
+  'train-too-long':
+    'Vláček je delší, než se vejde na obrazovku. Všechny vagonky zůstaly v depu; po ubrání může vyjet.',
 };
 
 const GROUPS: { group: WagonGroup; label: string }[] = [
@@ -252,7 +257,16 @@ export class UiLayer {
 
   #builder(model: UiModel, signal: AbortSignal): HTMLElement {
     const draft = model.draft;
-    const full = isFull(draft, model.maxWagons);
+    const rules = model.lengthRules;
+    const full = isFull(
+      draft,
+      model.wagons.map((wagon) => wagon.id),
+      rules,
+    );
+    const tooLong = isOverLimit(draft, rules);
+    const usedPercent = Math.round(
+      (100 * consistLengthU(draft.consist, rules)) / rules.maxLengthU,
+    );
     const loco = model.locomotives.find(
       (candidate) => candidate.id === draft.consist.locomotiveId,
     );
@@ -290,7 +304,7 @@ export class UiLayer {
     // the front on the right, wagons follow to the left in consist order.
     const layout = layoutConsist(
       items.map((item) => item.vehicle),
-      model.couplerGapU,
+      rules.couplerGapU,
     );
     const positions = items.map((item, index) =>
       Math.round(
@@ -376,9 +390,29 @@ export class UiLayer {
         el(
           'span',
           { class: 'count', 'aria-live': 'polite' },
-          `${draft.consist.wagons.length} / ${model.maxWagons}`,
+          String(draft.consist.wagons.length),
         ),
-        full ? el('span', { class: 'full-text' }, 'Vláček je plný') : undefined,
+        // How much of the longest train is used; no numbers to read.
+        el(
+          'div',
+          {
+            class: tooLong ? 'length-meter over' : 'length-meter',
+            role: 'meter',
+            'aria-label': 'Délka vláčku',
+            'aria-valuemin': '0',
+            'aria-valuemax': '100',
+            'aria-valuenow': String(usedPercent),
+          },
+          el('div', {
+            class: 'length-fill',
+            style: `width: ${Math.min(100, usedPercent)}%`,
+          }),
+        ),
+        tooLong
+          ? el('span', { class: 'full-text' }, 'Vláček je moc dlouhý')
+          : full
+            ? el('span', { class: 'full-text' }, 'Vláček je plný')
+            : undefined,
       ),
       strip,
       el(
@@ -422,7 +456,7 @@ export class UiLayer {
                   [vehicleSvg(wagon, 0.55)],
                   {
                     className: 'card small',
-                    disabled: full,
+                    disabled: !canAddWagon(draft, wagon.id, rules),
                   },
                 ),
               ),
@@ -434,6 +468,7 @@ export class UiLayer {
         { class: 'row bottom' },
         actionButton('depart', 'Vyjet', [icon('depart', 56), label('Vyjet')], {
           className: 'button big primary',
+          disabled: tooLong,
         }),
       ),
       origin === 'pause'

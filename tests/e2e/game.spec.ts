@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test';
-import { driveUntilMoving, snapshot, startRide, tapAction } from './helpers.ts';
+import {
+  buildLongestTrain,
+  driveUntilMoving,
+  expectWholeTrainInView,
+  snapshot,
+  startRide,
+  tapAction,
+  trainBoxesOverFrames,
+} from './helpers.ts';
 
 test.describe('user path', () => {
   test('UI-01/02: select, build, edit and depart', async ({ page }) => {
@@ -12,16 +20,16 @@ test.describe('user path', () => {
     await tapAction(page, 'to-depot');
     for (const wagon of ['cargo_box', 'cargo_coal', 'fun_balloons'])
       await tapAction(page, `add:${wagon}`);
-    await expect(page.locator('.count')).toHaveText('3 / 100');
+    await expect(page.locator('.count')).toHaveText('3');
     const strip = page.locator('.strip-item[data-action^="wagon:"]');
     await strip.nth(1).click();
     await expect(strip.nth(1)).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('.count')).toHaveText('3 / 100');
+    await expect(page.locator('.count')).toHaveText('3');
     await tapAction(page, 'move-forward');
     await tapAction(page, 'remove');
-    await expect(page.locator('.count')).toHaveText('2 / 100');
+    await expect(page.locator('.count')).toHaveText('2');
     await tapAction(page, 'undo');
-    await expect(page.locator('.count')).toHaveText('3 / 100');
+    await expect(page.locator('.count')).toHaveText('3');
     await tapAction(page, 'depart');
     await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
     const state = await snapshot(page);
@@ -62,6 +70,31 @@ test.describe('user path', () => {
     );
   });
 
+  test('doc 14 §2: the depot fills to the length limit, then nothing more fits', async ({
+    page,
+  }) => {
+    await page.goto('./?debug=1');
+    await tapAction(page, 'loco:steam_local');
+    await tapAction(page, 'to-depot');
+    // 156 u locomotive + 7 × (8 u coupler + 188 u container) = 1528 u of
+    // 1600 u; the shortest wagon (144 u) no longer fits.
+    const container = page.locator('[data-action="add:cargo_container"]');
+    while (await container.isEnabled()) await container.click();
+    await expect(page.locator('.count')).toHaveText('7');
+    for (const card of await page.locator('[data-action^="add:"]').all())
+      await expect(card).toBeDisabled();
+    await expect(page.locator('.full-text')).toBeVisible();
+    await expect(page.locator('.length-meter')).toHaveAttribute(
+      'aria-valuenow',
+      '96',
+    );
+    // Removing one makes room again; nothing was dropped.
+    await tapAction(page, 'wagon:w7');
+    await tapAction(page, 'remove');
+    await expect(page.locator('.count')).toHaveText('6');
+    await expect(container).toBeEnabled();
+  });
+
   test('doc 14 §1: the depot fits a phone held sideways', async ({ page }) => {
     await page.setViewportSize({ width: 844, height: 390 });
     await page.goto('./?debug=1');
@@ -86,7 +119,7 @@ test.describe('user path', () => {
     await page
       .locator('[data-action="add:fun_balloons"]')
       .click({ timeout: 5_000 });
-    await expect(page.locator('.count')).toHaveText(/^2 \//);
+    await expect(page.locator('.count')).toHaveText('2');
   });
 
   test('INP-01/02: holding drives, releasing coasts to a stop', async ({
@@ -199,25 +232,52 @@ test.describe('user path', () => {
     expect((await snapshot(page)).speedUPerSec).toBe(0);
   });
 
-  test('UI-03/TRN-07: 100 wagons, the 101st refused, track behind the whole train', async ({
+  test('doc 14 §2/TRN-07: Vyjet shows the whole longest train from the first frames', async ({
     page,
   }) => {
-    test.setTimeout(120_000);
-    await page.goto('./?debug=1');
-    await tapAction(page, 'loco:steam_local');
-    await tapAction(page, 'to-depot');
-    const add = page.locator('[data-action="add:cargo_container"]');
-    for (let i = 0; i < 100; i++) await add.click();
-    await expect(page.locator('.count')).toHaveText('100 / 100');
-    await expect(page.locator('.full-text')).toHaveText('Vláček je plný');
-    await expect(add).toBeDisabled();
-    expect(await page.locator('.strip-item').count()).toBeLessThan(40);
+    await buildLongestTrain(page);
+    await tapAction(page, 'depart');
+    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
+    const state = await snapshot(page);
+    expect(state.renderedVehicles).toBe(state.vehicles);
+    // The track already exists under the whole train (TRN-07).
+    expect(state.trackStartS).toBeLessThanOrEqual(state.tailS);
+  });
+
+  test('doc 14 §2: the whole train stays in view over hills and after a resize', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    await buildLongestTrain(page, '?debug=1&seed=77');
+    await tapAction(page, 'depart');
+    await driveUntilMoving(page, 60);
+    // ~8 s at full speed crosses several grade changes of seed 77.
+    const boxes = [];
+    for (let i = 0; i < 32; i++) {
+      boxes.push((await snapshot(page)).trainBox);
+      await page.waitForTimeout(250);
+    }
+    await page.mouse.up();
+    await expectWholeTrainInView(page, boxes);
+    const vehicles = (await snapshot(page)).vehicles;
+    await page.setViewportSize({ width: 1024, height: 600 });
+    await expect.poll(async () => (await snapshot(page)).screen).toBe('PAUSED');
+    await tapAction(page, 'resume');
+    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 10));
+    expect((await snapshot(page)).vehicles).toBe(vehicles);
+  });
+
+  test('doc 14 §2: after a reload Pokračovat shows the whole train at once', async ({
+    page,
+  }) => {
+    await buildLongestTrain(page);
     await tapAction(page, 'depart');
     await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
-    const state = await snapshot(page);
-    expect(state.vehicles).toBe(101);
-    expect(state.trackStartS).toBeLessThanOrEqual(state.tailS - 1024);
-    expect(state.renderedVehicles).toBeLessThan(101);
+    await tapAction(page, 'pause');
+    await page.reload();
+    await tapAction(page, 'continue');
+    await tapAction(page, 'resume');
+    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 10));
   });
 
   test('UI-04: a depot copy from pause keeps the journey until Vyjet', async ({

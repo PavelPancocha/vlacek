@@ -4,12 +4,14 @@ import {
   addWagon,
   createDraft,
   draftFromConsist,
+  isOverLimit,
   moveSelected,
   removeSelected,
   selectLocomotive,
   selectWagon,
   undoLastChange,
   type ConsistDraft,
+  type ConsistLengthRules,
 } from '../domain/consist/ConsistEditor.ts';
 import {
   RideSimulation,
@@ -49,7 +51,11 @@ export interface SessionDeps {
 
 /** Parent-facing notices; shown as plain text outside the child's controls. */
 export type SessionNotice =
-  SaveNotice | 'storage-limited' | 'start-failed' | 'journey-unavailable';
+  | SaveNotice
+  | 'storage-limited'
+  | 'start-failed'
+  | 'journey-unavailable'
+  | 'train-too-long';
 
 /** Session-level events for audio/visual feedback, alongside ride events. */
 export type SessionEvent =
@@ -101,12 +107,26 @@ export class GameSession {
       ),
       editDebounceMs: deps.config.save.editDebounceMs,
     });
+    const vehicles = new Map<string, VehicleGeometry>(
+      [...deps.catalog.locomotives, ...deps.catalog.wagons].map((vehicle) => [
+        vehicle.id,
+        vehicle,
+      ]),
+    );
+    this.lengthRules = {
+      maxLengthU: deps.config.train.maxConsistLengthU,
+      couplerGapU: deps.config.train.couplerGapU,
+      geometryOf: (id) => vehicles.get(id),
+    };
     this.router = new InputRouter(deps.config.input, {
       hitObject: (x, y) => this.#hitObject(x, y),
       onObjectTouched: (id) => this.#journey?.ride.activateObject(id),
       onAction: (action) => this.#onAction(action),
     });
   }
+
+  /** The length limit the depot and every departure respect (doc 14 §2). */
+  readonly lengthRules: ConsistLengthRules;
 
   get screen(): Screen {
     return this.#screen;
@@ -166,7 +186,18 @@ export class GameSession {
       // With a journey the app opens HOME; the draft waits for the next depot
       // visit. Without one it is already the selection screen's draft.
       if (save.builderDraft && save.journey) this.#restoredDraft = this.#draft;
-      if (save.journey) {
+      const tooLong =
+        save.journey !== undefined &&
+        isOverLimit(draftFromConsist(save.journey.consist), this.lengthRules);
+      if (save.journey && tooLong) {
+        // A 0.1 save may hold a train longer than the screen (doc 14 §2).
+        // Keep every wagon in the depot instead of riding an unseen train.
+        this.#draft = draftFromConsist(
+          save.builderDraft ?? save.journey.consist,
+        );
+        this.#restoredDraft = undefined;
+        this.#notices.add('train-too-long');
+      } else if (save.journey) {
         try {
           this.#journey = {
             seed: save.journey.seed,
@@ -293,6 +324,12 @@ export class GameSession {
   }
 
   #depart(): void {
+    if (isOverLimit(this.#draft, this.lengthRules)) {
+      this.#notices.add('train-too-long');
+      this.#fullSignals += 1;
+      this.#emit({ type: 'trainFull' });
+      return;
+    }
     let journey: Journey;
     try {
       const seed = this.#deps.randomSeed();
@@ -304,6 +341,7 @@ export class GameSession {
       return;
     }
     this.#notices.delete('start-failed');
+    this.#notices.delete('train-too-long');
     this.#restoredDraft = undefined;
     this.#journey = journey;
     this.#lastConsist = journey.consist;
@@ -383,11 +421,7 @@ export class GameSession {
           argument &&
           this.#deps.catalog.wagons.some((wagon) => wagon.id === argument)
         ) {
-          const result = addWagon(
-            this.#draft,
-            argument,
-            this.#deps.config.train.maxWagons,
-          );
+          const result = addWagon(this.#draft, argument, this.lengthRules);
           if (result.added) this.#edit(result.draft);
           else {
             this.#fullSignals += 1;

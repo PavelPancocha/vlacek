@@ -27,6 +27,9 @@ export interface DebugSnapshot {
   worstFrameMs: number;
   frameSamples: number;
   objects: { id: string; x: number; y: number }[];
+  /** Screen box of all drawn vehicles, CSS px (doc 14 §2 checks). */
+  trainBox:
+    { left: number; top: number; right: number; bottom: number } | undefined;
   brakeRect:
     { left: number; top: number; width: number; height: number } | undefined;
   audio: string;

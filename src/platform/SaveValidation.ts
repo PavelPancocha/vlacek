@@ -61,6 +61,13 @@ export type ParseResult =
   | { status: 'invalid'; reason: string }
   | { status: 'newer'; schemaVersion: number };
 
+/**
+ * Upper bound of the schema 1 wagon list. Version 0.1 allowed 100 wagons; the
+ * length limit of doc 14 is a game rule, not a format change, so older and
+ * longer saves stay readable and keep every wagon.
+ */
+export const SAVE_V1_MAX_WAGONS = 100;
+
 export function saveRules(
   config: GameConfig,
   locomotives: readonly LocomotiveDefinition[],
@@ -68,7 +75,7 @@ export function saveRules(
 ): SaveRules {
   return {
     maxBytes: config.save.maxBytes,
-    maxWagons: config.train.maxWagons,
+    maxWagons: SAVE_V1_MAX_WAGONS,
     maxRuntimeComponents: config.save.maxRuntimeComponents,
     locomotiveIds: new Set(locomotives.map((loco) => loco.id)),
     wagonIds: new Set(wagons.map((wagon) => wagon.id)),

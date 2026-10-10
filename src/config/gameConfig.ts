@@ -18,7 +18,11 @@ export interface SimulationConfig {
 }
 
 export interface TrainConfig {
-  maxWagons: number;
+  /**
+   * Longest train, locomotive front to last wagon end with couplers (doc 14
+   * §2). The camera fits this length into its share of the screen width.
+   */
+  maxConsistLengthU: number;
   maxVehicleLengthU: number;
   couplerGapU: number;
   maxSpeedUPerSec: number;
@@ -56,12 +60,27 @@ export interface SaveConfig {
   maxRuntimeComponents: number;
 }
 
+/** Ride camera framing (doc 14 §2); see `src/render/cameraFraming.ts`. */
+export interface CameraConfig {
+  /** Share of the screen width the longest allowed train fills. */
+  trainWidthFraction: number;
+  /** Room behind the last wagon, share of the width. */
+  rearMarginFraction: number;
+  /** A short train's front stays at least this far right. */
+  minFrontFraction: number;
+  /** Train middle within the band free of controls (0 top, 1 bottom). */
+  bandAnchor: number;
+  /** Vertical follow rate, 1/s. */
+  verticalFollowPerSec: number;
+}
+
 export interface GameConfig {
   simulation: SimulationConfig;
   save: SaveConfig;
   interaction: InteractionConfig;
   train: TrainConfig;
   world: WorldConfig;
+  camera: CameraConfig;
   input: InputConfig;
 }
 
@@ -77,7 +96,7 @@ export const gameConfig: GameConfig = {
   },
   interaction: { defaultCooldownSeconds: 1.5, hornMinIntervalSeconds: 0.7 },
   train: {
-    maxWagons: 100,
+    maxConsistLengthU: 1600,
     maxVehicleLengthU: 220,
     couplerGapU: 8,
     maxSpeedUPerSec: 180,
@@ -99,6 +118,13 @@ export const gameConfig: GameConfig = {
     spawnChunkIndex: 0,
     spawnLocalXU: 512,
   },
+  camera: {
+    trainWidthFraction: 0.72,
+    rearMarginFraction: 0.06,
+    minFrontFraction: 0.35,
+    bandAnchor: 0.55,
+    verticalFollowPerSec: 3,
+  },
   input: {
     maxPointers: 5,
     leftSwipeDistanceCssPx: 64,
@@ -117,7 +143,7 @@ const positive = (value: number) => Number.isFinite(value) && value > 0;
 
 /** Returns the paths of invalid values; an empty list means valid. */
 export function validateGameConfig(config: GameConfig): string[] {
-  const { simulation, save, interaction, train, world, input } = config;
+  const { simulation, save, interaction, train, world, camera, input } = config;
   const fraction = (value: number) =>
     Number.isFinite(value) && value >= 0 && value < 1;
   const checks: Check[] = [
@@ -140,7 +166,10 @@ export function validateGameConfig(config: GameConfig): string[] {
       'interaction.hornMinIntervalSeconds',
       positive(interaction.hornMinIntervalSeconds),
     ],
-    ['train.maxWagons', positiveInteger(train.maxWagons)],
+    [
+      'train.maxConsistLengthU',
+      train.maxConsistLengthU >= 2 * train.maxVehicleLengthU,
+    ],
     ['train.maxVehicleLengthU', positive(train.maxVehicleLengthU)],
     ['train.couplerGapU', positive(train.couplerGapU)],
     ['train.maxSpeedUPerSec', positive(train.maxSpeedUPerSec)],
@@ -161,6 +190,15 @@ export function validateGameConfig(config: GameConfig): string[] {
       positive(train.slowModeSpeedFactor) && train.slowModeSpeedFactor <= 1,
     ],
     ['world.chunkWidthU', positive(world.chunkWidthU)],
+    [
+      'camera.trainWidthFraction',
+      fraction(camera.trainWidthFraction) &&
+        camera.trainWidthFraction + camera.rearMarginFraction < 1,
+    ],
+    ['camera.rearMarginFraction', fraction(camera.rearMarginFraction)],
+    ['camera.minFrontFraction', fraction(camera.minFrontFraction)],
+    ['camera.bandAnchor', fraction(camera.bandAnchor)],
+    ['camera.verticalFollowPerSec', positive(camera.verticalFollowPerSec)],
     ['world.maxTrackGrade', positive(world.maxTrackGrade)],
     ['world.boundaryHeightScale', positive(world.boundaryHeightScale)],
     [

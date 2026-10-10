@@ -52,7 +52,7 @@ volta run npm run check
 
 ### Co umí verze 0.1
 
-Výběr ze 3 dočasných lokomotiv → depo se 7 dočasnými druhy vagonků (přidat, vybrat, posunout, odebrat, vrátit; až 100 vagonků) → jízda po nekonečné kopcovité trati → pauza → pokračování. Pokračování cesty se ukládá v prohlížeči a po obnovení stránky je vlak zastavený.
+Výběr ze 3 dočasných lokomotiv → depo se 7 dočasnými druhy vagonků (přidat, vybrat, posunout, odebrat, vrátit; délkový limit tak, aby byl celý vlak vidět) → jízda po nekonečné kopcovité trati → pauza → pokračování. Pokračování cesty se ukládá v prohlížeči a po obnovení stránky je vlak zastavený.
 
 | Ovládání | Dotyk / myš                                                               | Klávesnice        |
 | -------- | ------------------------------------------------------------------------- | ----------------- |
@@ -62,7 +62,7 @@ Výběr ze 3 dočasných lokomotiv → depo se 7 dočasnými druhy vagonků (př
 | Píšťala  | tlačítko vpravo dole                                                      | `H`               |
 | Pauza    | tlačítko vpravo nahoře                                                    | `Escape`          |
 
-Grafika i zvuky jsou zatím **dočasné placeholdery** (tvary kreslené kódem, syntetizované tóny), viz [původ assetů](assets/SOURCES.md). Parametr `?renderer=canvas` vynutí Canvas renderer, `?debug=1` ukáže diagnostiku. Pauza ukazuje drobně číslo světa; `?seed=123` začne každou novou cestu ve světě 123, takže jde svět zopakovat ([D-007](docs/decisions/007-world-seed-in-url.md)). Uloženou cestu „Pokračovat“ parametr nemění. Ověření je v [protokolu v0.1](docs/validation/2026-10-09-v0.1.md); fyzický tablet a Tesla jsou zatím **NEOVĚŘENO** ([matice zařízení](docs/device-tests/v0.1.md)). Elektrické lokomotivy, biomy, scénky, plný katalog a PWA přijdou v dalších milnících [plánu](vlacek-predavaci-balicek/10_IMPLEMENTACNI_PLAN.md).
+Grafika i zvuky jsou zatím **dočasné placeholdery** (tvary kreslené kódem, syntetizované tóny), viz [původ assetů](assets/SOURCES.md). Parametr `?renderer=canvas` vynutí Canvas renderer, `?debug=1` ukáže diagnostiku. Pauza ukazuje drobně číslo světa; `?seed=123` začne každou novou cestu ve světě 123, takže jde svět zopakovat ([D-007](docs/decisions/007-world-seed-in-url.md)). Uloženou cestu „Pokračovat“ parametr nemění. Ověření je v [protokolu v0.1](docs/validation/2026-10-09-v0.1.md) a v [protokolu iterace podle dokumentu 14](docs/validation/2026-10-10-iterace-upravy.md); fyzický tablet a Tesla jsou zatím **NEOVĚŘENO** ([matice zařízení](docs/device-tests/v0.1.md)). Elektrické lokomotivy, biomy, scénky, plný katalog a PWA přijdou v dalších milnících [plánu](vlacek-predavaci-balicek/10_IMPLEMENTACNI_PLAN.md).
 
 ### Spuštění a nasazení
 

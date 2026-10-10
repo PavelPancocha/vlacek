@@ -1,4 +1,3 @@
-import { gameConfig } from '../config/gameConfig.ts';
 import type { ShapedVehicle } from '../content/placeholderShapes.ts';
 import { locomotives, wagons } from '../content/vehicles.ts';
 import type { Consist } from '../domain/types.ts';
@@ -33,6 +32,9 @@ const HORN_BY_POWER: Record<string, SoundId> = {
  * adapter and audio, and forwards everything to the GameSession. Phaser's
  * animation frame is the only loop; the session runs its fixed steps in it.
  */
+/** Free space kept between the train and the HUD controls, CSS px. */
+const HUD_GAP_PX = 8;
+
 export class AppController {
   readonly #session: GameSession;
   readonly #options: AppControllerOptions;
@@ -196,8 +198,7 @@ export class AppController {
       buildId: this.#options.buildId,
       locomotives,
       wagons,
-      maxWagons: gameConfig.train.maxWagons,
-      couplerGapU: gameConfig.train.couplerGapU,
+      lengthRules: session.lengthRules,
     });
     const now = this.#uiRoot.dataset['screen'];
     if (now !== before) {
@@ -221,6 +222,16 @@ export class AppController {
       };
     }
     this.#session.router.setBrakeHitArea(this.#brakeRect);
+    // The camera keeps the whole train between the corner buttons and the
+    // brake (doc 14 §2). Without a HUD (pause) the last strips stay.
+    const corner = this.#uiRoot.querySelector('.corner');
+    if (brake && corner) {
+      const canvas = this.#gameRoot.getBoundingClientRect();
+      this.#scene.setReservedInsets(
+        corner.getBoundingClientRect().bottom - canvas.top + HUD_GAP_PX,
+        canvas.bottom - brake.getBoundingClientRect().top + HUD_GAP_PX,
+      );
+    }
   }
 
   snapshot(): DebugSnapshot {
@@ -260,6 +271,9 @@ export class AppController {
       objects: canvas
         ? this.#scene.objectScreenPositions(canvas.getBoundingClientRect())
         : [],
+      trainBox: canvas
+        ? this.#scene.trainScreenBox(canvas.getBoundingClientRect())
+        : undefined,
       brakeRect: this.#brakeRect,
       audio: this.#audio.state,
     };

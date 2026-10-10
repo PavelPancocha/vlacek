@@ -1,4 +1,8 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { gameConfig } from '../../src/config/gameConfig.ts';
+import { consistLengthU } from '../../src/domain/consist/ConsistEditor.ts';
 import { PRIMARY_KEY } from '../../src/platform/SaveRepository.ts';
 import {
   MemoryStorage,
@@ -172,14 +176,20 @@ describe('GameSession: build → ride → pause → resume', () => {
 });
 
 describe('GameSession: depot, saving and restoring', () => {
-  it('UI-03: the 101st wagon is refused with a gentle signal', () => {
+  it('doc 14 §2: wagons stop at the length limit with a gentle signal', () => {
     const session = createSession();
     tap(session, 'loco:steam_local');
     tap(session, 'to-depot');
-    for (let i = 0; i < 100; i++) tap(session, 'add:cargo_box');
+    for (let i = 0; i < 30; i++) tap(session, 'add:cargo_box');
+    const rules = session.lengthRules;
+    const lengthU = consistLengthU(session.draft.consist, rules);
+    expect(rules.maxLengthU).toBe(gameConfig.train.maxConsistLengthU);
+    expect(lengthU).toBeLessThanOrEqual(rules.maxLengthU);
+    expect(lengthU + rules.couplerGapU + 164).toBeGreaterThan(rules.maxLengthU);
+    const count = session.draft.consist.wagons.length;
     const before = session.fullSignals;
     tap(session, 'add:cargo_box');
-    expect(session.draft.consist.wagons).toHaveLength(100);
+    expect(session.draft.consist.wagons).toHaveLength(count);
     expect(session.fullSignals).toBe(before + 1);
   });
 
@@ -356,5 +366,62 @@ describe('GameSession: restoring a saved depot draft', () => {
     const later = editDraftThenReload();
     tap(later, 'build-new');
     expect(later.draft.consist.wagons).toHaveLength(2);
+  });
+});
+
+describe('GameSession: a longer train saved by version 0.1', () => {
+  /** A real 0.1 save (schema 1) whose journey has 60 box wagons. */
+  function legacyStorage(): MemoryStorage {
+    const save = JSON.parse(
+      readFileSync(
+        resolve(import.meta.dirname, '../fixtures/save/v1-journey.json'),
+        'utf8',
+      ),
+    ) as { journey: { consist: { wagons: unknown[] } }; lastConsist: unknown };
+    save.journey.consist.wagons = Array.from({ length: 60 }, (_, i) => ({
+      instanceId: `w${i + 1}`,
+      definitionId: 'cargo_box',
+      visualSeed: i,
+    }));
+    save.lastConsist = save.journey.consist;
+    const storage = new MemoryStorage();
+    storage.data.set(PRIMARY_KEY, JSON.stringify(save));
+    return storage;
+  }
+
+  it('keeps every wagon, tells why, and does not ride a train that cannot be seen', () => {
+    const storage = legacyStorage();
+    const session = createSession(storage);
+    expect(session.ride).toBeUndefined();
+    expect(session.notices).toContain('train-too-long');
+    expect(session.draft.consist.wagons).toHaveLength(60);
+    tap(session, 'to-depot');
+    expect(session.screen.name).toBe('BUILD_TRAIN');
+    tap(session, 'depart');
+    expect(session.screen.name).toBe('BUILD_TRAIN');
+    expect(session.ride).toBeUndefined();
+    // Nothing is dropped from storage behind the child's back.
+    runFor(session, 0.5, 10_000);
+    const stored = JSON.parse(storage.data.get(PRIMARY_KEY) ?? '{}') as {
+      lastConsist?: { wagons: unknown[] };
+      builderDraft?: { wagons: unknown[] };
+    };
+    expect((stored.builderDraft ?? stored.lastConsist)?.wagons.length).toBe(60);
+  });
+
+  it('departs once wagons are removed until the train fits', () => {
+    const session = createSession(legacyStorage());
+    tap(session, 'to-depot');
+    while (
+      consistLengthU(session.draft.consist, session.lengthRules) >
+      session.lengthRules.maxLengthU
+    ) {
+      const last = session.draft.consist.wagons.at(-1)?.instanceId ?? 'none';
+      tap(session, `wagon:${last}`);
+      tap(session, 'remove');
+    }
+    tap(session, 'depart');
+    expect(session.screen.name).toBe('RIDING');
+    expect(session.notices).not.toContain('train-too-long');
   });
 });

@@ -260,6 +260,23 @@ h1 {
   }
 }
 
+.length-meter {
+  width: 96px;
+  height: 14px;
+  border-radius: 7px;
+  background: #e0d8c6;
+  overflow: hidden;
+}
+
+.length-fill {
+  height: 100%;
+  background: var(--primary);
+}
+
+.length-meter.over .length-fill {
+  background: var(--brake);
+}
+
 .full-text,
 .count {
   font-size: 0.9rem;

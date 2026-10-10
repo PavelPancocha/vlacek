@@ -16,7 +16,7 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "resumeSpeedUPerSec": 0
   },
   "train": {
-    "maxWagons": 100,
+    "maxConsistLengthU": 1600,
     "maxVehicleLengthU": 220,
     "couplerGapU": 8,
     "maxSpeedUPerSec": 180,
@@ -61,10 +61,11 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "catenaryContactHeightU": 160
   },
   "camera": {
-    "referenceWidthU": 1280,
-    "referenceHeightU": 720,
-    "locomotiveAnchorX": 0.3,
-    "railAnchorY": 0.65,
+    "trainWidthFraction": 0.72,
+    "rearMarginFraction": 0.06,
+    "minFrontFraction": 0.35,
+    "bandAnchor": 0.55,
+    "verticalFollowPerSec": 3,
     "manualPanDuringRide": false
   },
   "crossing": {

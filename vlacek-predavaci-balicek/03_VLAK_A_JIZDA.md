@@ -73,23 +73,23 @@ Celý vlak nesmí být jediný nakloněný kontejner nebo dlouhý sprite. Na vrc
 
 Pro každý chunk vytvořit vzorky křivky nejvýše po 8 u v ose x a kumulativní délky segmentů. `samplePath(s)` najde chunk a dvojici sousedních vzorků binárním hledáním a interpoluje polohu i sklon. Odvození profilu a návaznosti je v dokumentu 04.
 
-Vzorky uchovávat pro celý rozsah od konce vlaku po generovaný předstih. Při 100 vagoncích mohou být vidět jen první čtyři, ale poslední musí mít správnou délkovou polohu. Pro neviditelné vagonky lze vynechat transformace obrázků, nikoli jejich existenci nebo délku soupravy.
+Vzorky uchovávat pro celý rozsah od konce vlaku po generovaný předstih. Celá souprava je v obraze (dokument 14 §2, [D-008](../docs/decisions/008-whole-train-in-view.md)); kdyby některý vagonek přesto byl mimo výřez, lze vynechat transformace jeho obrázků, nikoli jeho existenci nebo délku soupravy.
 
 Chyba vzorkování do 0.5 u a šev mezi chunky do 0.1 u jsou akceptační cíle. Při potřebě zpřesnění se zjemní LUT, nepřepíše model na pixely obrazovky.
 
 ## 6. Dlouhé soupravy a inicializace
 
-Limit V1 je 100 vagonků plus jedna lokomotiva. Výkonový profil nesmí tiše zahodit část vagonků nebo zkrátit vlak. Případná změna produktového limitu vyžaduje zdokumentované rozhodnutí podle skutečného měření.
+Limit je délkový (dokument 14 §2, [D-008](../docs/decisions/008-whole-train-in-view.md)): `train.maxConsistLengthU` (výchozí 1600 u) od čela lokomotivy po konec posledního vagonku včetně spřáhel, spočítaný stejným rozložením jako jízda. V depu lze přidat jen vagonek, který se vejde. Původní limit 100 vagonků neplatí. Výkonový profil nesmí tiše zahodit část vagonků nebo zkrátit vlak; delší souprava ze starší uložené hry zůstane celá v depu a vyjede až po ubrání.
 
 Na nové cestě se hlava umístí do chunku 0. **Před zobrazením** se vygeneruje dostatečná trať i za ní, včetně záporných indexů chunků. Celá souprava existuje od prvního snímku. Nesmí být nejprve vidět vagonky ve vzduchu a později pro ně přibýt koleje.
 
-V depu se simuluje rovná kolej, nikoli celá krajina. Náhled celé soupravy je posuvný. Během jízdy se nesnažit 100 vagonků vměstnat na jednu obrazovku automatickým oddálením.
+V depu se simuluje rovná kolej, nikoli celá krajina. Náhled celé soupravy je posuvný. Měřítko jízdy je pro danou obrazovku pevné a vychází z nejdelší povolené soupravy; nemění se podle aktuální délky vlaku.
 
 ## 7. Kamera
 
-Lokomotiva je přibližně na 30 % šířky herního výřezu; větší část obrazovky ukazuje, co přijíždí. Kolej u lokomotivy leží přibližně v 65 % výšky. Vodorovné sledování je stabilní; svislé vyrovnání může být mírně vyhlazené, ale nesmí odříznout vlak nebo vyvolávat houpání celého světa.
+Od prvního snímku je vidět celá souprava (dokument 14 §2, [D-008](../docs/decisions/008-whole-train-in-view.md)). Nejdelší povolená souprava zabere `camera.trainWidthFraction` (0.72) šířky, za koncem zůstává `camera.rearMarginFraction` (0.06) a čelo krátkého vlaku stojí nejméně na `camera.minFrontFraction` (0.35) šířky. Vodorovné sledování je přesné. Svislé vedení zná výšku koleje pod celou soupravou a vede její střed plynule (`camera.verticalFollowPerSec`) do `camera.bandAnchor` pásu volného od tlačítek v rozích a brzdy; hranice pásu mají přednost, takže vlak nikdy nezajede pod ovládání ani mimo obraz. Výpočet je čistý modul `src/render/cameraFraming.ts` s jednotkovými testy.
 
-Žádné třesení při houkání či průjezdu mostem. Žádné automatické zoomování při přidávání vagonků. Objekty musí být rozpoznatelné při běžném měřítku. Na širokém displeji se ukáže více krajiny, nikoli výrazně menší vlak.
+Žádné třesení při houkání či průjezdu mostem. Žádné automatické zoomování při přidávání vagonků. Objekty musí být rozpoznatelné při běžném měřítku. Na širokém displeji je vlak větší a zabírá stejný podíl šířky; na užším (4:3) je menší, ale celý.
 
 Za jízdy nejsou gesta kamery. To je vědomý rozdíl proti dřívějšímu návrhu: levé gesto je brzda a běžný dotyk je plyn. Celou soupravu dítě vidí v depu.
 

@@ -15,7 +15,7 @@ Výchozí bod: commit `c8f027d` obsahoval připnuté prostředí, GitHub Actions
 
 - **Doménové hranice a vstupy:** začni testem priority brzdy nad plynem (INP-04), pak UI bez propadnutí vstupu (INP-06), ukončení/zrušení dotyku (INP-09), ztráty fokusu (INP-10) a nového dotyku po obnovení (INP-11). Před produkčním kódem potvrď správné selhání testu. Přidej doménový TypeScript projekt bez DOM a lint zákazy platformních importů; negativním testem prokaž jejich vynucení i přes alias/reexport.
 - **Pohyb:** implementuj testovatelný fixní simulační krok, držení pro rozjezd, dojezd a brzdu. Parametry přebírej z dokumentu 13. Testuj nezápornou rychlost a nezávislost simulace na renderovacím FPS (TRN-04/05).
-- **Kolej a souprava:** stabilizuj jednotky, jedno vzorkování koleje a samostatné polohy vozidel přes kopec. Už první řez musí podporovat 0–100 vagonků a připravit trať za celou počáteční soupravou (TRN-01/03/07).
+- **Kolej a souprava:** stabilizuj jednotky, jedno vzorkování koleje a samostatné polohy vozidel přes kopec. Už první řez musí podporovat celou délku soupravy podle limitu a připravit trať za celou počáteční soupravou (TRN-01/03/07).
 - **Spustitelný web:** doplň přímé, přesně připnuté závislosti Vite, Phaser 4.2.1 a Playwright. Ověř API a renderer v instalovaných typech. Napoj jediný InputRouter a simulační loop na scénu s lokomotivou, 100 geometrickými vagonky, kopcem, interaktivním objektem, brzdou, píšťalou a pauzou. Placeholdery označ a eviduj jejich původ.
 - **Kontroly zároveň s implementací:** přidej skutečné `dev`, `build`, `preview`, browser smoke test a jejich CI kroky. Doplň dosud chybějící secret scanner a pravidla velikostí/assetů s ověřením, že vadný vstup selže. Rozšiř stávající projekt a testy; nevytvářej druhou aplikaci nebo prázdné úspěšné validátory.
 
@@ -24,6 +24,6 @@ Akceptační ID a přesné očekávané chování vlastní [dokument 11](../vlac
 ## Co musí být doloženo při dokončení M0
 
 - Fungující demo a příkazy ke spuštění; build identifikovaný commitem, dostupná testovací URL a zaznamenaná volba rendereru podle brány M0.
-- Lokální kontroly i GitHub Actions, browserové ovládání a návrat z pauzy, měření se 100 vagonky.
+- Lokální kontroly i GitHub Actions, browserové ovládání a návrat z pauzy, měření s nejdelší povolenou soupravou.
 - Stav fyzického Androidu a Tesly včetně zařízení/firmwaru; nedostupný test označit **NEOVĚŘENO**. Desktopová emulace není fyzický test.
 - Aktualizovaná dokumentace, původ assetů, známá omezení a zbývající práce. Příprava tooling sama o sobě neznamená hotové M0.

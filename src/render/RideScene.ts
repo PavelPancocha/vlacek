@@ -9,6 +9,12 @@ import {
   type ShapedVehicle,
 } from '../content/placeholderShapes.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
+import {
+  frameLeftX,
+  frameTopY,
+  trainZoom,
+  type FramingConfig,
+} from './cameraFraming.ts';
 
 /** What the scene needs from the application each frame. */
 export interface RideSceneHost {
@@ -25,10 +31,10 @@ export interface RenderStats {
   renderedChunks: number;
 }
 
-/** Design viewport height in world units (doc 13 `camera.referenceHeightU`). */
-const REFERENCE_HEIGHT_U = 720;
-const LOCO_ANCHOR_X = 0.3;
-const RAIL_ANCHOR_Y = 0.65;
+/** Hills cover the same share of the screen as at 720 u of view height. */
+const HILLS_REFERENCE_VIEW_U = 720;
+/** Rail height samples along the train for vertical framing. */
+const SPAN_STEP_U = 32;
 /** Render origin step; keeps GPU coordinates small on endless rides. */
 const ORIGIN_STEP_U = 4096;
 /** Chunk width shared with the generator and TrackWindow (doc 13). */
@@ -91,7 +97,11 @@ export class RideScene extends Phaser.Scene {
   readonly #objectImages = new Map<string, Phaser.GameObjects.Image>();
   readonly #slots: VehicleSlot[] = [];
   #hills: Phaser.GameObjects.TileSprite | undefined;
-  #cameraY: number | undefined;
+  /** World y (up) of the top screen edge; eased between frames. */
+  #cameraTopY: number | undefined;
+  #framing: FramingConfig | undefined;
+  /** CSS px covered by controls at the top and bottom of the screen. */
+  #insetsCss = { top: 0, bottom: 0 };
   #originX = 0;
   #rideRef: RideSimulation | undefined;
   /** Visible world rectangle (render-local units) of the latest frame. */
@@ -104,10 +114,17 @@ export class RideScene extends Phaser.Scene {
     this.#host = host;
   }
 
+  /** Strips covered by HUD controls; the whole train stays between them. */
+  setReservedInsets(topCss: number, bottomCss: number): void {
+    this.#insetsCss = { top: topCss, bottom: bottomCss };
+  }
+
   create(): void {
     this.cameras.main.setBackgroundColor('#bfe3f2');
+    let tallestU = 0;
     for (const vehicle of this.#host.catalogVehicles()) {
       const height = vehicleBodyHeightU(vehicle);
+      tallestU = Math.max(tallestU, height + vehicle.wheelRadiusU * 1.3);
       const g = this.make.graphics({}, false);
       drawShapes(g, vehicleShapes(vehicle), 0, height);
       g.generateTexture(
@@ -117,6 +134,7 @@ export class RideScene extends Phaser.Scene {
       );
       g.destroy();
     }
+    this.#framing = { ...gameConfig.camera, vehicleHeightU: tallestU + 8 };
     const wheel = this.make.graphics({}, false);
     wheel.fillStyle(0x222222, 1).fillCircle(16, 16, 16);
     wheel.fillStyle(0x7f8c8d, 1).fillCircle(16, 16, 6);
@@ -207,6 +225,41 @@ export class RideScene extends Phaser.Scene {
     return best?.id;
   }
 
+  /** Screen box (CSS px) of the drawn vehicles, for diagnostics and E2E. */
+  trainScreenBox(
+    canvasRect: DOMRect,
+  ): { left: number; top: number; right: number; bottom: number } | undefined {
+    const cssPerGame = Math.max(1, canvasRect.width) / this.scale.width;
+    let box:
+      { left: number; top: number; right: number; bottom: number } | undefined;
+    for (const slot of this.#slots) {
+      if (!slot.container.visible) continue;
+      // Bounds include rotation and the wheels below the body.
+      const bounds = slot.container.getBounds();
+      const left =
+        canvasRect.left +
+        (bounds.left - this.#view.left) * this.#view.zoom * cssPerGame;
+      const right =
+        canvasRect.left +
+        (bounds.right - this.#view.left) * this.#view.zoom * cssPerGame;
+      const top =
+        canvasRect.top +
+        (bounds.top - this.#view.top) * this.#view.zoom * cssPerGame;
+      const bottom =
+        canvasRect.top +
+        (bounds.bottom - this.#view.top) * this.#view.zoom * cssPerGame;
+      box = box
+        ? {
+            left: Math.min(box.left, left),
+            top: Math.min(box.top, top),
+            right: Math.max(box.right, right),
+            bottom: Math.max(box.bottom, bottom),
+          }
+        : { left, top, right, bottom };
+    }
+    return box;
+  }
+
   /** Screen positions (CSS px) of visible objects, for diagnostics and E2E. */
   objectScreenPositions(
     canvasRect: DOMRect,
@@ -232,7 +285,7 @@ export class RideScene extends Phaser.Scene {
     this.#objectImages.clear();
     for (const slot of this.#slots) slot.container.destroy();
     this.#slots.length = 0;
-    this.#cameraY = undefined;
+    this.#cameraTopY = undefined;
     this.#visibleObjects = [];
   }
 
@@ -247,38 +300,81 @@ export class RideScene extends Phaser.Scene {
       this.stats = { renderedVehicles: 0, renderedChunks: 0 };
       return;
     }
+    const framing = this.#framing;
+    if (!framing) return;
     const camera = this.cameras.main;
-    camera.setZoom(this.scale.height / REFERENCE_HEIGHT_U);
-    const viewW = this.scale.width / camera.zoom;
-    const viewH = this.scale.height / camera.zoom;
+    const gamePerCss =
+      this.scale.width / Math.max(1, this.game.canvas.clientWidth);
+    const viewport = {
+      widthPx: this.scale.width,
+      heightPx: this.scale.height,
+      reservedTopPx: this.#insetsCss.top * gamePerCss,
+      reservedBottomPx: this.#insetsCss.bottom * gamePerCss,
+    };
+    const layout = ride.layout;
+    const consistLengthU = layout.frontOffsetU + layout.tailOffsetU;
+    // One stable scale per screen, fitted to the longest allowed train.
+    const zoom = trainZoom(
+      viewport,
+      Math.max(gameConfig.train.maxConsistLengthU, consistLengthU),
+      framing,
+    );
+    camera.setZoom(zoom);
+    const viewW = this.scale.width / zoom;
+    const viewH = this.scale.height / zoom;
 
     const headS =
       ride.previousHeadS + (ride.headS - ride.previousHeadS) * alpha;
     const head = ride.sample(headS);
-    this.#originX = Math.floor(head.x / ORIGIN_STEP_U) * ORIGIN_STEP_U;
-    // Gentle vertical follow; horizontal follow is exact (doc 03 §7).
-    const smoothing = Math.min(1, (delta / 1000) * 4);
-    this.#cameraY =
-      this.#cameraY === undefined
-        ? head.y
-        : this.#cameraY + (head.y - this.#cameraY) * smoothing;
-    const centerX = head.x - this.#originX + (0.5 - LOCO_ANCHOR_X) * viewW;
-    const centerY = -this.#cameraY - (RAIL_ANCHOR_Y - 0.5) * viewH;
+    const front = ride.sample(headS + layout.frontOffsetU);
+    this.#originX = Math.floor(front.x / ORIGIN_STEP_U) * ORIGIN_STEP_U;
+    // Rail heights under the whole train, so slopes never cut it off.
+    let minRailY = front.y;
+    let maxRailY = front.y;
+    for (
+      let s = headS - layout.tailOffsetU;
+      s < headS + layout.frontOffsetU;
+      s += SPAN_STEP_U
+    ) {
+      const y = ride.sample(s).y;
+      minRailY = Math.min(minRailY, y);
+      maxRailY = Math.max(maxRailY, y);
+    }
+    this.#cameraTopY = frameTopY(
+      this.#cameraTopY,
+      { minRailY, maxRailY },
+      viewport,
+      zoom,
+      delta / 1000,
+      framing,
+    );
+    // Horizontal follow is exact; the front keeps a stable screen position.
+    const leftWorldX = frameLeftX(
+      front.x,
+      consistLengthU,
+      viewport,
+      zoom,
+      framing,
+    );
+    const centerX = leftWorldX - this.#originX + viewW / 2;
+    const centerY = -this.#cameraTopY + viewH / 2;
     camera.centerOn(centerX, centerY);
     this.#view = {
       left: centerX - viewW / 2,
       top: centerY - viewH / 2,
-      zoom: camera.zoom,
+      zoom,
     };
     if (this.#hills) {
       // Distant hills scroll slower than the track (parallax, doc 07 §3).
+      const scale = viewH / HILLS_REFERENCE_VIEW_U;
+      this.#hills.setScale(scale);
       this.#hills.setPosition(this.#view.left, this.#view.top + viewH);
-      this.#hills.setSize(viewW + 2, HILLS_HEIGHT);
-      this.#hills.tilePositionX = (head.x * 0.3) % HILLS_WIDTH;
+      this.#hills.setSize(viewW / scale + 2, HILLS_HEIGHT);
+      this.#hills.tilePositionX = ((head.x * 0.3) / scale) % HILLS_WIDTH;
     }
 
-    const leftX = head.x - LOCO_ANCHOR_X * viewW - 64;
-    const rightX = head.x + (1 - LOCO_ANCHOR_X) * viewW + 64;
+    const leftX = leftWorldX - 64;
+    const rightX = leftWorldX + viewW + 64;
     this.#drawTrack(ride, leftX, rightX);
     this.#drawObjects(ride, leftX, rightX);
     this.#drawTrain(ride, headS, leftX, rightX);
