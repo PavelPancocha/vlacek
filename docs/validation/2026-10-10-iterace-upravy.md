@@ -440,3 +440,23 @@ Druhý úplný běh, 24 samostatných běhů i 6 běhů při 8× zpomaleném CPU
 | Vzdálené kopce poskočí při posunu počátku vykreslování (každých 4096 u) | E2E přes x 4096 ve světě 123: střední kopce poskočily o 207 u (odhad 4096 × 0,55 mod 1020 = 213)                                                     | 14 E2E PASS (krajina) |
 | Řazení rekvizit nebylo konzistentní mezi vrstvami                       | unit: svět 0, chunk 7, zadní rekvizita v hloubce 0,81 kreslená po 0,67                                                                               | 63 PASS (svět)        |
 | Zvíře na 568 × 320 stálo mezi ovládáním                                 | E2E telefonu i na 568 × 320: zvíře v y 172,3 pod horní hranou brzdy 172; starý unit test očekával hloubku 0 v rozporu s dokumentem 02 a byl nahrazen | 5 unit + E2E PASS     |
+
+## Codex review PR #2 (`6f9c5a2`)
+
+| Nález                                                             | Red                                                                                                      | Green                                  |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Validace má odmítnout `roadClearanceSeconds` kratší než provoz    | unit: hodnota 0,1 s prošla validací                                                                      | 31 PASS (konfigurace a přejezd)        |
+| Selhaný atlas má uvolnit načtené zdroje dílů                      | E2E PWA-10 s jedním nenačteným SVG: 170 zdrojů `art-source:*` zůstalo v paměti                           | 10 E2E PASS (grafika)                  |
+| Kamera, horizont a prolínání pozadí mají v pauze stát             | E2E: pauza, kratší obrazovka, 40 snímků: vlak se posunul o 1,5 px (desktop i tablet)                     | 30 E2E PASS ve 3 opakováních (pauza)   |
+| Nalezeno při psaní testu: plátno po změně velikosti při hustotě 1 | E2E při DPR 1: plátno zůstalo ve staré CSS velikosti 1280 × 720 (obraz roztažený); při DPR 2 test prošel | 24 E2E PASS ve 2 opakováních (rozměry) |
+
+Poslední řádek není nález recenze. První verze testu pauzy čekala, až se po zkrácení obrazovky změní rámeček vlaku; s opravenou scénou se to na desktopu nestalo, protože kamera v pauze správně stojí. Při hledání jiné synchronizace ukázalo měření, že plátno má po změně okna novou velikost bufferu (1280 × 560), ale starou CSS velikost (1280 × 720 na desktopu, 1280 × 800 na tabletu). Phaser 4.2.1 v `resize` při zoomu 1 styl plátna nepřepíše a `GameHost` volal `setZoom` před `resize`, takže zapsal starou velikost. Týká se to obrazovek s DPR 1 a profilu `low` na všech zařízeních. Oprava pořadí je v [D-004](../decisions/004-renderer-and-phaser.md). Red testu pauzy jsem pak zopakoval s opraveným plátnem a starou scénou (posun 1,5 px na obou projektech).
+
+Celá brána po opravách (`18a5005` a tento zápis):
+
+- `npm run check`: 462 unit testů PASS, lint, typecheck, validace assetů, odkazy, tajné údaje a velikosti PASS.
+- `npm run test:e2e`: 126 PASS / 4 skipped.
+- `PERF_SECONDS=30 npm run measure:perf` s nejdelší soupravou: parní medián 30 FPS, p95 33 ms, nejhorší snímek 50 ms, ve všech vzorcích 9 z 9 vozidel; elektrická (`PERF_LOCOMOTIVE=electric_retro`) medián 30 FPS, p95 33 ms, nejhorší snímek 50 ms, 8 z 8 vozidel.
+- `npm run report:budgets`: úvodní přenos 2968 KiB (gzip 756 KiB) z rozpočtu 10 240 KiB.
+
+Vše lokálně v kontejneru (headless Chromium, softwarové GL). Fyzický tablet a Tesla: **NEOVĚŘENO**.
