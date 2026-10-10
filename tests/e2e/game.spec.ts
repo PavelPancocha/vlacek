@@ -249,6 +249,30 @@ test.describe('user path', () => {
     await page.mouse.up();
   });
 
+  test('a paused ride holds its view still, even mid-easing', async ({
+    page,
+  }) => {
+    await startRide(page, ['cargo_box'], '?debug=1&seed=123');
+    await driveUntilMoving(page);
+    await page.mouse.up();
+    await tapAction(page, 'pause');
+    await expect.poll(async () => (await snapshot(page)).screen).toBe('PAUSED');
+    // A shorter screen moves the camera's vertical target: the eased
+    // follow (and the horizon) would drift towards it behind the pause
+    // screen if they ran on wall-clock time. The clamp still applies.
+    await page.setViewportSize({ width: 1280, height: 560 });
+    await expect
+      .poll(
+        async () =>
+          (await page.locator('#game-root canvas').boundingBox())?.height,
+      )
+      .toBe(560);
+    await trainBoxesOverFrames(page, 3);
+    const boxes = await trainBoxesOverFrames(page, 40);
+    for (const box of boxes) expect(box).toEqual(boxes[0]);
+    expect((await snapshot(page)).screen).toBe('PAUSED');
+  });
+
   test('pausing from the HUD suspends sound; resuming needs a new gesture', async ({
     page,
   }) => {

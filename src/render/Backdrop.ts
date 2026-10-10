@@ -124,15 +124,18 @@ export class Backdrop {
     this.#fade = 1;
   }
 
-  /**
-   * Places everything for this frame: `horizonY` is the render y of the
-   * rails under the train, `groundTopY` the lowest top edge of the ground
-   * behind the track in view, `biome` the biome ahead of the train.
-   */
+  /** Parallax phase of the mid hills, u (diagnostics). */
   get midOffsetU(): number {
     return this.#midOffsetU;
   }
 
+  /**
+   * Places everything for this frame: `horizonY` is the render y of the
+   * rails under the train, `groundTopY` the lowest top edge of the ground
+   * behind the track in view, `biome` the biome ahead of the train.
+   * `deltaSec` is simulation time since the last frame (0 while paused),
+   * so a crossfade holds still behind the pause screen.
+   */
   update(
     view: ViewRect,
     horizonY: number,

@@ -247,8 +247,11 @@ export class RideScene extends Phaser.Scene {
   /** World y (up) of the top screen edge; eased between frames. */
   #cameraTopY: number | undefined;
   #framing: FramingConfig | undefined;
-  /** Simulation tick of the last tunnel update. */
-  #tunnelTick: number | undefined;
+  /**
+   * Simulation tick of the previous frame. Eased and animated motion
+   * advances by simulation time since then, so a paused ride holds still.
+   */
+  #frameTick: number | undefined;
   /** Where the drawn pantograph touches the wire this frame (render). */
   #pantographContact: { x: number; y: number } | undefined;
   /** CSS px covered by controls at the top and bottom of the screen. */
@@ -278,8 +281,6 @@ export class RideScene extends Phaser.Scene {
   readonly #ambient = new AmbientLife(this.#particles, Math.random);
   #effectsView: EffectsView | undefined;
   #effectsTexture: string | undefined;
-  /** Simulation tick the effects last advanced to. */
-  #effectsTick: number | undefined;
   /** Backdrop atlas texture the backdrop currently shows. */
   #backdropTexture: string | undefined;
   stats: RenderStats = NO_STATS;
@@ -532,8 +533,7 @@ export class RideScene extends Phaser.Scene {
 
   #reset(): void {
     this.#particles.clear();
-    this.#effectsTick = undefined;
-    this.#tunnelTick = undefined;
+    this.#frameTick = undefined;
     this.#destroyChunks();
     this.#destroyObjects();
     this.#scenery.clear();
@@ -578,6 +578,14 @@ export class RideScene extends Phaser.Scene {
       this.stats = { ...NO_STATS, localities: [], tunnels: [] };
     this.stats.pantographGapU = undefined;
     this.#pantographContact = undefined;
+    // Simulation time since the last frame: 0 while paused (and on a
+    // ride's first frame), at most the simulation's catch-up per frame.
+    const tick = ride.simulationTick;
+    const simDtSec =
+      this.#frameTick === undefined
+        ? 0
+        : Math.max(0, tick - this.#frameTick) / gameConfig.simulation.fixedHz;
+    this.#frameTick = tick;
     // The raised pantograph reaches the wire: keep it in view too.
     const framing = ride.electrified
       ? {
@@ -631,7 +639,7 @@ export class RideScene extends Phaser.Scene {
       { minRailY, maxRailY },
       viewport,
       zoom,
-      delta / 1000,
+      simDtSec,
       framing,
     );
     // Horizontal follow is exact; the front keeps a stable screen position.
@@ -655,7 +663,7 @@ export class RideScene extends Phaser.Scene {
 
     const leftX = leftWorldX - 64;
     const rightX = leftWorldX + viewW + 64;
-    this.#drawTrack(ride, leftX, rightX, timeSec);
+    this.#drawTrack(ride, leftX, rightX, timeSec, simDtSec);
     // Animals stay above the controls in the bottom corners (doc 02).
     this.#freeBottomY =
       this.#view.top +
@@ -664,7 +672,7 @@ export class RideScene extends Phaser.Scene {
     this.#drawObjects(ride, leftX, rightX, timeSec);
     this.#drawTrain(ride, headS, leftX, rightX);
     this.#drawOncoming(ride, leftX, rightX);
-    this.#drawEffects(ride, headS, leftX, rightX, viewW, viewH);
+    this.#drawEffects(ride, headS, leftX, rightX, viewW, viewH, simDtSec);
 
     const horizonTarget = -(minRailY + maxRailY) / 2;
     this.#horizonY =
@@ -672,7 +680,7 @@ export class RideScene extends Phaser.Scene {
         ? horizonTarget
         : this.#horizonY +
           (horizonTarget - this.#horizonY) *
-            (1 - Math.exp(-delta / 1000 / HORIZON_EASE_SEC));
+            (1 - Math.exp(-simDtSec / HORIZON_EASE_SEC));
     const aheadX = leftWorldX + viewW * BIOME_AHEAD_SHARE;
     const biome = this.#sceneryOf(
       ride.seed,
@@ -704,7 +712,7 @@ export class RideScene extends Phaser.Scene {
       groundTopY,
       biome,
       timeSec,
-      delta / 1000,
+      simDtSec,
     );
     this.stats.backdropMidOffsetU = this.#backdrop?.midOffsetU ?? 0;
     const localities: string[] = [];
@@ -728,6 +736,7 @@ export class RideScene extends Phaser.Scene {
     leftX: number,
     rightX: number,
     timeSec: number,
+    simDtSec: number,
   ): void {
     const first = Math.max(
       ride.track.firstChunkIndex,
@@ -748,18 +757,11 @@ export class RideScene extends Phaser.Scene {
     const crossings = new Map(ride.crossings.map((c) => [c.id, c]));
     // Reduced effects calm the decorative motion (doc 07 §9).
     const motion = motionScale(this.#host.effectsQuality());
-    // The whole train's x interval and the simulation time since the last
-    // frame, for the tunnels' see-through cover (0 while paused).
+    // The whole train's x interval, for the tunnels' see-through cover.
     const trainSpan = {
       minX: ride.sample(ride.tailS).x,
       maxX: ride.sample(ride.frontS).x,
     };
-    const tick = ride.simulationTick;
-    const tunnelDtSec =
-      this.#tunnelTick === undefined
-        ? 0
-        : Math.max(0, tick - this.#tunnelTick) / gameConfig.simulation.fixedHz;
-    this.#tunnelTick = tick;
     const texture = this.#art?.textureKey;
     const pxPerU = this.#art?.info?.pxPerU;
     const art =
@@ -791,7 +793,7 @@ export class RideScene extends Phaser.Scene {
       chunk.setX(k * CHUNK_WIDTH_U - this.#originX);
       const site = this.#sceneryOf(ride.seed, k).crossing;
       chunk.update(timeSec, site && crossings.get(site.id), motion);
-      chunk.tunnel?.update(trainSpan, tunnelDtSec);
+      chunk.tunnel?.update(trainSpan, simDtSec);
     }
     this.stats.tunnels = [...this.#chunks.values()].flatMap((chunk) =>
       chunk.tunnel
@@ -915,13 +917,8 @@ export class RideScene extends Phaser.Scene {
     rightX: number,
     viewW: number,
     viewH: number,
+    dtSec: number,
   ): void {
-    const tick = ride.simulationTick;
-    const dtSec =
-      this.#effectsTick === undefined
-        ? 0
-        : Math.max(0, tick - this.#effectsTick) / gameConfig.simulation.fixedHz;
-    this.#effectsTick = tick;
     const quality = this.#host.effectsQuality();
     this.#particles.setCapacity(
       gameConfig.quality[quality].maxDecorativeParticles,
