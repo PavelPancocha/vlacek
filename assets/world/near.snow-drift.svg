@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="92" height="20" viewBox="0 0 92 20">
+  <!-- Závěj: a snow drift with blue shadows, twigs and little tracks. Foot centre (46, 20). -->
+  <defs><linearGradient id="drift" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dce8f2"/></linearGradient>
+  </defs>
+  <path d="M1 20 Q10 10 26 7 Q44 1 60 6 Q78 10 91 20 Z" fill="url(#drift)" stroke="#a9bfd3" stroke-width="0.6"/>
+  <path d="M40 3 Q54 4 64 8 Q76 12 86 19 H62 Q56 12 40 3 Z" fill="#c4d6e6" fill-opacity="0.7"/>
+  <path d="M14 11 Q24 7 34 6" stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <path d="M30 8 l-2 -8 M28 3 l-3 -2 M29 5 l3 -3 M70 11 l1 -9 M71 5 l3 -2" stroke="#6b4a2e" stroke-width="0.8" stroke-linecap="round"/>
+  <ellipse cx="46" cy="14" rx="1.1" ry="0.7" fill="#9fb4c6"/><ellipse cx="52" cy="15.6" rx="1.1" ry="0.7" fill="#9fb4c6"/><ellipse cx="58" cy="14" rx="1.1" ry="0.7" fill="#9fb4c6"/><ellipse cx="64" cy="15.6" rx="1.1" ry="0.7" fill="#9fb4c6"/><ellipse cx="70" cy="14" rx="1.1" ry="0.7" fill="#9fb4c6"/>
+</svg>

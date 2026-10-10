@@ -104,3 +104,24 @@ export function arcAtX(table: ArcLengthTable, x: number): number {
   const a0 = table.cumulativeArcU[low] ?? 0;
   return a0 + ((table.cumulativeArcU[high] ?? 0) - a0) * f;
 }
+
+/**
+ * Rail height at chunk-global `x`, straight between the samples (as the
+ * track is drawn); clamped to the chunk's ends.
+ */
+export function heightAtX(table: ArcLengthTable, x: number): number {
+  const last = table.xs.length - 1;
+  if (!(x > (table.xs[0] ?? 0))) return table.ys[0] ?? 0;
+  if (x >= (table.xs[last] ?? 0)) return table.ys[last] ?? 0;
+  let low = 0;
+  let high = last;
+  while (high - low > 1) {
+    const middle = (low + high) >> 1;
+    if ((table.xs[middle] ?? 0) <= x) low = middle;
+    else high = middle;
+  }
+  const x0 = table.xs[low] ?? 0;
+  const f = (x - x0) / ((table.xs[high] ?? 0) - x0);
+  const y0 = table.ys[low] ?? 0;
+  return y0 + ((table.ys[high] ?? 0) - y0) * f;
+}

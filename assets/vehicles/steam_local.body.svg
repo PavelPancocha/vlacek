@@ -1,0 +1,286 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="156" height="100" viewBox="0 0 156 100">
+  <!-- Malá parní mašinka (steam_local): everything behind the wheels and
+       rods. Vehicle units: x from the rear coupler end, rail top at y = 100,
+       faces right. Light comes from the upper left on every vehicle. -->
+  <defs>
+    <linearGradient id="boiler" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#25282d"/>
+      <stop offset="0.16" stop-color="#5d636c"/>
+      <stop offset="0.3" stop-color="#3a3e45"/>
+      <stop offset="0.75" stop-color="#1b1d21"/>
+      <stop offset="1" stop-color="#0e0f11"/>
+    </linearGradient>
+    <linearGradient id="smokebox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f2125"/>
+      <stop offset="0.2" stop-color="#474c54"/>
+      <stop offset="0.42" stop-color="#26282c"/>
+      <stop offset="1" stop-color="#0b0c0e"/>
+    </linearGradient>
+    <linearGradient id="chimney" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#141518"/>
+      <stop offset="0.3" stop-color="#50555d"/>
+      <stop offset="0.55" stop-color="#25272b"/>
+      <stop offset="1" stop-color="#0b0c0e"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#40444b"/>
+      <stop offset="0.1" stop-color="#2d3036"/>
+      <stop offset="1" stop-color="#16181b"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dc4a43"/>
+      <stop offset="0.5" stop-color="#b3242b"/>
+      <stop offset="1" stop-color="#7a151b"/>
+    </linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6df9c"/>
+      <stop offset="0.45" stop-color="#cfa045"/>
+      <stop offset="1" stop-color="#86611f"/>
+    </linearGradient>
+    <linearGradient id="brassV" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#86611f"/>
+      <stop offset="0.35" stop-color="#f6df9c"/>
+      <stop offset="0.6" stop-color="#cfa045"/>
+      <stop offset="1" stop-color="#7a5719"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf5fb"/>
+      <stop offset="0.45" stop-color="#a9cde3"/>
+      <stop offset="1" stop-color="#5f8fae"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d3d8de"/>
+      <stop offset="0.5" stop-color="#8b9199"/>
+      <stop offset="1" stop-color="#555a62"/>
+    </linearGradient>
+    <linearGradient id="pump" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#121315"/>
+      <stop offset="0.35" stop-color="#4f545c"/>
+      <stop offset="0.6" stop-color="#25282d"/>
+      <stop offset="1" stop-color="#0d0e10"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="0.4" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#fffbe6"/>
+      <stop offset="0.6" stop-color="#f5d97a"/>
+      <stop offset="1" stop-color="#b88a2a"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.85" r="0.75">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.85"/>
+      <stop offset="0.5" stop-color="#c8561d" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#0d0e10" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="dome" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#6a707a"/>
+      <stop offset="0.35" stop-color="#363a41"/>
+      <stop offset="1" stop-color="#121315"/>
+    </radialGradient>
+  </defs>
+
+  <g stroke="#111214" stroke-width="0.6" stroke-linejoin="round">
+    <!-- Plate frames behind the wheels, with lightening holes. -->
+    <rect x="13" y="69.8" width="134" height="12.4" fill="url(#red)"/>
+    <path d="M13 71.4 H147" stroke="#ea8b7e" stroke-width="0.35" fill="none"/>
+    <g fill="#4d0d12" stroke="none">
+      <ellipse cx="60" cy="76.6" rx="1.2" ry="2.6"/>
+      <ellipse cx="92" cy="76.6" rx="1.2" ry="2.6"/>
+      <ellipse cx="126" cy="78" rx="2.4" ry="1.8"/>
+    </g>
+
+    <!-- Brake hangers, shoes on the leading side of each driver, pull rod. -->
+    <path d="M58 94 H123" stroke="#2a2d33" stroke-width="0.9" fill="none"/>
+    <g fill="#2a2d33">
+      <rect x="57.2" y="70" width="1.2" height="9"/>
+      <rect x="89.2" y="70" width="1.2" height="9"/>
+      <rect x="121.2" y="70" width="1.2" height="9"/>
+    </g>
+    <g fill="#3d4148" stroke-width="0.4">
+      <path d="M56.93 76.92 A15.25 15.25 0 0 1 56.93 93.08 L57.99 93.74 A16.5 16.5 0 0 0 57.99 76.26 Z"/>
+      <path d="M88.93 76.92 A15.25 15.25 0 0 1 88.93 93.08 L89.99 93.74 A16.5 16.5 0 0 0 89.99 76.26 Z"/>
+      <path d="M120.93 76.92 A15.25 15.25 0 0 1 120.93 93.08 L121.99 93.74 A16.5 16.5 0 0 0 121.99 76.26 Z"/>
+    </g>
+
+    <!-- Main air reservoir with straps under the cab. -->
+    <rect x="13.6" y="74.4" width="15" height="6.4" rx="3.2" fill="url(#steel)"/>
+    <path d="M14.6 75.6 H27.4" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.4" fill="none"/>
+    <path d="M17.4 74.2 V81 M24.8 74.2 V81" stroke="#2a2d33" stroke-width="0.9" fill="none"/>
+
+    <!-- Rear buffer beam: buffer, screw coupling, brake hose, lamp. -->
+    <rect x="5" y="63.6" width="9" height="16" rx="1" fill="url(#red)"/>
+    <path d="M5.8 65 H13.2" stroke="#ea8b7e" stroke-width="0.35" fill="none"/>
+    <rect x="1.6" y="68.6" width="4" height="3.2" fill="url(#steel)"/>
+    <rect x="0.2" y="66.4" width="1.9" height="7.6" rx="0.8" fill="#dfe3e8"/>
+    <path d="M5 76.2 H2.8 Q1.3 76.2 1.3 77.8 V79 H2.8" fill="none" stroke-width="1"/>
+    <path d="M2.8 77.4 Q4 81 3 84" stroke="#3a3d44" stroke-width="0.7" fill="none"/>
+    <path d="M10 79.6 Q10.6 85 7.6 87.4" stroke="#16171a" stroke-width="1.6" fill="none"/>
+    <rect x="6.2" y="86.6" width="2.6" height="1.8" rx="0.4" fill="url(#steel)" stroke-width="0.3"/>
+    <rect x="7" y="56.8" width="4.4" height="6.6" rx="1" fill="#2a2d33"/>
+    <circle cx="9.2" cy="60.1" r="1.7" fill="url(#lamp)"/>
+    <path d="M8.2 56.8 Q9.2 55 10.2 56.8" stroke="#2a2d33" stroke-width="0.6" fill="none"/>
+
+    <!-- Running board with red valance and lining. -->
+    <rect x="8" y="63" width="142" height="3.2" fill="#202227"/>
+    <path d="M8.4 63.4 H149.6" stroke="#5b616b" stroke-width="0.4" fill="none"/>
+    <rect x="8" y="66.2" width="142" height="3.6" fill="url(#red)"/>
+    <path d="M9 68 H149" stroke="#f3c7a0" stroke-width="0.35" fill="none"/>
+
+    <!-- Coal bunker, heaped coal and coal rails. -->
+    <path d="M8 63 V36 H22 V63 Z" fill="url(#panel)"/>
+    <path d="M8 36 L8.4 32.6 L10.2 31 L11.6 31.6 L13 29.4 L15.2 29 L16.6 30.2 L18.4 29.6 L20.2 30.8 L21.6 32.8 L22 36 Z" fill="#141416"/>
+    <g stroke="none">
+      <path d="M9 33.6 L10.4 31.6 L11.8 32.4 L10.8 34.2 Z" fill="#3a3c42"/>
+      <path d="M13.2 30.2 L15 29.6 L15.8 31 L14 31.6 Z" fill="#45484f"/>
+      <path d="M16.8 30.8 L18.6 30.2 L19.6 31.6 L17.8 32.4 Z" fill="#3a3c42"/>
+      <path d="M11.8 34 L13.6 32.8 L15 34 L13.2 35.2 Z" fill="#2b2d32"/>
+      <path d="M15.6 33.2 L17.4 33 L18 34.6 L16.2 35.2 Z" fill="#33363b"/>
+      <path d="M19.6 33 L21.2 32.8 L21.4 34.6 L20 35 Z" fill="#2b2d32"/>
+      <path d="M10.4 31.7 L11.6 32.3 M13.4 30.1 L14.9 29.7 M16.9 30.8 L18.4 30.3 M15.8 33.2 L17.2 33.1" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.35"/>
+    </g>
+    <path d="M8 31.6 H22 M8 34 H22" stroke="url(#steel)" stroke-width="0.7" fill="none"/>
+    <path d="M8.6 31.2 V36 M21.4 31.2 V36" stroke="#3a3d44" stroke-width="0.8" fill="none"/>
+    <path d="M8.6 37 H21.4" stroke="#5b616b" stroke-width="0.4" fill="none"/>
+    <g fill="#5b616b" stroke="none">
+      <circle cx="10" cy="40" r="0.45"/><circle cx="10" cy="46" r="0.45"/><circle cx="10" cy="52" r="0.45"/><circle cx="10" cy="58" r="0.45"/>
+      <circle cx="20" cy="40" r="0.45"/><circle cx="20" cy="46" r="0.45"/><circle cx="20" cy="52" r="0.45"/><circle cx="20" cy="58" r="0.45"/>
+    </g>
+    <path d="M10.4 42 H19.6 V60 H10.4 Z" fill="none" stroke="#c43a35" stroke-width="0.5"/>
+
+    <!-- Boiler, behind the tank, with firebox plugs, bands and pipework. -->
+    <rect x="52" y="28" width="67" height="28" fill="url(#boiler)"/>
+    <path d="M52.6 30.6 H118.4" stroke="#ffffff" stroke-opacity="0.32" stroke-width="0.45" fill="none"/>
+    <path d="M52.6 31.8 H118.4" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1.4" fill="none"/>
+    <g stroke="url(#brassV)" stroke-width="1.2" fill="none">
+      <path d="M64 28.2 V40"/><path d="M86 28.2 V40"/><path d="M108 28.2 V40"/>
+    </g>
+    <path d="M64.9 28.6 V40 M86.9 28.6 V40 M108.9 28.6 V40" stroke="#000000" stroke-opacity="0.35" stroke-width="0.5" fill="none"/>
+    <g fill="url(#brass)" stroke-width="0.3">
+      <circle cx="55.6" cy="36.8" r="0.8"/><circle cx="59.6" cy="36.8" r="0.8"/>
+    </g>
+    <!-- Feed pipe and clack valve. -->
+    <path d="M53 38.6 H88.4 Q90.2 38.6 90.8 37.2" stroke="#b8733a" stroke-width="0.8" fill="none"/>
+    <path d="M53 38.6 H88" stroke="#f0b27a" stroke-opacity="0.6" stroke-width="0.25" fill="none"/>
+    <rect x="90" y="34.8" width="3.2" height="2.8" rx="0.6" fill="url(#brass)" stroke-width="0.35"/>
+    <!-- Sand dome, steam dome, pop safety valves and whistle. -->
+    <path d="M70 28.4 Q70 21.4 75.5 21 Q81 21.4 81 28.4 Z" fill="url(#dome)"/>
+    <rect x="73.4" y="19.6" width="4.2" height="1.8" rx="0.6" fill="url(#brass)"/>
+    <path d="M71.6 24.8 Q75.5 23.4 79.4 24.8" stroke="#6a707a" stroke-width="0.35" fill="none"/>
+    <path d="M89 28.4 Q89 18.6 97 18 Q105 18.6 105 28.4 Z" fill="url(#dome)"/>
+    <path d="M90.4 22.6 Q97 20.4 103.6 22.6" stroke="url(#brass)" stroke-width="1.1" fill="none"/>
+    <rect x="94" y="16.4" width="6" height="2.2" rx="0.8" fill="url(#brass)"/>
+    <ellipse cx="93.2" cy="23.8" rx="1.3" ry="2.6" fill="#ffffff" fill-opacity="0.16" stroke="none"/>
+    <rect x="56" y="27.2" width="7.8" height="1.4" rx="0.5" fill="#2a2d33"/>
+    <rect x="57" y="22" width="2.4" height="5.4" fill="url(#brassV)" stroke-width="0.4"/>
+    <rect x="60.4" y="22" width="2.4" height="5.4" fill="url(#brassV)" stroke-width="0.4"/>
+    <rect x="56.6" y="20.8" width="3.2" height="1.6" rx="0.6" fill="url(#brass)" stroke-width="0.4"/>
+    <rect x="60" y="20.8" width="3.2" height="1.6" rx="0.6" fill="url(#brass)" stroke-width="0.4"/>
+    <path d="M54.6 28 V19.6" stroke="#86611f" stroke-width="0.8" fill="none"/>
+    <path d="M53.3 19.8 H55.9 L55.5 15.8 Q54.6 15 53.7 15.8 Z" fill="url(#brassV)" stroke-width="0.4"/>
+    <path d="M55.4 18.6 Q56.4 20.6 55.6 22.6" stroke="#3a3d44" stroke-width="0.3" fill="none"/>
+
+    <!-- Turbo-generator behind the chimney. -->
+    <rect x="110.6" y="23.6" width="7.2" height="4.6" rx="2" fill="url(#dome)"/>
+    <path d="M111.4 24.8 H117" stroke="#6a707a" stroke-width="0.35" fill="none"/>
+    <rect x="112.9" y="19.8" width="1.6" height="4" fill="#26282c"/>
+    <rect x="112.4" y="19.2" width="2.6" height="1" rx="0.3" fill="#26282c"/>
+
+    <!-- Cab: side sheet with doorway and firebox glow, window, plate. -->
+    <path d="M22 63 V26 Q22 23 25 23 H50 Q53 23 53 26 V63 Z" fill="url(#panel)"/>
+    <path d="M23.8 63 V40 Q23.8 37.6 26.2 37.6 H29.4 Q31.8 37.6 31.8 40 V63 Z" fill="#0d0e10"/>
+    <path d="M23.8 63 V40 Q23.8 37.6 26.2 37.6 H29.4 Q31.8 37.6 31.8 40 V63 Z" fill="url(#glow)" stroke="none"/>
+    <circle cx="28.6" cy="43.4" r="1.15" fill="#e8ecef" stroke-width="0.35"/>
+    <path d="M28.6 43.4 L29.2 42.8" stroke="#c0392b" stroke-width="0.25"/>
+    <path d="M25 49 H30.8" stroke="#3a3d44" stroke-width="0.6" fill="none"/>
+    <path d="M23.1 40 V61.6 M32.5 40 V61.6" stroke="url(#steel)" stroke-width="0.9" fill="none"/>
+    <path d="M34.4 40.6 V31 Q34.4 28.4 37 28.4 H47 Q49.6 28.4 49.6 31 V40.6 Z" fill="#141518"/>
+    <path d="M35.6 39.6 V31.4 Q35.6 29.6 37.4 29.6 H46.6 Q48.4 29.6 48.4 31.4 V39.6 Z" fill="url(#glass)"/>
+    <path d="M42 29.6 V39.6" stroke="#141518" stroke-width="0.7"/>
+    <path d="M36.6 38.4 L40.4 30.6 M43 38.4 L46.8 30.6 M38.4 38.6 L39.8 35.8" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.6" fill="none"/>
+    <path d="M33.6 27.4 H50.4" stroke="#5b616b" stroke-width="0.6" fill="none"/>
+    <rect x="25" y="23.6" width="26" height="1" fill="#454a52" stroke="none"/>
+    <rect x="33.6" y="43.8" width="16.8" height="16.6" rx="1" fill="none" stroke="#f3c7a0" stroke-width="0.3"/>
+    <rect x="34.6" y="46" width="14.8" height="6.4" rx="1.2" fill="url(#brass)" stroke-width="0.4"/>
+    <rect x="35.3" y="46.7" width="13.4" height="5" rx="0.8" fill="#2a1d10" stroke="none"/>
+    <text x="42" y="50.6" font-family="Arial, Helvetica, sans-serif" font-size="3.6" font-weight="700" fill="#f6df9c" text-anchor="middle" stroke="none">423.01</text>
+    <g fill="#5b616b" stroke="none">
+      <circle cx="51.4" cy="27" r="0.45"/><circle cx="51.4" cy="31" r="0.45"/><circle cx="51.4" cy="35" r="0.45"/><circle cx="51.4" cy="39" r="0.45"/><circle cx="51.4" cy="43" r="0.45"/><circle cx="51.4" cy="47" r="0.45"/><circle cx="51.4" cy="51" r="0.45"/><circle cx="51.4" cy="55" r="0.45"/><circle cx="51.4" cy="59" r="0.45"/>
+      <circle cx="33" cy="62" r="0.45"/><circle cx="36.4" cy="62" r="0.45"/><circle cx="39.8" cy="62" r="0.45"/><circle cx="43.2" cy="62" r="0.45"/><circle cx="46.6" cy="62" r="0.45"/><circle cx="50" cy="62" r="0.45"/>
+    </g>
+    <!-- Roof with overhang, rain strip and ventilator. -->
+    <path d="M22.4 25 H52.6 V26.4 H22.4 Z" fill="#000000" fill-opacity="0.35" stroke="none"/>
+    <path d="M19 24.6 Q36 16.4 56 24.6 L56 26 Q36 18 19 26 Z" fill="#2c2f35"/>
+    <path d="M19.6 25 Q36 17.6 55.4 25" stroke="#727a84" stroke-width="0.4" fill="none"/>
+    <path d="M24 22.6 Q36 18.2 50 22.2" stroke="#1a1c20" stroke-width="0.5" fill="none"/>
+    <rect x="34" y="18.4" width="6.4" height="2.4" rx="0.6" fill="#2a2d33"/>
+    <path d="M34.6 19.2 H39.8" stroke="#6a707a" stroke-width="0.3" fill="none"/>
+
+    <!-- Side tank: lining, rivets, filler and water-level highlight. -->
+    <path d="M52 63 V42.6 Q52 40 54.6 40 H108 Q111 40 111 43 V63 Z" fill="url(#panel)"/>
+    <rect x="52.4" y="38.4" width="58.4" height="1.6" fill="#000000" fill-opacity="0.35" stroke="none"/>
+    <path d="M52.8 41.2 H110.2" stroke="#6a707a" stroke-width="0.5" fill="none"/>
+    <g fill="#5b616b" stroke="none">
+      <circle cx="55" cy="43.4" r="0.45"/><circle cx="61" cy="43.4" r="0.45"/><circle cx="67" cy="43.4" r="0.45"/><circle cx="73" cy="43.4" r="0.45"/><circle cx="79" cy="43.4" r="0.45"/><circle cx="85" cy="43.4" r="0.45"/><circle cx="91" cy="43.4" r="0.45"/><circle cx="97" cy="43.4" r="0.45"/><circle cx="103" cy="43.4" r="0.45"/><circle cx="109" cy="43.4" r="0.45"/>
+      <circle cx="55" cy="60.4" r="0.45"/><circle cx="61" cy="60.4" r="0.45"/><circle cx="67" cy="60.4" r="0.45"/><circle cx="73" cy="60.4" r="0.45"/><circle cx="79" cy="60.4" r="0.45"/><circle cx="85" cy="60.4" r="0.45"/><circle cx="91" cy="60.4" r="0.45"/><circle cx="97" cy="60.4" r="0.45"/><circle cx="103" cy="60.4" r="0.45"/><circle cx="109" cy="60.4" r="0.45"/>
+      <circle cx="55" cy="51.9" r="0.45"/><circle cx="109" cy="51.9" r="0.45"/>
+    </g>
+    <rect x="56" y="45.6" width="50.4" height="12.4" rx="1.2" fill="none" stroke="#c43a35" stroke-width="0.7"/>
+    <rect x="57.4" y="47" width="47.6" height="9.6" rx="0.8" fill="none" stroke="#f3c7a0" stroke-width="0.3"/>
+    <path d="M57.4 47.6 H105" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2" fill="none"/>
+    <rect x="100.6" y="37.4" width="7.2" height="2.8" rx="1" fill="#2a2d33"/>
+    <path d="M101.4 38.2 H107" stroke="#6a707a" stroke-width="0.3" fill="none"/>
+    <!-- Reach rod to the reversing gear, on brackets. -->
+    <path d="M52 61.8 H110.6" stroke="url(#steel)" stroke-width="0.7" fill="none"/>
+    <path d="M70 61.4 V63 M92 61.4 V63" stroke="#3a3d44" stroke-width="0.6" fill="none"/>
+
+    <!-- Westinghouse air pump between the tank and the smokebox. -->
+    <path d="M114.6 40 V43" stroke="#26282c" stroke-width="1" fill="none"/>
+    <rect x="111.8" y="43" width="5.8" height="8.4" rx="1" fill="url(#pump)"/>
+    <rect x="112.2" y="52.2" width="5" height="9.2" rx="1" fill="url(#pump)"/>
+    <rect x="111.4" y="51" width="6.6" height="1.6" rx="0.4" fill="url(#brass)" stroke-width="0.35"/>
+    <rect x="111.4" y="42.4" width="6.6" height="1.4" rx="0.4" fill="url(#brass)" stroke-width="0.35"/>
+    <path d="M112.4 47 H117 M112.8 56.6 H116.6" stroke="#5b616b" stroke-width="0.35" fill="none"/>
+    <path d="M114.7 61.4 V63" stroke="#26282c" stroke-width="1.2" fill="none"/>
+
+    <!-- Boiler handrail on stanchions. -->
+    <path d="M56 33.4 H140" stroke="url(#steel)" stroke-width="0.8" fill="none"/>
+    <g fill="#c3c8cf" stroke-width="0.3">
+      <circle cx="60" cy="33.4" r="0.8"/><circle cx="80" cy="33.4" r="0.8"/><circle cx="100" cy="33.4" r="0.8"/><circle cx="121" cy="33.4" r="0.8"/><circle cx="138" cy="33.4" r="0.8"/>
+    </g>
+
+    <!-- Smokebox on its saddle, outside steam pipe, door with straps. -->
+    <rect x="119" y="59.2" width="22.4" height="4" fill="#1b1d21"/>
+    <rect x="118" y="25.6" width="24.4" height="34" rx="1.4" fill="url(#smokebox)"/>
+    <g fill="#4a4f57" stroke="none">
+      <circle cx="119.6" cy="28.6" r="0.4"/><circle cx="119.6" cy="32.4" r="0.4"/><circle cx="119.6" cy="36.2" r="0.4"/><circle cx="119.6" cy="40" r="0.4"/><circle cx="119.6" cy="43.8" r="0.4"/><circle cx="119.6" cy="47.6" r="0.4"/><circle cx="119.6" cy="51.4" r="0.4"/><circle cx="119.6" cy="55.2" r="0.4"/>
+    </g>
+    <path d="M123.8 50 Q124.4 60.4 131 63.4" stroke="#16171a" stroke-width="3" fill="none"/>
+    <path d="M122.9 50.6 Q123.4 58.6 127.4 62" stroke="#5b616b" stroke-width="0.5" fill="none"/>
+    <path d="M142 27.6 Q146.4 28.4 146.4 42.6 Q146.4 56.8 142 57.6 Z" fill="url(#smokebox)"/>
+    <path d="M142.2 35.4 H146 M142.2 49.8 H146" stroke="#3f434a" stroke-width="1.1" fill="none"/>
+    <circle cx="145.3" cy="42.6" r="1" fill="url(#steel)" stroke-width="0.35"/>
+    <path d="M143.4 30.6 Q145.8 42.6 143.4 54.6" stroke="url(#steel)" stroke-width="0.55" fill="none"/>
+
+    <!-- Lamp conduit from the generator, behind the chimney. -->
+    <path d="M117.8 25 Q128 24.4 139.6 23.4" stroke="#26282c" stroke-width="0.5" fill="none"/>
+    <!-- Chimney with flared cap and base flange. -->
+    <path d="M126 26 L126.6 10.6 H134.4 L135 26 Z" fill="url(#chimney)"/>
+    <path d="M123.2 10.8 Q124 6.2 126.4 6 H134.6 Q137 6.2 137.8 10.8 Z" fill="url(#chimney)"/>
+    <path d="M124.4 7.6 H136.6" stroke="#6a707a" stroke-width="0.45" fill="none"/>
+    <path d="M123.4 26.4 Q130.5 22.4 137.6 26.4 Z" fill="#1d1f23"/>
+    <path d="M128.4 11.4 V24.4" stroke="#ffffff" stroke-opacity="0.18" stroke-width="0.8" fill="none"/>
+
+    <!-- Electric lamp on the smokebox. -->
+    <rect x="139.4" y="18.4" width="5.6" height="7" rx="1.2" fill="#2a2d33"/>
+    <circle cx="143.2" cy="21.9" r="2" fill="url(#lamp)"/>
+    <path d="M140 18.4 Q141.4 16.8 143 18.4" stroke="#2a2d33" stroke-width="0.6" fill="none"/>
+
+    <!-- Front buffer beam: buffer, coupling, brake hose and lamp. -->
+    <rect x="144" y="63.6" width="9" height="16" rx="1" fill="url(#red)"/>
+    <path d="M144.8 65 H152.2" stroke="#ea8b7e" stroke-width="0.35" fill="none"/>
+    <rect x="150.4" y="68.6" width="4" height="3.2" fill="url(#steel)"/>
+    <rect x="153.9" y="66.4" width="1.9" height="7.6" rx="0.8" fill="#dfe3e8"/>
+    <path d="M153 76.2 H153.4 Q154.8 76.2 154.8 77.8 V79 H153.4" fill="none" stroke-width="1"/>
+    <path d="M147.6 79.6 Q147.2 85 150.2 87.4" stroke="#16171a" stroke-width="1.6" fill="none"/>
+    <rect x="149.2" y="86.6" width="2.6" height="1.8" rx="0.4" fill="url(#steel)" stroke-width="0.3"/>
+    <rect x="145.6" y="56.4" width="4.4" height="6.6" rx="1" fill="#2a2d33"/>
+    <circle cx="148" cy="59.7" r="1.7" fill="url(#lamp)"/>
+  </g>
+</svg>

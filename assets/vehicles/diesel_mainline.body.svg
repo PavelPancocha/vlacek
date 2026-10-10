@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="196" height="86" viewBox="0 0 196 86">
+  <!-- Velká naftová lokomotiva (diesel_mainline): body behind the bogies.
+       Two cabs, engine room with louvres, fuel tank. Vehicle units, rail
+       top at y = 86, faces right; buffers 30 u above the rail. -->
+  <defs>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d64541"/>
+      <stop offset="0.55" stop-color="#b3242b"/>
+      <stop offset="1" stop-color="#7a151b"/>
+    </linearGradient>
+    <linearGradient id="cream" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbf6ea"/>
+      <stop offset="0.5" stop-color="#efe5cf"/>
+      <stop offset="1" stop-color="#d9ccb0"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a3aab3"/>
+      <stop offset="0.5" stop-color="#7f8790"/>
+      <stop offset="1" stop-color="#565c64"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4f57"/>
+      <stop offset="0.4" stop-color="#2c2f35"/>
+      <stop offset="1" stop-color="#16181b"/>
+    </linearGradient>
+    <linearGradient id="tank" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5d636c"/>
+      <stop offset="0.3" stop-color="#3a3e45"/>
+      <stop offset="1" stop-color="#17191c"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf5fb"/>
+      <stop offset="0.45" stop-color="#a9cde3"/>
+      <stop offset="1" stop-color="#5f8fae"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d3d8de"/>
+      <stop offset="0.5" stop-color="#8b9199"/>
+      <stop offset="1" stop-color="#555a62"/>
+    </linearGradient>
+    <linearGradient id="louvre" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cfc4aa"/>
+      <stop offset="1" stop-color="#a99d82"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="0.4" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#fffbe6"/>
+      <stop offset="0.6" stop-color="#f5d97a"/>
+      <stop offset="1" stop-color="#b88a2a"/>
+    </radialGradient>
+    <radialGradient id="tail" cx="0.4" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#f1948a"/>
+      <stop offset="1" stop-color="#922b21"/>
+    </radialGradient>
+  </defs>
+
+  <g stroke="#111214" stroke-width="0.6" stroke-linejoin="round">
+    <!-- Fuel tank, battery box and pipes between the bogies. -->
+    <rect x="64" y="52" width="46" height="12" rx="3" fill="url(#tank)"/>
+    <path d="M66 54.2 H108" stroke="#ffffff" stroke-opacity="0.3" stroke-width="0.5" fill="none"/>
+    <path d="M76 52 V64 M88 52 V64 M100 52 V64" stroke="#16181b" stroke-width="0.9" fill="none"/>
+    <rect x="104.6" y="55" width="3" height="5.4" rx="0.6" fill="#d9ccb0" stroke-width="0.35"/>
+    <path d="M106.1 59.4 V56.6" stroke="#b3242b" stroke-width="0.7"/>
+    <rect x="68" y="50.6" width="4" height="2" rx="0.6" fill="url(#steel)" stroke-width="0.35"/>
+    <rect x="114" y="52" width="18" height="10" rx="1" fill="url(#dark)"/>
+    <path d="M116 55 H130 M116 57 H130 M116 59 H130" stroke="#5d636c" stroke-width="0.5" fill="none"/>
+    <path d="M62 60.6 H66 M110 60.6 H114 M132 58 H136" stroke="#3a3d44" stroke-width="0.8" fill="none"/>
+
+    <!-- Buffer beams, buffers, couplings, hoses and pilots. -->
+    <rect x="4" y="48" width="7" height="16" rx="0.8" fill="url(#red)"/>
+    <rect x="185" y="48" width="7" height="16" rx="0.8" fill="url(#red)"/>
+    <path d="M4.6 49.4 H10.4 M185.6 49.4 H191.4" stroke="#ea8b7e" stroke-width="0.35" fill="none"/>
+    <rect x="1.6" y="54.4" width="2.6" height="3.2" fill="url(#steel)"/>
+    <rect x="0.2" y="52.2" width="1.9" height="7.6" rx="0.8" fill="#dfe3e8"/>
+    <rect x="191.8" y="54.4" width="2.6" height="3.2" fill="url(#steel)"/>
+    <rect x="193.9" y="52.2" width="1.9" height="7.6" rx="0.8" fill="#dfe3e8"/>
+    <path d="M4 61 H2.6 Q1.3 61 1.3 62.6 V63.6 H2.6 M192 61 H193.4 Q194.7 61 194.7 62.6 V63.6 H193.4" fill="none" stroke-width="0.9"/>
+    <path d="M8.6 63.4 Q9.2 68.6 6.4 70.6 M187.4 63.4 Q186.8 68.6 189.6 70.6" stroke="#16171a" stroke-width="1.5" fill="none"/>
+    <path d="M4 64 H12 V77.6 H6.4 Z M192 64 H184 V77.6 H189.6 Z" fill="url(#dark)"/>
+    <path d="M5.4 66 L6.9 76.4 M190.6 66 L189.1 76.4" stroke="#6a707a" stroke-width="0.4" fill="none"/>
+    <!-- Lower head and tail lamps on the end faces. -->
+    <rect x="189.6" y="38.6" width="2.2" height="4.4" rx="0.8" fill="#2a2d33"/>
+    <circle cx="191.2" cy="40.8" r="1.3" fill="url(#lamp)" stroke-width="0.35"/>
+    <rect x="4.2" y="38.6" width="2.2" height="4.4" rx="0.8" fill="#2a2d33"/>
+    <circle cx="4.8" cy="40.8" r="1.3" fill="url(#tail)" stroke-width="0.35"/>
+
+    <!-- Underframe (solebar). -->
+    <rect x="7" y="46.6" width="182" height="6" fill="url(#dark)"/>
+    <path d="M7.6 47.4 H188.4" stroke="#6a707a" stroke-width="0.4" fill="none"/>
+
+    <!-- Body: red lower half, cream upper half, sloped cab ends. -->
+    <path d="M6 47 V28 L10.6 16.4 Q11.6 14.6 13.6 14.6 H182.4 Q184.4 14.6 185.4 16.4 L190 28 V47 Z" fill="url(#red)"/>
+    <path d="M6 31 V28 L10.6 16.4 Q11.6 14.6 13.6 14.6 H182.4 Q184.4 14.6 185.4 16.4 L190 28 V31 Z" fill="url(#cream)"/>
+    <path d="M6.3 31 H189.7" stroke="#ffffff" stroke-width="0.6" fill="none"/>
+    <path d="M6.3 31.8 H189.7" stroke="#5a1015" stroke-width="0.35" fill="none"/>
+    <!-- Cream speed stripe ending in chevrons on both noses. -->
+    <path d="M14 39.4 H182 L188.6 35.2 M14 39.4 L7.4 35.2" stroke="#efe5cf" stroke-width="1.2" fill="none"/>
+    <path d="M14 41.4 H182 L189.6 36.8 M14 41.4 L6.4 36.8" stroke="#efe5cf" stroke-width="0.5" fill="none"/>
+    <!-- Panel seams. -->
+    <path d="M36 15 V46.6 M64 15 V46.6 M132 15 V46.6 M160 15 V46.6" stroke="#000000" stroke-opacity="0.22" stroke-width="0.4" fill="none"/>
+
+    <!-- Roof with gutter, exhaust, fan housings, horns, lamps, aerial. -->
+    <path d="M13 14.6 Q14 11.4 17 11.2 H179 Q182 11.4 183 14.6 Z" fill="url(#roof)"/>
+    <path d="M13.4 14 H182.6" stroke="#3f444b" stroke-width="0.4" fill="none"/>
+    <path d="M18 12 H178" stroke="#ffffff" stroke-opacity="0.35" stroke-width="0.4" fill="none"/>
+    <rect x="96" y="6.4" width="6" height="5" rx="0.6" fill="url(#dark)"/>
+    <rect x="95.2" y="5.6" width="7.6" height="1.4" rx="0.4" fill="#2a2d33"/>
+    <path d="M112 11.2 Q113 7.6 117 7.4 H129 Q133 7.6 134 11.2 Z M138 11.2 Q139 7.6 143 7.4 H155 Q159 7.6 160 11.2 Z" fill="url(#roof)"/>
+    <path d="M117 8.4 V11 M120 8 V11 M123 8 V11 M126 8 V11 M129 8.4 V11 M143 8.4 V11 M146 8 V11 M149 8 V11 M152 8 V11 M155 8.4 V11" stroke="#3f444b" stroke-width="0.45" fill="none"/>
+    <path d="M168 11.2 V9.4 H172.6 L174.6 8.2 V11.2 Z M28 11.2 V9.4 H23.4 L21.4 8.2 V11.2 Z" fill="url(#steel)" stroke-width="0.4"/>
+    <path d="M40 11.2 V5.4" stroke="#2a2d33" stroke-width="0.5" fill="none"/>
+    <circle cx="40" cy="5.2" r="0.7" fill="#2a2d33" stroke="none"/>
+    <path d="M176 11.2 V8.8 Q176 8 176.8 8 H181.2 Q182.4 8 182.4 9.6 V11.2 Z" fill="url(#dark)"/>
+    <circle cx="181.4" cy="9.6" r="1.1" fill="url(#lamp)" stroke-width="0.3"/>
+    <path d="M20 11.2 V8.8 Q20 8 19.2 8 H14.8 Q13.6 8 13.6 9.6 V11.2 Z" fill="url(#dark)"/>
+    <circle cx="14.6" cy="9.6" r="1.1" fill="#9aa0a8" stroke-width="0.3"/>
+
+    <!-- Front cab: windscreen on the nose, side window, door. -->
+    <path d="M183.6 16.8 L185.4 16.8 L189.6 27.2 L187.8 27.2 Z" fill="#1b2a35"/>
+    <path d="M184.2 17.4 L188.4 26.6" stroke="#9fc6dd" stroke-width="0.5" fill="none"/>
+    <path d="M172 27.4 V20 Q172 18.4 173.6 18.4 H181.4 Q183.4 18.4 184 20.2 L185.8 25 Q186.4 27.4 184 27.4 Z" fill="#17191c"/>
+    <path d="M173.2 26.4 V20.4 Q173.2 19.4 174.2 19.4 H181 Q182.6 19.4 183.1 20.8 L184.6 25 Q185 26.4 183.6 26.4 Z" fill="url(#glass)" stroke="none"/>
+    <path d="M175 25.4 L178 20.2 M178.6 25.4 L181.4 20.6" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.5" fill="none"/>
+    <path d="M163 46 V18.4 H170.4 V46 Z" fill="none" stroke="#5a1015" stroke-width="0.5"/>
+    <path d="M163 18.4 H170.4" stroke="#8a7e66" stroke-width="0.5"/>
+    <rect x="164.2" y="19.8" width="5" height="7.6" rx="0.8" fill="url(#glass)" stroke-width="0.45"/>
+    <path d="M165 25.6 L167.4 21.2" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.4"/>
+    <rect x="168.8" y="34" width="1" height="2.6" rx="0.4" fill="url(#steel)" stroke-width="0.25"/>
+    <path d="M161.6 30 V45 M171.8 30 V45" stroke="url(#steel)" stroke-width="0.8" fill="none"/>
+    <rect x="173.4" y="34" width="10" height="3.4" rx="0.6" fill="#efe5cf" stroke-width="0.35"/>
+    <text x="178.4" y="36.6" font-family="Arial, Helvetica, sans-serif" font-size="2.6" font-weight="700" fill="#5a1015" text-anchor="middle" stroke="none">ND 196</text>
+
+    <!-- Rear cab, mirrored. -->
+    <path d="M12.4 16.8 L10.6 16.8 L6.4 27.2 L8.2 27.2 Z" fill="#1b2a35"/>
+    <path d="M24 27.4 V20 Q24 18.4 22.4 18.4 H14.6 Q12.6 18.4 12 20.2 L10.2 25 Q9.6 27.4 12 27.4 Z" fill="#17191c"/>
+    <path d="M22.8 26.4 V20.4 Q22.8 19.4 21.8 19.4 H15 Q13.4 19.4 12.9 20.8 L11.4 25 Q11 26.4 12.4 26.4 Z" fill="url(#glass)" stroke="none"/>
+    <path d="M14.4 25.4 L17.4 20.2 M18 25.4 L20.8 20.6" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.5" fill="none"/>
+    <path d="M33 46 V18.4 H25.6 V46 Z" fill="none" stroke="#5a1015" stroke-width="0.5"/>
+    <path d="M25.6 18.4 H33" stroke="#8a7e66" stroke-width="0.5"/>
+    <rect x="26.8" y="19.8" width="5" height="7.6" rx="0.8" fill="url(#glass)" stroke-width="0.45"/>
+    <path d="M27.6 25.6 L30 21.2" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.4"/>
+    <rect x="26.2" y="34" width="1" height="2.6" rx="0.4" fill="url(#steel)" stroke-width="0.25"/>
+    <path d="M24.2 30 V45 M34.4 30 V45" stroke="url(#steel)" stroke-width="0.8" fill="none"/>
+    <rect x="12.6" y="34" width="10" height="3.4" rx="0.6" fill="#efe5cf" stroke-width="0.35"/>
+    <text x="17.6" y="36.6" font-family="Arial, Helvetica, sans-serif" font-size="2.6" font-weight="700" fill="#5a1015" text-anchor="middle" stroke="none">ND 196</text>
+
+    <!-- Engine room: louvres, windows and a side door. -->
+    <g stroke-width="0.45">
+      <rect x="39" y="17.4" width="22" height="11.6" rx="0.6" fill="url(#louvre)"/>
+      <rect x="135" y="17.4" width="22" height="11.6" rx="0.6" fill="url(#louvre)"/>
+      <rect x="111" y="17.4" width="18" height="11.6" rx="0.6" fill="url(#louvre)"/>
+    </g>
+    <path d="M40 19 H60 M40 20.8 H60 M40 22.6 H60 M40 24.4 H60 M40 26.2 H60 M40 28 H60 M136 19 H156 M136 20.8 H156 M136 22.6 H156 M136 24.4 H156 M136 26.2 H156 M136 28 H156 M112 19 H128 M112 20.8 H128 M112 22.6 H128 M112 24.4 H128 M112 26.2 H128 M112 28 H128" stroke="#6e6452" stroke-width="0.55" fill="none"/>
+    <path d="M40 19.6 H60 M40 21.4 H60 M40 23.2 H60 M40 25 H60 M40 26.8 H60 M136 19.6 H156 M136 21.4 H156 M136 23.2 H156 M136 25 H156 M136 26.8 H156 M112 19.6 H128 M112 21.4 H128 M112 23.2 H128 M112 25 H128 M112 26.8 H128" stroke="#ffffff" stroke-opacity="0.5" stroke-width="0.3" fill="none"/>
+    <g stroke-width="0.45">
+      <rect x="68" y="18.6" width="8" height="8" rx="1.2" fill="#17191c"/>
+      <rect x="69" y="19.6" width="6" height="6" rx="0.8" fill="url(#glass)" stroke="none"/>
+      <rect x="100" y="18.6" width="8" height="8" rx="1.2" fill="#17191c"/>
+      <rect x="101" y="19.6" width="6" height="6" rx="0.8" fill="url(#glass)" stroke="none"/>
+    </g>
+    <path d="M69.6 24.6 L72.6 20.4 M101.6 24.6 L104.6 20.4" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.4" fill="none"/>
+    <path d="M81 46 V16.4 H95 V46" fill="none" stroke="#5a1015" stroke-width="0.5"/>
+    <path d="M81 16.4 H95" stroke="#8a7e66" stroke-width="0.5"/>
+    <rect x="84" y="18.4" width="8" height="5" rx="0.8" fill="url(#glass)" stroke-width="0.45"/>
+    <rect x="92.2" y="33.4" width="1" height="3" rx="0.4" fill="url(#steel)" stroke-width="0.25"/>
+    <path d="M79.6 32 V44.6 M96.4 32 V44.6" stroke="url(#steel)" stroke-width="0.7" fill="none"/>
+    <!-- Body highlight along the top of the red half. -->
+    <path d="M7 33 H189" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1.2" fill="none"/>
+  </g>
+</svg>

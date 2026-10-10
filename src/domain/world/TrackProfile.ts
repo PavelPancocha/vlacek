@@ -2,125 +2,174 @@ import { gameConfig } from '../../config/gameConfig.ts';
 import { unitRandom } from './Hash.ts';
 
 /**
- * Provisional generator "v0" for version 0.1: the doc 04 §4 boundary heights
- * and profiles without biomes or feature reservations. The V1 generator
- * (version 1) will place stations/crossings on flat profiles, so v0 journeys
- * cannot silently continue under it (see D-005). Changing any geometry input
- * here (chunk width, grade, height scale, key names) requires a new version.
+ * Track generator v1 (doc 14 §6, D-009). The track is planned in blocks of
+ * `blockChunks` chunks: flats and long constant grades in irregular lengths,
+ * joined by short parabolic transitions (vertical curves), so the grade
+ * changes only briefly and never with a kink. Every block starts and ends
+ * flat at a seeded height, so any chunk is computed from its own block
+ * alone, also far from the start. Version 0 (smootherstep waves of 0.1)
+ * journeys are not regenerated under v1 (D-005).
  */
-export const TEST_TRACK_GENERATOR_VERSION = 0;
+export const TRACK_GENERATOR_VERSION = 1;
 
+/** Point of the straight-line plan; x local to its block or chunk. */
+export interface ProfileVertex {
+  xU: number;
+  yU: number;
+}
+
+/** A chunk's view of its block plan, x local to the chunk. */
 export interface TrackProfile {
-  kind: 'smooth' | 'hill' | 'dip' | 'flat-middle';
-  startHeightU: number;
-  endHeightU: number;
-  middleHeightU?: number;
+  vertices: readonly ProfileVertex[];
+  transitionU: number;
 }
 
-const { chunkWidthU, maxTrackGrade, boundaryHeightScale } = gameConfig.world;
-/** Maximum of q'(t) for the smootherstep below. */
-const MAX_SMOOTHSTEP_SLOPE = 1.875;
+const { chunkWidthU } = gameConfig.world;
+const plan = gameConfig.world.profile;
+const BLOCK_U = plan.blockChunks * chunkWidthU;
 
-function r(seed: number, k: number): number {
+function random(seed: number, key: string, ...parts: number[]): number {
+  return unitRandom(seed, TRACK_GENERATOR_VERSION, key, ...parts);
+}
+
+/** Seeded length in [min, max], a multiple of the length step. */
+function length(
+  seed: number,
+  key: string,
+  b: number,
+  i: number,
+  min: number,
+  max: number,
+): number {
+  const steps = Math.floor((max - min) / plan.lengthStepU);
   return (
-    2 * unitRandom(seed, TEST_TRACK_GENERATOR_VERSION, 'terrain-boundary', k) -
-    1
+    min + Math.floor(random(seed, key, b, i) * (steps + 1)) * plan.lengthStepU
   );
 }
 
-/** Height of the shared boundary between chunks k-1 and k, in [-32, 32] u. */
-export function boundaryHeightU(seed: number, k: number): number {
-  return (
-    boundaryHeightScale * (r(seed, k - 1) + 2 * r(seed, k) + r(seed, k + 1))
-  );
+/** Height of the boundary where block `b` starts. */
+function blockStartHeightU(seed: number, b: number): number {
+  const roll = random(seed, 'block-height', b);
+  return Math.round((2 * roll - 1) * plan.blockHeightRangeU);
 }
 
-/** Largest rise of one smootherstep ramp of `lengthU` within the grade limit. */
-function maxRiseU(lengthU: number): number {
-  return (maxTrackGrade * lengthU) / MAX_SMOOTHSTEP_SLOPE;
+/** Shortest slope reaching a height difference at the steepest grade. */
+function finalSlopeU(riseU: number): number {
+  if (riseU === 0) return 0;
+  const steps = Math.ceil(
+    Math.max(plan.slopeMinU, Math.abs(riseU) / plan.gradeRangeMax) /
+      plan.lengthStepU,
+  );
+  return steps * plan.lengthStepU;
+}
+
+/**
+ * Vertices of block `b` from x = 0 to x = blockChunks × chunkWidthU:
+ * flat, slope, flat, slope, …, flat. Random slopes are taken only while the
+ * block can still reach the next block's height with one final slope.
+ */
+export function blockPlan(seed: number, b: number): ProfileVertex[] {
+  const target = blockStartHeightU(seed, b + 1);
+  let y = blockStartHeightU(seed, b);
+  let x = length(seed, 'flat', b, 0, plan.flatMinU, plan.flatMaxU);
+  const vertices: ProfileVertex[] = [
+    { xU: 0, yU: y },
+    { xU: x, yU: y },
+  ];
+  for (let i = 1; ; i++) {
+    const slopeU = length(seed, 'slope', b, i, plan.slopeMinU, plan.slopeMaxU);
+    const grade =
+      plan.gradeRangeMin +
+      (plan.gradeRangeMax - plan.gradeRangeMin) * random(seed, 'grade', b, i);
+    let up = random(seed, 'direction', b, i) < 0.5;
+    // Steer away from the height bounds instead of clipping the slope.
+    if (y + grade * slopeU > plan.maxHeightU) up = false;
+    if (y - grade * slopeU < -plan.maxHeightU) up = true;
+    const next = y + (up ? grade : -grade) * slopeU;
+    const flatU = length(seed, 'flat', b, i, plan.flatMinU, plan.flatMaxU);
+    const needed = slopeU + flatU + finalSlopeU(target - next) + plan.flatMinU;
+    if (Math.abs(next) > plan.maxHeightU || x + needed > BLOCK_U) break;
+    x += slopeU;
+    y = next;
+    vertices.push({ xU: x, yU: y });
+    x += flatU;
+    vertices.push({ xU: x, yU: y });
+  }
+  const finalU = finalSlopeU(target - y);
+  if (finalU > 0) {
+    // The last slope ends one minimal flat before the block boundary.
+    x = BLOCK_U - plan.flatMinU - finalU;
+    vertices[vertices.length - 1] = { xU: x, yU: y };
+    vertices.push({ xU: x + finalU, yU: target });
+  }
+  vertices.push({ xU: BLOCK_U, yU: target });
+  return vertices;
 }
 
 export function generateTrackProfile(seed: number, k: number): TrackProfile {
-  const startHeightU = boundaryHeightU(seed, k);
-  const endHeightU = boundaryHeightU(seed, k + 1);
-  const kindRoll = unitRandom(
-    seed,
-    TEST_TRACK_GENERATOR_VERSION,
-    'profile-kind',
-    k,
-  );
-  const middleRoll = unitRandom(
-    seed,
-    TEST_TRACK_GENERATOR_VERSION,
-    'profile-middle',
-    k,
-  );
-  const low = Math.min(startHeightU, endHeightU);
-  const high = Math.max(startHeightU, endHeightU);
-  const cap = maxRiseU(chunkWidthU / 2);
-  if (kindRoll < 0.4 || high - low > cap) {
-    return { kind: 'smooth', startHeightU, endHeightU };
-  }
-  if (kindRoll < 0.65) {
-    // Feasible interval computed analytically: above both ends, within grade.
-    const middleHeightU = high + (low + cap - high) * middleRoll;
-    return { kind: 'hill', startHeightU, endHeightU, middleHeightU };
-  }
-  if (kindRoll < 0.9) {
-    const middleHeightU = low - (low - (high - cap)) * middleRoll;
-    return { kind: 'dip', startHeightU, endHeightU, middleHeightU };
-  }
+  const b = Math.floor(k / plan.blockChunks);
+  const offsetU = (k - b * plan.blockChunks) * chunkWidthU;
   return {
-    kind: 'flat-middle',
-    startHeightU,
-    endHeightU,
-    middleHeightU: (startHeightU + endHeightU) / 2,
+    vertices: blockPlan(seed, b).map((vertex) => ({
+      xU: vertex.xU - offsetU,
+      yU: vertex.yU,
+    })),
+    transitionU: plan.transitionU,
   };
 }
 
-const smoothstep = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
-const smoothstepSlope = (t: number) => 30 * t * t * (t - 1) * (t - 1);
-
-interface Ramp {
-  x0: number;
-  x1: number;
-  y0: number;
-  y1: number;
+/** Straight-line segment around `x` (first or last one beyond the ends). */
+function segmentIndex(vertices: readonly ProfileVertex[], x: number): number {
+  let i = 0;
+  while (i < vertices.length - 2 && x >= (vertices[i + 1]?.xU ?? 0)) i++;
+  return i;
 }
 
-function rampAt(profile: TrackProfile, localX: number): Ramp {
-  const w = chunkWidthU;
-  const m = profile.middleHeightU ?? profile.startHeightU;
-  switch (profile.kind) {
-    case 'smooth':
-      return { x0: 0, x1: w, y0: profile.startHeightU, y1: profile.endHeightU };
-    case 'hill':
-    case 'dip':
-      return localX < w / 2
-        ? { x0: 0, x1: w / 2, y0: profile.startHeightU, y1: m }
-        : { x0: w / 2, x1: w, y0: m, y1: profile.endHeightU };
-    case 'flat-middle':
-      if (localX < w / 4)
-        return { x0: 0, x1: w / 4, y0: profile.startHeightU, y1: m };
-      if (localX < (3 * w) / 4)
-        return { x0: w / 4, x1: (3 * w) / 4, y0: m, y1: m };
-      return { x0: (3 * w) / 4, x1: w, y0: m, y1: profile.endHeightU };
+function gradeOf(vertices: readonly ProfileVertex[], i: number): number {
+  const a = vertices[i];
+  const b = vertices[i + 1];
+  if (!a || !b) return 0;
+  return (b.yU - a.yU) / (b.xU - a.xU);
+}
+
+/**
+ * Height and grade at `x`: the straight plan, except within half a
+ * transition of an inner vertex, where a parabola changes the grade linearly.
+ */
+function evaluate(
+  profile: TrackProfile,
+  x: number,
+): { heightU: number; grade: number } {
+  const { vertices, transitionU } = profile;
+  const half = transitionU / 2;
+  const i = segmentIndex(vertices, x);
+  for (const j of [i, i + 1]) {
+    const vertex = vertices[j];
+    if (!vertex || j === 0 || j === vertices.length - 1) continue;
+    const s = x - (vertex.xU - half);
+    if (s < 0 || s > transitionU) continue;
+    const before = gradeOf(vertices, j - 1);
+    const after = gradeOf(vertices, j);
+    return {
+      heightU:
+        vertex.yU -
+        before * half +
+        before * s +
+        ((after - before) * s * s) / (2 * transitionU),
+      grade: before + ((after - before) * s) / transitionU,
+    };
   }
+  const start = vertices[i] ?? { xU: 0, yU: 0 };
+  const grade = gradeOf(vertices, i);
+  return { heightU: start.yU + grade * (x - start.xU), grade };
 }
 
 /** Track height at `localX` ∈ [0, chunkWidthU], world y up. */
 export function profileHeightU(profile: TrackProfile, localX: number): number {
-  const ramp = rampAt(profile, localX);
-  const t = (localX - ramp.x0) / (ramp.x1 - ramp.x0);
-  if (t <= 0) return ramp.y0;
-  if (t >= 1) return ramp.y1;
-  return ramp.y0 + (ramp.y1 - ramp.y0) * smoothstep(t);
+  return evaluate(profile, localX).heightU;
 }
 
-/** Track grade dy/dx at `localX`; zero at every chunk boundary. */
+/** Track grade dy/dx at `localX`. */
 export function profileGrade(profile: TrackProfile, localX: number): number {
-  const ramp = rampAt(profile, localX);
-  const length = ramp.x1 - ramp.x0;
-  const t = Math.min(1, Math.max(0, (localX - ramp.x0) / length));
-  return ((ramp.y1 - ramp.y0) * smoothstepSlope(t)) / length;
+  return evaluate(profile, localX).grade;
 }

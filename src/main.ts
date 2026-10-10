@@ -7,6 +7,7 @@ import { browserStorage, randomSeed } from './platform/browserEnvironment.ts';
 import {
   debugEnabled,
   rendererPreference,
+  seedOverride,
 } from './platform/CapabilityProbe.ts';
 import { SaveRepository } from './platform/SaveRepository.ts';
 import { saveRules } from './platform/SaveValidation.ts';
@@ -20,6 +21,7 @@ if (app && gameRoot) {
     const configErrors = validateGameConfig(gameConfig);
     if (configErrors.length > 0)
       throw new Error(`Invalid config: ${configErrors.join(', ')}`);
+    const pinnedSeed = seedOverride(window.location.search);
     const session = new GameSession({
       config: gameConfig,
       catalog: { locomotives, wagons },
@@ -28,7 +30,7 @@ if (app && gameRoot) {
         saveRules(gameConfig, locomotives, wagons),
         gameConfig.save,
       ),
-      randomSeed,
+      randomSeed: pinnedSeed === undefined ? randomSeed : () => pinnedSeed,
       nowIso: () => new Date().toISOString(),
       buildId: __APP_BUILD_ID__,
     });

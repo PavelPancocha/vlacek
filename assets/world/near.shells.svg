@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="6" viewBox="0 0 14 6">
+  <!-- Mušle v písku. Foot centre (7, 6). -->
+  <defs>
+  </defs>
+  <path d="M1 6 Q4 0 7 6 Z" fill="#f8c8b0" stroke="#a0522d" stroke-width="0.3"/><path d="M2.4 6 L4 1.6 M4 6 L4 1.4 M5.6 6 L4 1.6" stroke="#a0522d" stroke-width="0.25"/>
+  <path d="M8 6 Q8 2 11 2 Q14 2 13 6 Z" fill="#f4f1ea" stroke="#8b7d6b" stroke-width="0.3"/>
+</svg>

@@ -1,5 +1,5 @@
 import { unitRandom } from './Hash.ts';
-import { TEST_TRACK_GENERATOR_VERSION } from './TrackProfile.ts';
+import { TRACK_GENERATOR_VERSION } from './TrackProfile.ts';
 
 /** Interactive placeholder object of generator v0 (one per chunk, M0). */
 export interface ChunkObject {
@@ -12,13 +12,13 @@ export interface ChunkObject {
 export function chunkObjects(seed: number, chunkIndex: number): ChunkObject[] {
   const roll = unitRandom(
     seed,
-    TEST_TRACK_GENERATOR_VERSION,
+    TRACK_GENERATOR_VERSION,
     'object-position',
     chunkIndex,
   );
   return [
     {
-      id: `g${TEST_TRACK_GENERATOR_VERSION}:chunk:${chunkIndex}:object:0`,
+      id: `g${TRACK_GENERATOR_VERSION}:chunk:${chunkIndex}:object:0`,
       chunkIndex,
       localXU: 128 + 768 * roll,
     },

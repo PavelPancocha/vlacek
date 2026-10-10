@@ -107,7 +107,7 @@ npm run test:e2e
 
 Instalace dalších referenčních browserů se doplní podle testovacího projektu. LAN HTTP je užitečné pro ovládání a výkon, nikoli automaticky pro service worker na tabletu. Produkční PWA testovat na HTTPS.
 
-Výše uvedené příkazy jsou požadavek na repozitář. Od verze 0.1 všechny existují; `npm run test:e2e` sám vytvoří build a `npm run measure:perf` měří jízdu se 100 vagonky. Přesný popis a omezení jsou ve [vývojovém návodu](../docs/development.md).
+Výše uvedené příkazy jsou požadavek na repozitář. Od verze 0.1 všechny existují; `npm run test:e2e` sám vytvoří build a `npm run measure:perf` měří jízdu s nejdelší povolenou soupravou. Přesný popis a omezení jsou ve [vývojovém návodu](../docs/development.md).
 
 ## 10. Definice hotové práce
 

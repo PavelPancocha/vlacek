@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="60" viewBox="0 0 160 60">
+  <!-- Mrak: cumulus with a flat, shaded base and sunlit tops. Centre bottom (80, 60). -->
+  <defs>
+    <linearGradient id="clouda-body" gradientUnits="userSpaceOnUse" x1="0" y1="-2.4" x2="0" y2="48">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#eef4f9"/>
+      <stop offset="1" stop-color="#bccfe0"/>
+    </linearGradient>
+    <linearGradient id="clouda-light" gradientUnits="userSpaceOnUse" x1="0" y1="-2.4" x2="0" y2="48">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="clouda-clip"><circle cx="27.28" cy="36.28" r="16.12"/><circle cx="50.22" cy="33.19" r="19.92"/><circle cx="71.29" cy="34.14" r="20.73"/><circle cx="87.4" cy="29.34" r="22.42"/><circle cx="110.05" cy="34.48" r="18.34"/><circle cx="127.05" cy="36.69" r="13.26"/><circle cx="53.06" cy="20.44" r="12.22"/><circle cx="76.86" cy="20.49" r="13.26"/><circle cx="105.21" cy="17.64" r="16.14"/><rect x="12.8" y="38.4" width="134.4" height="9.6" rx="4.8"/></clipPath>
+  </defs>
+  <g fill="#a9bfd3" fill-opacity="0.55" transform="translate(1.2 1.6)"><circle cx="27.28" cy="36.28" r="16.12"/><circle cx="50.22" cy="33.19" r="19.92"/><circle cx="71.29" cy="34.14" r="20.73"/><circle cx="87.4" cy="29.34" r="22.42"/><circle cx="110.05" cy="34.48" r="18.34"/><circle cx="127.05" cy="36.69" r="13.26"/><circle cx="53.06" cy="20.44" r="12.22"/><circle cx="76.86" cy="20.49" r="13.26"/><circle cx="105.21" cy="17.64" r="16.14"/><rect x="12.8" y="38.4" width="134.4" height="9.6" rx="4.8"/></g>
+  <g fill="url(#clouda-body)"><circle cx="27.28" cy="36.28" r="16.12"/><circle cx="50.22" cy="33.19" r="19.92"/><circle cx="71.29" cy="34.14" r="20.73"/><circle cx="87.4" cy="29.34" r="22.42"/><circle cx="110.05" cy="34.48" r="18.34"/><circle cx="127.05" cy="36.69" r="13.26"/><circle cx="53.06" cy="20.44" r="12.22"/><circle cx="76.86" cy="20.49" r="13.26"/><circle cx="105.21" cy="17.64" r="16.14"/><rect x="12.8" y="38.4" width="134.4" height="9.6" rx="4.8"/></g>
+  <g clip-path="url(#clouda-clip)">
+    <g fill="#c4d5e4" fill-opacity="0.55"><circle cx="32.92" cy="43.05" r="12.57"/><circle cx="57.19" cy="41.55" r="15.54"/><circle cx="95.25" cy="38.76" r="17.48"/><circle cx="116.47" cy="42.18" r="14.3"/><circle cx="57.34" cy="25.57" r="9.53"/><circle cx="81.51" cy="26.06" r="10.34"/><circle cx="110.86" cy="24.42" r="12.59"/></g>
+    <g fill="url(#clouda-light)"><circle cx="25.66" cy="34.02" r="13.54"/><circle cx="48.23" cy="30.4" r="16.74"/><circle cx="69.21" cy="31.23" r="17.41"/><circle cx="85.16" cy="26.2" r="18.83"/><circle cx="108.22" cy="31.92" r="15.4"/><circle cx="125.73" cy="34.83" r="11.14"/><circle cx="51.84" cy="18.73" r="10.26"/><circle cx="75.54" cy="18.64" r="11.14"/><circle cx="103.6" cy="15.38" r="13.56"/></g>
+    <g fill="#ffffff"><circle cx="79.78" cy="19.93" r="6.72"/><circle cx="48.91" cy="15.31" r="3.67"/><circle cx="72.35" cy="14.92" r="3.98"/><circle cx="99.72" cy="10.86" r="4.84"/></g>
+    <rect x="0" y="43.8" width="160" height="6" fill="#aec4d8" fill-opacity="0.45"/>
+  </g>
+</svg>

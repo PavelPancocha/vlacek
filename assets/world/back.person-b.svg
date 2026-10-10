@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="36" viewBox="0 0 14 36">
+  <!-- Cestující 2: simple figure without facial features. Foot centre (7, 36). -->
+  <defs>
+  </defs>
+  <ellipse cx="7" cy="35" rx="5" ry="1" fill="#1d2a14" fill-opacity="0.18"/>
+  <path d="M3.6 35.6 L4 21.6 L6.6 21.6 L6.4 35.6 Z M7.6 35.6 L7.4 21.6 L10 21.6 L10.4 35.6 Z" fill="#2c3e50" stroke="#1d2a14" stroke-width="0.5"/><path d="M2.8 35.8 H6.6 V34.2 H2.8 Z M7.4 35.8 H11.6 V34.2 H7.4 Z" fill="#2a2d33"/><path d="M2.6 22.6 Q2.2 11.6 7 10.6 Q11.8 11.6 11.4 22.6 Z" fill="#8e44ad" stroke="#1d2a14" stroke-width="0.5"/><path d="M10.6 12.6 Q12.6 17.6 11.8 22" stroke="#8e44ad" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="11.8" cy="22.4" r="1.1" fill="#8d5524"/><rect x="6.1" y="8.6" width="1.8" height="2.4" fill="#8d5524"/><circle cx="7" cy="5.6" r="3.4" fill="#8d5524" stroke="#1d2a14" stroke-width="0.45"/><path d="M3.5 5.6 Q3.2 1.2 7 1 Q10.8 1.2 10.4 5 Q7.6 3 3.5 5.6 Z" fill="#1b1b1b" stroke="#1d2a14" stroke-width="0.35"/>
+
+</svg>

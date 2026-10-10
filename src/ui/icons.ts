@@ -12,8 +12,8 @@ type IconName =
   | 'back'
   | 'depart'
   | 'remove'
-  | 'forward'
-  | 'backward'
+  | 'towardTail'
+  | 'towardLocomotive'
   | 'undo'
   | 'locomotive'
   | 'rotate'
@@ -50,8 +50,9 @@ const PATHS: Record<IconName, string[]> = {
   remove: [
     'M6 4.6L7.4 3.2 12 7.8l4.6-4.6L18 4.6 13.4 9.2 18 13.8l-1.4 1.4L12 10.6l-4.6 4.6L6 13.8l4.6-4.6z',
   ],
-  forward: ['M15 5l-7 7 7 7-1.4 1.4L5.2 12l8.4-8.4z'],
-  backward: ['M9 5l7 7-7 7 1.4 1.4 8.4-8.4-8.4-8.4z'],
+  // The train faces right: its tail is to the left (doc 14 §1).
+  towardTail: ['M15 5l-7 7 7 7-1.4 1.4L5.2 12l8.4-8.4z'],
+  towardLocomotive: ['M9 5l7 7-7 7 1.4 1.4 8.4-8.4-8.4-8.4z'],
   undo: ['M8 7V3L2 9l6 6v-4h6a4 4 0 010 8h-2v2h2a6 6 0 000-12z'],
   locomotive: [
     'M3 6h8v8H3z',

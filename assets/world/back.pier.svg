@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="26" viewBox="0 0 200 26">
+  <!-- Molo: wooden pier on posts over the water. Foot centre (100, 26). -->
+  <defs><linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c49a6c"/><stop offset="1" stop-color="#8b6a4a"/></linearGradient>
+  </defs>
+  <rect x="10" y="8" width="3" height="18" fill="#5a3e2b" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="34" y="8" width="3" height="18" fill="#5a3e2b" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="58" y="8" width="3" height="18" fill="#5a3e2b" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="82" y="8" width="3" height="18" fill="#5a3e2b" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="106" y="8" width="3" height="18" fill="#5a3e2b" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="130" y="8" width="3" height="18" fill="#5a3e2b" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="154" y="8" width="3" height="18" fill="#5a3e2b" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="178" y="8" width="3" height="18" fill="#5a3e2b" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <rect x="0" y="4" width="200" height="5" fill="url(#wood)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M4 4 V9 M10 4 V9 M16 4 V9 M22 4 V9 M28 4 V9 M34 4 V9 M40 4 V9 M46 4 V9 M52 4 V9 M58 4 V9 M64 4 V9 M70 4 V9 M76 4 V9 M82 4 V9 M88 4 V9 M94 4 V9 M100 4 V9 M106 4 V9 M112 4 V9 M118 4 V9 M124 4 V9 M130 4 V9 M136 4 V9 M142 4 V9 M148 4 V9 M154 4 V9 M160 4 V9 M166 4 V9 M172 4 V9 M178 4 V9 M184 4 V9 M190 4 V9 M196 4 V9 " stroke="#5a3e2b" stroke-width="0.4"/>
+  <path d="M0 23 Q100 21 200 23" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.8" fill="none"/>
+  <circle cx="186" cy="2" r="2" fill="#f4d03f" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="10" height="60" viewBox="0 0 10 60">
+  <!-- Nádražní lampa. Foot centre (5, 60). -->
+  <defs>
+  </defs>
+  <rect x="4" y="12" width="2" height="47" fill="#2f3b45" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <rect x="2.6" y="57" width="4.8" height="3" fill="#2f3b45" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M2 12 H8 L7 4 H3 Z" fill="#2f3b45" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <rect x="3.2" y="5" width="3.6" height="6" fill="#fff3c4" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M2 4 L5 0.6 L8 4 Z" fill="#2f3b45" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+</svg>

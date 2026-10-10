@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="76" viewBox="0 0 164 76">
+  <!-- Krytý nákladní: axle guards with leaf springs (axles 31 and 133), fixed tyre light. -->
+  <defs>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5d636c"/><stop offset="0.35" stop-color="#363a41"/><stop offset="1" stop-color="#16181b"/>
+    </linearGradient>
+    <linearGradient id="box" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6a707a"/><stop offset="1" stop-color="#26282c"/>
+    </linearGradient>
+    <linearGradient id="spring" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#26282c"/><stop offset="0.4" stop-color="#6a707a"/><stop offset="1" stop-color="#26282c"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4f57"/><stop offset="0.4" stop-color="#2c2f35"/><stop offset="1" stop-color="#16181b"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e3e7ec"/><stop offset="0.5" stop-color="#9aa0a8"/><stop offset="1" stop-color="#5b6068"/>
+    </linearGradient>
+  </defs>
+
+  <g fill="none" stroke-linecap="round">
+    <g stroke="#ffffff" stroke-opacity="0.38" stroke-width="1"><path d="M20.28 61.13 A11.1 11.1 0 0 1 33.87 53.28"/><path d="M122.28 61.13 A11.1 11.1 0 0 1 135.87 53.28"/></g>
+    <g stroke="#000000" stroke-opacity="0.3" stroke-width="1.3"><path d="M41.72 66.87 A11.1 11.1 0 0 1 25.45 73.61"/><path d="M143.72 66.87 A11.1 11.1 0 0 1 127.45 73.61"/></g>
+  </g>
+  <g stroke="#111214" stroke-width="0.6" stroke-linejoin="round">
+    <path d="M23.4 49 L25.4 70 H36.6 L38.6 49 H36.8 L35.2 68.6 H26.8 L25.2 49 Z" fill="url(#dark)"/>
+    <path d="M16 50.2 Q31 55.6 46 50.2" stroke="#2a2d33" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M17.6 51.6 Q31 56.6 44.4 51.6 M19.6 52.8 Q31 57.4 42.4 52.8" stroke="#3d4148" stroke-width="1.1" fill="none"/>
+    <path d="M16.4 50 Q31 54.8 45.6 50" stroke="#8b9199" stroke-width="0.35" fill="none"/>
+    <path d="M16 48 V51 M46 48 V51" stroke="#2a2d33" stroke-width="1.3"/>
+    <rect x="27.4" y="59.6" width="7.2" height="8.8" rx="1.2" fill="url(#box)"/>
+    <path d="M28.2 61.8 H33.8" stroke="#8b9199" stroke-width="0.4"/>
+    <circle cx="31" cy="65" r="1.4" fill="#4a4f57" stroke-width="0.35"/>
+    <path d="M125.4 49 L127.4 70 H138.6 L140.6 49 H138.8 L137.2 68.6 H128.8 L127.2 49 Z" fill="url(#dark)"/>
+    <path d="M118 50.2 Q133 55.6 148 50.2" stroke="#2a2d33" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M119.6 51.6 Q133 56.6 146.4 51.6 M121.6 52.8 Q133 57.4 144.4 52.8" stroke="#3d4148" stroke-width="1.1" fill="none"/>
+    <path d="M118.4 50 Q133 54.8 147.6 50" stroke="#8b9199" stroke-width="0.35" fill="none"/>
+    <path d="M118 48 V51 M148 48 V51" stroke="#2a2d33" stroke-width="1.3"/>
+    <rect x="129.4" y="59.6" width="7.2" height="8.8" rx="1.2" fill="url(#box)"/>
+    <path d="M130.2 61.8 H135.8" stroke="#8b9199" stroke-width="0.4"/>
+    <circle cx="133" cy="65" r="1.4" fill="#4a4f57" stroke-width="0.35"/>
+  </g>
+</svg>

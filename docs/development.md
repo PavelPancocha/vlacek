@@ -47,26 +47,26 @@ Přesné verze závislostí vlastní `package.json`, celý strom `package-lock.j
 
 ## Příkazy
 
-| Příkaz                                         | Výsledek                                                                                                              |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `npm run check`                                | Stejná úplná kontrola jako v CI.                                                                                      |
-| `npm run dev -- --host 0.0.0.0`                | Vývojový server Vite, dostupný i z jiného zařízení v LAN.                                                             |
-| `npm run build`                                | Produkční statický build do `dist/`; `VLACEK_BASE` určuje cestu nasazení (výchozí `/`).                               |
-| `npm run preview -- --host 0.0.0.0`            | Lokální servírování posledního buildu z `dist/`; `VLACEK_BASE` musí být stejné jako při buildu.                       |
-| `npm test`                                     | Všechny Vitest testy jednou.                                                                                          |
-| `npm run test:watch`                           | Průběžný vývoj s Vitest watch režimem.                                                                                |
-| `npm test -- tests/tooling/check-docs.test.ts` | Cílený test validátoru pro TDD.                                                                                       |
-| `npm run test:e2e`                             | Produkční build a Playwright testy proti `vite preview` (port 4173).                                                  |
-| `npm run measure:perf`                         | Měření jízdy se 100 vagonky (`PERF_SECONDS`, výchozí 60) v Chromiu; JSON v `test-results/`. Není součástí CI brány.   |
-| `npm run report:budgets`                       | Velikost `dist/` po souborech, raw i gzip; selže nad rozpočtem 10 MiB prvního přenosu.                                |
-| `npm run validate:assets`                      | Kontrakt katalogu vozidel (ID, délky, podvozky, trolej ⇔ elektrická); vypíše placeholdery. `-- --release` je odmítne. |
-| `npm run typecheck`                            | TypeScript bez generování souborů.                                                                                    |
-| `npm run lint`                                 | ESLint bez automatických oprav.                                                                                       |
-| `npm run format:check`                         | Kontrola formátu bez změny souborů.                                                                                   |
-| `npm run format`                               | Explicitní přeformátování projektu; před stagingem zkontroluj diff.                                                   |
-| `npm run check:docs`                           | Existují místní cíle odkazů ve všech Git tracked a neignorovaných untracked Markdown souborech.                       |
-| `npm run check:secrets`                        | secretlint nad všemi Git tracked a neignorovanými untracked soubory včetně dotfiles.                                  |
-| `npm run check:sizes`                          | Limit velikosti souborů: 1 MiB obecně, 4 MiB pro herní assety v `public/assets/`.                                     |
+| Příkaz                                         | Výsledek                                                                                                                                                                                                                               |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run check`                                | Stejná úplná kontrola jako v CI.                                                                                                                                                                                                       |
+| `npm run dev -- --host 0.0.0.0`                | Vývojový server Vite, dostupný i z jiného zařízení v LAN.                                                                                                                                                                              |
+| `npm run build`                                | Produkční statický build do `dist/`; `VLACEK_BASE` určuje cestu nasazení (výchozí `/`).                                                                                                                                                |
+| `npm run preview -- --host 0.0.0.0`            | Lokální servírování posledního buildu z `dist/`; `VLACEK_BASE` musí být stejné jako při buildu.                                                                                                                                        |
+| `npm test`                                     | Všechny Vitest testy jednou.                                                                                                                                                                                                           |
+| `npm run test:watch`                           | Průběžný vývoj s Vitest watch režimem.                                                                                                                                                                                                 |
+| `npm test -- tests/tooling/check-docs.test.ts` | Cílený test validátoru pro TDD.                                                                                                                                                                                                        |
+| `npm run test:e2e`                             | Produkční build a Playwright testy proti `vite preview` (port 4173).                                                                                                                                                                   |
+| `npm run measure:perf`                         | Měření jízdy s nejdelší povolenou soupravou (`PERF_SECONDS`, výchozí 60; `PERF_LOCOMOTIVE`, výchozí `steam_local`, `electric_retro` měří i trolejové vedení) v Chromiu; JSON v `test-results/`. Není součástí CI brány.                |
+| `npm run report:budgets`                       | Velikost `dist/` po souborech, raw i gzip; selže nad rozpočtem 10 MiB prvního přenosu.                                                                                                                                                 |
+| `npm run validate:assets`                      | Kontrakt katalogu vozidel (ID, délky, podvozky, trolej ⇔ elektrická) a grafiky vozidel i světa (SVG díly, rozměry, kola, táhla, dlaždice koleje, nepoužité díly; D-011, D-012, D-013); vypíše placeholdery. `-- --release` je odmítne. |
+| `npm run typecheck`                            | TypeScript bez generování souborů.                                                                                                                                                                                                     |
+| `npm run lint`                                 | ESLint bez automatických oprav.                                                                                                                                                                                                        |
+| `npm run format:check`                         | Kontrola formátu bez změny souborů.                                                                                                                                                                                                    |
+| `npm run format`                               | Explicitní přeformátování projektu; před stagingem zkontroluj diff.                                                                                                                                                                    |
+| `npm run check:docs`                           | Existují místní cíle odkazů ve všech Git tracked a neignorovaných untracked Markdown souborech.                                                                                                                                        |
+| `npm run check:secrets`                        | secretlint nad všemi Git tracked a neignorovanými untracked soubory včetně dotfiles.                                                                                                                                                   |
+| `npm run check:sizes`                          | Limit velikosti souborů: 1 MiB obecně, 4 MiB pro herní assety v `public/assets/`.                                                                                                                                                      |
 
 ## TypeScript projekty
 
@@ -96,7 +96,7 @@ volta run npm run test:e2e
 
 Pokud prostředí nastavuje `PLAYWRIGHT_BROWSERS_PATH` na adresář se starší revizí prohlížeče (například předinstalovaný kontejner), nainstaluj správnou revizi jinam a stejnou cestu předej i testům, např. `PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright`. Spouštění se starším Chromiem přes `executablePath` není podporovaná konfigurace. Testy mají `forbidOnly` a žádné retries; dotykový projekt používá `hasTouch`. Emulace není test fyzického zařízení.
 
-Celá uživatelská cesta (`tests/e2e/game.spec.ts`) čte stav přes diagnostické API `window.__vlacek.snapshot()`, které existuje jen s `?debug=1`. Vícedotykové testy posílají `Input.dispatchTouchEvent` přes CDP: `touchEnd` uvolní právě uvedené prsty. Časy gest se předávají explicitním `timestamp`, protože automatizační kanál doručuje události se zpožděním až stovek milisekund. Měření `*.perf.ts` má vlastní konfiguraci `tests/e2e/perf.config.ts` a běží jen přes `npm run measure:perf`.
+Celá uživatelská cesta (`tests/e2e/game.spec.ts`) čte stav přes diagnostické API `window.__vlacek.snapshot()`, které existuje jen s `?debug=1`. Chybu světa reprodukuj otevřením `?debug=1&seed=N` se seedem z pauzy nebo ze snapshotu a stejným buildem ([D-007](decisions/007-world-seed-in-url.md)). Vícedotykové testy posílají `Input.dispatchTouchEvent` přes CDP: `touchEnd` uvolní právě uvedené prsty. Časy gest se předávají explicitním `timestamp`, protože automatizační kanál doručuje události se zpožděním až stovek milisekund. Test `tests/e2e/render.spec.ts` porovnává stejný stojící snímek z WebGL a Canvas a hlídá chyby kreslení, které se projeví jen v jednom rendereru ([D-010](decisions/010-webgl-single-texture-batches.md)). Měření `*.perf.ts` má vlastní konfiguraci `tests/e2e/perf.config.ts` a běží jen přes `npm run measure:perf`.
 
 ## Kontrola dokumentace
 

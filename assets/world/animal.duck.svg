@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="18" viewBox="0 0 22 18">
+  <!-- Kachna: mallard on the water with a green head, faces right. Foot centre (11, 18). -->
+  <defs><linearGradient id="duck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b8a48c"/><stop offset="1" stop-color="#7d6a55"/></linearGradient>
+  </defs>
+  <path d="M1 12 Q2 17 10 17 Q17 17 18 12 Q14 13 10 12 Q5 11 1 12 Z" fill="url(#duck)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M1 12 Q0 9 3 9 Q7 9 10 11" fill="#8a7a6a" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M7 12 Q11 10 14 12" stroke="#2e5e7b" stroke-width="1.2" fill="none"/>
+  <path d="M13 12 Q12 7 14 4 Q17 1 19 4 Q20 7 17 9 Q16 11 16 12 Z" fill="#1e7a4a" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M14.6 9.4 H17.6" stroke="#ffffff" stroke-width="0.8"/>
+  <path d="M19 4.6 L22 5.6 L19 6.6 Z" fill="#f4b400" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle cx="17.6" cy="4.4" r="0.55" fill="#1b1b1b"/><circle cx="17.79" cy="4.21" r="0.19" fill="#ffffff"/>
+  <path d="M0 17.6 Q11 19.6 22 17.6" stroke="#ffffff" stroke-opacity="0.7" stroke-width="0.6" fill="none"/>
+</svg>

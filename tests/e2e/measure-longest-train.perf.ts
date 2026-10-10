@@ -1,8 +1,17 @@
 import { writeFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { gameConfig } from '../../src/config/gameConfig.ts';
+import { locomotives, wagons } from '../../src/content/vehicles.ts';
+import {
+  addWagon,
+  createDraft,
+  type ConsistLengthRules,
+} from '../../src/domain/consist/ConsistEditor.ts';
 import { snapshot, tapAction } from './helpers.ts';
 
 const SECONDS = Number(process.env['PERF_SECONDS'] ?? 60);
+/** Locomotive of the measured train; `electric_retro` adds the catenary. */
+const LOCOMOTIVE = process.env['PERF_LOCOMOTIVE'] ?? 'steam_local';
 const WAGON_TYPES = [
   'passenger_classic',
   'passenger_open',
@@ -13,23 +22,39 @@ const WAGON_TYPES = [
   'fun_balloons',
 ];
 
+/** Mixed wagon types until the next one would exceed the length limit. */
+function longestMixedConsist() {
+  const vehicles = new Map(
+    [...locomotives, ...wagons].map((vehicle) => [vehicle.id, vehicle]),
+  );
+  const rules: ConsistLengthRules = {
+    maxLengthU: gameConfig.train.maxConsistLengthU,
+    couplerGapU: gameConfig.train.couplerGapU,
+    geometryOf: (id) => vehicles.get(id),
+  };
+  let draft = createDraft(LOCOMOTIVE);
+  for (let i = 0; ; i++) {
+    const next = addWagon(
+      draft,
+      WAGON_TYPES[i % WAGON_TYPES.length] ?? 'cargo_box',
+      rules,
+    );
+    if (!next.added) return draft.consist;
+    draft = next.draft;
+  }
+}
+
 /**
- * PERF-01 (lite): 100 wagons restored from a v1 save, held throttle for
- * PERF_SECONDS (default 60). Records frame times with an independent rAF
- * probe. Results are a measurement of this machine, not of target devices.
+ * PERF-01 (lite): the longest allowed train (doc 14 §2) restored from a v1
+ * save, held throttle for PERF_SECONDS (default 60). Records frame times
+ * with an independent rAF probe. Results are a measurement of this machine,
+ * not of target devices.
  */
-test('measure a ride with 100 wagons', async ({
+test('measure a ride with the longest allowed train', async ({
   page,
   browserName,
 }, testInfo) => {
-  const consist = {
-    locomotiveId: 'steam_local',
-    wagons: Array.from({ length: 100 }, (_, i) => ({
-      instanceId: `w${i + 1}`,
-      definitionId: WAGON_TYPES[i % WAGON_TYPES.length] ?? 'cargo_box',
-      visualSeed: i,
-    })),
-  };
+  const consist = longestMixedConsist();
   const save = {
     schemaVersion: 1,
     contentVersion: 1,
@@ -78,12 +103,13 @@ test('measure a ride with 100 wagons', async ({
   await page.mouse.move(700, 300);
   await page.mouse.down();
   let maxLiveChunks = 0;
-  let maxRendered = 0;
+  // The fewest vehicles drawn on any sample: one culled frame shows here.
+  let minRendered = Infinity;
   for (let second = 0; second < SECONDS; second++) {
     await page.waitForTimeout(1000);
     const state = await snapshot(page);
     maxLiveChunks = Math.max(maxLiveChunks, state.liveChunks);
-    maxRendered = Math.max(maxRendered, state.renderedVehicles);
+    minRendered = Math.min(minRendered, state.renderedVehicles);
   }
   await page.mouse.up();
   const final = await snapshot(page);
@@ -101,7 +127,7 @@ test('measure a ride with 100 wagons', async ({
     renderer: final.renderer,
     seconds: SECONDS,
     vehicles: final.vehicles,
-    maxRenderedVehicles: maxRendered,
+    minRenderedVehicles: minRendered,
     maxLiveChunks,
     headChunkAtEnd: final.headChunk,
     frames: frames.length,
@@ -110,11 +136,13 @@ test('measure a ride with 100 wagons', async ({
     worstFrameMs: frames.at(-1) ?? 0,
     errors,
   };
-  const path = testInfo.outputPath('perf-100-wagons.json');
+  const path = testInfo.outputPath('perf-longest-train.json');
   writeFileSync(path, JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));
   expect(errors).toEqual([]);
-  expect(final.vehicles).toBe(101);
+  expect(final.vehicles).toBe(consist.wagons.length + 1);
+  // The whole train is drawn on every sampled second (doc 14 §2).
+  expect(minRendered).toBe(final.vehicles);
   expect(final.trackStartS).toBeLessThanOrEqual(final.tailS);
   expect(maxLiveChunks).toBeLessThanOrEqual(30);
 });

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="44" height="7" viewBox="0 0 44 7">
+  <!-- Golden connecting rod: big end on the crank pin at (3, 3.5), small
+       end on the crosshead at (41, 3.5), 38 u apart. -->
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/>
+      <stop offset="0.45" stop-color="#f4d03f"/>
+      <stop offset="1" stop-color="#9a6f14"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#1a0b21" stroke-width="0.4">
+    <path d="M3 1.5 L41 2.4 V4.6 L3 5.5 Z" fill="url(#gold)"/>
+    <rect x="0" y="0.3" width="6.4" height="6.4" rx="1.8" fill="url(#gold)"/>
+    <circle cx="3" cy="3.5" r="1.1" fill="#5b2c6f"/>
+    <circle cx="41" cy="3.5" r="2.2" fill="url(#gold)"/>
+    <circle cx="41" cy="3.5" r="0.8" fill="#5b2c6f"/>
+  </g>
+</svg>

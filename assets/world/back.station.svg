@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="110" viewBox="0 0 180 110">
+  <!-- Nádraží: ochre country station with a tiled roof, canopy, clock and the fictional station name Lhotka (never mirrored). Foot centre (90, 110). -->
+  <defs><linearGradient id="ochre" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2d48a"/><stop offset="1" stop-color="#d9b45c"/></linearGradient><linearGradient id="roof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b5452f"/><stop offset="1" stop-color="#6e2418"/></linearGradient>
+  </defs>
+  <ellipse cx="90" cy="109" rx="90" ry="2.6" fill="#1d2a14" fill-opacity="0.18"/>
+  <rect x="14" y="44" width="152" height="65" fill="url(#ochre)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <rect x="14" y="96" width="152" height="13" fill="#b9a27a" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M8 46 L22 10 H158 L172 46 Z" fill="url(#roof)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <clipPath id="roofClip"><path d="M8 46 L22 10 H158 L172 46 Z"/></clipPath>
+  <path d="M18 12 H162 M16.4 15.2 H163.6 M14.8 18.4 H165.2 M13.2 21.6 H166.8 M11.6 24.8 H168.4 M10 28 H170 M8.4 31.2 H171.6 M6.8 34.4 H173.2 M5.2 37.6 H174.8 M3.6 40.8 H176.4 " stroke="#5a2a1a" stroke-width="0.4" clip-path="url(#roofClip)"/>
+  <rect x="120" y="0" width="7" height="14" fill="#a04030" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <rect x="60" y="52" width="60" height="11" rx="1" fill="#1f4e79" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <text x="90" y="60.4" font-family="Arial, Helvetica, sans-serif" font-size="7" font-weight="700" fill="#ffffff" text-anchor="middle" stroke="none">Lhotka</text>
+  <circle cx="90" cy="30" r="7" fill="#f4f1ea" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><path d="M90 30 V25.4 M90 30 L93.4 31.6" stroke="#2a2d33" stroke-width="0.8"/>
+  <rect x="26" y="66" width="12" height="18" rx="6" ry="2" fill="#3d5a6c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><path d="M32 66 V84 M26 74 H38" stroke="#f4f1ea" stroke-width="0.9"/><path d="M27.4 82 L31 69" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.6"/><rect x="46" y="66" width="12" height="18" rx="6" ry="2" fill="#3d5a6c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><path d="M52 66 V84 M46 74 H58" stroke="#f4f1ea" stroke-width="0.9"/><path d="M47.4 82 L51 69" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.6"/><rect x="122" y="66" width="12" height="18" rx="6" ry="2" fill="#3d5a6c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><path d="M128 66 V84 M122 74 H134" stroke="#f4f1ea" stroke-width="0.9"/><path d="M123.4 82 L127 69" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.6"/><rect x="142" y="66" width="12" height="18" rx="6" ry="2" fill="#3d5a6c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><path d="M148 66 V84 M142 74 H154" stroke="#f4f1ea" stroke-width="0.9"/><path d="M143.4 82 L147 69" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.6"/>
+  <rect x="80" y="70" width="20" height="39" rx="10" ry="3" fill="#6d4c33" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><path d="M90 72 V109" stroke="#4a3222" stroke-width="0.5"/>
+  <circle cx="87" cy="90" r="0.8" fill="#d4ac0d"/><circle cx="93" cy="90" r="0.8" fill="#d4ac0d"/>
+  <path d="M2 44 H178 L172 50 H8 Z" fill="#7a3022" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M20 50 V58 M160 50 V58" stroke="#5a3e2b" stroke-width="1.2"/>
+  <rect x="104" y="72" width="10" height="7" rx="1" fill="#f6f1e4" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><path d="M106 74 H112 M106 76 H110" stroke="#5d6d7e" stroke-width="0.5"/>
+</svg>

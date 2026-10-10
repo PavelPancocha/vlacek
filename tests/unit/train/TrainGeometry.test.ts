@@ -6,20 +6,15 @@ import {
   type VehicleGeometry,
 } from '../../../src/domain/train/TrainGeometry.ts';
 import { TrackWindow } from '../../../src/domain/world/TrackWindow.ts';
-import type { TrackProfile } from '../../../src/domain/world/TrackProfile.ts';
+import { steepHill } from '../world/steepHill.ts';
 
 const gap = gameConfig.train.couplerGapU;
 const loco: VehicleGeometry = { lengthU: 156, bogieOffsetU: 46 };
 const short: VehicleGeometry = { lengthU: 144, bogieOffsetU: 44 };
 const long: VehicleGeometry = { lengthU: 188, bogieOffsetU: 58 };
 
-/** Every chunk is the steepest valid hill: crest at local x = 512. */
-const hills: TrackProfile = {
-  kind: 'hill',
-  startHeightU: 0,
-  endHeightU: 0,
-  middleHeightU: (0.12 * 512) / 1.875,
-};
+/** Every chunk climbs and descends at generator v1's steepest grade. */
+const hills = steepHill;
 
 describe('layoutConsist', () => {
   it('TRN-01: lays out 0, 1, 10 and 100 wagons without shortening', () => {
@@ -73,8 +68,10 @@ describe('poseVehicle', () => {
       expect(pose.frontBogie).toEqual({ x: front.x, y: front.y });
       expect(pose.rearBogie).toEqual({ x: rear.x, y: rear.y });
     }
-    expect(poses[0]?.angleRad).toBeLessThan(-0.1);
-    expect(poses.at(-1)?.angleRad).toBeGreaterThan(0.1);
+    // Clearly tilted both ways (the steepest grade is gradeRangeMax).
+    const tilt = 0.6 * gameConfig.world.profile.gradeRangeMax;
+    expect(poses[0]?.angleRad).toBeLessThan(-tilt);
+    expect(poses.at(-1)?.angleRad).toBeGreaterThan(tilt);
   });
 
   it('TRN-10: adjacent bodies neither overlap nor visibly separate on the extreme profile', () => {

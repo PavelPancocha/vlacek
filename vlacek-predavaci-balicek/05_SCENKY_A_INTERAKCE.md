@@ -28,6 +28,12 @@ Během `playing` další dotyk animaci nevrací na první frame. Lze přidat dro
 
 Hit oblasti jsou větší než malé obrázky. Při překryvu vyhrává vrchní viditelná interaktivní vrstva, pak bližší střed. Objekty za plnou překážkou, pod UI nebo mimo renderovací výřez nejsou aktivní dotykové cíle.
 
+Implementace zvířete v louce ([D-013](../docs/decisions/013-landscape-localities-and-backdrops.md)) má tři pravidla.
+
+- **Druh.** Druh určí lokalita: ovce a kráva na pastvině, kachna na rybníčku, srnec a liška v lese, racek na pláži.
+- **Velikost.** Zvíře se kreslí dvakrát větší než okolní dekorace. Hloubku v louce volí generátor tak, aby kresba i se skokem reakce zůstala pod vlakem.
+- **Ovládání.** Zvíře nikdy nestojí pod brzdou ani houkačkou. Kde je pruh mezi vlakem a tlačítky užší, například na telefonu naležato, kreslí se menší. Hit-test míří na střed kresby s poloměrem podle její velikosti, nejméně 40 CSS px.
+
 ## 3. Nádraží bez povinné zastávky
 
 Stanice má ploché nástupiště, budovu, světla a několik lidí. Při přiblížení nebo houkání může výpravčí zamávat. Jízda se nikdy automaticky nezmění.
@@ -89,6 +95,15 @@ Při obnově save, kdy vlak už stojí přes přejezd, inicializovat závory uza
 
 Pokud dlouhý vlak stojí přes silnici nebo těsně před ní, auta čekají libovolně dlouho. Hra ho nenutí odjet a žádné auto nejede přes koleje z netrpělivosti.
 
+Implementace ([D-015](../docs/decisions/015-level-crossings.md)):
+
+- Automat `LevelCrossing` počítá obsazení z celé soupravy. Konfliktní zóna má ±30 u podél koleje a rezervu 32 u.
+- Při nynější nejvyšší rychlosti 480 u/s (dokument 14) vychází Dclose 2 240 u.
+- Stop čára je 40 u za tratí a 56 u před ní, u paty náspu.
+- Aktér za stop čárou opustí zónu nejpozději za 2,0 s, i když jede za nejpomalejším. Validace konfigurace odmítne `roadClearanceSeconds` kratší než tato doba.
+- Výstražník za tratí je vysoký, před tratí nízký, aby nezakryl vlak. Polovinová břevna zavírají pravý pruh přijíždějících.
+- Červená světla se střídají po půl sekundě, bílé bliká při volném přejezdu, obojí v simulačním čase.
+
 ## 5. Okolní auta, kola a pracovní stroje
 
 Silniční provoz běží po předem definovaných 2D cestách; nepotřebuje obecný pathfinding. Na vesnické cestě jede osobní auto či autobus, na polní cestě traktor, na cyklostezce cyklista. Dotyk může vyvolat krátké zamávání nebo klakson, ale nesmí zastavit aktéra v přejezdové konfliktní zóně.
@@ -110,6 +125,13 @@ Když dítě před scénkou dlouho stojí, může druhý vlak projet dříve, ne
 Při setkání může jednou zahoukat a rozsvítit světla. Hráčova píšťala může vyvolat odpověď s cooldownem, ale nesmí vytvořit nekonečný dialog dvou píšťal. NPC odpověď sama další odpověď nespouští.
 
 Předjíždění, třetí kolej a rozvětvená železniční síť jsou pozdější rozšíření. Již první protijedoucí vlak splní požadavek živého souběžného provozu.
+
+Implementace ([D-017](../docs/decisions/017-second-track-and-oncoming-train.md)):
+
+- `OncomingTrain` je parní nebo naftová lokomotiva s 1–5 vagonky, 100–160 u/s, rozložená v měřítku 0,9 hlubší vrstvy.
+- Vyjede jednou, když čelo hráče projde bodem 512 u před levým portálem. Po obnově za tímto bodem nevyjede.
+- Při setkání v otevřeném úseku jednou zahouká. Na píšťalu v dosahu 800 u odpoví nejvýš jednou za 8 s, sám nic dalšího nespouští.
+- Rozsvícení světel zatím chybí.
 
 ## 7. Katalog základních reakcí
 

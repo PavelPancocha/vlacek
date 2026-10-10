@@ -2,7 +2,8 @@ import { gameConfig } from '../config/gameConfig.ts';
 import type { ShapedVehicle } from '../content/placeholderShapes.ts';
 import { locomotives, wagons } from '../content/vehicles.ts';
 import type { Consist } from '../domain/types.ts';
-import { TEST_TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
+import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
+import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import { AudioManager, type SoundId } from '../platform/AudioManager.ts';
 import { isPortrait } from '../platform/browserEnvironment.ts';
 import type { RendererPreference } from '../platform/CapabilityProbe.ts';
@@ -13,6 +14,8 @@ import { createGameHost, type GameHost } from '../render/GameHost.ts';
 import { RideScene } from '../render/RideScene.ts';
 import { BRAKE_HIT_MARGIN_PX, UiLayer } from '../ui/UiLayer.ts';
 import type { DebugSnapshot } from './debugSnapshot.ts';
+import { PhaseLog } from './phaseLog.ts';
+import { renderProfile } from './renderProfile.ts';
 import type { GameSession, SessionEvent } from './GameSession.ts';
 
 export interface AppControllerOptions {
@@ -33,6 +36,9 @@ const HORN_BY_POWER: Record<string, SoundId> = {
  * adapter and audio, and forwards everything to the GameSession. Phaser's
  * animation frame is the only loop; the session runs its fixed steps in it.
  */
+/** Free space kept between the train and the HUD controls, CSS px. */
+const HUD_GAP_PX = 8;
+
 export class AppController {
   readonly #session: GameSession;
   readonly #options: AppControllerOptions;
@@ -41,6 +47,8 @@ export class AppController {
   readonly #ui: UiLayer;
   readonly #audio = new AudioManager();
   readonly #frames = new FrameStats(600);
+  /** Every crossing phase of the ride, recorded each frame (debug only). */
+  readonly #crossingPhases = new PhaseLog();
   readonly #scene: RideScene;
   readonly #host: GameHost;
   readonly #input: DomInputAdapter;
@@ -78,11 +86,18 @@ export class AppController {
       ride: () => this.#session.ride,
       journeyVehicles: () => this.#vehiclesOfJourney(),
       catalogVehicles: () => [...locomotives, ...wagons],
+      // Reduced effects or the low profile halve the particles (doc 07 §9).
+      effectsQuality: () =>
+        renderProfile(this.#session.settings, gameConfig.quality).effects,
     });
+    const profile = renderProfile(session.settings, gameConfig.quality);
     this.#host = createGameHost({
       parent: gameRoot,
       renderer: options.renderer,
-      maxDpr: 1.5,
+      // The profile of the loaded settings (doc 13); settings that change
+      // the profile take effect on the next start.
+      maxDpr: profile.maxDpr,
+      fpsLimit: profile.fpsLimit,
       scenes: [this.#scene],
       onReady: (renderer) => {
         this.#renderer = renderer;
@@ -93,14 +108,24 @@ export class AppController {
       this.#scene.hitObject(x, y, this.#host.canvas.getBoundingClientRect()),
     );
     session.setUnhandledActionHandler((action) => {
-      if (action === 'strip-start')
-        this.#uiRoot.querySelector('.strip')?.scrollTo({ left: 0 });
+      if (action === 'strip-start') {
+        // The locomotive is the front of the train, at the strip's right end.
+        const strip = this.#uiRoot.querySelector('.strip');
+        strip?.scrollTo({ left: strip.scrollWidth });
+      }
       if (action === 'retry') window.location.reload();
     });
     this.#input = new DomInputAdapter({
       root: app,
       router: session.router,
-      onGesture: () => this.#audio.unlock(),
+      onGesture: () => {
+        // A gesture that leaves the game paused keeps the sound frozen
+        // (doc 02 §6); the one that resumes unlocks after routing.
+        if (this.#session.screen.name !== 'PAUSED') this.#audio.unlock();
+        // Show what the tap changed right away, not a frame later: the
+        // screen never offers a button the tap has just disabled.
+        this.#refreshUi();
+      },
       onInterrupt: () => {
         session.interrupt();
         this.#audio.suspend();
@@ -135,6 +160,8 @@ export class AppController {
   #frame(deltaSec: number, nowMs: number): number {
     this.#frames.add(deltaSec * 1000);
     const alpha = this.#session.frame(deltaSec, nowMs);
+    if (this.#options.debug)
+      this.#crossingPhases.record(this.#session.ride?.crossings ?? []);
     for (const event of this.#session.drainEvents()) this.#feedback(event);
     this.#refreshUi();
     if (this.#diagnostics && nowMs - this.#lastDiagnosticsMs > 250) {
@@ -169,6 +196,19 @@ export class AppController {
         this.#audio.play(HORN_BY_POWER[loco?.power ?? 'steam'] ?? 'horn-steam');
         return;
       }
+      case 'npcHorn': {
+        // The oncoming train answers with the horn of its own locomotive.
+        const train = this.#session.ride?.oncomingTrains.find(
+          (candidate) => candidate.id === event.id,
+        );
+        const loco = locomotives.find(
+          (candidate) => candidate.id === train?.vehicles[0]?.id,
+        );
+        this.#audio.play(
+          HORN_BY_POWER[loco?.power ?? 'diesel'] ?? 'horn-diesel',
+        );
+        return;
+      }
       case 'objectReacted':
         this.#audio.play('reaction');
         return;
@@ -188,13 +228,19 @@ export class AppController {
       notices: session.notices,
       fullSignals: session.fullSignals,
       hasJourney: session.ride !== undefined,
+      seed: session.journeySeed,
       portrait: this.#portrait,
       buildId: this.#options.buildId,
       locomotives,
       wagons,
-      maxWagons: gameConfig.train.maxWagons,
+      lengthRules: session.lengthRules,
     });
-    if (this.#uiRoot.dataset['screen'] !== before) this.#measureBrake();
+    const now = this.#uiRoot.dataset['screen'];
+    if (now !== before) {
+      this.#measureBrake();
+      // Pause freezes sounds too (doc 02 §6); the resume tap unlocks again.
+      if (now === 'PAUSED') this.#audio.suspend();
+    }
   }
 
   #measureBrake(): void {
@@ -211,6 +257,18 @@ export class AppController {
       };
     }
     this.#session.router.setBrakeHitArea(this.#brakeRect);
+    // The camera keeps the whole train between the corner buttons and the
+    // brake (doc 14 §2). Without a HUD (pause) the last strips stay.
+    const corner = this.#uiRoot.querySelector('.corner');
+    if (brake && corner) {
+      const canvas = this.#gameRoot.getBoundingClientRect();
+      this.#scene.setReservedInsets(
+        corner.getBoundingClientRect().bottom - canvas.top + HUD_GAP_PX,
+        canvas.bottom - brake.getBoundingClientRect().top + HUD_GAP_PX,
+        // Animals stay clear of the brake's whole touch area (doc 02).
+        canvas.bottom - (this.#brakeRect?.top ?? canvas.bottom),
+      );
+    }
   }
 
   snapshot(): DebugSnapshot {
@@ -223,12 +281,41 @@ export class AppController {
       renderer: this.#renderer,
       screen: session.screen.name,
       seed: session.journeySeed,
-      generatorVersion: TEST_TRACK_GENERATOR_VERSION,
+      generatorVersion: TRACK_GENERATOR_VERSION,
       headChunk: ride?.headCursor().chunkIndex,
       liveChunks: ride?.track.chunkCount ?? 0,
       renderedChunks: this.#scene.stats.renderedChunks,
       vehicles: ride?.vehicleCount ?? 0,
       renderedVehicles: this.#scene.stats.renderedVehicles,
+      artVehicles: this.#scene.stats.artVehicles,
+      artAtlas: this.#scene.artAtlas,
+      effects: this.#scene.effectsStats,
+      backdropAtlas: this.#scene.backdropAtlas,
+      artSourceTextures: this.#scene.artSourceTextures,
+      scenery: {
+        biome: this.#scene.stats.biome,
+        localities: [...this.#scene.stats.localities],
+        ...this.#nearPropCheck(),
+        crossingViews: this.#scene.stats.crossingViews,
+      },
+      catenary: {
+        electrified: ride?.electrified ?? false,
+        poles: this.#scene.stats.catenaryPoles,
+        pantographGapU: this.#scene.stats.pantographGapU,
+      },
+      crossings: ride ? this.#crossings(ride) : [],
+      backdropMidOffsetU: this.#scene.stats.backdropMidOffsetU,
+      tunnels: this.#scene.stats.tunnels.map((tunnel) => ({ ...tunnel })),
+      oncoming: {
+        trains: (ride?.oncomingTrains ?? []).map((train) => ({
+          id: train.id,
+          ...train.xSpan(),
+          fromX: train.site.fromX,
+          toX: train.site.toX,
+          vehicles: train.vehicles.length,
+        })),
+        drawnInOpen: this.#scene.stats.oncomingVehicles,
+      },
       consistLengthU: ride
         ? ride.layout.frontOffsetU + ride.layout.tailOffsetU
         : 0,
@@ -250,9 +337,37 @@ export class AppController {
       objects: canvas
         ? this.#scene.objectScreenPositions(canvas.getBoundingClientRect())
         : [],
+      chunkEdges: canvas
+        ? this.#scene.chunkEdgesScreenX(canvas.getBoundingClientRect())
+        : [],
+      trainBox: canvas
+        ? this.#scene.trainScreenBox(canvas.getBoundingClientRect())
+        : undefined,
       brakeRect: this.#brakeRect,
       audio: this.#audio.state,
     };
+  }
+
+  #crossings(ride: RideSimulation): DebugSnapshot['crossings'] {
+    const train = {
+      tailX: ride.sample(ride.tailS).x,
+      frontX: ride.sample(ride.frontS).x,
+    };
+    return ride.crossings.map((crossing) => ({
+      id: crossing.id,
+      phase: crossing.phase,
+      phases: [...this.#crossingPhases.phases(crossing.id)],
+      barrier: crossing.barrier,
+      occupied: crossing.trainInConflict(train),
+      actors: crossing.actors.length,
+      waiting: crossing.waitingCount(),
+      crossed: crossing.crossedCount,
+    }));
+  }
+
+  #nearPropCheck(): { nearProps: number; nearPropsOverTrain: number } {
+    const check = this.#scene.nearPropCheck();
+    return { nearProps: check.inView, nearPropsOverTrain: check.overTrain };
   }
 
   dispose(): void {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
 import {
   buildArcLengthTable,
+  heightAtX,
   sampleArcLengthTable,
 } from '../../../src/domain/world/ArcLengthTable.ts';
 import {
@@ -9,16 +10,11 @@ import {
   profileHeightU,
   type TrackProfile,
 } from '../../../src/domain/world/TrackProfile.ts';
+import { steepHill } from './steepHill.ts';
 
 const { chunkWidthU, arcSampleSpacingU } = gameConfig.world;
 
-/** Steep valid hill: 32.768 u over 512 u ramps, the doc 04 grade limit. */
-const extremeHill: TrackProfile = {
-  kind: 'hill',
-  startHeightU: 0,
-  endHeightU: 0,
-  middleHeightU: (0.12 * 512) / 1.875,
-};
+const extremeHill = steepHill;
 
 function referencePoint(profile: TrackProfile, arcU: number) {
   // Fine numerical arc length as an independent reference.
@@ -111,5 +107,29 @@ describe('ArcLengthTable', () => {
         0.1,
       );
     }
+  });
+
+  it('gives the rail height at a chunk-global x, as the samples draw it', () => {
+    for (let i = 0; i < table.xs.length; i += 7)
+      expect(heightAtX(table, table.xs[i] ?? 0)).toBeCloseTo(
+        table.ys[i] ?? 0,
+        9,
+      );
+    const x = ((table.xs[10] ?? 0) + (table.xs[11] ?? 0)) / 2;
+    expect(heightAtX(table, x)).toBeCloseTo(
+      ((table.ys[10] ?? 0) + (table.ys[11] ?? 0)) / 2,
+      9,
+    );
+    // Within the chunk the sampled rail stays on the true profile.
+    for (let local = 0; local <= chunkWidthU; local += 13)
+      expect(
+        Math.abs(
+          heightAtX(table, 3 * chunkWidthU + local) -
+            profileHeightU(extremeHill, local),
+        ),
+      ).toBeLessThan(0.5);
+    // Clamped at the chunk ends.
+    expect(heightAtX(table, 2 * chunkWidthU)).toBe(table.ys[0]);
+    expect(heightAtX(table, 5 * chunkWidthU)).toBe(table.ys.at(-1));
   });
 });

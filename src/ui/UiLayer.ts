@@ -2,16 +2,21 @@ import type { Screen } from '../app/AppState.ts';
 import type { SessionNotice } from '../app/GameSession.ts';
 import type { CatalogLocomotive, CatalogWagon } from '../content/vehicles.ts';
 import {
+  canAddWagon,
   canMoveSelected,
   canUndo,
+  consistLengthU,
   isFull,
+  isOverLimit,
   type ConsistDraft,
+  type ConsistLengthRules,
 } from '../domain/consist/ConsistEditor.ts';
+import { layoutConsist } from '../domain/train/TrainGeometry.ts';
 import type { WagonGroup } from '../domain/types.ts';
 import type { Settings } from '../platform/SaveValidation.ts';
 import { actionButton, el } from './dom.ts';
 import { icon } from './icons.ts';
-import { vehicleSvg } from './placeholderArt.ts';
+import { vehiclePreview } from './vehiclePreview.ts';
 
 /** Read-only state the DOM screens render. */
 export interface UiModel {
@@ -21,11 +26,14 @@ export interface UiModel {
   notices: readonly SessionNotice[];
   fullSignals: number;
   hasJourney: boolean;
+  /** World seed of the current journey, shown small on the pause screen. */
+  seed: number | undefined;
   portrait: boolean;
   buildId: string;
   locomotives: readonly CatalogLocomotive[];
   wagons: readonly CatalogWagon[];
-  maxWagons: number;
+  /** Length limit and coupler gap shared with every departure (doc 14 §2). */
+  lengthRules: ConsistLengthRules;
 }
 
 const NOTICE_TEXT: Record<SessionNotice, string> = {
@@ -39,6 +47,9 @@ const NOTICE_TEXT: Record<SessionNotice, string> = {
     'Uložená hra je z novější verze. Hrajeme bez ukládání, aby se nepřepsala.',
   'start-failed': 'Novou cestu se nepodařilo spustit. Původní cesta zůstává.',
   'journey-unavailable': 'Uloženou cestu se nepodařilo obnovit.',
+  'track-changed': 'Trať se změnila, vlak vyjede na novou cestu.',
+  'train-too-long':
+    'Vláček je delší, než se vejde na obrazovku. Všechny vagonky zůstaly v depu; po ubrání může vyjet.',
 };
 
 const GROUPS: { group: WagonGroup; label: string }[] = [
@@ -50,7 +61,7 @@ const GROUPS: { group: WagonGroup; label: string }[] = [
 
 /** Strip scale: CSS px per world unit for depot previews. */
 const STRIP_PX_PER_U = 0.7;
-const STRIP_GAP_PX = 6;
+const STRIP_PAD_PX = 8;
 /** Extra pixels around the brake button that still count as brake (doc 02 §1). */
 export const BRAKE_HIT_MARGIN_PX = 24;
 
@@ -104,6 +115,7 @@ export class UiLayer {
       model.notices,
       model.fullSignals,
       model.hasJourney,
+      model.seed,
       model.portrait,
     ]);
     if (signature === this.#signature) return;
@@ -213,7 +225,7 @@ export class UiLayer {
             `loco:${loco.id}`,
             loco.labelCs,
             [
-              vehicleSvg(loco, 1),
+              vehiclePreview(loco, 1),
               label(loco.labelCs),
               loco.id === selected
                 ? el('span', { class: 'selected-mark' }, icon('check', 32))
@@ -246,7 +258,16 @@ export class UiLayer {
 
   #builder(model: UiModel, signal: AbortSignal): HTMLElement {
     const draft = model.draft;
-    const full = isFull(draft, model.maxWagons);
+    const rules = model.lengthRules;
+    const full = isFull(
+      draft,
+      model.wagons.map((wagon) => wagon.id),
+      rules,
+    );
+    const tooLong = isOverLimit(draft, rules);
+    const usedPercent = Math.round(
+      (100 * consistLengthU(draft.consist, rules)) / rules.maxLengthU,
+    );
     const loco = model.locomotives.find(
       (candidate) => candidate.id === draft.consist.locomotiveId,
     );
@@ -280,12 +301,25 @@ export class UiLayer {
           : [];
       }),
     ];
-    const positions: number[] = [];
-    let width = 0;
-    for (const item of items) {
-      positions.push(width);
-      width += Math.round(item.vehicle.lengthU * STRIP_PX_PER_U) + STRIP_GAP_PX;
-    }
+    // One consist layout for depot and ride (doc 14 §1): the locomotive is
+    // the front on the right, wagons follow to the left in consist order.
+    const layout = layoutConsist(
+      items.map((item) => item.vehicle),
+      rules.couplerGapU,
+    );
+    const positions = items.map((item, index) =>
+      Math.round(
+        STRIP_PAD_PX +
+          (layout.tailOffsetU -
+            (layout.centerOffsetsU[index] ?? 0) -
+            item.vehicle.lengthU / 2) *
+            STRIP_PX_PER_U,
+      ),
+    );
+    const width = Math.round(
+      2 * STRIP_PAD_PX +
+        (layout.frontOffsetU + layout.tailOffsetU) * STRIP_PX_PER_U,
+    );
     track.style.width = `${width}px`;
     const renderVisible = () => {
       const from = strip.scrollLeft - 300;
@@ -298,7 +332,7 @@ export class UiLayer {
         const selected =
           item.instanceId !== undefined &&
           item.instanceId === draft.selectedInstanceId;
-        const content = [vehicleSvg(item.vehicle, STRIP_PX_PER_U)];
+        const content = [vehiclePreview(item.vehicle, STRIP_PX_PER_U)];
         const node =
           item.instanceId === undefined
             ? el('div', { class: 'strip-item loco' }, ...content)
@@ -320,9 +354,10 @@ export class UiLayer {
     strip.addEventListener('scroll', renderVisible, { signal, passive: true });
     queueMicrotask(() => {
       if (signal.aborted) return;
+      // A new wagon joins the tail at the left end: show it.
       const grew = draft.consist.wagons.length > this.#lastWagonCount;
       this.#lastWagonCount = draft.consist.wagons.length;
-      strip.scrollLeft = grew ? width : this.#stripScrollLeft;
+      strip.scrollLeft = grew ? 0 : this.#stripScrollLeft;
       renderVisible();
     });
 
@@ -356,27 +391,47 @@ export class UiLayer {
         el(
           'span',
           { class: 'count', 'aria-live': 'polite' },
-          `${draft.consist.wagons.length} / ${model.maxWagons}`,
+          String(draft.consist.wagons.length),
         ),
-        full ? el('span', { class: 'full-text' }, 'Vláček je plný') : undefined,
+        // How much of the longest train is used; no numbers to read.
+        el(
+          'div',
+          {
+            class: tooLong ? 'length-meter over' : 'length-meter',
+            role: 'meter',
+            'aria-label': 'Délka vláčku',
+            'aria-valuemin': '0',
+            'aria-valuemax': '100',
+            'aria-valuenow': String(usedPercent),
+          },
+          el('div', {
+            class: 'length-fill',
+            style: `width: ${Math.min(100, usedPercent)}%`,
+          }),
+        ),
+        tooLong
+          ? el('span', { class: 'full-text' }, 'Vláček je moc dlouhý')
+          : full
+            ? el('span', { class: 'full-text' }, 'Vláček je plný')
+            : undefined,
       ),
       strip,
       el(
         'div',
         { class: 'row actions' },
+        actionButton('move-back', 'Posunout dozadu', [icon('towardTail', 40)], {
+          className: 'button',
+          disabled: !canMoveSelected(draft, 'back'),
+        }),
         actionButton(
           'move-forward',
           'Posunout blíž k mašince',
-          [icon('forward', 40)],
+          [icon('towardLocomotive', 40)],
           {
             className: 'button',
             disabled: !canMoveSelected(draft, 'towardLocomotive'),
           },
         ),
-        actionButton('move-back', 'Posunout dozadu', [icon('backward', 40)], {
-          className: 'button',
-          disabled: !canMoveSelected(draft, 'back'),
-        }),
         actionButton('remove', 'Odebrat vagónek', [icon('remove', 40)], {
           className: 'button danger',
           disabled: !selection,
@@ -399,10 +454,10 @@ export class UiLayer {
                 actionButton(
                   `add:${wagon.id}`,
                   `Přidat: ${wagon.labelCs}`,
-                  [vehicleSvg(wagon, 0.55)],
+                  [vehiclePreview(wagon, 0.55)],
                   {
                     className: 'card small',
-                    disabled: full,
+                    disabled: !canAddWagon(draft, wagon.id, rules),
                   },
                 ),
               ),
@@ -414,6 +469,7 @@ export class UiLayer {
         { class: 'row bottom' },
         actionButton('depart', 'Vyjet', [icon('depart', 56), label('Vyjet')], {
           className: 'button big primary',
+          disabled: tooLong,
         }),
       ),
       origin === 'pause'
@@ -479,6 +535,9 @@ export class UiLayer {
         ),
       ),
       notices(model),
+      model.seed === undefined
+        ? undefined
+        : el('p', { class: 'world-id' }, `Svět ${model.seed}`),
       el('p', { class: 'build-id' }, `Build ${model.buildId}`),
     );
   }

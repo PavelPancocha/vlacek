@@ -8,6 +8,8 @@ export interface GameHostOptions {
   renderer: RendererPreference;
   /** Upper bound for the render buffer density (doc 13 `quality.*.maxDpr`). */
   maxDpr: number;
+  /** Frame rate cap of the quality profile, 0 for none (doc 13). */
+  fpsLimit: number;
   scenes: Phaser.Types.Scenes.SceneType[];
   onReady: (renderer: RendererName) => void;
 }
@@ -53,10 +55,15 @@ export function createGameHost(options: GameHostOptions): GameHost {
       gamepad: false,
       windowEvents: false,
     },
+    // One texture per batch: Phaser 4.2.1's WebGL multi-texture batching
+    // drew rotated quads of interleaved textures as sheared wedges (D-010).
+    // No MSAA: every edge comes from texture filtering (atlas frame margins,
+    // baked ground), and MSAA halved the frame rate on software GL (D-013).
+    render: { maxTextures: 1, antialiasGL: false },
     autoFocus: false,
     banner: false,
     audio: { noAudio: true },
-    fps: { smoothStep: false },
+    fps: { smoothStep: false, limit: options.fpsLimit },
     scene: options.scenes,
     callbacks: {
       postBoot: (booted) =>
@@ -69,8 +76,11 @@ export function createGameHost(options: GameHostOptions): GameHost {
   const observer = new ResizeObserver(() => {
     const size = cssSize();
     const d = density();
-    game.scale.setZoom(1 / d);
+    // Resize first: Phaser 4.2.1 `resize` leaves the canvas CSS size alone
+    // at zoom 1 (density 1), and `setZoom` writes it from the game size, so
+    // only this order stretches nothing at every density.
     game.scale.resize(size.width * d, size.height * d);
+    game.scale.setZoom(1 / d);
   });
   observer.observe(parent);
 

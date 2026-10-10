@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Spoked carriage wheel, r 12 u, centre (12, 12). Centred gradients
+       only: it rotates; light and shadow live in the vehicle overlay. -->
+  <defs>
+    <radialGradient id="tyre" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.84" stop-color="#3a3e45"/>
+      <stop offset="0.91" stop-color="#9aa0a8"/>
+      <stop offset="0.96" stop-color="#5a5f67"/>
+      <stop offset="1" stop-color="#25272b"/>
+    </radialGradient>
+    <radialGradient id="centre" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#4a4f57"/>
+      <stop offset="1" stop-color="#26292e"/>
+    </radialGradient>
+  </defs>
+  <circle cx="12" cy="12" r="11.7" fill="url(#tyre)" stroke="#111214" stroke-width="0.5"/>
+  <circle cx="12" cy="12" r="11.1" fill="none" stroke="#1d1f23" stroke-width="0.2"/>
+  <circle cx="12" cy="12" r="10.3" fill="#2f3237" stroke="#111214" stroke-width="0.35"/>
+  <circle cx="12" cy="12" r="9.6" fill="#141518"/>
+  <path d="M14.18 13.71 L21.25 15.56 L21.58 14.56 L14.77 11.9 Z M12.76 14.66 L17.39 20.32 L18.24 19.7 L14.3 13.55 Z M11.05 14.6 L11.47 21.9 L12.53 21.9 L12.95 14.6 Z M9.7 13.55 L5.76 19.7 L6.61 20.32 L11.24 14.66 Z M9.23 11.9 L2.42 14.56 L2.75 15.56 L9.82 13.71 Z M9.82 10.29 L2.75 8.44 L2.42 9.44 L9.23 12.1 Z M11.24 9.34 L6.61 3.68 L5.76 4.3 L9.7 10.45 Z M12.95 9.4 L12.52 2.1 L11.47 2.1 L11.05 9.4 Z M14.3 10.45 L18.24 4.3 L17.39 3.68 L12.76 9.34 Z M14.77 12.1 L21.58 9.44 L21.25 8.44 L14.18 10.29 Z" fill="url(#centre)" stroke="#0d0e10" stroke-width="0.2"/>
+  <circle cx="12" cy="12" r="9.75" fill="none" stroke="#4a4f57" stroke-width="0.6"/>
+  <circle cx="12" cy="12" r="2.9" fill="url(#centre)" stroke="#0d0e10" stroke-width="0.3"/>
+  <g fill="#0d0e10">
+    <circle cx="13.9" cy="12" r="0.32"/><circle cx="12.59" cy="13.81" r="0.32"/><circle cx="10.46" cy="13.12" r="0.32"/><circle cx="10.46" cy="10.88" r="0.32"/><circle cx="12.59" cy="10.19" r="0.32"/>
+  </g>
+  <circle cx="12" cy="12" r="1.05" fill="#b8bec6" stroke="#111214" stroke-width="0.25"/>
+</svg>
