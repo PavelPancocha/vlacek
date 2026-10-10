@@ -5,6 +5,7 @@ import type {
   WagonDefinition,
   WagonInstance,
 } from '../domain/types.ts';
+import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import type { TrackCursor } from '../domain/world/TrackWindow.ts';
 
 /** Save contracts of doc 08 §6, schema version 1. */
@@ -51,13 +52,17 @@ export interface SaveRules {
   maxRuntimeComponents: number;
   locomotiveIds: ReadonlySet<string>;
   wagonIds: ReadonlySet<string>;
-  /** Generator versions this build can continue (0.1: provisional v0). */
+  /**
+   * The track generator of this build. A journey from an older one starts
+   * fresh (D-009); one from a newer build is kept untouched (doc 08 §7).
+   */
+  trackGeneratorVersion: number;
 }
 
 export type ParseResult =
   | { status: 'valid'; save: SaveEnvelopeV1 }
   | { status: 'invalid'; reason: string }
-  | { status: 'newer'; schemaVersion: number };
+  | { status: 'newer'; schemaVersion: number; generatorVersion?: number };
 
 /**
  * Upper bound of the schema 1 wagon list. Version 0.1 allowed 100 wagons; the
@@ -77,6 +82,7 @@ export function saveRules(
     maxRuntimeComponents: config.save.maxRuntimeComponents,
     locomotiveIds: new Set(locomotives.map((loco) => loco.id)),
     wagonIds: new Set(wagons.map((wagon) => wagon.id)),
+    trackGeneratorVersion: TRACK_GENERATOR_VERSION,
   };
 }
 
@@ -292,6 +298,16 @@ export function parseSave(json: string, rules: SaveRules): ParseResult {
     }
     if (raw['journey'] !== undefined)
       save.journey = journey(raw['journey'], rules);
+    // A newer build's track: never replace it with this build's journey.
+    if (
+      save.journey &&
+      save.journey.generatorVersion > rules.trackGeneratorVersion
+    )
+      return {
+        status: 'newer',
+        schemaVersion,
+        generatorVersion: save.journey.generatorVersion,
+      };
     return { status: 'valid', save };
   } catch (error) {
     if (error instanceof Invalid)

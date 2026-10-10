@@ -9,7 +9,8 @@ Zadání [14 §6](../../vlacek-predavaci-balicek/14_UPRAVY_PRVNI_VERZE.md) poža
 **Kompatibilita uložené hry.**
 
 - `generatorVersion` nových cest je 1. Validace save (`SaveValidation`) už verzi generátoru neomezuje na známé hodnoty, jen na celé číslo 0–1000. Cesta z jiné verze dřív neprošla validací a celý save se zahodil jako poškozený i se soupravou a nastavením, což dokument 08 nedovoluje.
-- `GameSession` u cesty s jinou verzí generátoru, ať starší (0.1) nebo novější, zachová soupravu i číslo světa. Novou cestu začne na startu a ukáže „Trať se změnila, vlak vyjede na novou cestu.“ (`track-changed`). Pod uloženou soupravou se tedy nikdy potichu nemění geometrie.
+- `GameSession` u cesty ze starší verze generátoru (0.1) zachová soupravu i číslo světa. Novou cestu začne na startu a ukáže „Trať se změnila, vlak vyjede na novou cestu.“ (`track-changed`). Pod uloženou soupravou se tedy nikdy potichu nemění geometrie.
+- Cestu z **novější** verze generátoru (save novějšího buildu) validace hlásí jako novější save, stejně jako vyšší `schemaVersion`. Hra pak běží jen v paměti a uložená data nepřepíše (`newer-save-kept`, dokument 08 §7, DATA-04). Dřív by ji první checkpoint přepsal cestou v1 (Codex review PR #2).
 - ID entit nesou verzi (`g1:chunk:…`), takže se staré a nové objekty nepletou.
 
 **Důsledky.** Testy GEN-01/02/04/05 platí pro v1. Nové testy hlídají charakter tratě (převaha konstantního sklonu, roviny i dlouhé sklony oběma směry, různé délky), plynulost přechodů a to, že se oblouky nepřekrývají. Zátěžový profil pro geometrii soupravy (TRN-03, TRN-10) odpovídá nejprudšímu případu v1 a bere hodnoty z konfigurace. Nádraží a přejezdy z M2 se mají umístit na existující roviny plánu, aby geometrie v1 zůstala. Změna kteréhokoli parametru `world.profile` znamená novou verzi generátoru.
