@@ -130,7 +130,7 @@ Horní část: souprava v bočním pohledu. Spodní část: katalog vagonků s o
 
 Klepnutí na připojený vagónek jej vybere; samo ho neodebere. Vedle výběru se zobrazí velké akce „odebrat“, „posunout blíž k mašince“ a „posunout dozadu“. U krajních pozic je neplatná akce neaktivní. Lokomotiva se nepřesouvá mezi vagonky. Odebrání a změny pořadí mají jednou dostupné „vrátit poslední změnu“.
 
-Pás soupravy je horizontálně posouvatelný. Gesto zde slouží výhradně posunu, nikdy brzdě. Lokomotiva má vlastní tlačítko rychlého návratu na začátek pásu. U dlouhé soupravy virtualizovat náhledy; nepočítat trvale stovky složitých DOM komponent mimo výřez.
+Pás soupravy je horizontálně posouvatelný. Gesto zde slouží výhradně posunu, nikdy brzdě. Lokomotiva má vlastní tlačítko rychlého návratu na začátek pásu. Pás ukazuje soupravu stejně jako jízda (dokument 14 §1): lokomotiva vpravo čelem doprava, vagonky za ní doleva v pořadí výběru, nový vagonek na levém konci; pozice počítá stejná funkce `layoutConsist` jako jízda. Krátká souprava stojí u pravého okraje pásu; šipky přesunu míří k lokomotivě (doprava) a ke konci (doleva). Na nízkém displeji (výška do 500 px, telefon na šířku) sdílí ovládací tlačítka jeden řádek, katalog se posouvá vodorovně a Vyjet zůstává v pravém dolním rohu. U dlouhé soupravy virtualizovat náhledy; nepočítat trvale stovky složitých DOM komponent mimo výřez.
 
 Tlačítko **Vyjet** funguje i s nulou vagonků. Při limitu 100 se další přidávání vypne, souprava krátce jemně zareaguje a rodič může vidět „Vláček je plný“. Nic se automaticky nesmaže.
 

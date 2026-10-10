@@ -217,9 +217,16 @@ h1 {
   border-radius: 12px;
 }
 
+.strip {
+  display: flex;
+}
+
+/* A short train stands at the right: the locomotive is its front. */
 .strip-track {
   position: relative;
+  flex: none;
   height: 100%;
+  margin-left: auto;
 }
 
 .strip-item {
@@ -379,5 +386,56 @@ h1 {
   }
   .card {
     min-height: 110px;
+  }
+  .screen {
+    gap: 8px;
+    padding-top: calc(8px + var(--safe-top));
+    padding-bottom: calc(8px + var(--safe-bottom));
+  }
+  /* Phone held sideways: controls share one row, the catalog scrolls and
+     Vyjet stays in the corner, so nothing falls below the screen. */
+  .builder {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-content: start;
+  }
+  .builder > * {
+    min-width: 0;
+  }
+  .builder > .row.actions {
+    grid-row: 1;
+    grid-column: 2;
+    justify-content: flex-end;
+  }
+  .builder > .row.top {
+    grid-column: 1;
+    flex-wrap: nowrap;
+  }
+  .builder > .strip,
+  .builder > .catalog,
+  .builder > .hint,
+  .builder > .notices {
+    grid-column: 1 / -1;
+  }
+  .builder .strip {
+    height: 100px;
+  }
+  .builder > .catalog {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    touch-action: pan-x;
+  }
+  .builder .card.small {
+    min-height: 64px;
+  }
+  .builder > .row.bottom {
+    position: absolute;
+    right: calc(16px + var(--safe-right));
+    bottom: calc(8px + var(--safe-bottom));
+    margin: 0;
+  }
+  .builder .button.big {
+    min-height: 72px;
   }
 }

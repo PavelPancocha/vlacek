@@ -7,6 +7,7 @@ import {
   isFull,
   type ConsistDraft,
 } from '../domain/consist/ConsistEditor.ts';
+import { layoutConsist } from '../domain/train/TrainGeometry.ts';
 import type { WagonGroup } from '../domain/types.ts';
 import type { Settings } from '../platform/SaveValidation.ts';
 import { actionButton, el } from './dom.ts';
@@ -28,6 +29,8 @@ export interface UiModel {
   locomotives: readonly CatalogLocomotive[];
   wagons: readonly CatalogWagon[];
   maxWagons: number;
+  /** Same coupler gap as the ride, so the depot shows the real spacing. */
+  couplerGapU: number;
 }
 
 const NOTICE_TEXT: Record<SessionNotice, string> = {
@@ -52,7 +55,7 @@ const GROUPS: { group: WagonGroup; label: string }[] = [
 
 /** Strip scale: CSS px per world unit for depot previews. */
 const STRIP_PX_PER_U = 0.7;
-const STRIP_GAP_PX = 6;
+const STRIP_PAD_PX = 8;
 /** Extra pixels around the brake button that still count as brake (doc 02 §1). */
 export const BRAKE_HIT_MARGIN_PX = 24;
 
@@ -283,12 +286,25 @@ export class UiLayer {
           : [];
       }),
     ];
-    const positions: number[] = [];
-    let width = 0;
-    for (const item of items) {
-      positions.push(width);
-      width += Math.round(item.vehicle.lengthU * STRIP_PX_PER_U) + STRIP_GAP_PX;
-    }
+    // One consist layout for depot and ride (doc 14 §1): the locomotive is
+    // the front on the right, wagons follow to the left in consist order.
+    const layout = layoutConsist(
+      items.map((item) => item.vehicle),
+      model.couplerGapU,
+    );
+    const positions = items.map((item, index) =>
+      Math.round(
+        STRIP_PAD_PX +
+          (layout.tailOffsetU -
+            (layout.centerOffsetsU[index] ?? 0) -
+            item.vehicle.lengthU / 2) *
+            STRIP_PX_PER_U,
+      ),
+    );
+    const width = Math.round(
+      2 * STRIP_PAD_PX +
+        (layout.frontOffsetU + layout.tailOffsetU) * STRIP_PX_PER_U,
+    );
     track.style.width = `${width}px`;
     const renderVisible = () => {
       const from = strip.scrollLeft - 300;
@@ -323,9 +339,10 @@ export class UiLayer {
     strip.addEventListener('scroll', renderVisible, { signal, passive: true });
     queueMicrotask(() => {
       if (signal.aborted) return;
+      // A new wagon joins the tail at the left end: show it.
       const grew = draft.consist.wagons.length > this.#lastWagonCount;
       this.#lastWagonCount = draft.consist.wagons.length;
-      strip.scrollLeft = grew ? width : this.#stripScrollLeft;
+      strip.scrollLeft = grew ? 0 : this.#stripScrollLeft;
       renderVisible();
     });
 
@@ -367,19 +384,19 @@ export class UiLayer {
       el(
         'div',
         { class: 'row actions' },
+        actionButton('move-back', 'Posunout dozadu', [icon('towardTail', 40)], {
+          className: 'button',
+          disabled: !canMoveSelected(draft, 'back'),
+        }),
         actionButton(
           'move-forward',
           'Posunout blíž k mašince',
-          [icon('forward', 40)],
+          [icon('towardLocomotive', 40)],
           {
             className: 'button',
             disabled: !canMoveSelected(draft, 'towardLocomotive'),
           },
         ),
-        actionButton('move-back', 'Posunout dozadu', [icon('backward', 40)], {
-          className: 'button',
-          disabled: !canMoveSelected(draft, 'back'),
-        }),
         actionButton('remove', 'Odebrat vagónek', [icon('remove', 40)], {
           className: 'button danger',
           disabled: !selection,

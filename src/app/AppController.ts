@@ -93,8 +93,11 @@ export class AppController {
       this.#scene.hitObject(x, y, this.#host.canvas.getBoundingClientRect()),
     );
     session.setUnhandledActionHandler((action) => {
-      if (action === 'strip-start')
-        this.#uiRoot.querySelector('.strip')?.scrollTo({ left: 0 });
+      if (action === 'strip-start') {
+        // The locomotive is the front of the train, at the strip's right end.
+        const strip = this.#uiRoot.querySelector('.strip');
+        strip?.scrollTo({ left: strip.scrollWidth });
+      }
       if (action === 'retry') window.location.reload();
     });
     this.#input = new DomInputAdapter({
@@ -194,6 +197,7 @@ export class AppController {
       locomotives,
       wagons,
       maxWagons: gameConfig.train.maxWagons,
+      couplerGapU: gameConfig.train.couplerGapU,
     });
     const now = this.#uiRoot.dataset['screen'];
     if (now !== before) {

@@ -29,6 +29,66 @@ test.describe('user path', () => {
     expect(state.speedUPerSec).toBe(0);
   });
 
+  test('doc 14 §1: the locomotive leads on the right, new wagons join at the left end', async ({
+    page,
+  }) => {
+    await page.goto('./?debug=1');
+    await tapAction(page, 'loco:steam_local');
+    await tapAction(page, 'to-depot');
+    await tapAction(page, 'add:cargo_box');
+    await tapAction(page, 'add:fun_balloons');
+    await tapAction(page, 'add:passenger_classic');
+    const left = async (selector: string) => {
+      const box = await page.locator(selector).boundingBox();
+      if (!box) throw new Error(`${selector} is not visible`);
+      return box.x;
+    };
+    const loco = await left('.strip-item.loco');
+    const first = await left('[data-action="wagon:w1"]');
+    const second = await left('[data-action="wagon:w2"]');
+    const third = await left('[data-action="wagon:w3"]');
+    // [w3]—[w2]—[w1]—[loco →]: the order of choosing, read from the front.
+    expect(third).toBeLessThan(second);
+    expect(second).toBeLessThan(first);
+    expect(first).toBeLessThan(loco);
+    // "Closer to the locomotive" moves the tail wagon one place right.
+    await tapAction(page, 'wagon:w3');
+    await tapAction(page, 'move-forward');
+    expect(await left('[data-action="wagon:w3"]')).toBeGreaterThan(
+      await left('[data-action="wagon:w2"]'),
+    );
+    expect(await left('[data-action="wagon:w3"]')).toBeLessThan(
+      await left('[data-action="wagon:w1"]'),
+    );
+  });
+
+  test('doc 14 §1: the depot fits a phone held sideways', async ({ page }) => {
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.goto('./?debug=1');
+    await tapAction(page, 'loco:steam_local');
+    await tapAction(page, 'to-depot');
+    await tapAction(page, 'add:cargo_box');
+    const inView = async (selector: string) => {
+      const box = await page.locator(selector).first().boundingBox();
+      if (!box) throw new Error(`${selector} is not visible`);
+      return (
+        box.x >= 0 &&
+        box.y >= 0 &&
+        box.x + box.width <= 844 &&
+        box.y + box.height <= 390
+      );
+    };
+    expect(await inView('[data-action="depart"]')).toBe(true);
+    expect(await inView('.strip-item.loco')).toBe(true);
+    expect(await inView('[data-action="undo"]')).toBe(true);
+    // Every catalog card stays reachable: the row scrolls instead of
+    // spilling past the screen edge.
+    await page
+      .locator('[data-action="add:fun_balloons"]')
+      .click({ timeout: 5_000 });
+    await expect(page.locator('.count')).toHaveText(/^2 \//);
+  });
+
   test('INP-01/02: holding drives, releasing coasts to a stop', async ({
     page,
   }) => {
