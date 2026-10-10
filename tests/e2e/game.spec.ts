@@ -100,6 +100,50 @@ test.describe('user path', () => {
     [667, 375],
     [568, 320],
   ] as const) {
+    test(`the locomotive picker fits a phone held sideways (${width}×${height})`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('./?debug=1');
+      const cards = page.locator('[data-action^="loco:"]');
+      const count = await cards.count();
+      expect(count).toBeGreaterThanOrEqual(4);
+      const inView = (
+        box: { x: number; y: number; width: number; height: number },
+        what: string,
+      ) => {
+        expect(box.x, what).toBeGreaterThanOrEqual(0);
+        expect(box.y, what).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width, what).toBeLessThanOrEqual(width);
+        expect(box.y + box.height, what).toBeLessThanOrEqual(height);
+      };
+      for (let i = 0; i < count; i++) {
+        const card = cards.nth(i);
+        // Only the row of cards may scroll (sideways, by finger); the
+        // screen itself cannot, so it must not have moved.
+        await card.evaluate((node) =>
+          node.scrollIntoView({ block: 'nearest', inline: 'center' }),
+        );
+        const scrolled = await page.evaluate(() => ({
+          screen: document.querySelector('.screen.select')?.scrollTop ?? 0,
+          page: window.scrollY,
+        }));
+        expect(scrolled, `card ${i}`).toEqual({ screen: 0, page: 0 });
+        const box = await card.boundingBox();
+        const next = await page
+          .locator('[data-action="to-depot"]')
+          .first()
+          .boundingBox();
+        if (!box || !next) throw new Error(`card ${i} or the next button`);
+        inView(box, `card ${i}`);
+        inView(next, 'to-depot');
+        // Above the bottom buttons, never behind them.
+        expect(box.y + box.height, `card ${i}`).toBeLessThanOrEqual(next.y);
+        await card.click({ timeout: 5_000 });
+        await expect(card).toHaveAttribute('aria-pressed', 'true');
+      }
+    });
+
     test(`doc 14 §1: the depot fits a phone held sideways (${width}×${height})`, async ({
       page,
     }) => {

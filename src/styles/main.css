@@ -409,6 +409,20 @@ h1 {
     padding-top: calc(8px + var(--safe-top));
     padding-bottom: calc(8px + var(--safe-bottom));
   }
+  /* Phone held sideways: the locomotives scroll in one row, so the way to
+     the depot stays on screen (10 locomotives in V1, doc 06 §2). */
+  .select .cards {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: pan-x;
+    flex: 0 0 auto;
+    max-width: 100%;
+  }
+  .select .card {
+    flex: 0 0 auto;
+  }
   /* Phone held sideways: controls share one row, the catalog scrolls and
      Vyjet stays in the corner, so nothing falls below the screen. */
   .builder {
