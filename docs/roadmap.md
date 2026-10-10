@@ -20,32 +20,102 @@ Dokument 14 je splněný v §1–7: pořadí soupravy, celý vlak v obraze s dé
 
 ## Další kroky v pořadí
 
-1. **H0 — atlas pro jednu jízdu** (podmínka [D-011](decisions/011-vector-vehicle-art-and-atlas.md)). Celý katalog se do jednoho atlasu při 2,5 px/u nevejde.
-   - Atlas bude obsahovat jen vozidla jízdy a seedem vybranou sadu protijedoucích vlaků: 2 parní nebo naftové lokomotivy a 6 druhů vagonků místo celého katalogu.
-   - Po každém výjezdu se atlas přestaví. Depo zůstává u SVG.
-   - Nové rozhodnutí D-019. Test rozpočtu atlasu počítá nejhorší jízdu.
-2. **H1 — šest chybějících lokomotiv** podle dokumentu 06 §2: `steam_express`, `diesel_shunter`, `electric_modern`, `electric_mountain`, `magic_bubbles`, `magic_rainbow`.
-   - Detailní vektorová grafika ve stylu současných vozidel, bez obličejů a log.
-   - Velká parní dostane větší hnací kola a táhla, elektrické pantograf, fantazijní vlastní částice.
-   - Výběr deseti lokomotiv se musí vejít i na telefon naležato.
-3. **H2 — 25 chybějících druhů vagonků** po skupinách dokumentu 06 §3, s jedním commitem na skupinu:
-   - osobní (4);
-   - služební (2);
-   - nákladní (13);
-   - hravé (6).
+Cíl je celý katalog dokumentu 06 §2–3: 10 lokomotiv a 32 druhů vagonků. Dnes jsou 4 lokomotivy a 7 druhů vagonků. Všechna vozidla dostanou detailní vektorovou grafiku ve stylu současných vozidel. Světlo svítí zleva shora, vozidla nemají obličeje ani loga a nejsou převzatá z dětských pořadů. Katalog pojede ve stejném PR jako grafika, tedy v PR #2. Když už bude sloučený, pojede v novém PR z `master`. Každý krok jde přes red → green a má dokumentaci ve stejném commitu.
 
-   Každý druh má vlastní kresbu, ne přebarvenou kopii. Výsledkem je kontaktní list všech 42 vozidel ze skutečné aplikace a `validate:assets --release` bez placeholderů.
+### H0 — atlas pro jednu jízdu a sada protijedoucích vlaků (D-019)
 
-4. **H3 — bubliny a duha.** Bublinková mašinka pouští bubliny, které jde dotykem prasknout souběžně s plynem. Duhová mašinka pouští barevné obláčky.
-5. **Potom (M3–M5):**
-   - scénky dokumentu 05;
-   - varianty infrastruktury dokumentu 06 §5 (ocelový most, viadukt, skalní tunel, další nádraží);
-   - chybějící zvířata dokumentu 06 §6 (datel, ryba, sova);
-   - porovnání lokalit se sestavami dokumentu 06 §7;
-   - den, noc a počasí;
-   - finální zvuky;
-   - PWA a offline (M5);
-   - test na skutečných zařízeních.
+Podmínka z [D-011](decisions/011-vector-vehicle-art-and-atlas.md): celý katalog se do jednoho atlasu při 2,5 px/u nevejde. Dnes navíc protijedoucí vlak bere vagonky z celého katalogu (`GameSession` → `npcFleet.wagons = catalog.wagons`).
+
+- **Doména:** čistá funkce `npcFleetFor(seed, catalog)` u `src/domain/interaction/OncomingTrain.ts`.
+  - Seedem (klíč `npc-fleet`) vybere sadu jízdy: 2 parní nebo naftové lokomotivy a 6 druhů vagonků.
+  - `GameSession.#createRide` ji předá místo celého katalogu. `OncomingTrain` dál volí pro každé místo z této sady.
+  - Unit testy (nejdřív red): stabilita pro stejný seed, jen parní a naftový pohon, velikost sady, žádná elektrická.
+- **Vykreslování:** `journeyArtKeys(vehicles, fleet)` v `src/render/atlasPacking.ts` vrátí díly vozidel jízdy a sady protijedoucích vlaků.
+  - `RideScene` z nich a z dílů světa sestaví `ArtAtlas`. Při změně jízdy (výjezd z depa, obnova) ho přestaví.
+  - Zdroje SVG se dál načtou jednou při startu, zhruba 1 MB. Ověří to `report:budgets`.
+- **Test rozpočtu:** `atlasPacking` místo „všech vozidel“ zabalí nejhorší jízdu při `ART_MAX_PX_PER_U`, tedy 8 největších různých vozidel a největší sadu protijedoucích vlaků.
+- **Depo** zůstává u SVG vrstev (`<image>`), beze změny.
+- **E2E:** jízda s vozidly z různých skupin má `artVehicles === vehicles`. Po změně v depu a novém výjezdu má atlas nová vozidla.
+- **Dokumentace:** D-019 (rozhodnutí, důsledky; kompatibilita: nic se neukládá). V D-011 se podmínka označí jako splněná.
+
+### H1 — šest chybějících lokomotiv
+
+Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
+
+- záznam v `src/content/vehicles.ts`;
+- karoserii a překryv v `assets/vehicles/`;
+- záznam v `src/content/artManifest.ts`;
+- emitory částic;
+- vlastní výšku houkání. Zvuky zůstávají dočasně syntetizované, ale každý typ zní jinak a velká parní má hlubší píšťalu.
+
+| ID                        | Zvláštnosti                                                                                                                      |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `steam_express` 216 u     | Dlouhý kotel, velká spřažená hnací kola (nový díl `wheel-steam-driver-large`), rozvod přes `steamGear`, uhlí v zadní části, kouř |
+| `diesel_shunter` 148 u    | Kapota, kabina a ochoz, sdílená naftová kola, emitor výfuku                                                                      |
+| `electric_modern` 204 u   | Zaoblená čela, hladké boky; sdílí díly pantografu s `electric_retro` (manifest pak jmenuje sdílené klíče)                        |
+| `electric_mountain` 160 u | Krátká robustní skříň, vlastní tvar kabiny, pantograf                                                                            |
+| `magic_bubbles` 164 u     | Zaoblená karoserie; nový druh částic `bubble`                                                                                    |
+| `magic_rainbow` 176 u     | Vlastní silueta, barevné díly; nový druh částic `rainbow-puff`                                                                   |
+
+- **Výběr lokomotivy:** všech 10 se musí vejít a jít ťuknout. E2E telefonů 844 × 390, 667 × 375 a 568 × 320 se rozšíří i na výběr: poslední karta klikatelná, nic se nepřekrývá.
+- **Testy:**
+  - `validateVehicleArt` hlídá geometrii a vlastní kresbu;
+  - test katalogu ověří tabulku lokomotiv dokumentu 06: ID, pohon, délky, `requiresCatenary`;
+  - testy `TrainEffects` pokryjí nové emitory;
+  - jízdy s novými elektrickými lokomotivami projdou E2E TRN-08 se sběračem na drátu.
+
+### H2 — 25 chybějících druhů vagonků, ve čtyřech dávkách (commit na dávku)
+
+1. Osobní: `passenger_double`, `passenger_sleeper`, `passenger_dining`, `passenger_panorama`.
+2. Služební: `service_tools`, `service_snowplow` (pluh složený v obrysu vozu).
+3. Nákladní: `cargo_logs`, `cargo_sand`, `cargo_gravel`, `cargo_tank`, `cargo_milk`, `cargo_grain`, `cargo_hay`, `cargo_apples`, `cargo_cars`, `cargo_tractor`, `cargo_excavator`, `cargo_mail`, `cargo_refrigerated`.
+   - Náklad je pevně ukotvený (dokument 06 §4).
+   - Žádná skutečná loga ani dopravci.
+4. Hravé: `fun_stars`, `fun_garden`, `fun_aquarium`, `fun_windmill`, `fun_lights`, `fun_toyblocks`.
+
+- **Data:** délky, skupiny a české názvy jsou z dokumentu 06 §3. Dvounápravový nebo podvozkový pojezd určuje manifest u každého vagonku.
+- **Depo:** katalog si nechá čtyři skupiny. E2E telefonů ověří, že je dosažitelná i poslední z 32 karet.
+- **Testy a kontroly:**
+  - test katalogu ověří přesně 32 ID vagonků s délkami a skupinami dokumentu 06 a zmizí komentář „Temporary subset“;
+  - `validate:assets --release` projde bez placeholderů;
+  - E2E vyfotí kontaktní list všech 42 vozidel ze skutečné aplikace.
+
+### H3 — bubliny a duha (dokument 06 §2)
+
+- **Bubliny:** viditelné bubliny bublinkové mašinky jde prasknout dotykem.
+  - Zásah hledá stávající `GameSession.setWorldHitTest`. Dotyk funguje souběžně s plynem, stejně jako reakce zvířat.
+  - Prasknutí má malou částici a zvuk.
+- **Duha:** duhová mašinka pouští měkké barevné obláčky.
+- **Testy:** unit pro životnost bubliny a prasknutí; E2E: ťuknutí na bublinu ji odstraní a vlak jede dál.
+
+### Postup a ověření pro H0–H3
+
+- **TDD:** red a green se zapíšou do [protokolu iterace](validation/2026-10-10-iterace-upravy.md). U E2E se red pouští proti předchozímu buildu.
+- **Dokumentace ve stejném commitu:** poznámky k implementaci ve specifikaci 06, README (katalog kompletní), řádky v `assets/SOURCES.md`, D-019.
+- **Kompatibilita (dokument 08):** katalogová ID se jen přidávají. Staré savy obsahují existující ID, takže migrace není potřeba. Test s fixture ověří, že se starý save dál načte.
+- **Brána:**
+  - `npm run check` včetně `validate:assets` a jeho režimu `--release` bez placeholderů;
+  - celé `npm run test:e2e`;
+  - `report:budgets` (počáteční přenos do 10 MiB);
+  - `PERF_SECONDS=30 npm run measure:perf` s nejdelší soupravou z největších vozidel, tedy `steam_express` a dlouhé vagonky. Skript na to dostane volbu `PERF_WAGON`.
+- **Snímky ze skutečné aplikace:**
+  - kontaktní list všech 42 vozidel;
+  - výběr deseti lokomotiv;
+  - depo se všemi skupinami;
+  - jízda s každou novou lokomotivou;
+  - prasknutí bubliny.
+- **Fyzická zařízení:** NEOVĚŘENO, dokud je někdo neotestuje.
+
+### Potom (M3–M5)
+
+- scénky dokumentu 05;
+- varianty infrastruktury dokumentu 06 §5 (ocelový most, viadukt, skalní tunel, další nádraží);
+- chybějící zvířata dokumentu 06 §6 (datel, ryba, sova);
+- porovnání 18 lokalit se sestavami dokumentu 06 §7;
+- den, noc a počasí;
+- finální zvuky;
+- PWA a offline (M5);
+- test na skutečných zařízeních.
 
 Volitelné místní reakce vagonků (dokument 06 §3) zůstávají mimo tento plán, dokud je vlastník nevyžádá.
 
