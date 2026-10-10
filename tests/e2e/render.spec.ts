@@ -112,6 +112,21 @@ async function standingTrain(
 async function differingPixels(placeholders: boolean, browser: Browser) {
   const webgl = await standingTrain(browser, 'auto', placeholders);
   const canvas = await standingTrain(browser, 'canvas', placeholders);
+  try {
+    return await compare(webgl, canvas, placeholders);
+  } finally {
+    // Both pages run a ride; left open they would slow every later test
+    // in this worker's browser.
+    await webgl.page.close();
+    await canvas.page.close();
+  }
+}
+
+async function compare(
+  webgl: Awaited<ReturnType<typeof standingTrain>>,
+  canvas: Awaited<ReturnType<typeof standingTrain>>,
+  placeholders: boolean,
+): Promise<number> {
   expect(webgl.state.renderer).toBe('webgl');
   expect(canvas.state.renderer).toBe('canvas');
   expect(webgl.state.artVehicles).toBe(placeholders ? 0 : WAGONS.length + 1);
