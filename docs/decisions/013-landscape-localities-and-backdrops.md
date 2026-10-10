@@ -105,5 +105,5 @@ Vlastník zvolil „vektory a vyřezaná scenérie“. Referenční listy ale ni
 
 - **Výřezy z referenčních listů:** nejsou, dokud listy nejsou v repozitáři jako soubory.
 - **Zem nejvýše 1 px/u:** na monitoru s 2 px/u jsou hrany země měkčí. Zvýší se, pokud test zařízení ukáže rušivou neostrost; spolu s tím je nutné změřit paměť.
-- **Částice, přejezdy, tunel, druhá kolej a elektrická trolej:** přijdou v dalších krocích F a G.
+- **Částice, přejezdy, tunel, druhá kolej a elektrická trolej** přibyly v krocích F a G ([D-014](014-particles-and-small-animations.md) až [D-018](018-bridges-and-tunnels.md)); toto omezení je odstraněné.
 - **Fyzická zařízení:** NEOVĚŘENO.

@@ -1,6 +1,6 @@
 # Start vývoje — M0
 
-**Stav 2026-10-09:** řezy M0 + M1 jsou implementované jako průběžná verze 0.1. Ověření je v [protokolu v0.1](validation/2026-10-09-v0.1.md), architektura v [D-006](decisions/006-runtime-architecture.md) a matice zařízení v [device-tests](device-tests/v0.1.md). Další práce pokračuje M2 podle implementačního plánu. Text níže popisuje původní zahájení M0.
+**Stav 2026-10-09:** řezy M0 + M1 jsou implementované jako průběžná verze 0.1. Ověření je v [protokolu v0.1](validation/2026-10-09-v0.1.md), architektura v [D-006](decisions/006-runtime-architecture.md) a matice zařízení v [device-tests](device-tests/v0.1.md). Další práce pokračuje podle implementačního plánu; aktuální stav a pořadí dalších kroků je ve [stavu a dalších krocích](roadmap.md). Text níže popisuje původní zahájení M0.
 
 Výchozí bod: commit `c8f027d` obsahoval připnuté prostředí, GitHub Actions, Git hook a 10 testů tooling. Závazný rozsah a brány vlastní [implementační plán](../vlacek-predavaci-balicek/10_IMPLEMENTACNI_PLAN.md); tento soubor pouze určuje první konkrétní kroky.
 
