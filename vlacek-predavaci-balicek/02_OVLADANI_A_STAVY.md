@@ -114,7 +114,7 @@ libovolný stav → RECOVERABLE_ERROR (pouze při skutečné chybě)
 
 Pauza zmrazí simulační čas, dopravu, částice i ambientní zvuky. Vymaže mapu prstů a kláves. Pozice vlaku zůstane zachována. Při obnovení je **rychlost nula**, nezávisle na rychlosti před přerušením; nedojde k okamžitému rozjezdu.
 
-Tlačítko „Pokračovat“ pouze odstraní pauzu. Tentýž dotyk se nepoužije jako plyn. Vstup se znovu odemkne po zvednutí všech prstů, které existovaly při potvrzení. Teprve další nový dotyk může rozjet vlak.
+Tlačítko „Pokračovat“ pouze odstraní pauzu. Tentýž dotyk se nepoužije jako plyn. Vstup se znovu odemkne po zvednutí všech prstů, které existovaly při potvrzení. Teprve další nový dotyk může rozjet vlak. Dotyk, který začne ještě před tímto odemčením, zůstane neaktivní po celou dobu svého držení; vlak se tedy nerozjede ani ve chvíli, kdy se zvedne poslední starý prst. Totéž platí pro klávesy: klávesa držená při potvrzení řídí až po novém stisku.
 
 Totéž platí po načtení uložené cesty. Návrat z neviditelné stránky nikdy automaticky neaktivuje zvuk ani jízdu. Audio se případně znovu odemkne potvrzujícím dotykem, viz dokument 09.
 

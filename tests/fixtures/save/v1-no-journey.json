@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": 1,
+  "savedAtIso": "2026-10-09T18:00:00.000Z",
+  "appBuildId": "0.1.0+0000000",
+  "settings": {
+    "sfxEnabled": false,
+    "musicEnabled": false,
+    "reducedEffects": true,
+    "maxSpeedFactor": 0.65,
+    "quality": "low"
+  },
+  "lastConsist": { "locomotiveId": "magic_stars", "wagons": [] },
+  "builderDraft": {
+    "locomotiveId": "diesel_mainline",
+    "wagons": [
+      { "instanceId": "w3", "definitionId": "cargo_coal", "visualSeed": 1 }
+    ]
+  }
+}
