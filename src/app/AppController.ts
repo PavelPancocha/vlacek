@@ -292,6 +292,7 @@ export class AppController {
         biome: this.#scene.stats.biome,
         localities: [...this.#scene.stats.localities],
         ...this.#nearPropCheck(),
+        crossingViews: this.#scene.stats.crossingViews,
       },
       catenary: {
         electrified: ride?.electrified ?? false,

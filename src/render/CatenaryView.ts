@@ -92,3 +92,70 @@ export function chunkCatenary(
   }
   return { containers: [poles, wires], poles: masts };
 }
+
+/** Paints with Graphics once into a texture (ChunkView's baking). */
+type Bake = (
+  paint: (g: Phaser.GameObjects.Graphics) => void,
+  bounds: { left: number; top: number; right: number; bottom: number },
+) => Phaser.GameObjects.Container;
+
+const FALLBACK_MAST = 0x6b7178;
+const FALLBACK_WIRE = 0x2f3338;
+
+/**
+ * The catenary drawn with plain lines when the art failed to load
+ * (PWA-10): masts and the wire at the same poles and contact height, so
+ * an electric journey keeps its wire along the whole route (AGENTS.md).
+ */
+export function chunkCatenaryFallback(
+  table: ArcLengthTable,
+  seed: number,
+  depths: CatenaryDepths,
+  bake: Bake,
+): ChunkCatenary {
+  const x0 = table.chunkIndex * chunkWidthU;
+  const poleHeightU = worldParts[catenaryParts.pole].heightU;
+  const xs = catenaryPoleXs(seed, x0, x0 + chunkWidthU);
+  const next = catenaryPoleXs(
+    seed,
+    x0 + chunkWidthU,
+    x0 + chunkWidthU + 2 * catenaryPoleSpacingU,
+  )[0];
+  const wirePoints = [...xs, ...(next === undefined ? [] : [next])].map(
+    (x) => ({ x: x - x0, y: -heightAtX(table, x) - catenaryContactHeightU }),
+  );
+  const masts = xs.filter((x) => catenarySupport(seed, x) === 'mast');
+  const top = Math.min(
+    ...wirePoints.map((point) => point.y),
+    ...masts.map(
+      (x) => -heightAtX(table, x) - CATENARY_POLE_DEPTH_U - poleHeightU,
+    ),
+  );
+  const bottom = Math.max(...xs.map((x) => -heightAtX(table, x))) + 4;
+  const right = (wirePoints.at(-1)?.x ?? chunkWidthU) + 4;
+  const poles = bake(
+    (g) => {
+      g.fillStyle(FALLBACK_MAST, 1);
+      for (const x of masts) {
+        const foot = -heightAtX(table, x) - CATENARY_POLE_DEPTH_U;
+        g.fillRect(x - x0 - 2, foot - poleHeightU, 4, poleHeightU);
+        // The arm out to the contact wire.
+        const wire = -heightAtX(table, x) - catenaryContactHeightU;
+        g.fillRect(x - x0 - 2, wire - 2, 14, 2.5);
+      }
+    },
+    { left: -4, top: top - 4, right, bottom },
+  ).setDepth(depths.poles);
+  const wires = bake(
+    (g) => {
+      g.lineStyle(1.6, FALLBACK_WIRE, 1);
+      for (let i = 1; i < wirePoints.length; i++) {
+        const a = wirePoints[i - 1];
+        const b = wirePoints[i];
+        if (a && b) g.lineBetween(a.x, a.y, b.x, b.y);
+      }
+    },
+    { left: -4, top: top - 4, right, bottom },
+  ).setDepth(depths.wires);
+  return { containers: [poles, wires], poles: masts.length };
+}

@@ -91,6 +91,8 @@ export interface RenderStats {
   localities: string[];
   /** Catenary masts in the rendered chunks (doc 03 §9). */
   catenaryPoles: number;
+  /** Level crossings drawn in the rendered chunks (art or plain). */
+  crossingViews: number;
   /**
    * How far the drawn pantograph head misses the contact wire, u; undefined
    * without a raised pantograph in view.
@@ -109,6 +111,7 @@ const NO_STATS: RenderStats = {
   biome: undefined,
   localities: [],
   catenaryPoles: 0,
+  crossingViews: 0,
   pantographGapU: undefined,
   oncomingVehicles: 0,
   tunnels: [],
@@ -791,6 +794,9 @@ export class RideScene extends Phaser.Scene {
         : [],
     );
     this.stats.renderedChunks = this.#chunks.size;
+    this.stats.crossingViews = [...this.#chunks.values()].filter(
+      (chunk) => chunk.hasCrossingView,
+    ).length;
     this.stats.catenaryPoles = [...this.#chunks.values()].reduce(
       (sum, chunk) => sum + chunk.catenaryPoles,
       0,

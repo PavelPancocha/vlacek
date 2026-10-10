@@ -39,6 +39,7 @@ Katalog dosud elektrickou lokomotivu neměl; test to výslovně hlídal, dokud v
    - Kamera u elektrické jízdy drží v obraze i výšku kontaktu.
    - Jiskra: nad 30 % nejvyšší rychlosti v místě kontaktu občas odletí jedna nebo dvě, asi jednou za tři sekundy.
 6. **Diagnostika.** Snímek `?debug=1` hlásí `catenary`: elektrifikaci, počet stožárů ve vykreslených chuncích a mezeru mezi sběračem a drátem.
+7. **Bez grafiky (PWA-10).** Když se grafika nenačte, stožáry a drát se kreslí jednoduchými čarami na stejných místech a ve stejné výšce, takže vedení vede celou trasou i tehdy ([D-011](011-vector-vehicle-art-and-atlas.md)).
 
 ## Důsledky
 

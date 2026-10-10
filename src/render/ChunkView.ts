@@ -31,7 +31,12 @@ import type {
   NearGround,
 } from '../domain/world/sceneryTemplates.ts';
 import { bankHeightU } from '../domain/world/Terrain.ts';
-import { RIVER_HALF_U } from '../domain/world/Structures.ts';
+import {
+  BRIDGE_HALF_U,
+  RIVER_HALF_U,
+  VALLEY_DEPTH_U,
+  type TunnelSite,
+} from '../domain/world/Structures.ts';
 import {
   BACK_PALETTE,
   NEAR_PALETTE,
@@ -42,7 +47,7 @@ import {
 } from './groundPalette.ts';
 import { glintAlpha, swayAmplitudeRad, swayAngle } from './ambientMotion.ts';
 import { frameOrigin } from './atlasPacking.ts';
-import { chunkCatenary } from './CatenaryView.ts';
+import { chunkCatenary, chunkCatenaryFallback } from './CatenaryView.ts';
 import {
   TUNNEL_MAST_CLEARANCE_U,
   catenaryPoleXs,
@@ -50,7 +55,8 @@ import {
 } from '../domain/world/Catenary.ts';
 import { chunkSecondaryTrack } from './SecondaryView.ts';
 import { CrossingView, type CrossingState } from './CrossingView.ts';
-import { TunnelView } from './TunnelView.ts';
+import { CrossingFallbackView } from './CrossingFallbackView.ts';
+import { TunnelView, type Bake } from './TunnelView.ts';
 import { roadHalfWidthU, roadPointY } from './crossingLayout.ts';
 import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
 import { trackTilePlacements } from './trackTiles.ts';
@@ -211,11 +217,11 @@ export class ChunkView {
   }[] = [];
   readonly #glints: { image: Phaser.GameObjects.Image; phase: number }[] = [];
   /** Barriers, lamps and traffic of the chunk's level crossing. */
-  #crossing: CrossingView | undefined;
+  #crossing: CrossingView | CrossingFallbackView | undefined;
   /** The chunk's tunnel, whose hill clears while the train is inside. */
   #tunnel: TunnelView | undefined;
   /** Catenary masts of an electric journey (doc 03 §9). */
-  readonly #poles: number = 0;
+  #poles = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -422,18 +428,33 @@ export class ChunkView {
     }
     this.#objects.push(back, ground);
     if (!art) {
-      // Baked too: without MSAA a live line would alias (D-013).
+      // Baked too: without MSAA a live line would alias (D-013). A bridge
+      // still carries the track over its valley.
+      const bridge = scenery.bridge;
       this.#objects.push(
         this.#bake(
-          (g) => paintPlainTrack(g, table),
+          (g) => {
+            if (bridge) this.#paintPlainBridge(g, bridge.localXU);
+            paintPlainTrack(g, table);
+          },
           {
             left: -4,
             right: CHUNK_WIDTH_U + 4,
             top: -highRail - 8,
-            bottom: -lowRail + 12,
+            bottom: -lowRail + 12 + VALLEY_DEPTH_U + TRACK_BED_DEPTH_U,
           },
           groundScale,
         ).setDepth(depths.track),
+      );
+      // The functional infrastructure works without its art (PWA-10).
+      this.#addPlainInfrastructure(
+        scene,
+        table,
+        seed,
+        scenery,
+        depths,
+        electrified,
+        groundScale,
       );
       return;
     }
@@ -501,38 +522,17 @@ export class ChunkView {
         );
       this.#objects.push(railing);
     }
-    if (scenery.tunnel) {
-      // An electric journey's wire hangs from the tunnel's ceiling there.
-      const x0 = table.chunkIndex * CHUNK_WIDTH_U;
-      const hangerXs = electrified
-        ? catenaryPoleXs(
-            seed,
-            x0 + scenery.tunnel.fromX - TUNNEL_MAST_CLEARANCE_U,
-            x0 + scenery.tunnel.toX + TUNNEL_MAST_CLEARANCE_U,
-          )
-            .filter((x) => catenarySupport(seed, x) === 'hanger')
-            .map((x) => x - x0)
-        : [];
-      this.#tunnel = new TunnelView(
+    if (scenery.tunnel)
+      this.#addTunnel(
         scene,
         art,
+        table,
+        seed,
         scenery.tunnel,
-        {
-          railY: (x) => -this.#railAt(x),
-          meadowY: (x) => this.#meadowTop(x),
-        },
+        depths,
+        electrified,
         (paint, bounds) => this.#bake(paint, bounds, groundScale),
-        {
-          // In front of the second track's hills, behind the masts.
-          flanks: depths.backProps + 0.5,
-          interior: depths.backProps + 0.55,
-          shade: depths.train + 0.05,
-          cover: depths.train + 0.6,
-        },
-        hangerXs,
       );
-      this.#objects.push(...this.#tunnel.containers);
-    }
     // The second track behind the main one, its tunnel mouths and portal
     // hills; the oncoming train is drawn between them (doc 04 §7).
     this.#objects.push(
@@ -591,6 +591,115 @@ export class ChunkView {
   /** The chunk's tunnel, if any. */
   get tunnel(): TunnelView | undefined {
     return this.#tunnel;
+  }
+
+  /** Whether a level crossing is drawn here (with art or plain). */
+  get hasCrossingView(): boolean {
+    return this.#crossing !== undefined;
+  }
+
+  /**
+   * Crossing, tunnel and catenary drawn plain when the art failed to load
+   * (PWA-10): the barriers still warn, the hill still clears over the
+   * train and an electric journey keeps its wire (AGENTS.md).
+   */
+  #addPlainInfrastructure(
+    scene: Phaser.Scene,
+    table: ArcLengthTable,
+    seed: number,
+    scenery: ChunkScenery,
+    depths: ChunkDepths,
+    electrified: boolean,
+    groundScale: number,
+  ): void {
+    const bake: Bake = (paint, bounds) =>
+      this.#bake(paint, bounds, groundScale);
+    if (scenery.crossing) {
+      const x = scenery.crossing.localXU;
+      this.#crossing = new CrossingFallbackView(
+        scene,
+        x,
+        { railY: -this.#railAt(x), meadowY: this.#meadowTop(x) },
+        {
+          back: depths.backProps + 0.5,
+          deck: depths.track + 0.5,
+          near: depths.nearProps + 0.5,
+        },
+      );
+    }
+    if (scenery.tunnel)
+      this.#addTunnel(
+        scene,
+        undefined,
+        table,
+        seed,
+        scenery.tunnel,
+        depths,
+        electrified,
+        bake,
+      );
+    if (electrified) {
+      const catenary = chunkCatenaryFallback(
+        table,
+        seed,
+        { poles: depths.backProps + 0.6, wires: depths.wires },
+        bake,
+      );
+      this.#objects.push(...catenary.containers);
+      this.#poles = catenary.poles;
+    }
+  }
+
+  /** A simple deck and abutments under the rails over the stream. */
+  #paintPlainBridge(g: Phaser.GameObjects.Graphics, x: number): void {
+    const top = -this.#railAt(x) + 3;
+    const floor = this.#meadowTop(x);
+    g.fillStyle(0xb9ae94, 1);
+    g.fillRect(x - BRIDGE_HALF_U, top, 2 * BRIDGE_HALF_U, 10);
+    g.fillRect(x - BRIDGE_HALF_U, top, 14, floor - top);
+    g.fillRect(x + BRIDGE_HALF_U - 14, top, 14, floor - top);
+  }
+
+  #addTunnel(
+    scene: Phaser.Scene,
+    art: ChunkArt | undefined,
+    table: ArcLengthTable,
+    seed: number,
+    site: TunnelSite,
+    depths: ChunkDepths,
+    electrified: boolean,
+    bake: Bake,
+  ): void {
+    // An electric journey's wire hangs from the tunnel's ceiling there.
+    const x0 = table.chunkIndex * CHUNK_WIDTH_U;
+    const hangerXs = electrified
+      ? catenaryPoleXs(
+          seed,
+          x0 + site.fromX - TUNNEL_MAST_CLEARANCE_U,
+          x0 + site.toX + TUNNEL_MAST_CLEARANCE_U,
+        )
+          .filter((x) => catenarySupport(seed, x) === 'hanger')
+          .map((x) => x - x0)
+      : [];
+    this.#tunnel = new TunnelView(
+      scene,
+      art,
+      site,
+      {
+        railY: (x) => -this.#railAt(x),
+        meadowY: (x) => this.#meadowTop(x),
+      },
+      bake,
+      {
+        // In front of the second track's hills, behind the masts.
+        flanks: depths.backProps + 0.5,
+        interior: depths.backProps + 0.55,
+        shade: depths.train + 0.05,
+        cover: depths.train + 0.6,
+      },
+      hangerXs,
+    );
+    this.#objects.push(...this.#tunnel.containers);
   }
 
   /** Catenary masts of this chunk (0 unless the journey is electric). */

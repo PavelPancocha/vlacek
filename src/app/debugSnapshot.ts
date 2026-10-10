@@ -38,6 +38,8 @@ export interface DebugSnapshot {
     nearProps: number;
     /** Near-meadow props overlapping a drawn vehicle; always 0. */
     nearPropsOverTrain: number;
+    /** Level crossings drawn in view, with art or its fallback. */
+    crossingViews: number;
   };
   /** Catenary of an electric journey (doc 03 §9, D-016). */
   catenary: {

@@ -40,6 +40,7 @@ Dokument 14 §3 žádá detailní semi-realistickou grafiku místo placeholderů
    - Prohlížeč tak vyhlazuje vektor přímo ve zobrazené velikosti. První verze s pevnými 2 px/u byla na 1280 × 720 (zoom 0,58) zubatá, protože GPU zmenšovalo bitmapu 3,5×.
 5. **Build.** Soubory vozidel se nevkládají do JS jako `data:` URI (`assetsInlineLimit` ve `vite.config.ts`). Phaser 4.2.1 dekóduje každé `data:` URI jako base64. Vite ale malé SVG vkládá URL-kódované, takže `atob` vyhodilo výjimku, načítání scény se zastavilo a s ním celé UI.
 6. **Fallback (PWA-10).** Když se díl nenačte, scéna chybu zapíše do konzole. Vozy se pak kreslí jednotnou neutrální siluetou se žlutými šrafami a jízda pokračuje. Stejnou siluetu dostane i budoucí vozidlo katalogu, které ještě nemá grafiku (`placeholder: true`).
+   - Funkční infrastruktura se bez grafiky kreslí jednoduchými tvary na stejných místech: přejezd se sloupky, břevny, blikajícími světly a provozem (`CrossingFallbackView`), stožáry a trolej elektrické jízdy (`chunkCatenaryFallback`), most jako mostovka s opěrami a tunel bez portálů s průhledným kopcem. Varování přejezdu tak platí dál a trolej vede celou trasou (Codex review PR #2).
 7. **Depo.** Náhled je `<svg>` s jedním `<image>` na díl ze stejných souborů. Id přechodů jednotlivých souborů se tak v dokumentu nepřekrývají.
 
 **Důsledky.**

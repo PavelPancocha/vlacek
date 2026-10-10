@@ -82,7 +82,8 @@ export class TunnelView {
 
   constructor(
     scene: Phaser.Scene,
-    art: TunnelArt,
+    /** Without art (PWA-10) the portals are left out; the rest stays. */
+    art: TunnelArt | undefined,
     site: TunnelSite,
     ground: TunnelGround,
     bake: Bake,
@@ -346,6 +347,7 @@ export class TunnelView {
       [fromX, false],
       [toX, true],
     ] as const) {
+      if (!art) break;
       const image = scene.add.image(
         x,
         ground.railY(x),

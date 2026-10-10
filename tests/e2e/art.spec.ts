@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { artParts } from '../../src/content/artManifest.ts';
 import { isBackdropPart, worldParts } from '../../src/content/worldArt.ts';
+import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 import { snapshot, startRide, tapAction } from './helpers.ts';
 
 /** Vehicles, track, props and animals share the main atlas (D-013). */
@@ -55,6 +56,67 @@ test.describe('vehicle art (doc 14 §3)', () => {
     const state = await snapshot(page);
     expect(state.artAtlas).toBeUndefined();
     expect(state.artVehicles).toBe(0);
+  });
+
+  test('PWA-10: without its art the ride still shows the wire, the crossing and the tunnel', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    await page.route(/steam_local\.body-[^/]*\.svg$/, (route) => route.abort());
+    // An electric journey in world 123 before the crossing of chunk 3; the
+    // tunnel of chunk 6 lies ahead (doc 04 §6).
+    const consist = {
+      locomotiveId: 'electric_retro',
+      wagons: [{ instanceId: 'w1', definitionId: 'cargo_box', visualSeed: 0 }],
+    };
+    const save = JSON.stringify({
+      schemaVersion: 1,
+      contentVersion: 1,
+      savedAtIso: '2026-10-10T00:00:00.000Z',
+      appBuildId: 'fallback-test',
+      settings: {
+        sfxEnabled: false,
+        musicEnabled: false,
+        reducedEffects: false,
+        maxSpeedFactor: 1,
+        quality: 'auto',
+      },
+      lastConsist: consist,
+      journey: {
+        seed: 123,
+        generatorVersion: TRACK_GENERATOR_VERSION,
+        consist,
+        head: { chunkIndex: 3, arcOffsetU: 300 },
+        simulationTick: 0,
+        activeEntities: [],
+      },
+    });
+    await page.addInitScript((json) => {
+      if (!sessionStorage.getItem('fallback-seeded')) {
+        localStorage.setItem('vlacek.save.v1', json);
+        sessionStorage.setItem('fallback-seeded', '1');
+      }
+    }, save);
+    await page.goto('./?debug=1');
+    await tapAction(page, 'continue');
+    await tapAction(page, 'resume');
+    await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+    expect((await snapshot(page)).artAtlas).toBeUndefined();
+    // The wire along the whole route (AGENTS.md) and the crossing's
+    // barriers and lamps are drawn without the art too.
+    await expect
+      .poll(async () => (await snapshot(page)).catenary.poles)
+      .toBeGreaterThan(0);
+    expect((await snapshot(page)).scenery.crossingViews).toBeGreaterThan(0);
+    // Drive on to the tunnel: its see-through cover works without art.
+    await page.mouse.move(700, 300);
+    await page.mouse.down();
+    await expect
+      .poll(async () => (await snapshot(page)).tunnels.length, {
+        timeout: 20_000,
+      })
+      .toBeGreaterThan(0);
+    await page.mouse.up();
   });
 
   test('D-011: the art is rasterised at the screen scale and again after a resize', async ({
