@@ -40,6 +40,8 @@ Z-order není univerzální pravidlo „všechna zvířata před vlakem“: konk
 
 Pozadí používá dvě až tři parallax rychlosti. Nejbližší fyzický terén a kolej se pohybují přesně s kamerou. Na styku chunků nesmí zůstat prázdné místo v obloze či pozadí.
 
+Implementace vrstev 5 a 6 ([D-012](../docs/decisions/012-track-tiles-and-terrain.md)): kolej tvoří vektorové dlaždice z atlasu, pokládané po 64 u a otočené podle profilu. Pod nimi je svah náspu a louka v pásech, které k divákovi tmavnou. Zem každého chunku přesahuje do dalšího, aby na Canvasu nevznikl šev.
+
 ## 4. Specifikace vozidlových assetů
 
 Každý vozidlový typ musí být rozpoznatelný při běžné velikosti a mít náhled pro katalog. Obrázky se připravují alespoň pro základní a vyšší hustotu nebo ve zdrojovém vektoru; runtime nemusí pracovat s velkým SVG DOM.

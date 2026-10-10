@@ -65,4 +65,18 @@ describe('gameConfig', () => {
     };
     expect(validateGameConfig(broken)).toEqual(['camera.trainWidthFraction']);
   });
+
+  it('rejects a terrain without lattice or with a negative embankment', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      world: {
+        ...gameConfig.world,
+        terrain: { latticeU: 0, maxEmbankmentU: -1 },
+      },
+    };
+    expect(validateGameConfig(broken)).toEqual([
+      'world.terrain.latticeU',
+      'world.terrain.maxEmbankmentU',
+    ]);
+  });
 });

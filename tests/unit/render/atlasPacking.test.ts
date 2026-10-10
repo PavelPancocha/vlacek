@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { artParts } from '../../../src/content/artManifest.ts';
+import { worldParts } from '../../../src/content/worldArt.ts';
 import {
   ART_MAX_PX_PER_U,
   ATLAS_PADDING_PX,
@@ -82,10 +83,11 @@ describe('vehicle art atlas', () => {
     expect(artScaleFor(9)).toBe(ART_MAX_PX_PER_U);
   });
 
-  it('fits every art part into one atlas at the largest raster scale (doc 13 budget)', () => {
-    const items = artAtlasItems(artParts, ART_MAX_PX_PER_U);
+  it('fits every vehicle and world part into one atlas at the largest raster scale (doc 13 budget)', () => {
+    const parts = { ...artParts, ...worldParts };
+    const items = artAtlasItems(parts, ART_MAX_PX_PER_U);
     expect(items.map((item) => item.key).sort()).toEqual(
-      Object.keys(artParts).sort(),
+      Object.keys(parts).sort(),
     );
     const body = items.find((item) => item.key === 'steam_local.body');
     expect(body).toEqual({

@@ -118,6 +118,11 @@ export class RideSimulation {
     return this.#vehicles.length;
   }
 
+  /** World seed of the journey, for seeded scenery around the track. */
+  get seed(): number {
+    return this.#seed;
+  }
+
   sample(s: number): TrackSample {
     return this.track.sample(s);
   }

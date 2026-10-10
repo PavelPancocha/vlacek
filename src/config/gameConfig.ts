@@ -58,11 +58,20 @@ export interface TrackProfileConfig {
   lengthStepU: number;
 }
 
+/** Ground around the track (`src/domain/world/Terrain.ts`). */
+export interface TerrainConfig {
+  /** Spacing of the seeded height nodes; heights blend between them. */
+  latticeU: number;
+  /** Highest track bed above the near meadow. */
+  maxEmbankmentU: number;
+}
+
 export interface WorldConfig {
   chunkWidthU: number;
   /** Absolute grade bound for validation and the motion model. */
   maxTrackGrade: number;
   profile: TrackProfileConfig;
+  terrain: TerrainConfig;
   arcSampleSpacingU: number;
   geometryLookAheadU: number;
   geometryTailMarginU: number;
@@ -149,6 +158,7 @@ export const gameConfig: GameConfig = {
       transitionU: 192,
       lengthStepU: 64,
     },
+    terrain: { latticeU: 512, maxEmbankmentU: 40 },
     arcSampleSpacingU: 8,
     geometryLookAheadU: 2048,
     geometryTailMarginU: 1024,
@@ -261,6 +271,12 @@ export function validateGameConfig(config: GameConfig): string[] {
     ],
     ['world.profile.transitionU', positive(world.profile.transitionU)],
     ['world.profile.lengthStepU', positive(world.profile.lengthStepU)],
+    ['world.terrain.latticeU', positive(world.terrain.latticeU)],
+    [
+      'world.terrain.maxEmbankmentU',
+      Number.isFinite(world.terrain.maxEmbankmentU) &&
+        world.terrain.maxEmbankmentU >= 0,
+    ],
     [
       // A block can always go from one boundary height to the next.
       'world.profile.blockLength',

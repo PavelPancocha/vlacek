@@ -120,6 +120,28 @@ function vehicleErrors(
 }
 
 /**
+ * Every part file exists with its size in u as the viewBox, and every file
+ * in the folder belongs to a part (shared by vehicle and world art).
+ */
+export function partFileErrors(
+  parts: Readonly<Record<string, ArtPart>>,
+  files: ReadonlyMap<string, string>,
+): string[] {
+  const errors: string[] = [];
+  const used = new Set<string>();
+  for (const [key, part] of Object.entries(parts)) {
+    used.add(part.file);
+    const text = files.get(part.file);
+    if (text === undefined) errors.push(`${key}: ${part.file} missing`);
+    else errors.push(...partErrors(key, part, text));
+  }
+  for (const file of files.keys()) {
+    if (!used.has(file)) errors.push(`${file}: not in the manifest`);
+  }
+  return errors;
+}
+
+/**
  * Vehicle art contract (CNT-02, doc 06 §8, doc 07 §4): every catalog
  * vehicle has exactly one look, every part file exists at its size in u,
  * drawings are exactly as long as the vehicle, wheels stand on the rail and
@@ -141,16 +163,7 @@ export function validateVehicleArt(input: ArtValidationInput): string[] {
       errors.push(`${id}: art for a vehicle not in the catalog`);
   }
 
-  const used = new Set<string>();
-  for (const [key, part] of Object.entries(input.parts)) {
-    used.add(part.file);
-    const text = input.files.get(part.file);
-    if (text === undefined) errors.push(`${key}: ${part.file} missing`);
-    else errors.push(...partErrors(key, part, text));
-  }
-  for (const file of input.files.keys()) {
-    if (!used.has(file)) errors.push(`${file}: not in the manifest`);
-  }
+  errors.push(...partFileErrors(input.parts, input.files));
 
   // Every type has its own drawing (doc 10 §5: not a recoloured copy).
   const bodies = new Map<string, string>();

@@ -9,7 +9,7 @@ test.describe('vehicle art (doc 14 §3)', () => {
     await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(3);
     const state = await snapshot(page);
     expect(state.renderedVehicles).toBe(3);
-    expect(state.artAtlas?.frames).toBe(33);
+    expect(state.artAtlas?.frames).toBe(36);
     expect(state.artAtlas?.width).toBeLessThanOrEqual(2048);
     expect(state.artAtlas?.height).toBeLessThanOrEqual(2048);
   });

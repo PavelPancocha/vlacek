@@ -59,6 +59,8 @@ Výška a sklon jsou spojité na každém švu chunku i bloku. Sklon nikdy nepř
 
 Nádraží a přejezdy (M2) se umístí na existující roviny plánu, mosty a tunely na terén kolem tratě, který může být členitější než kolejové těleso. Geometrie v1 se kvůli nim nemá měnit.
 
+Terén kolem tratě je samostatná seedovaná funkce, ne součást profilu koleje ([D-012](../docs/decisions/012-track-tiles-and-terrain.md)). `embankmentU(seed, x)` určuje výšku kolejového tělesa nad loukou v popředí: hodnotový šum s uzly po `world.terrain.latticeU` do `world.terrain.maxEmbankmentU`, spojitý se spojitým sklonem a počítaný jen z x. Klíč obsahuje verzi generátoru.
+
 ## 5. Biomy a návaznost krajiny
 
 Šest základních biomů:

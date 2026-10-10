@@ -155,3 +155,28 @@ Skutečná aplikace, 1600 × 900, svět 7: depo se všemi sedmi vozy a stojící
 ![Depo se všemi vozy](img/2026-10-10-depo-vsech-vozidel.png)
 
 ![Souprava všech vozidel v jízdě](img/2026-10-10-jizda-vsech-vozidel.png)
+
+## E1 — kolej a terén (§3, §6)
+
+Rozhodnutí: [D-012](../decisions/012-track-tiles-and-terrain.md). Kolej z vektorových dlaždic: kolejnice s lesklou hlavou, upevnění, konce pražců, štěrk, travnatý okraj. Pod ní seedovaný násep a louka v pásech.
+
+| Test                                                                                    | Red                                                      | Green               |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------- |
+| Unit `embankmentU` (determinismus, meze a pestrost, spojitost přes chunky a uzly)       | 2 FAIL proti stubu vracejícímu 0                         | 3 PASS              |
+| Unit `trackTilePlacements` (po 64 u na kolejnici, tětiva k další dlaždici, varianty)    | 2 FAIL proti stubu `[]`                                  | 3 PASS              |
+| Unit manifest světa a `validateWorldArt` (chybějící, špatná velikost, zbylé, nepoužité) | 2 FAIL (bez dlaždic, stub validátoru)                    | 4 PASS              |
+| Tooling `validate:assets` (výpis s díly světa)                                          | 1 FAIL (výpis bez světa)                                 | 2 PASS              |
+| Unit konfigurace `world.terrain`                                                        | přidáno spolu s konfigurací (bez samostatného red)       | PASS                |
+| E2E švy na Canvasu, nově bez pevné barvy země                                           | s nulovým přesahem chunků FAIL (šev na x 98, 688 a 1278) | PASS s přesahem 4 u |
+| E2E `game`, `render`, `art`                                                             | —                                                        | 64 PASS / 4 skipped |
+
+Výkon (`PERF_SECONDS=30 npm run measure:perf`, nejdelší souprava):
+
+| Varianta                       | Medián FPS | p95     |
+| ------------------------------ | ---------- | ------- |
+| Dlaždice a 7 pásů louky po 8 u | 15         | 83 ms   |
+| Jen 1 pás louky                | 20         | 50 ms   |
+| Bez dlaždic (dražší jsou pásy) | 15         | 83 ms   |
+| Obrysy země po 32 u (výsledek) | 20         | 66,6 ms |
+
+Nejhorší snímek výsledné varianty měl 83 ms.

@@ -374,18 +374,22 @@ test.describe('user path', () => {
         document.querySelector<HTMLCanvasElement>('#game-root canvas');
       const context = canvas?.getContext('2d');
       if (!canvas || !context) throw new Error('no 2D game canvas');
-      // Ground fill #8cbf6a. Compositing two anti-aliased edges of the same
-      // colour may round by one level; the seam was 4–7 levels lighter.
-      const ground = [140, 191, 106];
-      const isGround = (
-        data: Uint8ClampedArray,
-        x: number,
-        tolerance: number,
-      ) =>
-        ground.every(
-          (value, channel) =>
-            Math.abs((data[4 * x + channel] ?? 0) - value) <= tolerance,
+      // A seam is a one-pixel column that differs from its two identical
+      // neighbours; compositing two anti-aliased edges of the same colour
+      // may round by one level, the seam was 4–7 levels lighter.
+      const isSeam = (data: Uint8ClampedArray, x: number) => {
+        const same = [0, 1, 2].every(
+          (c) => data[4 * (x - 1) + c] === data[4 * (x + 1) + c],
         );
+        return (
+          same &&
+          [0, 1, 2].some(
+            (c) =>
+              Math.abs((data[4 * x + c] ?? 0) - (data[4 * (x - 1) + c] ?? 0)) >
+              2,
+          )
+        );
+      };
       const found: string[] = [];
       for (let frame = 0; frame < 30; frame++) {
         await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -393,11 +397,7 @@ test.describe('user path', () => {
           const y = Math.round(canvas.height * fraction);
           const row = context.getImageData(0, y, canvas.width, 1).data;
           for (let x = 1; x < canvas.width - 1; x++) {
-            if (
-              isGround(row, x - 1, 0) &&
-              isGround(row, x + 1, 0) &&
-              !isGround(row, x, 2)
-            )
+            if (isSeam(row, x))
               found.push(
                 `frame ${frame} x ${x} y ${y}: ${row.slice(4 * x, 4 * x + 3).join()}`,
               );

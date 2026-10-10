@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { gameConfig } from '../config/gameConfig.ts';
 import { vehicleArtLayers } from '../content/artLayers.ts';
+import { artFileUrl, worldFileUrl } from '../content/artFiles.ts';
 import { artParts, vehicleArt } from '../content/artManifest.ts';
 import {
   OBJECT_RADIUS_U,
@@ -10,8 +11,16 @@ import {
   type Shape,
   type ShapedVehicle,
 } from '../content/placeholderShapes.ts';
+import { TRACK_BED_DEPTH_U, worldParts } from '../content/worldArt.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
-import { ArtAtlas, preloadArt, type ArtAtlasInfo } from './ArtAtlas.ts';
+import { embankmentU } from '../domain/world/Terrain.ts';
+import {
+  ArtAtlas,
+  preloadArt,
+  type ArtAtlasInfo,
+  type ArtSource,
+} from './ArtAtlas.ts';
+import { ChunkView } from './ChunkView.ts';
 import {
   frameLeftX,
   frameTopY,
@@ -44,12 +53,8 @@ const SPAN_STEP_U = 32;
 const ORIGIN_STEP_U = 4096;
 /** Chunk width shared with the generator and TrackWindow (doc 13). */
 const CHUNK_WIDTH_U = gameConfig.world.chunkWidthU;
-const GROUND_DEPTH_U = 1200;
-/**
- * Each chunk's ground reaches this far into the next one: abutting
- * anti-aliased polygon edges leave a light seam column on Canvas.
- */
-const GROUND_OVERLAP_U = 4;
+/** Interactive objects stand this far into the meadow below the bank. */
+const OBJECT_MEADOW_DEPTH_U = 12;
 const REACTION_TICKS = 40;
 const HILLS_HEIGHT = 560;
 /** Width of the repeating background hills texture (not a chunk width). */
@@ -61,7 +66,23 @@ const HILLS_WIDTH = 1024;
  */
 const HILLS_CLEAR_BOTTOM = 4;
 
-const DEPTH = { hills: 1, ground: 5, train: 7, objects: 9 } as const;
+const DEPTH = { hills: 1, ground: 5, track: 6, train: 7, objects: 9 } as const;
+
+/** Every vehicle and world part, for the one art atlas. */
+const ART_SOURCES: readonly ArtSource[] = [
+  ...Object.entries(artParts).map(([key, part]) => ({
+    key,
+    url: artFileUrl(part.file),
+    widthU: part.widthU,
+    heightU: part.heightU,
+  })),
+  ...Object.entries(worldParts).map(([key, part]) => ({
+    key,
+    url: worldFileUrl(part.file),
+    widthU: part.widthU,
+    heightU: part.heightU,
+  })),
+];
 
 function hex(color: string): number {
   return Number.parseInt(color.replace('#', ''), 16);
@@ -99,7 +120,7 @@ interface VehicleSlot {
  */
 export class RideScene extends Phaser.Scene {
   readonly #host: RideSceneHost;
-  readonly #chunkGraphics = new Map<number, Phaser.GameObjects.Graphics>();
+  readonly #chunks = new Map<number, ChunkView>();
   readonly #objectImages = new Map<string, Phaser.GameObjects.Image>();
   readonly #slots: VehicleSlot[] = [];
   #hills: Phaser.GameObjects.TileSprite | undefined;
@@ -137,13 +158,13 @@ export class RideScene extends Phaser.Scene {
   }
 
   preload(): void {
-    preloadArt(this, artParts);
+    preloadArt(this, ART_SOURCES);
   }
 
   create(): void {
     this.cameras.main.setBackgroundColor('#bfe3f2');
     try {
-      this.#art = new ArtAtlas(this, artParts);
+      this.#art = new ArtAtlas(this, ART_SOURCES);
       this.events.once('destroy', () => this.#art?.destroy());
     } catch (error) {
       // A failed download must not stop the ride (PWA-10): vehicles fall
@@ -315,8 +336,7 @@ export class RideScene extends Phaser.Scene {
   }
 
   #reset(): void {
-    for (const graphics of this.#chunkGraphics.values()) graphics.destroy();
-    this.#chunkGraphics.clear();
+    this.#destroyChunks();
     for (const image of this.#objectImages.values()) image.destroy();
     this.#objectImages.clear();
     for (const slot of this.#slots) slot.container.destroy();
@@ -417,6 +437,11 @@ export class RideScene extends Phaser.Scene {
     this.#drawTrain(ride, headS, leftX, rightX);
   }
 
+  #destroyChunks(): void {
+    for (const chunk of this.#chunks.values()) chunk.destroy();
+    this.#chunks.clear();
+  }
+
   #drawTrack(ride: RideSimulation, leftX: number, rightX: number): void {
     const first = Math.max(
       ride.track.firstChunkIndex,
@@ -426,53 +451,30 @@ export class RideScene extends Phaser.Scene {
       ride.track.lastChunkIndex,
       Math.floor(rightX / CHUNK_WIDTH_U) + 1,
     );
-    for (const [index, graphics] of this.#chunkGraphics) {
+    for (const [index, chunk] of this.#chunks) {
       if (index < first || index > last) {
-        graphics.destroy();
-        this.#chunkGraphics.delete(index);
+        chunk.destroy();
+        this.#chunks.delete(index);
       }
     }
+    const texture = this.#art?.textureKey;
+    const pxPerU = this.#art?.info?.pxPerU;
+    const art =
+      texture !== undefined && pxPerU !== undefined
+        ? { texture, pxPerU }
+        : undefined;
     for (let k = first; k <= last; k++) {
-      let graphics = this.#chunkGraphics.get(k);
-      if (!graphics) {
-        graphics = this.add.graphics().setDepth(DEPTH.ground);
-        const table = ride.track.chunkTable(k);
-        const x0 = k * CHUNK_WIDTH_U;
-        const ground = table.xs.map(
-          (x, i) => new Phaser.Math.Vector2(x - x0, -(table.ys[i] ?? 0) + 4),
-        );
-        const endY = -(table.ys[table.ys.length - 1] ?? 0) + 4;
-        ground.push(
-          new Phaser.Math.Vector2(CHUNK_WIDTH_U + GROUND_OVERLAP_U, endY),
-          new Phaser.Math.Vector2(
-            CHUNK_WIDTH_U + GROUND_OVERLAP_U,
-            GROUND_DEPTH_U,
-          ),
-          new Phaser.Math.Vector2(0, GROUND_DEPTH_U),
-        );
-        graphics.fillStyle(0x8cbf6a, 1).fillPoints(ground, true);
-        graphics.fillStyle(0x7a5c3e, 1);
-        for (let i = 0; i < table.xs.length; i += 3) {
-          graphics.fillRect(
-            (table.xs[i] ?? 0) - x0 - 5,
-            -(table.ys[i] ?? 0) - 1,
-            10,
-            6,
-          );
-        }
-        graphics.lineStyle(4, 0x5b4a3a, 1);
-        graphics.strokePoints(
-          table.xs.map(
-            (x, i) => new Phaser.Math.Vector2(x - x0, -(table.ys[i] ?? 0) - 2),
-          ),
-          false,
-          false,
-        );
-        this.#chunkGraphics.set(k, graphics);
+      let chunk = this.#chunks.get(k);
+      if (!chunk) {
+        chunk = new ChunkView(this, ride.track.chunkTable(k), ride.seed, art, {
+          ground: DEPTH.ground,
+          track: DEPTH.track,
+        });
+        this.#chunks.set(k, chunk);
       }
-      graphics.setPosition(k * CHUNK_WIDTH_U - this.#originX, 0);
+      chunk.setX(k * CHUNK_WIDTH_U - this.#originX);
     }
-    this.stats.renderedChunks = this.#chunkGraphics.size;
+    this.stats.renderedChunks = this.#chunks.size;
   }
 
   #drawObjects(ride: RideSimulation, leftX: number, rightX: number): void {
@@ -499,8 +501,12 @@ export class RideScene extends Phaser.Scene {
           ? Math.sin((age / REACTION_TICKS) * Math.PI) * 24
           : 0;
       const x = point.x - this.#originX;
-      // Objects stand on the ground in front of the track (lower on screen).
-      const y = -point.y + 30;
+      // Objects stand on the meadow in front of the track bed.
+      const y =
+        -point.y +
+        TRACK_BED_DEPTH_U +
+        embankmentU(ride.seed, point.x) +
+        OBJECT_MEADOW_DEPTH_U;
       image.setPosition(x, y - hop);
       this.#visibleObjects.push({ id: object.id, x, y });
     }
@@ -547,6 +553,8 @@ export class RideScene extends Phaser.Scene {
     const replaced = art?.update(zoom);
     const key = art?.textureKey;
     if (replaced === undefined || key === undefined) return;
+    // Chunks are rebuilt from the new atlas on this frame's draw.
+    this.#destroyChunks();
     for (const slot of this.#slots) {
       slot.images.forEach((image, i) => {
         const shown = slot.frames[i];

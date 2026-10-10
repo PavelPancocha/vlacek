@@ -55,6 +55,10 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
       "transitionU": 192,
       "lengthStepU": 64
     },
+    "terrain": {
+      "latticeU": 512,
+      "maxEmbankmentU": 40
+    },
     "arcSampleSpacingU": 8,
     "geometryLookAheadU": 2048,
     "geometryTailMarginU": 1024,

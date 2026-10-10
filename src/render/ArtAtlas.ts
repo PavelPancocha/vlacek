@@ -1,6 +1,4 @@
 import type Phaser from 'phaser';
-import { artFileUrl } from '../content/artFiles.ts';
-import type { ArtPart } from '../content/artManifest.ts';
 import {
   ART_MAX_PX_PER_U,
   ATLAS_PADDING_PX,
@@ -23,6 +21,14 @@ export interface ArtAtlasInfo {
 
 type SourceImage = HTMLImageElement | HTMLCanvasElement;
 
+/** One SVG part for the atlas: frame key, build URL, size in u. */
+export interface ArtSource {
+  key: string;
+  url: string;
+  widthU: number;
+  heightU: number;
+}
+
 /**
  * Queues every art part on the scene loader. The loader sets the SVG size
  * before decoding, at the largest raster scale, so a browser that
@@ -30,10 +36,10 @@ type SourceImage = HTMLImageElement | HTMLCanvasElement;
  */
 export function preloadArt(
   scene: Phaser.Scene,
-  parts: Readonly<Record<string, ArtPart>>,
+  sources: readonly ArtSource[],
 ): void {
-  for (const [key, part] of Object.entries(parts)) {
-    scene.load.svg(`${SOURCE_PREFIX}${key}`, artFileUrl(part.file), {
+  for (const source of sources) {
+    scene.load.svg(`${SOURCE_PREFIX}${source.key}`, source.url, {
       scale: ART_MAX_PX_PER_U,
     });
   }
@@ -48,17 +54,19 @@ export function preloadArt(
  */
 export class ArtAtlas {
   readonly #scene: Phaser.Scene;
-  readonly #parts: Readonly<Record<string, ArtPart>>;
+  readonly #parts: Readonly<Record<string, ArtSource>>;
   readonly #sources = new Map<string, SourceImage>();
   #version = 0;
   #textureKey: string | undefined;
   #info: ArtAtlasInfo | undefined;
 
   /** Takes over the loaded sources; throws if a part did not load. */
-  constructor(scene: Phaser.Scene, parts: Readonly<Record<string, ArtPart>>) {
+  constructor(scene: Phaser.Scene, sources: readonly ArtSource[]) {
     this.#scene = scene;
-    this.#parts = parts;
-    for (const key of Object.keys(parts)) {
+    this.#parts = Object.fromEntries(
+      sources.map((source) => [source.key, source]),
+    );
+    for (const { key } of sources) {
       const source = `${SOURCE_PREFIX}${key}`;
       if (!scene.textures.exists(source))
         throw new Error(`art part ${key} did not load`);
@@ -71,7 +79,7 @@ export class ArtAtlas {
       this.#sources.set(key, image);
     }
     // The atlas replaces the per-part GPU textures.
-    for (const key of Object.keys(parts))
+    for (const { key } of sources)
       scene.textures.remove(`${SOURCE_PREFIX}${key}`);
   }
 
