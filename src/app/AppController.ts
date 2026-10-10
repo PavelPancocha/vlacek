@@ -291,6 +291,7 @@ export class AppController {
       artAtlas: this.#scene.artAtlas,
       effects: this.#scene.effectsStats,
       backdropAtlas: this.#scene.backdropAtlas,
+      artSourceTextures: this.#scene.artSourceTextures,
       scenery: {
         biome: this.#scene.stats.biome,
         localities: [...this.#scene.stats.localities],

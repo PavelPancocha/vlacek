@@ -20,6 +20,8 @@ test.describe('vehicle art (doc 14 §3)', () => {
     expect(state.artAtlas?.frames).toBe(MAIN_FRAMES);
     expect(state.artAtlas?.width).toBeLessThanOrEqual(2048);
     expect(state.artAtlas?.height).toBeLessThanOrEqual(2048);
+    // The atlases replace the decoded per-part textures.
+    expect(state.artSourceTextures).toBe(0);
   });
 
   test('the depot shows the same parts, loaded from the build', async ({
@@ -56,6 +58,10 @@ test.describe('vehicle art (doc 14 §3)', () => {
     const state = await snapshot(page);
     expect(state.artAtlas).toBeUndefined();
     expect(state.artVehicles).toBe(0);
+    // The parts that did load are released too (D-011): the fallback must
+    // not keep the whole decoded art set in memory.
+    expect(state.backdropAtlas).toBeDefined();
+    expect(state.artSourceTextures).toBe(0);
   });
 
   test('PWA-10: without its art the ride still shows the wire, the crossing and the tunnel', async ({

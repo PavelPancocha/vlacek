@@ -56,6 +56,13 @@ export function preloadArt(
     throw new Error('duplicate art keys');
 }
 
+/** Decoded SVG sources still held as textures (diagnostics, D-011). */
+export function artSourceTextureCount(scene: Phaser.Scene): number {
+  return scene.textures
+    .getTextureKeys()
+    .filter((key) => key.startsWith(SOURCE_PREFIX)).length;
+}
+
 /**
  * Art parts in one canvas texture (doc 07 §4/§10): one texture keeps every
  * vehicle, track and prop quad in one batch (D-010); backdrops have their
@@ -73,7 +80,12 @@ export class ArtAtlas {
   #textureKey: string | undefined;
   #info: ArtAtlasInfo | undefined;
 
-  /** Takes over the loaded sources; throws if a part did not load. */
+  /**
+   * Takes over the loaded sources; throws if a part did not load. Either
+   * way the per-part textures are released: the atlas replaces them, and
+   * a failed atlas must not keep the parts that did load (the ride falls
+   * back to plain shapes).
+   */
   constructor(
     scene: Phaser.Scene,
     sources: readonly ArtSource[],
@@ -84,21 +96,25 @@ export class ArtAtlas {
     this.#parts = Object.fromEntries(
       sources.map((source) => [source.key, source]),
     );
-    for (const { key } of sources) {
-      const source = `${SOURCE_PREFIX}${key}`;
-      if (!scene.textures.exists(source))
-        throw new Error(`art part ${key} did not load`);
-      const image = scene.textures.get(source).getSourceImage();
-      if (
-        !(image instanceof HTMLImageElement) &&
-        !(image instanceof HTMLCanvasElement)
-      )
-        throw new Error(`art part ${key} is not an image`);
-      this.#sources.set(key, image);
+    try {
+      for (const { key } of sources) {
+        const source = `${SOURCE_PREFIX}${key}`;
+        if (!scene.textures.exists(source))
+          throw new Error(`art part ${key} did not load`);
+        const image = scene.textures.get(source).getSourceImage();
+        if (
+          !(image instanceof HTMLImageElement) &&
+          !(image instanceof HTMLCanvasElement)
+        )
+          throw new Error(`art part ${key} is not an image`);
+        this.#sources.set(key, image);
+      }
+    } finally {
+      for (const { key } of sources) {
+        const source = `${SOURCE_PREFIX}${key}`;
+        if (scene.textures.exists(source)) scene.textures.remove(source);
+      }
     }
-    // The atlas replaces the per-part GPU textures.
-    for (const { key } of sources)
-      scene.textures.remove(`${SOURCE_PREFIX}${key}`);
   }
 
   /** Texture holding the current atlas; frames are the part keys. */

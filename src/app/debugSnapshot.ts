@@ -24,6 +24,11 @@ export interface DebugSnapshot {
     /** Sum of particle positions; unchanged while the ride is paused. */
     checksum: number;
   };
+  /**
+   * Loaded SVG sources still held as textures; 0 once the atlases are
+   * built, and also when one failed (D-011).
+   */
+  artSourceTextures: number;
   /** The backdrop atlas (D-013); undefined if the art failed to load. */
   backdropAtlas:
     | { width: number; height: number; frames: number; pxPerU: number }

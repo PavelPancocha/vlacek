@@ -35,6 +35,7 @@ import {
 import { bankHeightU } from '../domain/world/Terrain.ts';
 import {
   ArtAtlas,
+  artSourceTextureCount,
   preloadArt,
   type ArtAtlasInfo,
   type ArtSource,
@@ -309,6 +310,11 @@ export class RideScene extends Phaser.Scene {
   /** Size of the backdrop atlas, for diagnostics. */
   get backdropAtlas(): ArtAtlasInfo | undefined {
     return this.#backdropArt?.info;
+  }
+
+  /** Loaded SVG sources not yet released, for diagnostics. */
+  get artSourceTextures(): number {
+    return artSourceTextureCount(this);
   }
 
   preload(): void {
