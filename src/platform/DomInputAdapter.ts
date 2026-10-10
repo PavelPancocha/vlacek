@@ -6,7 +6,11 @@ export interface DomInputOptions {
   /** Element containing the canvas and all UI; receives every pointer. */
   root: HTMLElement;
   router: InputRouter;
-  /** Called inside each user gesture (audio unlock, doc 09 §6). */
+  /**
+   * Called inside each user gesture (audio unlock, doc 09 §6), before and
+   * after routing, so a gesture that changes the screen is seen in its new
+   * state.
+   */
   onGesture(): void;
   onInterrupt(reason: InterruptReason): void;
   /** Layout changed: re-measure hit areas. */
@@ -80,6 +84,7 @@ export class DomInputAdapter {
         id: event.pointerId,
         ...(action === undefined ? {} : { action }),
       });
+      options.onGesture();
     });
     listen(root, 'pointercancel', (event) =>
       router.pointerCancel({ id: event.pointerId }),
@@ -97,6 +102,7 @@ export class DomInputAdapter {
         event.target instanceof Element ? event.target : null,
       );
       if (action !== undefined) router.activateByKeyboard(action);
+      options.onGesture();
     });
 
     window.addEventListener(
@@ -111,6 +117,7 @@ export class DomInputAdapter {
         if (router.mode === 'ride' && DRIVING_KEYS.has(event.code))
           event.preventDefault();
         router.keyDown({ code: event.code, repeat: event.repeat });
+        options.onGesture();
       },
       { signal },
     );

@@ -188,6 +188,12 @@ test.describe('user path', () => {
     await expect
       .poll(async () => (await snapshot(page)).audio)
       .toBe('suspended');
+    // Taps and keys that do not leave the pause keep it silent.
+    await page.mouse.click(40, 360);
+    await page.keyboard.press('KeyA');
+    await page.waitForTimeout(300);
+    expect((await snapshot(page)).screen).toBe('PAUSED');
+    expect((await snapshot(page)).audio).toBe('suspended');
     await tapAction(page, 'resume');
     await expect.poll(async () => (await snapshot(page)).audio).toBe('running');
   });
