@@ -15,6 +15,7 @@ import { RideScene } from '../render/RideScene.ts';
 import { BRAKE_HIT_MARGIN_PX, UiLayer } from '../ui/UiLayer.ts';
 import type { DebugSnapshot } from './debugSnapshot.ts';
 import { PhaseLog } from './phaseLog.ts';
+import { renderProfile } from './renderProfile.ts';
 import type { GameSession, SessionEvent } from './GameSession.ts';
 
 export interface AppControllerOptions {
@@ -86,17 +87,17 @@ export class AppController {
       journeyVehicles: () => this.#vehiclesOfJourney(),
       catalogVehicles: () => [...locomotives, ...wagons],
       // Reduced effects or the low profile halve the particles (doc 07 §9).
-      effectsQuality: () => {
-        const settings = this.#session.settings;
-        return settings.quality === 'low' || settings.reducedEffects
-          ? 'low'
-          : 'standard';
-      },
+      effectsQuality: () =>
+        renderProfile(this.#session.settings, gameConfig.quality).effects,
     });
+    const profile = renderProfile(session.settings, gameConfig.quality);
     this.#host = createGameHost({
       parent: gameRoot,
       renderer: options.renderer,
-      maxDpr: gameConfig.quality.standard.maxDpr,
+      // The profile of the loaded settings (doc 13); settings that change
+      // the profile take effect on the next start.
+      maxDpr: profile.maxDpr,
+      fpsLimit: profile.fpsLimit,
       scenes: [this.#scene],
       onReady: (renderer) => {
         this.#renderer = renderer;

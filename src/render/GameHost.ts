@@ -8,6 +8,8 @@ export interface GameHostOptions {
   renderer: RendererPreference;
   /** Upper bound for the render buffer density (doc 13 `quality.*.maxDpr`). */
   maxDpr: number;
+  /** Frame rate cap of the quality profile, 0 for none (doc 13). */
+  fpsLimit: number;
   scenes: Phaser.Types.Scenes.SceneType[];
   onReady: (renderer: RendererName) => void;
 }
@@ -61,7 +63,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
     autoFocus: false,
     banner: false,
     audio: { noAudio: true },
-    fps: { smoothStep: false },
+    fps: { smoothStep: false, limit: options.fpsLimit },
     scene: options.scenes,
     callbacks: {
       postBoot: (booted) =>

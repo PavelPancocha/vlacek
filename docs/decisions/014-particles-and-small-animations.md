@@ -47,8 +47,8 @@ Emitery mají sedět na modelu se sklonem a vypuštěné částice se nesmí poh
    - na každé vodní nádrži občas zableskne šest odlesků;
    - zvířata v klidu jemně dýchají, kresba se jen mírně zplošťuje, takže nikdy nedosáhne výš.
 6. **Kvalita.** `gameConfig.quality` převádí profily dokumentu 13 do typované konfigurace s validací.
-   - Profil `low` platí při `settings.quality = 'low'` nebo při omezených efektech.
-   - Snižuje strop částic na 96 a hustotu emisí na polovinu; událostí života je méně.
+   - Efekty profilu `low` platí při `settings.quality = 'low'` nebo při omezených efektech. Snižují strop částic na 96 a hustotu emisí na polovinu; událostí života je méně.
+   - Samotné `settings.quality = 'low'` navíc snižuje hustotu vykreslování na 1 a omezí snímky na 30 za sekundu (`renderProfile`, Phaser `fps.limit`). Standardní profil snímky neomezuje: limit na úrovni obnovovací frekvence by Phaser nechal snímky vynechávat. Profil platí od startu hry; nastavení, které by ho za běhu měnilo, zatím ve hře není (Codex review PR #2).
    - Funkční signalizace se tím neomezuje.
 7. **Kresba částic.** Šestnáct malých SVG dílů `fx.*` v `assets/world/` s pivotem uprostřed, ve stejném atlasu jako vozidla:
    - kouř, pára a výfuk;
