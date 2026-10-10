@@ -32,7 +32,7 @@ Vlastník zvolil „vektory a vyřezaná scenérie“. Referenční listy ale ni
    - Renderer ji staví nejméně 30 u pod kolejnici: 22 u kolejového lože a 8 u odsazení.
    - Interaktivní zvíře se kreslí dvakrát větší (`ANIMAL_SCALE`), aby ho dítě vidělo. I se skokem reakce splní stejnou mez; výchozí hloubka je 0,26–0,6.
    - `placeAnimal` zvíře zvedne nad dotykovou plochu brzdy a houkačky (dokument 02: brzda nikdy nezasáhne objekt pod sebou).
-   - Na telefonu naležato je pruh mezi vlakem a brzdou užší než zvíře, a tak se zvíře zmenší i se skokem.
+   - Na telefonu naležato je pruh mezi vlakem a brzdou užší než zvíře, a tak se zvíře zmenší i se skokem. Kde ovládání sahá i nad patu náspu (568 × 320), zvíře se nekreslí a nejde se ho dotknout; kdyby stálo u paty, ťuknutí na brzdu by ho zasáhlo (Codex review PR #2).
    - Kontrolují to jednotkové testy a E2E: žádná rekvizita ani zvíře nepřekrývá vykreslený vlak a na telefonu žádné zvíře nestojí pod tlačítky.
 4. **Vrstvy a parallax** (dokument 07 §3), od zadu dopředu:
    1. Obloha: přechod barev, kreslí se jen nad pozadím.

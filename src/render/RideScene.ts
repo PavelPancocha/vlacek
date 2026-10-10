@@ -829,11 +829,18 @@ export class RideScene extends Phaser.Scene {
         TRACK_BED_DEPTH_U +
         bankHeightU(ride.seed, point.x) +
         NEAR_FOOT_OFFSET_U;
-      const { depth, fit } = placeAnimal(
+      const placed = placeAnimal(
         animal.depth,
         part.heightU,
         (this.#freeBottomY - meadowY) / NEAR_DEPTH_RANGE_U,
       );
+      if (!placed) {
+        // A small phone: even the bank foot is among the controls, so the
+        // animal is left out, neither drawn nor touchable (doc 02).
+        this.#objectImages.get(object.id)?.setVisible(false);
+        continue;
+      }
+      const { depth, fit } = placed;
       const scale = fit * ANIMAL_SCALE * nearDepthScale(depth);
       let image = this.#objectImages.get(object.id);
       if (!image) {
@@ -866,7 +873,10 @@ export class RideScene extends Phaser.Scene {
                   (0.8 * timeSec + (hash32('breath', object.id) % 1000) / 1000),
               ));
       const base = drawn ? scale / pxPerU : 1;
-      image.setScale(base, base * breath).setPosition(x, y - hop);
+      image
+        .setVisible(true)
+        .setScale(base, base * breath)
+        .setPosition(x, y - hop);
       this.#visibleObjects.push({
         id: object.id,
         x,

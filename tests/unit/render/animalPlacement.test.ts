@@ -31,6 +31,7 @@ describe('placeAnimal: near meadow, below the train, above the controls (doc 02,
     for (const height of heights) {
       for (const free of [0.02, 0.06, 0.12, 0.2]) {
         const placed = placeAnimal(0.5, height, free);
+        if (!placed) throw new Error('no room for the animal');
         expect(placed.depth).toBeCloseTo(free, 9);
         expect(placed.fit).toBeGreaterThan(0);
         expect(placed.fit).toBeLessThanOrEqual(1);
@@ -41,19 +42,23 @@ describe('placeAnimal: near meadow, below the train, above the controls (doc 02,
     }
   });
 
-  it('stands at the bank foot when the controls leave no band at all', () => {
-    const placed = placeAnimal(0.5, 40, -0.3);
-    expect(placed.depth).toBe(0);
-    expect(overCap(40, 0, placed.fit)).toBeLessThanOrEqual(1e-9);
-  });
-
   it('never draws a generated animal over the train at full size', () => {
     for (const height of heights)
       for (const depth of [0.26, 0.4, 0.6]) {
         const placed = placeAnimal(depth, height, 1);
+        if (!placed) throw new Error('no room for the animal');
         expect(overCap(height, placed.depth, placed.fit)).toBeLessThanOrEqual(
           1e-9,
         );
       }
+  });
+
+  it('leaves the animal out when the controls reach above the meadow foot (568×320)', () => {
+    // No band is free of the brake and the horn: even depth 0 would put
+    // the foot among the controls, and shrinking cannot lift it.
+    expect(placeAnimal(0.4, 40, -0.05)).toBeUndefined();
+    expect(placeAnimal(0.4, 40, 0)).toEqual(
+      expect.objectContaining({ depth: 0 }),
+    );
   });
 });

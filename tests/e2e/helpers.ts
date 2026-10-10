@@ -33,8 +33,9 @@ export async function startRide(
 export async function driveUntilMoving(
   page: Page,
   minSpeed = 60,
+  at = { x: 700, y: 300 },
 ): Promise<void> {
-  await page.mouse.move(700, 300);
+  await page.mouse.move(at.x, at.y);
   await page.mouse.down();
   await expect
     .poll(async () => (await snapshot(page)).speedUPerSec, { timeout: 8_000 })

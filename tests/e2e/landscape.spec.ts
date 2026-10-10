@@ -60,29 +60,36 @@ test.describe('landscape (doc 14 §5, D-013)', () => {
       expect(seen).toBeGreaterThan(0);
     });
 
-  test('doc 02: on a phone, animals stay above the brake and the horn', async ({
-    page,
-  }) => {
-    test.setTimeout(60_000);
-    await page.setViewportSize({ width: 844, height: 390 });
-    await buildLongestTrain(page, '?debug=1&seed=123');
-    await tapAction(page, 'depart');
-    await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
-    await driveUntilMoving(page, 200);
-    let seen = 0;
-    for (let sample = 0; sample < 16; sample++) {
-      const state = await snapshot(page);
-      const brake = state.brakeRect;
-      if (!brake) throw new Error('no brake rect');
-      // Smaller on a phone, but still below the train (doc 14 §5).
-      expect(state.scenery.nearPropsOverTrain).toBe(0);
-      for (const object of state.objects) {
-        seen += 1;
-        expect(object.y, object.id).toBeLessThan(brake.top);
+  for (const [width, height] of [
+    [844, 390],
+    [568, 320],
+  ] as const)
+    test(`doc 02: on a phone, animals stay above the brake and the horn (${width}×${height})`, async ({
+      page,
+    }) => {
+      test.setTimeout(60_000);
+      await page.setViewportSize({ width, height });
+      await buildLongestTrain(page, '?debug=1&seed=123');
+      await tapAction(page, 'depart');
+      await expect
+        .poll(async () => (await snapshot(page)).screen)
+        .toBe('RIDING');
+      // Hold the world above the train, inside this small screen.
+      await driveUntilMoving(page, 200, { x: width / 2, y: height / 4 });
+      let seen = 0;
+      for (let sample = 0; sample < 16; sample++) {
+        const state = await snapshot(page);
+        const brake = state.brakeRect;
+        if (!brake) throw new Error('no brake rect');
+        // Smaller on a phone, but still below the train (doc 14 §5).
+        expect(state.scenery.nearPropsOverTrain).toBe(0);
+        for (const object of state.objects) {
+          seen += 1;
+          expect(object.y, object.id).toBeLessThan(brake.top);
+        }
+        await page.waitForTimeout(250);
       }
-      await page.waitForTimeout(250);
-    }
-    await page.mouse.up();
-    expect(seen).toBeGreaterThan(0);
-  });
+      await page.mouse.up();
+      expect(seen).toBeGreaterThan(0);
+    });
 });

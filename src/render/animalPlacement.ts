@@ -20,14 +20,17 @@ export interface AnimalPlacement {
  * brake never reaches an object under it). Where that band is too thin
  * for the full size (a phone held sideways), the animal is drawn smaller,
  * hop included, so it still stays below the train under the same cap as
- * the near props.
+ * the near props. Where even the bank foot is among the controls (a small
+ * phone), it is left out: undefined.
  */
 export function placeAnimal(
   depth: number,
   heightU: number,
   freeDepth: number,
-): AnimalPlacement {
-  const at = Math.max(0, Math.min(depth, freeDepth));
+): AnimalPlacement | undefined {
+  // The controls reach above the bank foot: no place is free of them.
+  if (freeDepth < 0) return undefined;
+  const at = Math.min(depth, freeDepth);
   const reach = heightU * ANIMAL_SCALE * nearDepthScale(at) + ANIMAL_HOP_U;
   const cap = NEAR_PROP_MAX_HEIGHT_U + at * NEAR_DEPTH_RANGE_U;
   return { depth: at, fit: Math.min(1, cap / reach) };
