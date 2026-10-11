@@ -1,6 +1,6 @@
 # Stav a další kroky
 
-Stav k 2026-10-10. Rozsah a brány milníků vlastní [implementační plán](../vlacek-predavaci-balicek/10_IMPLEMENTACNI_PLAN.md) a úpravy po první verzi [dokument 14](../vlacek-predavaci-balicek/14_UPRAVY_PRVNI_VERZE.md). Tento soubor jen shrnuje, co je hotové, co zbývá a v jakém pořadí. Ověření jednotlivých kroků je v [protokolu v0.1](validation/2026-10-09-v0.1.md) a v [protokolu iterace podle dokumentu 14](validation/2026-10-10-iterace-upravy.md).
+Stav k 2026-10-11. Rozsah a brány milníků vlastní [implementační plán](../vlacek-predavaci-balicek/10_IMPLEMENTACNI_PLAN.md) a úpravy po první verzi [dokument 14](../vlacek-predavaci-balicek/14_UPRAVY_PRVNI_VERZE.md). Tento soubor jen shrnuje, co je hotové, co zbývá a v jakém pořadí. Ověření jednotlivých kroků je v [protokolu v0.1](validation/2026-10-09-v0.1.md) a v [protokolu iterace podle dokumentu 14](validation/2026-10-10-iterace-upravy.md).
 
 ## Hotovo
 
@@ -17,11 +17,12 @@ Dokument 14 je splněný v §1–7: pořadí soupravy, celý vlak v obraze s dé
 ## Rozhodnutí, která čekají na vlastníka
 
 - **Číslo světa u příliš dlouhé jízdy z 0.1.** Taková jízda nemůže pokračovat; hráč vlak zkrátí v depu a vyjede v novém světě, stejně jako po každé úpravě vlaku. Codex navrhl staré číslo zachovat. Zatím beze změny, rozhodnutí je ve vlákně PR #2.
-- **Nádraží v prvním bloku.** Dokument 04 chce v prvním bloku nové cesty pevně nádraží ve slotu 1. Dnes stojí ve slotu 1 nebo 2 jen tam, kde trať generátoru v1 má rovinu aspoň 448 u; v 53 % světů (1056 z 2000) první blok nádraží nemá. Oprava znamená generátor v2: první blok dostane rovinu ve slotu 1. Uložené cesty v1 by prošly migrací jako v0 (vlak a číslo světa zůstanou), a aby se ostatní bloky nezměnily, musí se klíče náhodnosti oddělit od čísla verze (dnes 36 míst). Návrh: samostatná změna po sloučení PR #2. Rozhodnutí je ve vlákně PR #2.
+
+Rozhodnuto 2026-10-11: PR #2 už nedostane další kód. Nálezy recenze, které zbývají, jsou naplánované níže jako R1–R4 a přijdou v samostatných PR po sloučení.
 
 ## Další kroky v pořadí
 
-Cíl je celý katalog dokumentu 06 §2–3: 10 lokomotiv a 32 druhů vagonků. Dnes jsou 4 lokomotivy a 7 druhů vagonků. Všechna vozidla dostanou detailní vektorovou grafiku ve stylu současných vozidel. Světlo svítí zleva shora, vozidla nemají obličeje ani loga a nejsou převzatá z dětských pořadů. Katalog pojede ve stejném PR jako grafika, tedy v PR #2. Když už bude sloučený, pojede v novém PR z `master`. Každý krok jde přes red → green a má dokumentaci ve stejném commitu.
+Cíl je celý katalog dokumentu 06 §2–3: 10 lokomotiv a 32 druhů vagonků. Dnes jsou 4 lokomotivy a 7 druhů vagonků. Všechna vozidla dostanou detailní vektorovou grafiku ve stylu současných vozidel. Světlo svítí zleva shora, vozidla nemají obličeje ani loga a nejsou převzatá z dětských pořadů. Katalog pojede v novém PR z `master` po sloučení PR #2, který už další kód nedostane. Každý krok jde přes red → green a má dokumentaci ve stejném commitu.
 
 ### H0 — atlas pro jednu jízdu a sada protijedoucích vlaků (D-019)
 
@@ -107,6 +108,55 @@ Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
   - prasknutí bubliny.
 - **Fyzická zařízení:** NEOVĚŘENO, dokud je někdo neotestuje.
 
+### Nálezy recenze odložené po sloučení PR #2 (R1–R4)
+
+Codex je našel při recenzi PR #2 (`21a37d5` a dřív). Všechny jsou ověřené v kódu a podle vlastníka nepatří do PR #2. Každý půjde přes red → green jako samostatný PR z `master`: R1 a R2 jako první (malé), R3 jako jeden PR s migrací, R4 samostatně.
+
+Generátor v1 i veškerý obsah světa zatím existují jen v PR #2 (`master` má generátor 0). Po sloučení se v1 vydá, takže každá oprava, která mění svět v1 (R3), už potřebuje generátor v2 a migraci uložených cest.
+
+#### R1 — novější save se pozná dřív, než se ověří jeho obsah
+
+- **Problém:** `parseSave` (`src/platform/SaveValidation.ts`) porovná `journey.generatorVersion` s verzí buildu až po ověření `lastConsist`, `builderDraft` a cesty proti současnému katalogu. Save z novějšího buildu s novou lokomotivou nebo vagonkem tak skončí jako `invalid`, ne `newer`. `SaveRepository` pak může obnovit starší zálohu a příští uložení novější primární save přepíše (AGENTS.md: neznámou novější verzi nepřepisuj).
+- **Oprava:** před ověřením polí, která závisí na katalogu, se přečtou surové údaje. `newer` vrátí `schemaVersion` nad 1, `contentVersion` nad podporovanou (dokument 08: změna obsahu mapuje ID) i `journey.generatorVersion` nad verzí buildu.
+- **Test:** fixture se schématem 1, generátorem 2 a neznámou lokomotivou dá `newer`. `SaveRepository` nechá primární save beze změny i při platné záloze a oznámí `newer-save-kept`.
+- **Dokumentace:** poznámka v dokumentu 08 a v [D-009](decisions/009-track-generator-v1.md), řádek v README fixtures.
+
+#### R2 — konečná nejvyšší rychlost protijedoucího vlaku
+
+- **Problém:** kontrola `interaction.npcTrainSpeedUPerSec` v `src/config/gameConfig.ts` ověří konečnost jen u minima. S maximem `Infinity` projde, protijedoucí vlak pak skočí na `headS = -Infinity` a `SecondaryLine.sample()` vyhodí výjimku v aktualizaci jízdy.
+- **Oprava:** minimum i maximum musí být konečná kladná čísla a minimum nejvýš maximum.
+- **Test:** unit test validace s `Infinity` (červený před opravou).
+
+#### R3 — generátor v2: dvě opravy světa v jedné změně kompatibility
+
+- **a) První blok má vždy přejezd.**
+  - Problém: `crossingSite` (`src/domain/world/Crossings.ts`) vyřadí každé místo blíž než 120 u ke zvířeti chunku. Když zvíře stojí uprostřed jediné rovné části, přejezd v chunku 3 chybí. Ve světě 1226 a v 16 z 20 000 světů (Codex: 71 ze 100 000).
+  - Oprava: nejdřív se rezervuje přejezd, zvíře se mu vyhne (posune se v chunku, nebo se vynechá). Vlastníci: `Crossings.ts`, umístění zvířete v `ChunkObjects.ts` a `Scenery.ts`.
+  - Test: průchod mnoha seedy, regresní seed 1226.
+- **b) Nádraží ve slotu 1 prvního bloku (dokument 04).**
+  - Problém: nádraží dnes stojí ve slotu 1 nebo 2 jen tam, kde trať v1 má rovinu aspoň 448 u. V 1056 z 2000 světů (Codex: asi 55 % ze 100 000) první blok nádraží nemá.
+  - Oprava: `blockPlan` (`src/domain/world/TrackProfile.ts`) dá prvnímu bloku ve slotu 1 rovinu aspoň 448 u.
+  - Test: průchod seedy, všude `stationSlot(seed, 0) === 1`.
+- **c) Kompatibilita:**
+  - `TRACK_GENERATOR_VERSION` 2;
+  - cesta v1 se migruje jako v0: vlak a číslo světa zůstanou, hráč dostane upozornění a vyjede na novou cestu ze startu;
+  - fixture uloženého v1 a test migrace;
+  - nové rozhodnutí D-0xx a poznámka v [D-009](decisions/009-track-generator-v1.md);
+  - volitelně (rozhodne D-0xx) oddělit klíče náhodnosti od čísla verze (dnes 36 míst), aby se svět mimo první blok nezměnil.
+- **d) E2E:** znovu ověřit pozice, na které testy spoléhají: svět 123 (přejezd v chunku 3, tunel v chunku 6, druhá kolej v bloku 1) a svět 7.
+
+#### R4 — adaptivní kvalita `auto`
+
+- **Problém:** dokument 08 chce, aby `auto` začínala konzervativně a při dlouhodobém zpomalení omezila dekorativní částice, hustotu pozadí a rozlišení. Dnes `renderProfile` (`src/app/renderProfile.ts`) bere `auto` jako `standard` a nic ji za běhu nemění. Ruční volba `low` zatím nemá v UI ovládání.
+- **Oprava:**
+  - čistý řadič `AutoQuality` v `src/app/` krmený z `FrameStats`;
+  - začne konzervativně, po dlouhodobě pomalých snímcích sníží úroveň a s hysterezí ji zase zvýší;
+  - za běhu přepíná strop dekorativních částic, hustotu pozadí a hustotu vykreslování (`GameHost` dostane setter hustoty přes stávající cestu změny velikosti), případně i limit snímků, pokud ho Phaser 4.2.1 dovolí měnit za běhu;
+  - nikdy se nedotkne brzdění, přejezdů ani soupravy.
+- **Test:** unit testy se syntetickými časy snímků; E2E při zpomaleném CPU ukáže snížení úrovně.
+- **Mez:** prahy zůstanou NEOVĚŘENO, dokud se nezměří na skutečných zařízeních.
+- **Dokumentace:** nové rozhodnutí a úprava [D-014](decisions/014-particles-and-small-animations.md).
+
 ### Potom (M3–M5)
 
 - scénky dokumentu 05;
@@ -129,5 +179,7 @@ Každé omezení má podmínku odstranění v uvedeném rozhodnutí.
 - **Souběžná kolej** zatím nemá vedení a protijedoucí vlak je parní nebo naftový. Doplní se s další elektrickou lokomotivou ([D-016](decisions/016-electric-locomotive-and-catenary.md), [D-017](decisions/017-second-track-and-oncoming-train.md)).
 - **Portálové podpěry vedení ve stanici** chybí. Přijdou s vícekolejnými nádražími ([D-016](decisions/016-electric-locomotive-and-catenary.md)).
 - **Zem se kreslí nejvýše 1 px/u.** Zvýší se, pokud test zařízení ukáže rušivou neostrost ([D-013](decisions/013-landscape-localities-and-backdrops.md)).
+- **Kvalita `auto`** je zatím totéž co `standard`. Odstraní ji R4.
+- **Přejezd a nádraží prvního bloku** nejsou zaručené (přejezd chybí v 0,08 % světů, nádraží v 53 %). Odstraní je R3.
 - **WebGL dávky s jednou texturou** obcházejí chybu Phaseru 4.2.1 ([D-010](decisions/010-webgl-single-texture-batches.md)).
 - **Fyzický tablet, telefon a Tesla:** NEOVĚŘENO ([matice zařízení](device-tests/v0.1.md)).
