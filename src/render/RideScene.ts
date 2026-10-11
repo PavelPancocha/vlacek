@@ -190,6 +190,42 @@ const BACKDROP_SOURCES: readonly ArtSource[] = Object.entries(worldParts)
     heightU: part.heightU,
   }));
 
+/**
+ * Radius of each wheel part in u. A wheel turns, and the box of its turning
+ * square frame grows by up to √2 (and by its transparent margin); the
+ * drawn disc does not.
+ */
+const WHEEL_RADIUS_U: ReadonlyMap<string, number> = new Map(
+  Object.values(vehicleArt).flatMap((art) =>
+    (art?.wheels ?? []).map(
+      (wheel) => [wheel.part, artParts[wheel.part].heightU / 2] as const,
+    ),
+  ),
+);
+/** Radius of the placeholder wheel's disc in its texture, px. */
+const PLACEHOLDER_WHEEL_RADIUS_PX = 16;
+
+/**
+ * World box of what an image draws, for the overlap checks: a wheel's disc
+ * (its pivot is the centre), otherwise the image's bounds.
+ */
+function drawnBounds(
+  image: Phaser.GameObjects.Image,
+  pxPerU: number | undefined,
+): Phaser.Geom.Rectangle {
+  const radiusU = WHEEL_RADIUS_U.get(image.frame.name);
+  const radiusPx =
+    image.texture.key === 'wheel'
+      ? PLACEHOLDER_WHEEL_RADIUS_PX
+      : radiusU !== undefined && pxPerU !== undefined
+        ? radiusU * pxPerU
+        : undefined;
+  if (radiusPx === undefined) return image.getBounds();
+  const m = image.getWorldTransformMatrix();
+  const r = radiusPx * Math.hypot(m.a, m.b);
+  return new Phaser.Geom.Rectangle(m.tx - r, m.ty - r, 2 * r, 2 * r);
+}
+
 function hex(color: string): number {
   return Number.parseInt(color.replace('#', ''), 16);
 }
@@ -381,8 +417,10 @@ export class RideScene extends Phaser.Scene {
     }
     this.#framing = { ...gameConfig.camera, vehicleHeightU: tallestU + 8 };
     const wheel = this.make.graphics({}, false);
-    const hub = 16 + PLACEHOLDER_MARGIN_PX;
-    wheel.fillStyle(0x222222, 1).fillCircle(hub, hub, 16);
+    const hub = PLACEHOLDER_WHEEL_RADIUS_PX + PLACEHOLDER_MARGIN_PX;
+    wheel
+      .fillStyle(0x222222, 1)
+      .fillCircle(hub, hub, PLACEHOLDER_WHEEL_RADIUS_PX);
     wheel.fillStyle(0x7f8c8d, 1).fillCircle(hub, hub, 6);
     wheel
       .lineStyle(3, 0x7f8c8d, 1)
@@ -506,14 +544,18 @@ export class RideScene extends Phaser.Scene {
    * vehicle: always 0 (doc 14 §5: the scenery never covers the train).
    * Diagnostics and E2E.
    */
-  nearPropCheck(): { inView: number; overTrain: number } {
+  nearPropCheck(): { inView: number; overTrain: number; overlaps: string[] } {
     const view = this.cameras.main.worldView;
     const train = this.#slots
       .filter((slot) => slot.container.visible)
       .flatMap((slot) => slot.images.filter((image) => image.visible))
-      .map((image) => image.getBounds());
+      .map((image) => ({
+        frame: image.frame.name,
+        box: drawnBounds(image, this.#art?.info?.pxPerU),
+      }));
     let inView = 0;
     let overTrain = 0;
+    const overlaps: string[] = [];
     const near = [
       ...[...this.#chunks.values()].flatMap((chunk) => chunk.nearProps),
       // The interactive animals stand in the near meadow too.
@@ -524,11 +566,15 @@ export class RideScene extends Phaser.Scene {
         const bounds = prop.getBounds();
         if (!Phaser.Geom.Rectangle.Overlaps(view, bounds)) continue;
         inView += 1;
-        if (train.some((box) => Phaser.Geom.Rectangle.Overlaps(box, bounds)))
-          overTrain += 1;
+        const hit = train.find(({ box }) =>
+          Phaser.Geom.Rectangle.Overlaps(box, bounds),
+        );
+        if (!hit) continue;
+        overTrain += 1;
+        overlaps.push(`${prop.frame.name} over ${hit.frame}`);
       }
     }
-    return { inView, overTrain };
+    return { inView, overTrain, overlaps };
   }
 
   #reset(): void {

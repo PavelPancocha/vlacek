@@ -365,9 +365,17 @@ export class AppController {
     }));
   }
 
-  #nearPropCheck(): { nearProps: number; nearPropsOverTrain: number } {
+  #nearPropCheck(): {
+    nearProps: number;
+    nearPropsOverTrain: number;
+    nearPropOverlaps: string[];
+  } {
     const check = this.#scene.nearPropCheck();
-    return { nearProps: check.inView, nearPropsOverTrain: check.overTrain };
+    return {
+      nearProps: check.inView,
+      nearPropsOverTrain: check.overTrain,
+      nearPropOverlaps: check.overlaps,
+    };
   }
 
   dispose(): void {

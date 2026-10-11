@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { artParts } from '../../src/content/artManifest.ts';
 import { isBackdropPart, worldParts } from '../../src/content/worldArt.ts';
+import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
+import { gameConfig } from '../../src/config/gameConfig.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 import {
   buildLongestTrain,
@@ -15,6 +17,7 @@ const MAIN_FRAMES =
   Object.keys(artParts).length +
   worldKeys.filter((key) => !isBackdropPart(key)).length;
 const BACKDROP_FRAMES = worldKeys.filter(isBackdropPart).length;
+const CHUNK_WIDTH_U = gameConfig.world.chunkWidthU;
 
 test.describe('landscape (doc 14 §5, D-013)', () => {
   test('the ride draws track, scenery and backdrops from two atlases', async ({
@@ -49,14 +52,30 @@ test.describe('landscape (doc 14 §5, D-013)', () => {
         .poll(async () => (await snapshot(page)).screen)
         .toBe('RIDING');
       await driveUntilMoving(page, 200);
-      let seen = 0;
-      for (let sample = 0; sample < 12; sample++) {
-        const { scenery } = await snapshot(page);
-        expect(scenery.nearPropsOverTrain).toBe(0);
-        seen += scenery.nearProps;
-        await page.waitForTimeout(250);
-      }
+      // Every frame until the front is past block 0's level crossing
+      // (slot 3), whose low post stands closest to the wheels: sampling
+      // by wall-clock time missed short windows (CI, world 7).
+      const { seen, overlaps } = await page.evaluate(
+        async (endX) => {
+          const api = (
+            window as unknown as { __vlacek: { snapshot(): DebugSnapshot } }
+          ).__vlacek;
+          const found = new Set<string>();
+          let props = 0;
+          for (let frame = 0; frame < 1200; frame++) {
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+            const state = api.snapshot();
+            props += state.scenery.nearProps;
+            for (const overlap of state.scenery.nearPropOverlaps)
+              found.add(`${Math.round(state.frontS)}: ${overlap}`);
+            if (state.frontS > endX) break;
+          }
+          return { seen: props, overlaps: [...found] };
+        },
+        4 * CHUNK_WIDTH_U + 600,
+      );
       await page.mouse.up();
+      expect(overlaps).toEqual([]);
       // The check is not vacuous: the meadow had props next to the train.
       expect(seen).toBeGreaterThan(0);
     });

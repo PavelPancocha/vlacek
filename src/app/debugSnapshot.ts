@@ -43,6 +43,8 @@ export interface DebugSnapshot {
     nearProps: number;
     /** Near-meadow props overlapping a drawn vehicle; always 0. */
     nearPropsOverTrain: number;
+    /** What overlapped: "prop frame over vehicle frame" (diagnostics). */
+    nearPropOverlaps: string[];
     /** Level crossings drawn in view, with art or its fallback. */
     crossingViews: number;
   };
