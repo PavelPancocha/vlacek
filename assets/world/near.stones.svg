@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10" viewBox="0 0 20 10">
+  <!-- Kameny v trávě. Foot centre (10, 10). -->
+  <defs>
+  </defs>
+  <path d="M1 10 L3 5 L8 3 L12 5 L13 10 Z M10 10 L13 6 L17 5 L19 10 Z" fill="#a39e94" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M8 3 L12 5 L13 10 L9 10 Z" fill="#7c776f"/>
+  <path d="M0.06 10 Q0.54 8.09 0.27 6.82 Q0.88 8.41 1.26 10 Z" fill="#6fae3e"/><path d="M2.5 10 Q3.19 7.78 3.4 6.3 Q3.46 8.15 3.7 10 Z" fill="#6fae3e"/><path d="M13.88 10 Q14.24 8.03 13.68 6.71 Q14.62 8.36 15.08 10 Z" fill="#4e8a2c"/><path d="M17.11 10 Q17.75 8.52 17.85 7.53 Q18.04 8.76 18.31 10 Z" fill="#4e8a2c"/><path d="M9.37 10 Q10.08 8.39 10.34 7.32 Q10.34 8.66 10.57 10 Z" fill="#6fae3e"/><path d="M16.57 10 Q17.09 8.64 16.89 7.74 Q17.41 8.87 17.77 10 Z" fill="#6fae3e"/>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="34" height="26" viewBox="0 0 34 26">
+  <!-- Červené auto zepředu (jede k divákovi). Pata uprostřed (17, 26). -->
+  <defs><linearGradient id="paint" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e37363"/><stop offset="1" stop-color="#983021"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe6f5"/><stop offset="1" stop-color="#5a7f9a"/></linearGradient>
+  </defs>
+  <ellipse cx="17" cy="24.5" rx="15" ry="2.2" fill="#1d2a14" fill-opacity="0.28"/>
+  <rect x="5" y="19" width="5" height="6" rx="1.4" fill="#1d1f22"/>
+  <rect x="24" y="19" width="5" height="6" rx="1.4" fill="#1d1f22"/>
+  <rect x="4" y="12" width="26" height="9" rx="2.5" fill="url(#paint)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M7 12.4 Q8.4 5 11.4 4.4 H22.6 Q25.6 5 27 12.4 Z" fill="url(#paint)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M9.4 12 Q10.6 6.8 12.4 6.4 H21.6 Q23.4 6.8 24.6 12 Z" fill="url(#glass)" stroke="#1d2a14" stroke-width="0.4"/>
+  <path d="M12 11.4 L14.6 7 M15.6 11.4 L18 7" stroke="#ffffff" stroke-width="0.6" stroke-opacity="0.6"/>
+  <circle cx="8.4" cy="15.4" r="2.2" fill="#fff8d6" stroke="#1d2a14" stroke-width="0.4"/>
+  <circle cx="25.6" cy="15.4" r="2.2" fill="#fff8d6" stroke="#1d2a14" stroke-width="0.4"/>
+  <rect x="12.4" y="14.6" width="9.2" height="3.4" rx="0.8" fill="#2a2d33"/>
+  <path d="M13 15.6 H21 M13 16.8 H21" stroke="#5a5f66" stroke-width="0.4"/>
+  <rect x="13.4" y="19" width="7.2" height="1.8" fill="#f4f1ea" stroke="#1d2a14" stroke-width="0.3"/>
+  <rect x="3" y="19" width="28" height="2.6" rx="1" fill="#3a3d42"/>
+  <rect x="2.6" y="12.6" width="2.4" height="1.8" rx="0.5" fill="#983021" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <rect x="29" y="12.6" width="2.4" height="1.8" rx="0.5" fill="#983021" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+</svg>

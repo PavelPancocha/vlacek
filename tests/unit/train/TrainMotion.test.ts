@@ -8,7 +8,21 @@ import {
 } from '../../../src/domain/train/TrainMotion.ts';
 
 const dtSec = 1 / gameConfig.simulation.fixedHz;
-const standard = motionParams(gameConfig, 1);
+/**
+ * Motion laws are checked with fixed reference numbers (the 0.1 defaults),
+ * independent of tuning the shipped config (doc 14 §6).
+ */
+const REFERENCE = {
+  ...gameConfig,
+  train: {
+    ...gameConfig.train,
+    maxSpeedUPerSec: 180,
+    accelerationUPerSec2: 65,
+    coastDecelerationUPerSec2: 30,
+    brakeDecelerationUPerSec2: 180,
+  },
+};
+const standard = motionParams(REFERENCE, 1);
 
 function run(
   params: MotionParams,
@@ -43,9 +57,15 @@ function ticksUntilStop(startSpeed: number, intent: MotionIntent) {
 }
 
 describe('TrainMotion', () => {
-  it('derives parameters from doc 13 and the parent speed factor', () => {
-    expect(standard.maxSpeedUPerSec).toBe(180);
-    expect(motionParams(gameConfig, 0.65).maxSpeedUPerSec).toBeCloseTo(117);
+  it('derives parameters from the config and the parent speed factor', () => {
+    const shipped = motionParams(gameConfig, 1);
+    expect(shipped.maxSpeedUPerSec).toBe(gameConfig.train.maxSpeedUPerSec);
+    expect(shipped.accelerationUPerSec2).toBe(
+      gameConfig.train.accelerationUPerSec2,
+    );
+    expect(motionParams(gameConfig, 0.65).maxSpeedUPerSec).toBeCloseTo(
+      gameConfig.train.maxSpeedUPerSec * 0.65,
+    );
   });
 
   it('INP-01: throttle accelerates monotonically and never exceeds the limit', () => {

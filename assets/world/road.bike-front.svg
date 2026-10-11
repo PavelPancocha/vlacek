@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="30" viewBox="0 0 16 30">
+  <!-- Cyklista zepředu, v helmě, bez obličeje. Pata uprostřed (8, 30). -->
+  <defs>
+  </defs>
+  <ellipse cx="8" cy="29" rx="5" ry="1.2" fill="#1d2a14" fill-opacity="0.25"/>
+  <rect x="6.8" y="20" width="2.4" height="9" rx="1.2" fill="#1d1f22"/>
+  <path d="M8 20 V17" stroke="#7f8c8d" stroke-width="1"/>
+  <path d="M3 15 H13" stroke="#7f8c8d" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M5.2 21 L6.4 15 M10.8 21 L9.6 15" stroke="#34495e" stroke-width="2" stroke-linecap="round"/>
+  <path d="M4.6 14 Q5 7 8 6.600000000000001 Q11 7 11.4 14 Z" fill="#27ae60" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M4.6 13.399999999999999 L3.2 15 M11.4 13.399999999999999 L12.8 15" stroke="#f1c7a5" stroke-width="1.4" stroke-linecap="round"/>
+  <circle cx="8" cy="4.600000000000001" r="2.6" fill="#f1c7a5" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M5 4.199999999999999 Q5.4 0.3999999999999986 8 0.3999999999999986 Q10.6 0.3999999999999986 11 4.199999999999999 Z" fill="#f39c12" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle cx="8" cy="16.4" r="1.2" fill="#fff8d6" stroke="#1d2a14" stroke-width="0.3"/>
+</svg>

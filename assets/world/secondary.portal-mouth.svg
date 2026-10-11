@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="76" height="110" viewBox="0 0 76 110">
+  <!-- Tma v tunelovém oblouku druhé koleje, kreslí se pod protijedoucí vlak. Pivot na kolejnici pod středem (38, 104). -->
+  <defs><radialGradient id="dark" cx="0.5" cy="0.8" r="0.8"><stop offset="0" stop-color="#0d0c0b"/><stop offset="1" stop-color="#2a2622"/></radialGradient>
+  </defs>
+  <path d="M2 108 V36 A36 36 0 0 1 74 36 V108 Z" fill="url(#dark)"/>
+  <path d="M20 104 L32 88 H44 L56 104 Z" fill="#3a3530" fill-opacity="0.6"/>
+  <path d="M24 104 L34 90 M52 104 L42 90" stroke="#8b9199" stroke-width="0.9" stroke-opacity="0.7"/>
+  <path d="M8 42 A30 30 0 0 1 68 42" stroke="#4a4540" stroke-width="2" fill="none" stroke-opacity="0.6"/>
+</svg>

@@ -31,18 +31,18 @@ Klávesnicové ekvivalenty ověřit zvlášť, zejména `keyup`, auto-repeat a f
 
 ## 3. Souprava a geometrie — TRN
 
-| ID     | Situace                                                 | Očekávaný výsledek                                                       |
-| ------ | ------------------------------------------------------- | ------------------------------------------------------------------------ |
-| TRN-01 | 0, 1, 10 a 100 vagonků.                                 | Každá sestava jede; sto není automaticky zkráceno.                       |
-| TRN-02 | Opakovat jeden typ 100×.                                | Platná souprava, unikátní instance, správná celková délka.               |
-| TRN-03 | Rozdílné délky přes kopec a údolí.                      | Každá karoserie a podvozky mají vlastní správnou polohu.                 |
-| TRN-04 | Stejná délka simulace při renderu 30/60/120 FPS.        | Stejná dráha v toleranci integrace; žádná rychlost závislá na FPS.       |
-| TRN-05 | Kopec nahoru, dolů, dlouhé stání.                       | Nikdy negativní v; po puštění zpomaluje i z kopce.                       |
-| TRN-06 | Jedna část soupravy v tunelu, druhá venku.              | Překrytí a světlo po vozidlech, nikoli společný přepínač celého vlaku.   |
-| TRN-07 | Nejdelší počáteční souprava.                            | Kolej existuje za všemi vagonky již před prvním snímkem.                 |
-| TRN-08 | Elektrická mašinka přes most, tunel a šev chunku.       | Souvislé vedení, správný kontakt, žádné místo bez troleje.               |
-| TRN-09 | Opakovaný rebase přes 16 384 u.                         | Neviditelný posun originu, stejné hit oblasti a obraz, žádný skok vlaku. |
-| TRN-10 | Vzorkování LUT a spřáhla na extrémním validním profilu. | Chyba polohy ≤ 0.5 u, žádný průnik vozidel; spřáhlo vizuálně navazuje.   |
+| ID     | Situace                                                   | Očekávaný výsledek                                                            |
+| ------ | --------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| TRN-01 | 0, 1 a nejdelší povolená souprava; starší delší soupravy. | Každá sestava jede; nic není automaticky zkráceno, delší zůstane celá v depu. |
+| TRN-02 | Opakovat jeden typ 100×.                                  | Platná souprava, unikátní instance, správná celková délka.                    |
+| TRN-03 | Rozdílné délky přes kopec a údolí.                        | Každá karoserie a podvozky mají vlastní správnou polohu.                      |
+| TRN-04 | Stejná délka simulace při renderu 30/60/120 FPS.          | Stejná dráha v toleranci integrace; žádná rychlost závislá na FPS.            |
+| TRN-05 | Kopec nahoru, dolů, dlouhé stání.                         | Nikdy negativní v; po puštění zpomaluje i z kopce.                            |
+| TRN-06 | Jedna část soupravy v tunelu, druhá venku.                | Překrytí a světlo po vozidlech, nikoli společný přepínač celého vlaku.        |
+| TRN-07 | Nejdelší počáteční souprava.                              | Kolej existuje za všemi vagonky již před prvním snímkem.                      |
+| TRN-08 | Elektrická mašinka přes most, tunel a šev chunku.         | Souvislé vedení, správný kontakt, žádné místo bez troleje.                    |
+| TRN-09 | Opakovaný rebase přes 16 384 u.                           | Neviditelný posun originu, stejné hit oblasti a obraz, žádný skok vlaku.      |
+| TRN-10 | Vzorkování LUT a spřáhla na extrémním validním profilu.   | Chyba polohy ≤ 0.5 u, žádný průnik vozidel; spřáhlo vizuálně navazuje.        |
 
 U nominálního zastavení připustit toleranci dvou simulačních ticků plus snap epsilon. Přesný dojezd při maximální rychlosti na rovině zkontrolovat i podle analytického vztahu `v²/(2a)`; standardní hodnoty dávají 540 u bez brzdy a 90 u s brzdou před zanedbatelnou diskretizační odchylkou.
 
@@ -58,7 +58,7 @@ U nominálního zastavení připustit toleranci dvou simulačních ticků plus s
 | GEN-06 | Stanice, přejezd a vícedílné rezervace.            | Žádné nepovolené překryvy, stanice a přejezd na rovině.                         |
 | GEN-07 | Všechny varianty biomového cyklu.                  | Platné přechody, dosažitelné všechny biomy, žádný skok světa.                   |
 | GEN-08 | Nevalidní dekorativní template / vyčerpané pokusy. | Deterministický bezpečný fallback, žádná smyčka generování.                     |
-| GEN-09 | Hráč s 100 vagonky a zadní částí mimo kameru.      | Geometrie za zadní částí zůstane, nepotřebná stará data se zahodí.              |
+| GEN-09 | Hráč s nejdelší povolenou soupravou.               | Geometrie za zadní částí zůstane, nepotřebná stará data se zahodí.              |
 | GEN-10 | 10 000 chunků v headless simulaci.                 | Počet živých chunků závisí na aktuálním okně, ne na ujeté historii.             |
 | GEN-11 | Save/reload na hranici chunku a uvnitř kopce.      | Stejná geometrie a poloha, nikoli záměna x za délku oblouku.                    |
 | GEN-12 | Změna lokomotivy při stejném testovacím seedu.     | Jediná globální změna je elektrifikace a vlastní vlak; layout se nepřeseeduje.  |
@@ -97,20 +97,20 @@ V každém ticku dopravního testu assertovat, že vlak a silniční aktér sou�
 
 ## 6. Obsah a rozhraní — UI / CNT
 
-| ID     | Test                                                | Očekávaný výsledek                                                              |
-| ------ | --------------------------------------------------- | ------------------------------------------------------------------------------- |
-| UI-01  | První spuštění bez save.                            | Dostupný výběr lokomotivy bez čtení a přihlášení.                               |
-| UI-02  | Přidat, vybrat, přesunout, odebrat, vrátit editaci. | Jednoznačné operace, žádné smazání pouhým výběrem vozu.                         |
-| UI-03  | Přidat 101. vagónek.                                | Limit je srozumitelný, prvních 100 zůstane beze změny.                          |
-| UI-04  | Otevřít kopii v depu a vrátit se.                   | Původní cesta zůstává; změna draftu ji nepřepsala.                              |
-| UI-05  | Běžná karta bez fullscreen a bez instalace.         | Všechno podstatné dostupné a neodříznuté.                                       |
-| UI-06  | Na výšku, malý výřez a velmi široký výřez.          | Žádné překrytí důležitých tlačítek, bezpečná pauza při resize.                  |
-| UI-07  | Vypnutý zvuk, klávesnice, rodičovská branka.        | Ovládání srozumitelné bez zvuku, dostupná nastavení.                            |
-| CNT-01 | Validace katalogu.                                  | Přesně 10 lokomotiv, nejméně všech 32 požadovaných vagonků a unikátní ID.       |
-| CNT-02 | Validace assetů a rozměrů.                          | Každý klíč existuje, žádný povinný placeholder, délky a pivoty jsou platné.     |
-| CNT-03 | Kontaktní listy a živé scény.                       | Rozlišitelné typy a konzistentní styl; ne 10 přebarvených lokomotiv.            |
-| CNT-04 | Přehled biomů a infrastruktury.                     | Šest biomů, 18 scénických sestav, varianty mostů/stanic a požadované živé typy. |
-| CNT-05 | Den, noc, tunel, sníh a déšť.                       | Vlak, kolej a brzda zůstávají čitelné ve standardním i úsporném režimu.         |
+| ID     | Test                                                | Očekávaný výsledek                                                                 |
+| ------ | --------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| UI-01  | První spuštění bez save.                            | Dostupný výběr lokomotivy bez čtení a přihlášení.                                  |
+| UI-02  | Přidat, vybrat, přesunout, odebrat, vrátit editaci. | Jednoznačné operace, žádné smazání pouhým výběrem vozu.                            |
+| UI-03  | Přidávat vagonky až po délkový limit.               | Lze přidat jen vagonek, který se vejde; limit je srozumitelný, souprava se nemění. |
+| UI-04  | Otevřít kopii v depu a vrátit se.                   | Původní cesta zůstává; změna draftu ji nepřepsala.                                 |
+| UI-05  | Běžná karta bez fullscreen a bez instalace.         | Všechno podstatné dostupné a neodříznuté.                                          |
+| UI-06  | Na výšku, malý výřez a velmi široký výřez.          | Žádné překrytí důležitých tlačítek, bezpečná pauza při resize.                     |
+| UI-07  | Vypnutý zvuk, klávesnice, rodičovská branka.        | Ovládání srozumitelné bez zvuku, dostupná nastavení.                               |
+| CNT-01 | Validace katalogu.                                  | Přesně 10 lokomotiv, nejméně všech 32 požadovaných vagonků a unikátní ID.          |
+| CNT-02 | Validace assetů a rozměrů.                          | Každý klíč existuje, žádný povinný placeholder, délky a pivoty jsou platné.        |
+| CNT-03 | Kontaktní listy a živé scény.                       | Rozlišitelné typy a konzistentní styl; ne 10 přebarvených lokomotiv.               |
+| CNT-04 | Přehled biomů a infrastruktury.                     | Šest biomů, 18 scénických sestav, varianty mostů/stanic a požadované živé typy.    |
+| CNT-05 | Den, noc, tunel, sníh a déšť.                       | Vlak, kolej a brzda zůstávají čitelné ve standardním i úsporném režimu.            |
 
 ## 7. Ukládání a odolnost — DATA
 
@@ -155,13 +155,13 @@ Cíle nejsou dosud naměřené hodnoty. Reference se doplní skutečným modelem
 | Plynulost v cílovém úsporném profilu | Medián alespoň 30 FPS během měřeného pětiminutového průjezdu.                                                     |
 | Frame time                           | 95. percentil nejvýše 50 ms; samostatně uvést i nejhorší delší záseky.                                            |
 | Odezva brzdy                         | Změna vstupního stavu nejpozději v následujícím simulačním kroku; viditelná odezva do 100 ms v referenční zátěži. |
-| Dlouhá souprava                      | Výše uvedená kontrola i se 100 vagonky, přejezdem a živým okolím.                                                 |
+| Dlouhá souprava                      | Výše uvedená kontrola i s nejdelší povolenou soupravou, přejezdem a živým okolím; celý vlak stále v obraze.       |
 | Záseky při změně biomu               | Žádný opakovatelný main-thread blok přes 250 ms po předehřátí assetů.                                             |
 | Paměť v 30min průjezdu               | Po úvodním načtení se ustálí; neexistuje růst živých chunků či listenerů podle historie.                          |
 | Textury a síťový balík               | Rozpočty z dokumentu 07; případné překročení je měření a rozhodnutí, ne skrytá výjimka.                           |
 | Lokální save                         | Do 128 KiB cílově, tvrdý limit 512 KiB, žádné velké assety uvnitř.                                                |
 
-PERF-01 je instrumentovaný průjezd s 100 vagonky přes všechny typy infrastruktury. PERF-02 je 30min reálná jízda s opakovanou pauzou a změnami prostředí. PERF-03 je headless streaming 10 000 chunků. PERF-04 je studený start, předehřátý start a offline start se zaznamenáním podmínek sítě a cache.
+PERF-01 je instrumentovaný průjezd s nejdelší povolenou soupravou přes všechny typy infrastruktury. PERF-02 je 30min reálná jízda s opakovanou pauzou a změnami prostředí. PERF-03 je headless streaming 10 000 chunků. PERF-04 je studený start, předehřátý start a offline start se zaznamenáním podmínek sítě a cache.
 
 Pro 1280 × 720 a současné maximální rozměry vozidel cílit nejvýše na zhruba 48 živých geometrických chunků; přesná mez se odvodí z délky soupravy, rezerv a dráhy NPC. Není dovoleno použít pevnou mez, která smaže poslední část dlouhého vlaku. Rozpočet na počet renderovaných objektů je samostatný.
 
@@ -185,7 +185,7 @@ Místní save:
 Fullscreen:
 PWA instalace:
 Offline studený start:
-Výkonový průjezd 100 vagonků:
+Výkonový průjezd nejdelší povolené soupravy:
 Známá omezení a reprodukce:
 Výsledek: PASS / FAIL / NEOVĚŘENO / NEPODPOROVÁNO
 ```

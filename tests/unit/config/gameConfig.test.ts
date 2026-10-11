@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  crossingCloseDistanceU,
   gameConfig,
   validateGameConfig,
   type GameConfig,
@@ -17,8 +18,150 @@ describe('gameConfig', () => {
     });
   });
 
+  it('doc 14 §6: the ride feels snappy on screen yet easy to follow', () => {
+    const { train, camera } = gameConfig;
+    // Screen widths per second at full speed: the scale fits the longest
+    // train into trainWidthFraction of the width on every screen.
+    const widthsPerSecond =
+      (train.maxSpeedUPerSec * camera.trainWidthFraction) /
+      train.maxConsistLengthU;
+    expect(widthsPerSecond).toBeGreaterThanOrEqual(0.18);
+    expect(widthsPerSecond).toBeLessThanOrEqual(0.3);
+    // Smooth start and coast: seconds from standstill to full speed and back.
+    const toFull = train.maxSpeedUPerSec / train.accelerationUPerSec2;
+    const coast = train.maxSpeedUPerSec / train.coastDecelerationUPerSec2;
+    const brake = train.maxSpeedUPerSec / train.brakeDecelerationUPerSec2;
+    expect(toFull).toBeGreaterThanOrEqual(2);
+    expect(toFull).toBeLessThanOrEqual(4);
+    expect(coast).toBeGreaterThanOrEqual(4);
+    expect(coast).toBeLessThanOrEqual(7);
+    expect(brake).toBeLessThan(coast / 3);
+  });
+
+  it('carries the doc 13 catenary spacing and contact height (doc 03 §9)', () => {
+    expect(gameConfig.world.catenaryPoleSpacingU).toBe(256);
+    expect(gameConfig.world.catenaryContactHeightU).toBe(160);
+  });
+
+  it('rejects poles that would not keep one phase across chunks', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      world: {
+        ...gameConfig.world,
+        catenaryPoleSpacingU: 300,
+        catenaryContactHeightU: 0,
+      },
+    };
+    expect(validateGameConfig(broken)).toEqual([
+      'world.catenaryPoleSpacingU',
+      'world.catenaryContactHeightU',
+    ]);
+  });
+
+  it('carries the doc 13 second-track and oncoming-train defaults (doc 04 §7, doc 05 §6)', () => {
+    const { world, interaction } = gameConfig;
+    expect([
+      world.secondaryTrackOffsetU,
+      world.secondaryRailProbability,
+      world.forcedSecondaryBiomeBlock,
+      world.npcTriggerBeforeFeatureU,
+      world.npcHiddenPathMarginU,
+    ]).toEqual([64, 1 / 3, 1, 512, 256]);
+    expect(interaction).toEqual({
+      defaultCooldownSeconds: 1.5,
+      hornMinIntervalSeconds: 0.7,
+      npcHornCooldownSeconds: 8,
+      hornResponseRadiusU: 800,
+      npcTrainMaxWagons: 5,
+      npcTrainMinSpeedUPerSec: 100,
+      npcTrainMaxSpeedUPerSec: 160,
+    });
+  });
+
+  it('rejects an oncoming train faster at its slowest than at its fastest', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      world: { ...gameConfig.world, secondaryRailProbability: 1.5 },
+      interaction: {
+        ...gameConfig.interaction,
+        npcTrainMinSpeedUPerSec: 200,
+        npcTrainMaxWagons: 0,
+      },
+    };
+    expect(validateGameConfig(broken)).toEqual([
+      'interaction.npcTrainMaxWagons',
+      'interaction.npcTrainSpeedUPerSec',
+      'world.secondaryRailProbability',
+    ]);
+  });
+
+  it('carries the doc 13 quality profiles with their particle budgets', () => {
+    expect(gameConfig.quality).toEqual({
+      low: { maxDpr: 1, targetFps: 30, maxDecorativeParticles: 96 },
+      standard: { maxDpr: 1.5, targetFps: 60, maxDecorativeParticles: 240 },
+    });
+  });
+
+  it('rejects a quality profile without a particle budget', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      quality: {
+        ...gameConfig.quality,
+        low: { ...gameConfig.quality.low, maxDecorativeParticles: 0 },
+        standard: { ...gameConfig.quality.standard, maxDpr: 0.5 },
+      },
+    };
+    expect(validateGameConfig(broken)).toEqual([
+      'quality.low.maxDecorativeParticles',
+      'quality.standard.maxDpr',
+    ]);
+  });
+
+  it('carries the doc 13 crossing timings and derives Dclose from the top speed (doc 05 §4)', () => {
+    expect(gameConfig.crossing).toEqual({
+      roadClearanceSeconds: 2,
+      warningSeconds: 1.2,
+      closingSeconds: 0.8,
+      openingSeconds: 0.8,
+      safetySeconds: 0.5,
+      distanceMarginU: 80,
+      maxQueuedCars: 6,
+      maxQueuedBikes: 2,
+    });
+    // Doc 05 example: 180 u/s gives 890 u; the ride now tops out at 480 u/s.
+    expect(crossingCloseDistanceU(gameConfig.crossing, 180)).toBeCloseTo(
+      890,
+      9,
+    );
+    expect(
+      crossingCloseDistanceU(
+        gameConfig.crossing,
+        gameConfig.train.maxSpeedUPerSec,
+      ),
+    ).toBeCloseTo(480 * 4.5 + 80, 9);
+  });
+
   it('is valid as shipped', () => {
     expect(validateGameConfig(gameConfig)).toEqual([]);
+  });
+
+  it('rejects a road clearance shorter than the slowest road actor needs (doc 05 §4)', () => {
+    // A shorter clearance also shortens Dclose: a train at top speed would
+    // reach the crossing before the barriers are down.
+    const withClearance = (roadClearanceSeconds: number): GameConfig => ({
+      ...gameConfig,
+      crossing: { ...gameConfig.crossing, roadClearanceSeconds },
+    });
+    expect(validateGameConfig(withClearance(0.1))).toEqual([
+      'crossing.roadClearanceSeconds',
+    ]);
+    expect(validateGameConfig(withClearance(1.9))).toEqual([
+      'crossing.roadClearanceSeconds',
+    ]);
+    expect(validateGameConfig(withClearance(Number.NaN))).toEqual([
+      'crossing.roadClearanceSeconds',
+    ]);
+    expect(validateGameConfig(withClearance(2))).toEqual([]);
   });
 
   it('reports out-of-range values with their path', () => {
@@ -35,6 +178,28 @@ describe('gameConfig', () => {
       'input.maxPointers',
       'input.leftSwipeDistanceCssPx',
       'input.primaryControlTargetCssPx',
+    ]);
+  });
+
+  it('rejects a train-width fraction of zero (the camera would not zoom)', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      camera: { ...gameConfig.camera, trainWidthFraction: 0 },
+    };
+    expect(validateGameConfig(broken)).toEqual(['camera.trainWidthFraction']);
+  });
+
+  it('rejects a terrain without lattice or with a negative embankment', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      world: {
+        ...gameConfig.world,
+        terrain: { latticeU: 0, maxEmbankmentU: -1 },
+      },
+    };
+    expect(validateGameConfig(broken)).toEqual([
+      'world.terrain.latticeU',
+      'world.terrain.maxEmbankmentU',
     ]);
   });
 });

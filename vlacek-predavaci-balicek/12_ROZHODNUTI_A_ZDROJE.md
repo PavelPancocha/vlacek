@@ -27,28 +27,28 @@ Výraz u elektrické lokomotivy je zde operacionalizován jako trolejové veden�
 
 ## 2. Doplněné výchozí volby
 
-| ID   | Výchozí volba                                                                       | Důvod / dopad                                                                                |
-| ---- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| D-01 | Velká viditelná brzda vlevo dole + gesto doleva. Ne celá neviditelná levá polovina. | Vyřešení uživatelem otevřené varianty brzdění, srozumitelná plocha.                          |
-| D-02 | Dotyk objektu reaguje okamžitě a zároveň dává plyn.                                 | Jednotný vztah dotyk–jízda, žádné čekání na rozpoznání záměru dítěte.                        |
-| D-03 | Brzda má prioritu nad všemi plynovými dotyky.                                       | Jednoznačnost při více prstech.                                                              |
-| D-04 | Po přerušení je v = 0 a k rozjezdu je potřeba nový dotyk.                           | Odolnost vůči ztraceným koncovým událostem a nechtěnému rozjezdu.                            |
-| D-05 | 100 vagonků a 32 katalogových druhů.                                                | Konkrétní implementační výklad „hodně“. Čísla nejsou původní explicitní požadavek uživatele. |
-| D-06 | Všechny typy dostupné hned; žádné skóre, odemykání a prohra.                        | Hračka pro malé dítě, nikoli výkonová hra.                                                   |
-| D-07 | Žádná fyzika hmotností, couvání ani volba výhybek.                                  | Zjednodušení bez ztráty hlavního zážitku.                                                    |
-| D-08 | Kamera pevně sleduje předek, celá souprava je posuvná v depu.                       | Gesta během jízdy jsou vyhrazená řízení.                                                     |
-| D-09 | Jeden režim, žádné samostatné minihry a úkoly.                                      | Nepřidávat složitost, kterou uživatel odložil.                                               |
-| D-10 | Změna soupravy zahajuje novou cestu až po potvrzení Vyjet.                          | Bez přepojování vozů v živé krajině a přepočítávání obsazených přejezdů.                     |
-| D-11 | Jeden lokální rozehraný výlet, žádné účty a synchronizace.                          | Nejmenší provozní a implementační náklady.                                                   |
-| D-12 | Semi-realistická ilustrace bez obličejů lokomotiv, 7 realistických + 3 hravé typy.  | Konzistentní rozpracování vizuálního záměru.                                                 |
-| D-13 | Šest biomů a jednoduchá předvídatelná gramatika jejich návaznosti.                  | Proceduralita bez neuvěřitelných skoků a drahého plánování.                                  |
-| D-14 | Mírné počasí a pomalý herní den; žádná bouřka a globální roční období.              | Atmosféra bez zahlcení a dalšího herního systému.                                            |
-| D-15 | Hudba výchozí vypnutá, zvuky zapnuté, žádné automatické mluvené poučování.          | Zvuková odezva bez permanentního komentátora.                                                |
-| D-16 | TypeScript + Phaser + Vite, statické nasazení, malé DOM UI.                         | Jedna webová implementace, testovatelná logika a bez backendu.                               |
-| D-17 | PWA je volitelná; online cesta funguje i bez ní.                                    | Specifické browsery nesmějí selhat kvůli nepodporované nadstavbě.                            |
-| D-18 | Standardní čekající aktualizace workeru, žádné nucené přepnutí uprostřed jízdy.     | Jednoduchost a konzistence assetů.                                                           |
-| D-19 | V1 má malé lokální JSON save a zálohu, ne databázový server.                        | Úměrnost rozsahu, snadná možnost pozdější výměny adaptéru.                                   |
-| D-20 | Numerické konstanty a výkonové rozpočty jsou výchozí, mají se měřit.                | Nepředstírat otestované optimum před vznikem hry.                                            |
+| ID   | Výchozí volba                                                                       | Důvod / dopad                                                                                                               |
+| ---- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| D-01 | Velká viditelná brzda vlevo dole + gesto doleva. Ne celá neviditelná levá polovina. | Vyřešení uživatelem otevřené varianty brzdění, srozumitelná plocha.                                                         |
+| D-02 | Dotyk objektu reaguje okamžitě a zároveň dává plyn.                                 | Jednotný vztah dotyk–jízda, žádné čekání na rozpoznání záměru dítěte.                                                       |
+| D-03 | Brzda má prioritu nad všemi plynovými dotyky.                                       | Jednoznačnost při více prstech.                                                                                             |
+| D-04 | Po přerušení je v = 0 a k rozjezdu je potřeba nový dotyk.                           | Odolnost vůči ztraceným koncovým událostem a nechtěnému rozjezdu.                                                           |
+| D-05 | ~~100 vagonků~~ délkový limit soupravy a 32 katalogových druhů.                     | Limit 100 vagonků nahradilo zadání 14 §2 a [D-008](../docs/decisions/008-whole-train-in-view.md): celý vlak musí být vidět. |
+| D-06 | Všechny typy dostupné hned; žádné skóre, odemykání a prohra.                        | Hračka pro malé dítě, nikoli výkonová hra.                                                                                  |
+| D-07 | Žádná fyzika hmotností, couvání ani volba výhybek.                                  | Zjednodušení bez ztráty hlavního zážitku.                                                                                   |
+| D-08 | Kamera pevně sleduje předek, celá souprava je posuvná v depu.                       | Gesta během jízdy jsou vyhrazená řízení.                                                                                    |
+| D-09 | Jeden režim, žádné samostatné minihry a úkoly.                                      | Nepřidávat složitost, kterou uživatel odložil.                                                                              |
+| D-10 | Změna soupravy zahajuje novou cestu až po potvrzení Vyjet.                          | Bez přepojování vozů v živé krajině a přepočítávání obsazených přejezdů.                                                    |
+| D-11 | Jeden lokální rozehraný výlet, žádné účty a synchronizace.                          | Nejmenší provozní a implementační náklady.                                                                                  |
+| D-12 | Semi-realistická ilustrace bez obličejů lokomotiv, 7 realistických + 3 hravé typy.  | Konzistentní rozpracování vizuálního záměru.                                                                                |
+| D-13 | Šest biomů a jednoduchá předvídatelná gramatika jejich návaznosti.                  | Proceduralita bez neuvěřitelných skoků a drahého plánování.                                                                 |
+| D-14 | Mírné počasí a pomalý herní den; žádná bouřka a globální roční období.              | Atmosféra bez zahlcení a dalšího herního systému.                                                                           |
+| D-15 | Hudba výchozí vypnutá, zvuky zapnuté, žádné automatické mluvené poučování.          | Zvuková odezva bez permanentního komentátora.                                                                               |
+| D-16 | TypeScript + Phaser + Vite, statické nasazení, malé DOM UI.                         | Jedna webová implementace, testovatelná logika a bez backendu.                                                              |
+| D-17 | PWA je volitelná; online cesta funguje i bez ní.                                    | Specifické browsery nesmějí selhat kvůli nepodporované nadstavbě.                                                           |
+| D-18 | Standardní čekající aktualizace workeru, žádné nucené přepnutí uprostřed jízdy.     | Jednoduchost a konzistence assetů.                                                                                          |
+| D-19 | V1 má malé lokální JSON save a zálohu, ne databázový server.                        | Úměrnost rozsahu, snadná možnost pozdější výměny adaptéru.                                                                  |
+| D-20 | Numerické konstanty a výkonové rozpočty jsou výchozí, mají se měřit.                | Nepředstírat otestované optimum před vznikem hry.                                                                           |
 
 Tyto volby tvoří proveditelné zadání bez dalšího kola otázek. Jejich pozdější úprava má být malý popsaný zásah se změnou testů, ne neřízené přidávání funkcí.
 

@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="76" viewBox="0 0 144 76">
+  <!-- Otevřený výletní vagónek (passenger_open): varnished plank sides, benches with passengers (simple figures, no faces), striped canopy on posts, open end platforms. Rail top at y = 76, buffers 30 u above the rail. -->
+  <defs>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d3d8de"/><stop offset="0.5" stop-color="#8b9199"/><stop offset="1" stop-color="#555a62"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4f57"/><stop offset="0.4" stop-color="#2c2f35"/><stop offset="1" stop-color="#16181b"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf5fb"/><stop offset="0.45" stop-color="#a9cde3"/><stop offset="1" stop-color="#5f8fae"/>
+    </linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e3a35a"/><stop offset="0.5" stop-color="#c47f35"/><stop offset="1" stop-color="#8a5320"/>
+    </linearGradient>
+    <linearGradient id="post" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#14532d"/><stop offset="0.4" stop-color="#2e7d4f"/><stop offset="1" stop-color="#0e3b20"/>
+    </linearGradient>
+    <linearGradient id="canopy" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdfaf0"/><stop offset="1" stop-color="#d9ccb0"/>
+    </linearGradient>
+  </defs>
+
+  <g stroke="#111214" stroke-width="0.6" stroke-linejoin="round">
+
+    <!-- Headstocks with buffers (30 u above the rail), couplings, hoses. -->
+    <rect x="4" y="39" width="7" height="14" rx="0.8" fill="url(#wood)"/>
+    <rect x="133" y="39" width="7" height="14" rx="0.8" fill="url(#wood)"/>
+    <rect x="1.6" y="44.4" width="2.6" height="3.2" fill="url(#steel)"/>
+    <rect x="0.2" y="42.2" width="1.9" height="7.6" rx="0.8" fill="#dfe3e8"/>
+    <rect x="139.8" y="44.4" width="2.6" height="3.2" fill="url(#steel)"/>
+    <rect x="141.9" y="42.2" width="1.9" height="7.6" rx="0.8" fill="#dfe3e8"/>
+    <path d="M4 50 H2.6 Q1.3 50 1.3 51.6 V52.6 H2.6 M140 50 H141.4 Q142.7 50 142.7 51.6 V52.6 H141.4" fill="none" stroke-width="0.9"/>
+    <path d="M8.4 53 Q9 58 6.4 60 M135.6 53 Q135 58 137.6 60" stroke="#16171a" stroke-width="1.4" fill="none"/>
+    <!-- Floor frame. -->
+    <rect x="5" y="41.6" width="134" height="6" fill="url(#dark)"/>
+    <path d="M5.6 42.4 H138.4" stroke="#6a707a" stroke-width="0.4" fill="none"/>
+    <!-- Bench backs behind the passengers. -->
+    <path d="M14 30 V24 H40 V30 M45 30 V24 H71 V30 M76 30 V24 H101 V30 M107 30 V24 H131 V30" fill="#8a5320" stroke-width="0.5"/>
+    <path d="M14 25.6 H40 M45 25.6 H71 M76 25.6 H101 M107 25.6 H131" stroke="#e3a35a" stroke-width="0.5" fill="none"/>
+
+      <path d="M17.4 31 Q17.4 25.4 22 25.2 Q26.6 25.4 26.6 31 Z" fill="#2e86c1" stroke-width="0.35"/>
+      <rect x="21.1" y="23.8" width="1.8" height="1.8" fill="#f1c7a5" stroke="none"/>
+      <circle cx="22" cy="22" r="2.5" fill="#f1c7a5" stroke-width="0.35"/>
+      <path d="M19.3 23.6 Q18.8 18.4 22 18.4 Q25.2 18.4 24.7 23.6 Q23.6 20.4 19.3 23.6 Z" fill="#a04000" stroke-width="0.3"/>
+      <path d="M27.4 31 Q27.4 25.4 32 25.2 Q36.6 25.4 36.6 31 Z" fill="#f4d03f" stroke-width="0.35"/>
+      <rect x="31.1" y="23.8" width="1.8" height="1.8" fill="#c68642" stroke="none"/>
+      <circle cx="32" cy="22" r="2.5" fill="#c68642" stroke-width="0.35"/>
+      <path d="M29.4 21.8 Q29.2 18.6 32 18.5 Q34.8 18.6 34.6 21.8 Q33.2 20 29.4 21.8 Z" fill="#1b1b1b" stroke-width="0.3"/>
+      <path d="M48.4 31 Q48.4 25.4 53 25.2 Q57.6 25.4 57.6 31 Z" fill="#e74c3c" stroke-width="0.35"/>
+      <rect x="52.1" y="23.8" width="1.8" height="1.8" fill="#ffdbac" stroke="none"/>
+      <circle cx="53" cy="22" r="2.5" fill="#ffdbac" stroke-width="0.35"/>
+      <path d="M50.5 21.4 Q50.5 18.6 53 18.6 Q55.5 18.6 55.5 21.4 Z M54.6 18.8 Q57 18 56.6 20.6 Q55.8 19.8 54.6 19.6 Z" fill="#d4ac0d" stroke-width="0.3"/>
+      <path d="M59.4 31 Q59.4 25.4 64 25.2 Q68.6 25.4 68.6 31 Z" fill="#ffffff" stroke-width="0.35"/>
+      <rect x="63.1" y="23.8" width="1.8" height="1.8" fill="#8d5524" stroke="none"/>
+      <circle cx="64" cy="22" r="2.5" fill="#8d5524" stroke-width="0.35"/>
+      <path d="M60.8 21 H67.2 V20.2 H66.2 Q66 17.8 64 17.8 Q62 17.8 61.8 20.2 H60.8 Z" fill="#1b1b1b" stroke-width="0.3"/>
+      <path d="M81.4 31 Q81.4 25.4 86 25.2 Q90.6 25.4 90.6 31 Z" fill="#27ae60" stroke-width="0.35"/>
+      <rect x="85.1" y="23.8" width="1.8" height="1.8" fill="#f1c7a5" stroke="none"/>
+      <circle cx="86" cy="22" r="2.5" fill="#f1c7a5" stroke-width="0.35"/>
+      <path d="M83.3 23.6 Q82.8 18.4 86 18.4 Q89.2 18.4 88.7 23.6 Q87.6 20.4 83.3 23.6 Z" fill="#5d3a1a" stroke-width="0.3"/>
+      <path d="M111.4 31 Q111.4 25.4 116 25.2 Q120.6 25.4 120.6 31 Z" fill="#8e44ad" stroke-width="0.35"/>
+      <rect x="115.1" y="23.8" width="1.8" height="1.8" fill="#e0ac69" stroke="none"/>
+      <circle cx="116" cy="22" r="2.5" fill="#e0ac69" stroke-width="0.35"/>
+      <path d="M113.4 21.8 Q113.2 18.6 116 18.5 Q118.8 18.6 118.6 21.8 Q117.2 20 113.4 21.8 Z" fill="#3e2723" stroke-width="0.3"/>
+      <path d="M121.4 31 Q121.4 25.4 126 25.2 Q130.6 25.4 130.6 31 Z" fill="#e67e22" stroke-width="0.35"/>
+      <rect x="125.1" y="23.8" width="1.8" height="1.8" fill="#ffdbac" stroke="none"/>
+      <circle cx="126" cy="22" r="2.5" fill="#ffdbac" stroke-width="0.35"/>
+      <path d="M123.5 21.4 Q123.5 18.6 126 18.6 Q128.5 18.6 128.5 21.4 Z M127.6 18.8 Q130 18 129.6 20.6 Q128.8 19.8 127.6 19.6 Z" fill="#7b3f00" stroke-width="0.3"/>
+    <!-- Canopy posts. -->
+    <rect x="9.1" y="11.6" width="1.8" height="30" fill="url(#post)" stroke-width="0.4"/><rect x="40.1" y="11.6" width="1.8" height="30" fill="url(#post)" stroke-width="0.4"/><rect x="71.1" y="11.6" width="1.8" height="30" fill="url(#post)" stroke-width="0.4"/><rect x="102.1" y="11.6" width="1.8" height="30" fill="url(#post)" stroke-width="0.4"/><rect x="133.1" y="11.6" width="1.8" height="30" fill="url(#post)" stroke-width="0.4"/>
+    <!-- Plank side wall with end posts and iron corner straps. -->
+    <rect x="8" y="29.6" width="128" height="12.4" fill="url(#wood)"/>
+    <path d="M9 31.6 H135 M9 34.4 H135 M9 37.2 H135 M9 40 H135" stroke="#6e3f15" stroke-width="0.5" fill="none"/>
+    <path d="M9 30.4 H135" stroke="#f6d3a0" stroke-width="0.5" fill="none"/>
+    <rect x="8.6" y="29.6" width="2.8" height="12.4" fill="url(#post)" stroke-width="0.4"/><rect x="39.6" y="29.6" width="2.8" height="12.4" fill="url(#post)" stroke-width="0.4"/><rect x="70.6" y="29.6" width="2.8" height="12.4" fill="url(#post)" stroke-width="0.4"/><rect x="101.6" y="29.6" width="2.8" height="12.4" fill="url(#post)" stroke-width="0.4"/><rect x="132.6" y="29.6" width="2.8" height="12.4" fill="url(#post)" stroke-width="0.4"/>
+    <g fill="#14532d" stroke="none">
+      <circle cx="10" cy="32" r="0.45" fill="#a9dfbf"/><circle cx="10" cy="39.6" r="0.45" fill="#a9dfbf"/><circle cx="41" cy="32" r="0.45" fill="#a9dfbf"/><circle cx="41" cy="39.6" r="0.45" fill="#a9dfbf"/><circle cx="72" cy="32" r="0.45" fill="#a9dfbf"/><circle cx="72" cy="39.6" r="0.45" fill="#a9dfbf"/><circle cx="103" cy="32" r="0.45" fill="#a9dfbf"/><circle cx="103" cy="39.6" r="0.45" fill="#a9dfbf"/><circle cx="134" cy="32" r="0.45" fill="#a9dfbf"/><circle cx="134" cy="39.6" r="0.45" fill="#a9dfbf"/>
+    </g>
+    <!-- End platforms with railings and gates. -->
+    <path d="M4.6 41.6 V27.6 H9 M139.4 41.6 V27.6 H135" stroke="url(#steel)" stroke-width="0.9" fill="none"/>
+    <path d="M4.6 34.4 H8 M139.4 34.4 H136" stroke="url(#steel)" stroke-width="0.7" fill="none"/>
+    <!-- Canopy roof with a striped scalloped valance and a lantern. -->
+    <path d="M4 11.8 Q4.6 7 12 6.6 H132 Q139.4 7 140 11.8 Z" fill="url(#canopy)"/>
+    <path d="M12 7.6 H132" stroke="#ffffff" stroke-width="0.6" fill="none"/>
+    <path d="M4.4 11.6 H139.6" stroke="#8a7e66" stroke-width="0.5" fill="none"/>
+    <g stroke-width="0.35"><path d="M6 11.6 H14.25 V13.2 Q10.120000000000001 17.4 6 13.2 Z" fill="#c0392b"/><path d="M14.25 11.6 H22.5 V13.2 Q18.37 17.4 14.25 13.2 Z" fill="#fbf6ea"/><path d="M22.5 11.6 H30.75 V13.2 Q26.62 17.4 22.5 13.2 Z" fill="#c0392b"/><path d="M30.75 11.6 H39 V13.2 Q34.87 17.4 30.75 13.2 Z" fill="#fbf6ea"/><path d="M39 11.6 H47.25 V13.2 Q43.12 17.4 39 13.2 Z" fill="#c0392b"/><path d="M47.25 11.6 H55.5 V13.2 Q51.37 17.4 47.25 13.2 Z" fill="#fbf6ea"/><path d="M55.5 11.6 H63.75 V13.2 Q59.62 17.4 55.5 13.2 Z" fill="#c0392b"/><path d="M63.75 11.6 H72 V13.2 Q67.87 17.4 63.75 13.2 Z" fill="#fbf6ea"/><path d="M72 11.6 H80.25 V13.2 Q76.12 17.4 72 13.2 Z" fill="#c0392b"/><path d="M80.25 11.6 H88.5 V13.2 Q84.37 17.4 80.25 13.2 Z" fill="#fbf6ea"/><path d="M88.5 11.6 H96.75 V13.2 Q92.62 17.4 88.5 13.2 Z" fill="#c0392b"/><path d="M96.75 11.6 H105 V13.2 Q100.87 17.4 96.75 13.2 Z" fill="#fbf6ea"/><path d="M105 11.6 H113.25 V13.2 Q109.12 17.4 105 13.2 Z" fill="#c0392b"/><path d="M113.25 11.6 H121.5 V13.2 Q117.37 17.4 113.25 13.2 Z" fill="#fbf6ea"/><path d="M121.5 11.6 H129.75 V13.2 Q125.62 17.4 121.5 13.2 Z" fill="#c0392b"/><path d="M129.75 11.6 H138 V13.2 Q133.87 17.4 129.75 13.2 Z" fill="#fbf6ea"/></g>
+    <path d="M134 15.2 V17.4" stroke="#2a2d33" stroke-width="0.5"/>
+    <rect x="132.4" y="17.4" width="3.2" height="4.4" rx="0.8" fill="#2a2d33"/>
+    <rect x="133" y="18.2" width="2" height="2.8" rx="0.5" fill="#f9e79f" stroke="none"/>
+  </g>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="42" height="6" viewBox="0 0 42 6">
+  <!-- Golden coupling rod for magic_stars: pins at x 4 and 38 (34 u apart,
+       like the drivers), y 3; pivot on the main pin (38, 3). -->
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/>
+      <stop offset="0.45" stop-color="#f4d03f"/>
+      <stop offset="1" stop-color="#9a6f14"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#1a0b21" stroke-width="0.4">
+    <path d="M4 1.7 Q21 2.4 38 1.7 V4.3 Q21 3.6 4 4.3 Z" fill="url(#gold)"/>
+    <circle cx="4" cy="3" r="2.6" fill="url(#gold)"/>
+    <circle cx="38" cy="3" r="2.6" fill="url(#gold)"/>
+    <circle cx="4" cy="3" r="1" fill="#5b2c6f"/>
+    <circle cx="38" cy="3" r="1" fill="#5b2c6f"/>
+    <path d="M21.00 1.50 L21.35 2.52 L22.43 2.54 L21.57 3.19 L21.88 4.22 L21.00 3.60 L20.12 4.22 L20.43 3.19 L19.57 2.54 L20.65 2.52 Z" fill="#fff9e0" stroke="#9a6f14" stroke-width="0.2"/>
+  </g>
+</svg>

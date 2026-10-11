@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="20" viewBox="0 0 160 20">
+  <!-- Zábradlí na vzdálené straně mostku, za vlakem. Pivot (80, 19) na patě. -->
+  <defs>
+  </defs>
+  <rect x="3" y="4" width="2" height="15" fill="#4a4f57"/><rect x="15" y="4" width="2" height="15" fill="#4a4f57"/><rect x="27" y="4" width="2" height="15" fill="#4a4f57"/><rect x="39" y="4" width="2" height="15" fill="#4a4f57"/><rect x="51" y="4" width="2" height="15" fill="#4a4f57"/><rect x="63" y="4" width="2" height="15" fill="#4a4f57"/><rect x="75" y="4" width="2" height="15" fill="#4a4f57"/><rect x="87" y="4" width="2" height="15" fill="#4a4f57"/><rect x="99" y="4" width="2" height="15" fill="#4a4f57"/><rect x="111" y="4" width="2" height="15" fill="#4a4f57"/><rect x="123" y="4" width="2" height="15" fill="#4a4f57"/><rect x="135" y="4" width="2" height="15" fill="#4a4f57"/><rect x="147" y="4" width="2" height="15" fill="#4a4f57"/>
+  <rect x="2" y="2" width="156" height="2.6" rx="1" fill="#5d636c" stroke="#1d2a14" stroke-width="0.4"/>
+  <path d="M3 10 H157" stroke="#4a4f57" stroke-width="1.4"/>
+  <path d="M3 2.8 H157" stroke="#aab1b9" stroke-width="0.6"/>
+</svg>

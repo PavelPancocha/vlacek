@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="16" viewBox="0 0 24 16">
+  <!-- Pařez: sawn stump with rings. Foot centre (12, 16). -->
+  <defs><linearGradient id="bark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8b6a4a"/><stop offset="1" stop-color="#5a3e2b"/></linearGradient>
+  </defs>
+  <ellipse cx="12" cy="15" rx="11" ry="1.4" fill="#1d2a14" fill-opacity="0.18"/>
+  <path d="M3 15 L4.4 5 Q12 2.6 19.6 5 L21 15 Z" fill="url(#bark)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <ellipse cx="12" cy="5" rx="7.6" ry="2.4" fill="#d9b07a" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <ellipse cx="12" cy="5" rx="4.6" ry="1.4" fill="none" stroke="#a5794a" stroke-width="0.4"/><ellipse cx="12" cy="5" rx="2" ry="0.6" fill="none" stroke="#a5794a" stroke-width="0.4"/>
+  <path d="M7 8 V14 M15 7.6 V14" stroke="#4a3222" stroke-width="0.4"/>
+  <path d="M0.95 16 Q1.63 14.71 1.8 13.84 Q1.9 14.92 2.15 16 Z" fill="#4e8a2c"/><path d="M8.93 16 Q9.61 13.2 9.79 11.33 Q9.88 13.67 10.13 16 Z" fill="#4e8a2c"/><path d="M9.81 16 Q10.49 13.09 10.67 11.14 Q10.76 13.57 11.01 16 Z" fill="#6fae3e"/><path d="M20.64 16 Q20.98 13.6 20.36 12 Q21.36 14 21.84 16 Z" fill="#6fae3e"/><path d="M8.08 16 Q8.55 13.64 8.24 12.07 Q8.89 14.04 9.28 16 Z" fill="#6fae3e"/><path d="M8.6 16 Q9.09 14.15 8.85 12.92 Q9.43 14.46 9.8 16 Z" fill="#4e8a2c"/><path d="M13.16 16 Q13.68 13.54 13.47 11.9 Q14.01 13.95 14.36 16 Z" fill="#4e8a2c"/><path d="M13.91 16 Q14.78 13.88 15.43 12.47 Q14.99 14.23 15.11 16 Z" fill="#6fae3e"/>
+</svg>

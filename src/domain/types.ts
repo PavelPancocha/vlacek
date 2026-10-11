@@ -40,6 +40,6 @@ export interface WagonInstance {
 
 export interface Consist {
   locomotiveId: string;
-  /** 0 to `train.maxWagons`; repeated definitions are allowed. */
+  /** Repeated definitions are allowed; length is limited by `ConsistLengthRules`. */
   wagons: WagonInstance[];
 }

@@ -1,0 +1,213 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="188" height="92" viewBox="0 0 188 92">
+  <!-- Hranatá elektrická lokomotiva (electric_retro): skříň za podvozky.
+       Modrá hranatá skříň s krémovým pásem oken, výrazné přední světlomety,
+       střecha s izolátory, sklopeným předním pantografem a odporníkem.
+       Ramena zdviženého pantografu a jeho hlava jsou samostatné díly.
+       Jednotky vozidla, hlava kolejnice v y = 92, čelo vpravo; nárazníky 30 u
+       nad kolejnicí. Bez log dopravce, bez obličeje. -->
+  <defs>
+    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a74bd"/>
+      <stop offset="0.5" stop-color="#1f5296"/>
+      <stop offset="1" stop-color="#123465"/>
+    </linearGradient>
+    <linearGradient id="cream" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbf6e6"/>
+      <stop offset="0.5" stop-color="#f0e6c8"/>
+      <stop offset="1" stop-color="#d8caa2"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c3c9d0"/>
+      <stop offset="0.5" stop-color="#98a0a9"/>
+      <stop offset="1" stop-color="#6a727b"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4f57"/>
+      <stop offset="0.4" stop-color="#2c2f35"/>
+      <stop offset="1" stop-color="#16181b"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e3e7ec"/>
+      <stop offset="0.5" stop-color="#9aa0a8"/>
+      <stop offset="1" stop-color="#5b6068"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf5fb"/>
+      <stop offset="0.45" stop-color="#a9cde3"/>
+      <stop offset="1" stop-color="#5f8fae"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d64541"/>
+      <stop offset="0.55" stop-color="#b3242b"/>
+      <stop offset="1" stop-color="#7a151b"/>
+    </linearGradient>
+    <linearGradient id="louvre" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f5f9e"/>
+      <stop offset="1" stop-color="#173b6e"/>
+    </linearGradient>
+    <linearGradient id="porcelain" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff6e8"/>
+      <stop offset="0.5" stop-color="#e7d2b6"/>
+      <stop offset="1" stop-color="#b99a78"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="0.4" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#fffbe6"/>
+      <stop offset="0.6" stop-color="#f5d97a"/>
+      <stop offset="1" stop-color="#b88a2a"/>
+    </radialGradient>
+    <radialGradient id="tail" cx="0.4" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#f1948a"/>
+      <stop offset="1" stop-color="#922b21"/>
+    </radialGradient>
+  </defs>
+  <g stroke="#111214" stroke-width="0.6" stroke-linejoin="round">
+    <!-- Air reservoirs, battery boxes and pipes between the bogies. -->
+    <rect x="62" y="58.4" width="30" height="7.6" rx="3.8" fill="url(#steel)"/>
+    <path d="M64 59.8 H90" stroke="#ffffff" stroke-opacity="0.5" stroke-width="0.5" fill="none"/>
+    <path d="M70 58.4 V66 M84 58.4 V66" stroke="#4a4f57" stroke-width="0.6" fill="none"/>
+    <rect x="96" y="58" width="12" height="9" rx="1" fill="url(#dark)"/>
+    <rect x="110" y="58" width="12" height="9" rx="1" fill="url(#dark)"/>
+    <path d="M98 61 H106 M98 63 H106 M112 61 H120 M112 63 H120" stroke="#6a707a" stroke-width="0.45" fill="none"/>
+    <rect x="98.6" y="64.4" width="2.4" height="1.4" fill="#f1c40f" stroke-width="0.25"/>
+    <rect x="112.6" y="64.4" width="2.4" height="1.4" fill="#f1c40f" stroke-width="0.25"/>
+    <path d="M60 66.4 H124 M66 66.4 V68 M118 66.4 V68" stroke="#3a3d44" stroke-width="0.8" fill="none"/>
+    <rect x="125" y="58" width="9" height="8" rx="0.8" fill="url(#dark)"/>
+    <circle cx="129.5" cy="62" r="2" fill="url(#steel)" stroke-width="0.4"/>
+    <!-- Buffer beams, buffers, couplings, hoses and pilots. -->
+    <rect x="177" y="54" width="7" height="16" rx="0.8" fill="url(#red)"/>
+    <path d="M177.6 55.4 H183.4" stroke="#ea8b7e" stroke-width="0.35" fill="none"/>
+    <rect x="184" y="60.4" width="2.6" height="3.2" fill="url(#steel)"/>
+    <rect x="186.1" y="58.2" width="1.9" height="7.6" rx="0.8" fill="#dfe3e8"/>
+    <path d="M180.6 63.4 Q181.2 68.6 178.4 70.6" stroke="#16171a" stroke-width="1.5" fill="none"/>
+    <path d="M184 70 H176 V84 H181.6 Z" fill="url(#dark)"/>
+    <path d="M182.6 72 L181.1 82.4" stroke="#6a707a" stroke-width="0.4" fill="none"/>
+    <rect x="4" y="54" width="7" height="16" rx="0.8" fill="url(#red)"/>
+    <path d="M4.6 55.4 H10.4" stroke="#ea8b7e" stroke-width="0.35" fill="none"/>
+    <rect x="1.4" y="60.4" width="2.6" height="3.2" fill="url(#steel)"/>
+    <rect x="-0.5" y="58.2" width="1.9" height="7.6" rx="0.8" fill="#dfe3e8"/>
+    <path d="M7.4 63.4 Q6.8 68.6 9.6 70.6" stroke="#16171a" stroke-width="1.5" fill="none"/>
+    <path d="M4 70 H12 V84 H6.4 Z" fill="url(#dark)"/>
+    <path d="M5.4 72 L6.9 82.4" stroke="#6a707a" stroke-width="0.4" fill="none"/>
+    <!-- Underframe (solebar) with lifting points. -->
+    <rect x="6" y="52" width="176" height="6.4" fill="url(#dark)"/>
+    <path d="M6.6 52.8 H181.4" stroke="#6a707a" stroke-width="0.4" fill="none"/>
+    <rect x="58" y="54.2" width="4" height="2.6" rx="0.4" fill="#5d636c" stroke-width="0.3"/>
+    <rect x="126" y="54.2" width="4" height="2.6" rx="0.4" fill="#5d636c" stroke-width="0.3"/>
+    <!-- Boxy body: blue, a cream window band and aluminium trims. -->
+    <path d="M6 52.4 V18.4 Q6 15.6 8.8 15.6 H179.2 Q182 15.6 182 18.4 V52.4 Z" fill="url(#blue)"/>
+    <path d="M6.2 33.2 V20.6 Q6.2 18.8 8 18.8 H180 Q181.8 18.8 181.8 20.6 V33.2 Z" fill="url(#cream)" stroke="none"/>
+    <path d="M6.2 18.8 H181.8 M6.2 33.2 H181.8" stroke="#c9ced4" stroke-width="0.7" fill="none"/>
+    <path d="M6.2 34 H181.8" stroke="#0d2447" stroke-width="0.35" fill="none"/>
+    <path d="M6.4 49.6 H181.6" stroke="#c9ced4" stroke-width="0.9" fill="none"/>
+    <path d="M6.4 50.4 H181.6" stroke="#0d2447" stroke-width="0.3" fill="none"/>
+    <!-- Highlight along the top of the blue skirt; side panel seams. -->
+    <path d="M7 36 H181" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.2" fill="none"/>
+    <path d="M28 16 V52 M44 16 V52 M76 16 V52 M112 16 V52 M144 16 V52 M160 16 V52" stroke="#000000" stroke-opacity="0.2" stroke-width="0.4" fill="none"/>
+    <!-- Cab ends with windscreens and headlights. -->
+    <path d="M182 18.4 Q184.6 19 184.8 22 V50 Q184.6 52 182 52.4 Z" fill="url(#blue)"/>
+    <path d="M182 20.2 Q184 20.8 184.2 23 V31.6 L182 31.6 Z" fill="#1b2a35"/>
+    <path d="M182.6 21.6 L183.6 30.6" stroke="#9fc6dd" stroke-width="0.5" fill="none"/>
+    <path d="M182 33 Q183.6 33.2 184.6 34" stroke="#f0e6c8" stroke-width="0.8" fill="none"/>
+    <path d="M6 18.4 Q3.4 19 3.2 22 V50 Q3.4 52 6 52.4 Z" fill="url(#blue)"/>
+    <path d="M6 20.2 Q4 20.8 3.8 23 V31.6 L6 31.6 Z" fill="#1b2a35"/>
+    <path d="M5.4 21.6 L4.4 30.6" stroke="#9fc6dd" stroke-width="0.5" fill="none"/>
+    <path d="M6 33 Q4.4 33.2 3.4 34" stroke="#f0e6c8" stroke-width="0.8" fill="none"/>
+    <path d="M183.2 39.4 H186.2 V47.4 H183.2 Z" fill="url(#dark)"/>
+    <path d="M186.2 39.6 V47.2" stroke="#e3e7ec" stroke-width="1.1" fill="none"/>
+    <path d="M186.7 40.2 Q189 43.4 186.7 46.6 Z" fill="url(#lamp)"/>
+    <path d="M187.1 41.64 Q187.9 42.76 187.7 43.72" stroke="#ffffff" stroke-opacity="0.8" stroke-width="0.5" fill="none"/>
+    <path d="M183.2 14.4 H186.2 V20.4 H183.2 Z" fill="url(#dark)"/>
+    <path d="M186.2 14.6 V20.2" stroke="#e3e7ec" stroke-width="1.1" fill="none"/>
+    <path d="M186.7 15.2 Q189 17.4 186.7 19.6 Z" fill="url(#lamp)"/>
+    <path d="M187.1 16.19 Q187.9 16.96 187.7 17.62" stroke="#ffffff" stroke-opacity="0.8" stroke-width="0.5" fill="none"/>
+    <path d="M4.8 39.4 H1.8 V47.4 H4.8 Z" fill="url(#dark)"/>
+    <path d="M1.8 39.6 V47.2" stroke="#e3e7ec" stroke-width="1.1" fill="none"/>
+    <path d="M1.3 40.2 Q-1 43.4 1.3 46.6 Z" fill="url(#tail)"/>
+    <path d="M0.9 41.64 Q0.1 42.76 0.3 43.72" stroke="#ffffff" stroke-opacity="0.8" stroke-width="0.5" fill="none"/>
+    <path d="M4.8 15.1 H1.8 V19.7 H4.8 Z" fill="url(#dark)"/>
+    <path d="M1.8 15.3 V19.5" stroke="#e3e7ec" stroke-width="1.1" fill="none"/>
+    <path d="M1.3 15.9 Q-1 17.4 1.3 18.9 Z" fill="url(#tail)"/>
+    <path d="M0.9 16.57 Q0.1 17.1 0.3 17.55" stroke="#ffffff" stroke-opacity="0.8" stroke-width="0.5" fill="none"/>
+    <!-- Cabs: doors with windows and handrails, sliding side windows. -->
+    <path d="M162 51.6 V20.4 H170.4 V51.6" fill="none" stroke="#0d2447" stroke-width="0.5"/>
+    <rect x="163.4" y="21.6" width="5.6" height="8.6" rx="0.8" fill="url(#glass)" stroke-width="0.45"/>
+    <path d="M164.2 28.8 L166.8 23.2" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.4"/>
+    <rect x="168.6" y="38" width="1" height="2.8" rx="0.4" fill="url(#steel)" stroke-width="0.25"/>
+    <path d="M160.6 34 V49 M171.8 34 V49" stroke="url(#steel)" stroke-width="0.8" fill="none"/>
+    <rect x="172.4" y="20.6" width="9.4" height="9.8" rx="1.2" fill="#17191c"/>
+    <rect x="173.3" y="21.5" width="7.6" height="8" rx="0.8" fill="url(#glass)" stroke="none"/>
+    <path d="M177.1 21.4 V29.6" stroke="#5a6f80" stroke-width="0.5"/>
+    <path d="M174 28.6 L176.4 22.6 M178 28.6 L180 23.4" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.4"/>
+    <path d="M17.6 51.6 V20.4 H26 V51.6" fill="none" stroke="#0d2447" stroke-width="0.5"/>
+    <rect x="19" y="21.6" width="5.6" height="8.6" rx="0.8" fill="url(#glass)" stroke-width="0.45"/>
+    <path d="M19.8 28.8 L22.400000000000002 23.2" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.4"/>
+    <rect x="18.400000000000002" y="38" width="1" height="2.8" rx="0.4" fill="url(#steel)" stroke-width="0.25"/>
+    <path d="M16.200000000000003 34 V49 M27.400000000000002 34 V49" stroke="url(#steel)" stroke-width="0.8" fill="none"/>
+    <rect x="7.2" y="20.6" width="9.4" height="9.8" rx="1.2" fill="#17191c"/>
+    <rect x="8.1" y="21.5" width="7.6" height="8" rx="0.8" fill="url(#glass)" stroke="none"/>
+    <path d="M11.9 21.4 V29.6" stroke="#5a6f80" stroke-width="0.5"/>
+    <path d="M8.8 28.6 L11.2 22.6 M12.8 28.6 L14.8 23.4" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.4"/>
+    <!-- Machine room: square windows, louvre grilles, central door. -->
+    <rect x="34" y="21.4" width="8.4" height="8.4" rx="1.2" fill="#17191c"/>
+    <rect x="34.9" y="22.3" width="6.6" height="6.6" rx="0.8" fill="url(#glass)" stroke="none"/>
+    <path d="M35.6 28 L38.8 23" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.4"/>
+    <rect x="48" y="21.4" width="8.4" height="8.4" rx="1.2" fill="#17191c"/>
+    <rect x="48.9" y="22.3" width="6.6" height="6.6" rx="0.8" fill="url(#glass)" stroke="none"/>
+    <path d="M49.6 28 L52.8 23" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.4"/>
+    <rect x="62" y="21.4" width="8.4" height="8.4" rx="1.2" fill="#17191c"/>
+    <rect x="62.9" y="22.3" width="6.6" height="6.6" rx="0.8" fill="url(#glass)" stroke="none"/>
+    <path d="M63.6 28 L66.8 23" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.4"/>
+    <rect x="118" y="21.4" width="8.4" height="8.4" rx="1.2" fill="#17191c"/>
+    <rect x="118.9" y="22.3" width="6.6" height="6.6" rx="0.8" fill="url(#glass)" stroke="none"/>
+    <path d="M119.6 28 L122.8 23" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.4"/>
+    <rect x="132" y="21.4" width="8.4" height="8.4" rx="1.2" fill="#17191c"/>
+    <rect x="132.9" y="22.3" width="6.6" height="6.6" rx="0.8" fill="url(#glass)" stroke="none"/>
+    <path d="M133.6 28 L136.8 23" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.4"/>
+    <rect x="146" y="21.4" width="8.4" height="8.4" rx="1.2" fill="#17191c"/>
+    <rect x="146.9" y="22.3" width="6.6" height="6.6" rx="0.8" fill="url(#glass)" stroke="none"/>
+    <path d="M147.6 28 L150.8 23" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.4"/>
+    <rect x="32" y="37" width="38" height="10.4" rx="0.8" fill="url(#louvre)" stroke-width="0.45"/>
+    <path d="M33 38.4 H69 M33 40 H69 M33 41.6 H69 M33 43.2 H69 M33 44.8 H69 M33 46.4 H69 " stroke="#0d2447" stroke-width="0.5" fill="none"/>
+    <path d="M33 39 H69 M33 40.6 H69 M33 42.2 H69 M33 43.8 H69 M33 45.4 H69 " stroke="#5f8fd0" stroke-opacity="0.6" stroke-width="0.35" fill="none"/>
+    <rect x="118" y="37" width="38" height="10.4" rx="0.8" fill="url(#louvre)" stroke-width="0.45"/>
+    <path d="M119 38.4 H155 M119 40 H155 M119 41.6 H155 M119 43.2 H155 M119 44.8 H155 M119 46.4 H155 " stroke="#0d2447" stroke-width="0.5" fill="none"/>
+    <path d="M119 39 H155 M119 40.6 H155 M119 42.2 H155 M119 43.8 H155 M119 45.4 H155 " stroke="#5f8fd0" stroke-opacity="0.6" stroke-width="0.35" fill="none"/>
+    <path d="M86 51.6 V20.6 H102 V51.6" fill="none" stroke="#0d2447" stroke-width="0.5"/>
+    <rect x="89" y="22" width="10" height="6.4" rx="0.8" fill="url(#glass)" stroke-width="0.45"/>
+    <path d="M90 27.4 L93 23" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.4"/>
+    <rect x="99.4" y="38.4" width="1" height="3" rx="0.4" fill="url(#steel)" stroke-width="0.25"/>
+    <rect x="72.6" y="39.4" width="11" height="4.2" rx="0.6" fill="#f0e6c8" stroke-width="0.35"/>
+    <text x="78.1" y="42.6" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="700" fill="#123465" text-anchor="middle" stroke="none">E 188</text>
+    <rect x="104.4" y="39.4" width="11" height="4.2" rx="0.6" fill="#f0e6c8" stroke-width="0.35"/>
+    <text x="109.9" y="42.6" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="700" fill="#123465" text-anchor="middle" stroke="none">E 188</text>
+    <!-- Roof, walkway and roof equipment. -->
+    <path d="M7.4 15.8 Q8.4 11.6 12 11.2 H176 Q179.6 11.6 180.6 15.8 Z" fill="url(#roof)"/>
+    <path d="M8 15.2 H180" stroke="#4a4f57" stroke-width="0.4" fill="none"/>
+    <path d="M13 12 H175" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.4" fill="none"/>
+    <!-- Raised pantograph base (arms and head are separate parts). -->
+    <rect x="35" y="5.2" width="30" height="1.8" rx="0.6" fill="url(#dark)"/>
+    <path d="M35.6 5.6 H64.4" stroke="#6a707a" stroke-width="0.35" fill="none"/>
+    <rect x="37.2" y="7" width="1.6" height="3.6" fill="#c9b79a" stroke-width="0.25"/><rect x="36.4" y="8" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="36.4" y="9.2" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="61.2" y="7" width="1.6" height="3.6" fill="#c9b79a" stroke-width="0.25"/><rect x="60.4" y="8" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="60.4" y="9.2" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="45.2" y="7" width="1.6" height="3.6" fill="#c9b79a" stroke-width="0.25"/><rect x="44.4" y="8" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="44.4" y="9.2" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="53.2" y="7" width="1.6" height="3.6" fill="#c9b79a" stroke-width="0.25"/><rect x="52.4" y="8" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="52.4" y="9.2" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/>
+    <!-- Lowered front pantograph. -->
+    <rect x="123" y="5.2" width="30" height="1.8" rx="0.6" fill="url(#dark)"/>
+    <path d="M123.6 5.6 H152.4" stroke="#6a707a" stroke-width="0.35" fill="none"/>
+    <rect x="125.2" y="7" width="1.6" height="3.6" fill="#c9b79a" stroke-width="0.25"/><rect x="124.4" y="8" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="124.4" y="9.2" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="149.2" y="7" width="1.6" height="3.6" fill="#c9b79a" stroke-width="0.25"/><rect x="148.4" y="8" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="148.4" y="9.2" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="133.2" y="7" width="1.6" height="3.6" fill="#c9b79a" stroke-width="0.25"/><rect x="132.4" y="8" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="132.4" y="9.2" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="141.2" y="7" width="1.6" height="3.6" fill="#c9b79a" stroke-width="0.25"/><rect x="140.4" y="8" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="140.4" y="9.2" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/>
+    <path d="M138 5.2 L121 3.6 L138 2 L155 3.6 Z" fill="none" stroke="#3a3d44" stroke-width="1.1"/>
+    <path d="M138 5.2 L121 3.6 L138 2 L155 3.6 Z" fill="none" stroke="#c9ced4" stroke-width="0.45"/>
+    <rect x="117" y="0.6" width="42" height="1.4" rx="0.6" fill="url(#dark)"/>
+    <path d="M117 1.3 Q114 1.3 113.6 3 M159 1.3 Q162 1.3 162.4 3" stroke="#2a2d33" stroke-width="0.9" fill="none"/>
+    <!-- Resistor housing with louvres, main switch, roof bus line. -->
+    <path d="M70 11.2 V7.6 Q70 6.6 71 6.6 H117 Q118 6.6 118 7.6 V11.2 Z" fill="url(#roof)"/>
+    <path d="M73 7.6 V10.6 M76 7.6 V10.6 M79 7.6 V10.6 M82 7.6 V10.6 M85 7.6 V10.6 M88 7.6 V10.6 M100 7.6 V10.6 M103 7.6 V10.6 M106 7.6 V10.6 M109 7.6 V10.6 M112 7.6 V10.6 M115 7.6 V10.6" stroke="#4a4f57" stroke-width="0.45" fill="none"/>
+    <rect x="90.6" y="3.6" width="7" height="3" rx="0.6" fill="url(#dark)"/>
+    <rect x="91.2" y="6.6" width="1.6" height="2.8" fill="#c9b79a" stroke-width="0.25"/><rect x="90.4" y="7.6" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="90.4" y="8.8" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="95.2" y="6.6" width="1.6" height="2.8" fill="#c9b79a" stroke-width="0.25"/><rect x="94.4" y="7.6" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/><rect x="94.4" y="8.8" width="3.2" height="0.8" rx="0.4" fill="url(#porcelain)" stroke-width="0.2"/>
+    <path d="M62 6.2 H90.6 M97.6 4.6 H126" stroke="#b87333" stroke-width="0.9" fill="none"/>
+    <path d="M62 6.2 H90.6 M97.6 4.6 H126" stroke="#f0b27a" stroke-width="0.3" fill="none"/>
+    <path d="M126 4.6 V5.6" stroke="#b87333" stroke-width="0.9" fill="none"/>
+    <!-- Horns, roof lamp and walkway. -->
+    <path d="M166 11.2 V9.4 H170.6 L172.6 8.2 V11.2 Z M22 11.2 V9.4 H17.4 L15.4 8.2 V11.2 Z" fill="url(#steel)" stroke-width="0.4"/>
+    <path d="M174.6 11.2 V9 Q174.6 8.2 175.4 8.2 H178 Q179 8.2 179 9.6 V11.2 Z" fill="url(#dark)"/>
+    <circle cx="178.2" cy="9.6" r="1" fill="url(#lamp)" stroke-width="0.3"/>
+    <path d="M28 10.4 H44 M152 10.4 H160" stroke="#6a727b" stroke-width="0.6" stroke-dasharray="1.2 0.8" fill="none"/>
+  </g>
+</svg>

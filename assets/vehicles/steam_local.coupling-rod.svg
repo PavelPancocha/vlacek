@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="70" height="6" viewBox="0 0 70 6">
+  <!-- Coupling rod for steam_local: pin bosses at x 3, 35 and 67 (32 u
+       apart, like the drivers), y 3. Moves with the crank pins. -->
+  <defs>
+    <linearGradient id="rod" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef1f4"/>
+      <stop offset="0.45" stop-color="#a7adb5"/>
+      <stop offset="1" stop-color="#5b6068"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#111214" stroke-width="0.4">
+    <path d="M3 1.6 Q19 2.3 35 1.6 Q51 2.3 67 1.6 V4.4 Q51 3.7 35 4.4 Q19 3.7 3 4.4 Z" fill="url(#rod)"/>
+    <path d="M6 3 H32 M38 3 H64" stroke="#6b7179" stroke-width="0.35" fill="none"/>
+    <circle cx="3" cy="3" r="2.6" fill="url(#rod)"/>
+    <circle cx="35" cy="3" r="2.6" fill="url(#rod)"/>
+    <circle cx="67" cy="3" r="2.6" fill="url(#rod)"/>
+    <circle cx="3" cy="3" r="1" fill="#3a3d44"/>
+    <circle cx="35" cy="3" r="1" fill="#3a3d44"/>
+    <circle cx="67" cy="3" r="1" fill="#3a3d44"/>
+    <rect x="18" y="0.2" width="2" height="1.6" rx="0.4" fill="#c99a3c"/>
+    <rect x="50" y="0.2" width="2" height="1.6" rx="0.4" fill="#c99a3c"/>
+  </g>
+</svg>

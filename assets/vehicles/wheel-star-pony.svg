@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+  <!-- Fairy-tale leading wheel, r 10 u, centre (10, 10): golden tyre and a
+       star. Centred gradients only: it rotates. -->
+  <defs>
+    <radialGradient id="tyre" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.82" stop-color="#7a5719"/>
+      <stop offset="0.9" stop-color="#f6df9c"/>
+      <stop offset="0.95" stop-color="#cfa045"/>
+      <stop offset="1" stop-color="#6b4c16"/>
+    </radialGradient>
+    <radialGradient id="disc" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7d3c98"/>
+      <stop offset="1" stop-color="#2e1538"/>
+    </radialGradient>
+    <radialGradient id="star" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff3c4"/>
+      <stop offset="1" stop-color="#d4a520"/>
+    </radialGradient>
+  </defs>
+  <circle cx="10" cy="10" r="9.7" fill="url(#tyre)" stroke="#111214" stroke-width="0.5"/>
+  <circle cx="10" cy="10" r="8.3" fill="url(#disc)" stroke="#111214" stroke-width="0.3"/>
+  <path d="M10.00 2.60 L11.94 7.33 L17.04 7.71 L13.14 11.02 L14.35 15.99 L10.00 13.30 L5.65 15.99 L6.86 11.02 L2.96 7.71 L8.06 7.33 Z" fill="url(#star)" stroke="#8a6420" stroke-width="0.3" stroke-linejoin="round"/>
+  <circle cx="10" cy="10" r="1.6" fill="#cfa045" stroke="#6b4c16" stroke-width="0.25"/>
+</svg>

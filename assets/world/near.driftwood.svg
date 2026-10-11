@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="74" height="18" viewBox="0 0 74 18">
+  <!-- Naplavené dřevo: bleached driftwood with seaweed and a shell. Foot centre (37, 18). -->
+  <defs><linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6dccb"/><stop offset="1" stop-color="#b8a68a"/></linearGradient>
+  </defs>
+  <ellipse cx="37" cy="17" rx="34" ry="1.8" fill="#1d2a14" fill-opacity="0.18"/>
+  <path d="M4 15 Q12 6 30 8 L60 6 Q70 5 72 10 Q70 15 60 14 L30 15 Q14 17 4 15 Z" fill="url(#wood)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M12 11 Q30 10 58 10 M20 13 H54" stroke="#9a8a74" stroke-width="0.6" fill="none"/>
+  <path d="M60 6 l6 -6 M64 3 l3 -1" stroke="#b8a68a" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M26 15 q4 -6 9 -3 q4 3 8 -2 q-2 6 -8 5 q-5 0 -9 0 Z" fill="#4f7a3a" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M10 17 q2 -4 4 0 Z" fill="#f2c6b4" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M48 17 q3 -3 6 0" stroke="#c9a46a" stroke-width="0.8" fill="none"/>
+</svg>

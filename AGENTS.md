@@ -8,7 +8,7 @@ V tomto repozitáři je vstupním bodem kořenový [README.md](README.md); dokum
 
 ## Co přečíst před kódováním
 
-Povinně README, dokumenty 01, 02, 03, 04, 08, 10, 11, 12 a 13. Před obsahem načti katalog 06, před scénkami 05 a před grafikou 07. Před instalací a distribucí čti 09. Zachovej všechny explicitní požadavky a respektuj vyznačené výchozí volby.
+Povinně README, dokumenty 01, 02, 03, 04, 08, 10, 11, 12, 13 a 14. Dokument 14 (úpravy po první verzi) má při rozporu přednost před staršími dokumenty. Před obsahem načti katalog 06, před scénkami 05 a před grafikou 07. Před instalací a distribucí čti 09. Zachovej všechny explicitní požadavky a respektuj vyznačené výchozí volby.
 
 ## Nepřepisuj produktový záměr
 
@@ -18,7 +18,7 @@ Povinně README, dokumenty 01, 02, 03, 04, 08, 10, 11, 12 a 13. Před obsahem na
 - Nádraží lze projet. Žádné povinné úkoly, minihry a vazba scénky na typ nákladu.
 - Deset lokomotiv a celý 32druhový katalog nejsou nahrazené několika placeholdery. Prototyp je pouze milník.
 - Elektrická lokomotiva znamená vedení v celé trase, včetně mostů a tunelů.
-- Až 100 vagonků, žádná reálná tažná fyzika, havárie, ztráta vagonků ani couvání.
+- Délka soupravy omezená tak, aby byl celý vlak vidět (dokument 14); žádná reálná tažná fyzika, havárie, ztráta vagonků ani couvání.
 - Online web je základ, PWA nadstavba. Žádné účty, backend, externí herní API nebo App Store jako podmínka.
 
 ## Technické zásady
@@ -38,7 +38,7 @@ Veškeré herní assety jsou součástí webového buildu a mají evidovaný pů
 - Od M0 vynucuj hranice domény typecheckem a lintem: doménový TypeScript projekt bez DOM typů, zákaz importů do renderu, UI, platformy a Phaseru včetně cest přes aliasy/reexporty. Doménové testy běží v Node bez browserových globálů. Čas a náhodnost přicházejí explicitně; doména nesmí číst `Date.now()`, `performance.now()` ani `Math.random()`.
 - Používej `strict`, `noUncheckedIndexedAccess` a `exactOptionalPropertyTypes`. `any`, potlačení TypeScript/lint chyb a neověřené typové přetypování nesmějí obcházet validaci nebo kontrakty; nutnou výjimku lokálně zdůvodni. Jednotky a souřadné soustavy označ v názvech a kontraktech.
 - Při změně save, katalogových ID nebo generátoru vyhodnoť kompatibilitu podle dokumentu 08. Udržuj malé fixtures skutečně vydaných formátů a testy jejich obnovy/migrace; neznámou novější verzi nepřepisuj. Změna geometrie nesmí potichu změnit rozehranou trasu.
-- Každý nový zdroj událostí, timer, rendererový objekt a cache má vlastníka a cestu uvolnění. Změny lifecycle ověř opakovaným vstupem/odchodem a cleanupem; výkonové změny měřením se 100 vagonky. Optimalizace nesmějí měnit herní invarianty.
+- Každý nový zdroj událostí, timer, rendererový objekt a cache má vlastníka a cestu uvolnění. Změny lifecycle ověř opakovaným vstupem/odchodem a cleanupem; výkonové změny měřením s nejdelší povolenou soupravou. Optimalizace nesmějí měnit herní invarianty.
 - Zaznamenej přesný Node patch, verzi správce balíčků a závislostí; používej jeden lockfile a `npm ci`. Aktualizace závislostí odděl od funkčních změn, ověř jejich skutečné API a spusť dotčené kontroly. Neprováděj automatické vynucené upgrady jen kvůli vyčištění hlášení auditu.
 - Významnou změnu kontraktu nebo technické volby zapiš stručně do `docs/decisions/`: důvod, rozhodnutí, důsledky a kompatibilita. Aktualizuj příslušnou specifikaci a testy ve stejné změně. Dočasné omezení musí mít konkrétní podmínku odstranění; žádné obecné sliby „vyřeší se později“.
 

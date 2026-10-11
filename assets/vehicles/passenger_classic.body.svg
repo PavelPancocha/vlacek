@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="176" height="82" viewBox="0 0 176 82">
+  <!-- Osobní vagón (passenger_classic): body behind the bogies, eight windows with passengers (simple figures, no faces). Rail top at y = 82, buffers 30 u above the rail. -->
+  <defs>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d3d8de"/><stop offset="0.5" stop-color="#8b9199"/><stop offset="1" stop-color="#555a62"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4f57"/><stop offset="0.4" stop-color="#2c2f35"/><stop offset="1" stop-color="#16181b"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf5fb"/><stop offset="0.45" stop-color="#a9cde3"/><stop offset="1" stop-color="#5f8fae"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3fa266"/><stop offset="0.5" stop-color="#2e7d4f"/><stop offset="1" stop-color="#1b4d30"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b3b9c0"/><stop offset="0.5" stop-color="#868d95"/><stop offset="1" stop-color="#5a6067"/>
+    </linearGradient>
+    <linearGradient id="pane" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf5fb" stop-opacity="0.45"/><stop offset="0.5" stop-color="#a9cde3" stop-opacity="0.18"/><stop offset="1" stop-color="#5f8fae" stop-opacity="0.35"/>
+    </linearGradient>
+    <clipPath id="w0"><rect x="26" y="16" width="12" height="14" rx="1.4"/></clipPath>
+    <clipPath id="w1"><rect x="42" y="16" width="12" height="14" rx="1.4"/></clipPath>
+    <clipPath id="w2"><rect x="58" y="16" width="12" height="14" rx="1.4"/></clipPath>
+    <clipPath id="w3"><rect x="74" y="16" width="12" height="14" rx="1.4"/></clipPath>
+    <clipPath id="w4"><rect x="90" y="16" width="12" height="14" rx="1.4"/></clipPath>
+    <clipPath id="w5"><rect x="106" y="16" width="12" height="14" rx="1.4"/></clipPath>
+    <clipPath id="w6"><rect x="122" y="16" width="12" height="14" rx="1.4"/></clipPath>
+    <clipPath id="w7"><rect x="138" y="16" width="12" height="14" rx="1.4"/></clipPath>
+  </defs>
+
+  <g stroke="#111214" stroke-width="0.6" stroke-linejoin="round">
+    <!-- Under-floor equipment: battery box, brake cylinder, water tank. -->
+    <rect x="62" y="54" width="16" height="8" rx="1" fill="url(#dark)"/>
+    <path d="M64 56.4 H76 M64 58.6 H76" stroke="#5d636c" stroke-width="0.45" fill="none"/>
+    <rect x="82" y="54" width="10" height="6.4" rx="3" fill="url(#steel)"/>
+    <rect x="96" y="54" width="20" height="7.4" rx="3.6" fill="url(#dark)"/>
+    <path d="M100 54 V61.4 M112 54 V61.4" stroke="#16181b" stroke-width="0.8" fill="none"/>
+
+    <!-- Headstocks with buffers (30 u above the rail), couplings, hoses. -->
+    <rect x="4" y="45" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+    <rect x="165" y="45" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+    <rect x="1.6" y="50.4" width="2.6" height="3.2" fill="url(#steel)"/>
+    <rect x="0.2" y="48.2" width="1.9" height="7.6" rx="0.8" fill="#dfe3e8"/>
+    <rect x="171.8" y="50.4" width="2.6" height="3.2" fill="url(#steel)"/>
+    <rect x="173.9" y="48.2" width="1.9" height="7.6" rx="0.8" fill="#dfe3e8"/>
+    <path d="M4 56 H2.6 Q1.3 56 1.3 57.6 V58.6 H2.6 M172 56 H173.4 Q174.7 56 174.7 57.6 V58.6 H173.4" fill="none" stroke-width="0.9"/>
+    <path d="M8.4 59 Q9 64 6.4 66 M167.6 59 Q167 64 169.6 66" stroke="#16171a" stroke-width="1.4" fill="none"/>
+    <!-- Solebar. -->
+    <rect x="6" y="49.4" width="164" height="5.6" fill="url(#dark)"/>
+    <path d="M6.6 50.2 H169.4" stroke="#6a707a" stroke-width="0.4" fill="none"/>
+
+    <rect x="3.4" y="14" width="2.8" height="32" fill="#1f2125"/>
+    <path d="M3.4 18 H6.199999999999999 M3.4 22 H6.199999999999999 M3.4 26 H6.199999999999999 M3.4 30 H6.199999999999999 M3.4 34 H6.199999999999999 M3.4 38 H6.199999999999999 M3.4 42 H6.199999999999999" stroke="#4a4f57" stroke-width="0.5"/>
+    <rect x="169.8" y="14" width="2.8" height="32" fill="#1f2125"/>
+    <path d="M169.8 18 H172.60000000000002 M169.8 22 H172.60000000000002 M169.8 26 H172.60000000000002 M169.8 30 H172.60000000000002 M169.8 34 H172.60000000000002 M169.8 38 H172.60000000000002 M169.8 42 H172.60000000000002" stroke="#4a4f57" stroke-width="0.5"/>
+    <!-- Body side, cream lining under the roof and below the windows. -->
+    <rect x="6" y="12" width="164" height="37.8" fill="url(#green)"/>
+    <path d="M6.4 14.2 H169.6 M6.4 32.4 H169.6" stroke="#f3e9c6" stroke-width="0.7" fill="none"/>
+    <path d="M6.4 46.6 H169.6" stroke="#000000" stroke-opacity="0.25" stroke-width="1.6" fill="none"/>
+    <path d="M7 34.6 H169" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1.2" fill="none"/>
+
+    <g clip-path="url(#w0)">
+      <rect x="26" y="16" width="12" height="14" fill="#2b3a44" stroke="none"/>
+      <rect x="26.6" y="22.6" width="10.8" height="8" rx="2" fill="#7b241c" stroke="#4a1410" stroke-width="0.3"/>
+
+      <path d="M26.4 32.4 Q26.4 26.799999999999997 31 26.599999999999998 Q35.6 26.799999999999997 35.6 32.4 Z" fill="#c0392b" stroke-width="0.35"/>
+      <rect x="30.1" y="25.2" width="1.8" height="1.8" fill="#f1c7a5" stroke="none"/>
+      <circle cx="31" cy="23.4" r="2.5" fill="#f1c7a5" stroke-width="0.35"/>
+      <path d="M28.4 23.2 Q28.2 20 31 19.9 Q33.8 20 33.6 23.2 Q32.2 21.4 28.4 23.2 Z" fill="#5d3a1a" stroke-width="0.3"/>
+      <rect x="26" y="16" width="12" height="14" fill="url(#pane)" stroke="none"/>
+      <path d="M27.4 29 L32.4 17 M30.6 29.4 L34.6 19.8" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.6" fill="none"/>
+    </g>
+    <rect x="26" y="16" width="12" height="14" rx="1.4" fill="none" stroke-width="0.6"/>
+    <path d="M26 19.4 H38" stroke="#111214" stroke-width="0.5"/>
+    <g clip-path="url(#w1)">
+      <rect x="42" y="16" width="12" height="14" fill="#2b3a44" stroke="none"/>
+      <rect x="42.6" y="22.6" width="10.8" height="8" rx="2" fill="#7b241c" stroke="#4a1410" stroke-width="0.3"/>
+
+      <path d="M44.4 32.4 Q44.4 26.799999999999997 49 26.599999999999998 Q53.6 26.799999999999997 53.6 32.4 Z" fill="#f4d03f" stroke-width="0.35"/>
+      <rect x="48.1" y="25.2" width="1.8" height="1.8" fill="#e0ac69" stroke="none"/>
+      <circle cx="49" cy="23.4" r="2.5" fill="#e0ac69" stroke-width="0.35"/>
+      <path d="M46.3 25 Q45.8 19.799999999999997 49 19.799999999999997 Q52.2 19.799999999999997 51.7 25 Q50.6 21.799999999999997 46.3 25 Z" fill="#1b1b1b" stroke-width="0.3"/>
+      <rect x="42" y="16" width="12" height="14" fill="url(#pane)" stroke="none"/>
+      <path d="M43.4 29 L48.4 17 M46.6 29.4 L50.6 19.8" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.6" fill="none"/>
+    </g>
+    <rect x="42" y="16" width="12" height="14" rx="1.4" fill="none" stroke-width="0.6"/>
+    <path d="M42 19.4 H54" stroke="#111214" stroke-width="0.5"/>
+    <g clip-path="url(#w2)">
+      <rect x="58" y="16" width="12" height="14" fill="#2b3a44" stroke="none"/>
+      <rect x="58.6" y="22.6" width="10.8" height="8" rx="2" fill="#7b241c" stroke="#4a1410" stroke-width="0.3"/>
+
+      <rect x="58" y="16" width="12" height="14" fill="url(#pane)" stroke="none"/>
+      <path d="M59.4 29 L64.4 17 M62.6 29.4 L66.6 19.8" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.6" fill="none"/>
+    </g>
+    <rect x="58" y="16" width="12" height="14" rx="1.4" fill="none" stroke-width="0.6"/>
+    <path d="M58 19.4 H70" stroke="#111214" stroke-width="0.5"/>
+    <g clip-path="url(#w3)">
+      <rect x="74" y="16" width="12" height="14" fill="#2b3a44" stroke="none"/>
+      <rect x="74.6" y="22.6" width="10.8" height="8" rx="2" fill="#7b241c" stroke="#4a1410" stroke-width="0.3"/>
+
+      <path d="M76.4 32.4 Q76.4 26.799999999999997 81 26.599999999999998 Q85.6 26.799999999999997 85.6 32.4 Z" fill="#27ae60" stroke-width="0.35"/>
+      <rect x="80.1" y="25.2" width="1.8" height="1.8" fill="#8d5524" stroke="none"/>
+      <circle cx="81" cy="23.4" r="2.5" fill="#8d5524" stroke-width="0.35"/>
+      <path d="M77.8 22.4 H84.2 V21.599999999999998 H83.2 Q83 19.2 81 19.2 Q79 19.2 78.8 21.599999999999998 H77.8 Z" fill="#1b1b1b" stroke-width="0.3"/>
+      <rect x="74" y="16" width="12" height="14" fill="url(#pane)" stroke="none"/>
+      <path d="M75.4 29 L80.4 17 M78.6 29.4 L82.6 19.8" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.6" fill="none"/>
+    </g>
+    <rect x="74" y="16" width="12" height="14" rx="1.4" fill="none" stroke-width="0.6"/>
+    <path d="M74 19.4 H86" stroke="#111214" stroke-width="0.5"/>
+    <g clip-path="url(#w4)">
+      <rect x="90" y="16" width="12" height="14" fill="#2b3a44" stroke="none"/>
+      <rect x="90.6" y="22.6" width="10.8" height="8" rx="2" fill="#7b241c" stroke="#4a1410" stroke-width="0.3"/>
+
+      <path d="M90.4 32.4 Q90.4 26.799999999999997 95 26.599999999999998 Q99.6 26.799999999999997 99.6 32.4 Z" fill="#8e44ad" stroke-width="0.35"/>
+      <rect x="94.1" y="25.2" width="1.8" height="1.8" fill="#f1c7a5" stroke="none"/>
+      <circle cx="95" cy="23.4" r="2.5" fill="#f1c7a5" stroke-width="0.35"/>
+      <path d="M92.3 25 Q91.8 19.799999999999997 95 19.799999999999997 Q98.2 19.799999999999997 97.7 25 Q96.6 21.799999999999997 92.3 25 Z" fill="#d4ac0d" stroke-width="0.3"/>
+      <rect x="90" y="16" width="12" height="14" fill="url(#pane)" stroke="none"/>
+      <path d="M91.4 29 L96.4 17 M94.6 29.4 L98.6 19.8" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.6" fill="none"/>
+    </g>
+    <rect x="90" y="16" width="12" height="14" rx="1.4" fill="none" stroke-width="0.6"/>
+    <path d="M90 19.4 H102" stroke="#111214" stroke-width="0.5"/>
+    <g clip-path="url(#w5)">
+      <rect x="106" y="16" width="12" height="14" fill="#2b3a44" stroke="none"/>
+      <rect x="106.6" y="22.6" width="10.8" height="8" rx="2" fill="#7b241c" stroke="#4a1410" stroke-width="0.3"/>
+
+      <path d="M108.4 32.4 Q108.4 26.799999999999997 113 26.599999999999998 Q117.6 26.799999999999997 117.6 32.4 Z" fill="#2e86c1" stroke-width="0.35"/>
+      <rect x="112.1" y="25.2" width="1.8" height="1.8" fill="#c68642" stroke="none"/>
+      <circle cx="113" cy="23.4" r="2.5" fill="#c68642" stroke-width="0.35"/>
+      <path d="M110.5 22.799999999999997 Q110.5 20 113 20 Q115.5 20 115.5 22.799999999999997 Z M114.6 20.2 Q117 19.4 116.6 22 Q115.8 21.2 114.6 21 Z" fill="#3e2723" stroke-width="0.3"/>
+      <rect x="106" y="16" width="12" height="14" fill="url(#pane)" stroke="none"/>
+      <path d="M107.4 29 L112.4 17 M110.6 29.4 L114.6 19.8" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.6" fill="none"/>
+    </g>
+    <rect x="106" y="16" width="12" height="14" rx="1.4" fill="none" stroke-width="0.6"/>
+    <path d="M106 19.4 H118" stroke="#111214" stroke-width="0.5"/>
+    <g clip-path="url(#w6)">
+      <rect x="122" y="16" width="12" height="14" fill="#2b3a44" stroke="none"/>
+      <rect x="122.6" y="22.6" width="10.8" height="8" rx="2" fill="#7b241c" stroke="#4a1410" stroke-width="0.3"/>
+
+      <rect x="122" y="16" width="12" height="14" fill="url(#pane)" stroke="none"/>
+      <path d="M123.4 29 L128.4 17 M126.6 29.4 L130.6 19.8" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.6" fill="none"/>
+    </g>
+    <rect x="122" y="16" width="12" height="14" rx="1.4" fill="none" stroke-width="0.6"/>
+    <path d="M122 19.4 H134" stroke="#111214" stroke-width="0.5"/>
+    <g clip-path="url(#w7)">
+      <rect x="138" y="16" width="12" height="14" fill="#2b3a44" stroke="none"/>
+      <rect x="138.6" y="22.6" width="10.8" height="8" rx="2" fill="#7b241c" stroke="#4a1410" stroke-width="0.3"/>
+
+      <path d="M140.4 32.4 Q140.4 26.799999999999997 145 26.599999999999998 Q149.6 26.799999999999997 149.6 32.4 Z" fill="#e67e22" stroke-width="0.35"/>
+      <rect x="144.1" y="25.2" width="1.8" height="1.8" fill="#ffdbac" stroke="none"/>
+      <circle cx="145" cy="23.4" r="2.5" fill="#ffdbac" stroke-width="0.35"/>
+      <path d="M142.4 23.2 Q142.2 20 145 19.9 Q147.8 20 147.6 23.2 Q146.2 21.4 142.4 23.2 Z" fill="#a04000" stroke-width="0.3"/>
+      <rect x="138" y="16" width="12" height="14" fill="url(#pane)" stroke="none"/>
+      <path d="M139.4 29 L144.4 17 M142.6 29.4 L146.6 19.8" stroke="#ffffff" stroke-opacity="0.45" stroke-width="0.6" fill="none"/>
+    </g>
+    <rect x="138" y="16" width="12" height="14" rx="1.4" fill="none" stroke-width="0.6"/>
+    <path d="M138 19.4 H150" stroke="#111214" stroke-width="0.5"/>
+
+    <path d="M9 49.6 V13.8 H20 V49.6" fill="none" stroke="#14532d" stroke-width="0.6"/>
+    <rect x="11.2" y="16" width="6.6" height="11.4" rx="1" fill="url(#glass)" stroke-width="0.45"/>
+    <path d="M12 26 L15.4 17.4" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.45"/>
+    <rect x="17.6" y="33" width="1" height="3" rx="0.4" fill="url(#steel)" stroke-width="0.25"/>
+    <path d="M8 30 V48 M21 30 V48" stroke="url(#steel)" stroke-width="0.7" fill="none"/>
+    <path d="M156 49.6 V13.8 H167 V49.6" fill="none" stroke="#14532d" stroke-width="0.6"/>
+    <rect x="158.2" y="16" width="6.6" height="11.4" rx="1" fill="url(#glass)" stroke-width="0.45"/>
+    <path d="M159 26 L162.4 17.4" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.45"/>
+    <rect x="164.6" y="33" width="1" height="3" rx="0.4" fill="url(#steel)" stroke-width="0.25"/>
+    <path d="M155 30 V48 M168 30 V48" stroke="url(#steel)" stroke-width="0.7" fill="none"/>
+    <!-- Class marks and data panel (no real operator marks). -->
+    <rect x="23.4" y="36" width="5" height="6" rx="0.6" fill="#f3e9c6" stroke-width="0.35"/>
+    <text x="25.9" y="40.9" font-family="Arial, Helvetica, sans-serif" font-size="5" font-weight="700" fill="#14532d" text-anchor="middle" stroke="none">2</text>
+    <rect x="147.6" y="36" width="5" height="6" rx="0.6" fill="#f3e9c6" stroke-width="0.35"/>
+    <text x="150.1" y="40.9" font-family="Arial, Helvetica, sans-serif" font-size="5" font-weight="700" fill="#14532d" text-anchor="middle" stroke="none">2</text>
+    <path d="M78 39 H98 M78 41 H94 M78 43 H96" stroke="#f3e9c6" stroke-width="0.6" stroke-opacity="0.8" fill="none"/>
+    <!-- Roof with gutter and mushroom vents. -->
+    <path d="M4.6 13.4 Q5.4 6.2 18 5.4 H158 Q170.6 6.2 171.4 13.4 Z" fill="url(#roof)"/>
+    <path d="M5 12.6 H171" stroke="#3f444b" stroke-width="0.5" fill="none"/>
+    <path d="M18 6.6 H158" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.5" fill="none"/>
+
+    <path d="M33.4 5.6 V4.4 Q33.4 3 36 3 Q38.6 3 38.6 4.4 V5.6 Z" fill="url(#roof)" stroke-width="0.4"/>
+    <path d="M59.4 5.6 V4.4 Q59.4 3 62 3 Q64.6 3 64.6 4.4 V5.6 Z" fill="url(#roof)" stroke-width="0.4"/>
+    <path d="M85.4 5.6 V4.4 Q85.4 3 88 3 Q90.6 3 90.6 4.4 V5.6 Z" fill="url(#roof)" stroke-width="0.4"/>
+    <path d="M111.4 5.6 V4.4 Q111.4 3 114 3 Q116.6 3 116.6 4.4 V5.6 Z" fill="url(#roof)" stroke-width="0.4"/>
+    <path d="M137.4 5.6 V4.4 Q137.4 3 140 3 Q142.6 3 142.6 4.4 V5.6 Z" fill="url(#roof)" stroke-width="0.4"/>
+  </g>
+</svg>

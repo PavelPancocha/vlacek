@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="76" viewBox="0 0 144 76">
+  <!-- Otevřený výletní vagónek: axle guards with leaf springs (axles 27 and 117), end steps, fixed tyre light. -->
+  <defs>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5d636c"/><stop offset="0.35" stop-color="#363a41"/><stop offset="1" stop-color="#16181b"/>
+    </linearGradient>
+    <linearGradient id="box" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6a707a"/><stop offset="1" stop-color="#26282c"/>
+    </linearGradient>
+    <linearGradient id="spring" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#26282c"/><stop offset="0.4" stop-color="#6a707a"/><stop offset="1" stop-color="#26282c"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4f57"/><stop offset="0.4" stop-color="#2c2f35"/><stop offset="1" stop-color="#16181b"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e3e7ec"/><stop offset="0.5" stop-color="#9aa0a8"/><stop offset="1" stop-color="#5b6068"/>
+    </linearGradient>
+  </defs>
+
+  <g fill="none" stroke-linecap="round">
+    <g stroke="#ffffff" stroke-opacity="0.38" stroke-width="1"><path d="M16.28 61.13 A11.1 11.1 0 0 1 29.87 53.28"/><path d="M106.28 61.13 A11.1 11.1 0 0 1 119.87 53.28"/></g>
+    <g stroke="#000000" stroke-opacity="0.3" stroke-width="1.3"><path d="M37.72 66.87 A11.1 11.1 0 0 1 21.45 73.61"/><path d="M127.72 66.87 A11.1 11.1 0 0 1 111.45 73.61"/></g>
+  </g>
+  <g stroke="#111214" stroke-width="0.6" stroke-linejoin="round">
+    <path d="M19.4 47.6 L21.4 70 H32.6 L34.6 47.6 H32.8 L31.2 68.6 H22.8 L21.2 47.6 Z" fill="url(#dark)"/>
+    <path d="M12 48.800000000000004 Q27 54.2 42 48.800000000000004" stroke="#2a2d33" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M13.6 50.2 Q27 55.2 40.4 50.2 M15.6 51.4 Q27 56 38.4 51.4" stroke="#3d4148" stroke-width="1.1" fill="none"/>
+    <path d="M12.4 48.6 Q27 53.4 41.6 48.6" stroke="#8b9199" stroke-width="0.35" fill="none"/>
+    <path d="M12 46.6 V49.6 M42 46.6 V49.6" stroke="#2a2d33" stroke-width="1.3"/>
+    <rect x="23.4" y="59.6" width="7.2" height="8.8" rx="1.2" fill="url(#box)"/>
+    <path d="M24.2 61.8 H29.8" stroke="#8b9199" stroke-width="0.4"/>
+    <circle cx="27" cy="65" r="1.4" fill="#4a4f57" stroke-width="0.35"/>
+    <path d="M109.4 47.6 L111.4 70 H122.6 L124.6 47.6 H122.8 L121.2 68.6 H112.8 L111.2 47.6 Z" fill="url(#dark)"/>
+    <path d="M102 48.800000000000004 Q117 54.2 132 48.800000000000004" stroke="#2a2d33" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M103.6 50.2 Q117 55.2 130.4 50.2 M105.6 51.4 Q117 56 128.4 51.4" stroke="#3d4148" stroke-width="1.1" fill="none"/>
+    <path d="M102.4 48.6 Q117 53.4 131.6 48.6" stroke="#8b9199" stroke-width="0.35" fill="none"/>
+    <path d="M102 46.6 V49.6 M132 46.6 V49.6" stroke="#2a2d33" stroke-width="1.3"/>
+    <rect x="113.4" y="59.6" width="7.2" height="8.8" rx="1.2" fill="url(#box)"/>
+    <path d="M114.2 61.8 H119.8" stroke="#8b9199" stroke-width="0.4"/>
+    <circle cx="117" cy="65" r="1.4" fill="#4a4f57" stroke-width="0.35"/>
+    <path d="M5.4 47.6 V56 M10.6 47.6 V56 M133.4 47.6 V56 M138.6 47.6 V56" stroke="url(#steel)" stroke-width="0.7"/>
+    <rect x="4.8" y="55.2" width="6.4" height="1.4" rx="0.4" fill="url(#steel)"/>
+    <rect x="132.8" y="55.2" width="6.4" height="1.4" rx="0.4" fill="url(#steel)"/>
+  </g>
+</svg>

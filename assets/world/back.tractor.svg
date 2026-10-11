@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="70" height="46" viewBox="0 0 70 46">
+  <!-- Traktor: red tractor with yellow wheels, faces right (drives back and forth). Foot centre (35, 46). -->
+  <defs><linearGradient id="red" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e74c3c"/><stop offset="1" stop-color="#a0281f"/></linearGradient>
+  </defs>
+  <ellipse cx="35" cy="45" rx="32" ry="2" fill="#1d2a14" fill-opacity="0.18"/>
+  <path d="M14 30 H52 V20 H34 V10 H18 Q14 10 14 14 Z" fill="url(#red)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <rect x="18" y="12" width="13" height="10" rx="1" fill="#3d5a6c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><path d="M19 21 L26 13" stroke="#ffffff" stroke-opacity="0.5" stroke-width="0.6"/>
+  <path d="M34 20 H58 Q62 20 62 24 V30 H34 Z" fill="url(#red)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M38 22 H56 M38 25 H56 M38 28 H56" stroke="#7a151b" stroke-width="0.6"/>
+  <rect x="50" y="11" width="2.6" height="10" fill="#2a2d33" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle cx="61" cy="25" r="1.6" fill="#fff3c4" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle cx="22" cy="33" r="12" fill="#2a2d33" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><circle cx="22" cy="33" r="6" fill="#f4d03f" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><circle cx="22" cy="33" r="2" fill="#2a2d33"/>
+  <circle cx="54" cy="37" r="8" fill="#2a2d33" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><circle cx="54" cy="37" r="4" fill="#f4d03f" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><circle cx="54" cy="37" r="1.4" fill="#2a2d33"/>
+  <path d="M12 26 A12 12 0 0 1 32 24" stroke="#7a151b" stroke-width="2" fill="none"/>
+  <path d="M4.32 46 Q4.89 44.74 4.8 43.89 Q5.2 44.95 5.52 46 Z" fill="#6fae3e"/><path d="M52.41 46 Q52.98 44.51 52.91 43.52 Q53.29 44.76 53.61 46 Z" fill="#e0c86a"/><path d="M24.63 46 Q24.92 43.78 24.21 42.3 Q25.33 44.15 25.83 46 Z" fill="#e0c86a"/><path d="M44.64 46 Q45.32 43.93 45.51 42.56 Q45.59 44.28 45.84 46 Z" fill="#6fae3e"/><path d="M56.41 46 Q57.23 44.04 57.74 42.73 Q57.46 44.37 57.61 46 Z" fill="#c9b458"/><path d="M43.13 46 Q43.81 44.13 44 42.89 Q44.09 44.45 44.33 46 Z" fill="#6fae3e"/><path d="M38.32 46 Q39.12 43.97 39.58 42.62 Q39.35 44.31 39.52 46 Z" fill="#c9b458"/><path d="M53.92 46 Q54.53 43.64 54.56 42.07 Q54.83 44.04 55.12 46 Z" fill="#6fae3e"/><path d="M60.63 46 Q61.14 44.52 60.93 43.54 Q61.47 44.77 61.83 46 Z" fill="#6fae3e"/><path d="M43.45 46 Q44.37 43.68 45.12 42.13 Q44.56 44.06 44.65 46 Z" fill="#e0c86a"/><path d="M41.9 46 Q42.68 43.81 43.11 42.34 Q42.92 44.17 43.1 46 Z" fill="#c9b458"/><path d="M36.68 46 Q37.38 44.59 37.62 43.65 Q37.65 44.82 37.88 46 Z" fill="#6fae3e"/><path d="M29.54 46 Q29.91 44.06 29.38 42.76 Q30.29 44.38 30.74 46 Z" fill="#c9b458"/><path d="M3.97 46 Q4.84 44.08 5.46 42.8 Q5.05 44.4 5.17 46 Z" fill="#e0c86a"/>
+</svg>

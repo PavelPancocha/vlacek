@@ -137,6 +137,18 @@ describe('SaveRepository', () => {
     expect(storage.getItem(BACKUP_KEY)).toBeNull();
   });
 
+  it('DATA-04: a journey from a newer track generator is never overwritten', () => {
+    const storage = new MemoryStorage();
+    storage.data.set(PRIMARY_KEY, fixture('v1-future-generator.json'));
+    const repo = new SaveRepository(storage, rules, gameConfig.save);
+    expect(repo.load()).toEqual({ source: 'none', notice: 'newer-save-kept' });
+    expect(repo.save(valid('v1-journey.json'))).toBe('memory-only');
+    expect(storage.getItem(PRIMARY_KEY)).toBe(
+      fixture('v1-future-generator.json'),
+    );
+    expect(storage.getItem(BACKUP_KEY)).toBeNull();
+  });
+
   it('DATA-07: a failed primary write after the backup keeps a valid restore point', () => {
     const storage = new MemoryStorage();
     const repo = new SaveRepository(storage, rules, gameConfig.save);

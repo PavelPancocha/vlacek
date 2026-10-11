@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="70" height="50" viewBox="0 0 70 50">
+  <!-- Rybářská loď: small fishing boat with a cabin and boom. Foot centre (35, 50). -->
+  <defs><linearGradient id="hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c0392b"/><stop offset="1" stop-color="#7a1f17"/></linearGradient>
+  </defs>
+  <path d="M4 34 H66 L58 46 Q35 49 12 46 Z" fill="url(#hull)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M6 37 H64" stroke="#f4d03f" stroke-width="1.2"/>
+  <rect x="34" y="16" width="20" height="18" fill="#f4f1ea" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="38" y="20" width="5" height="5" fill="#3d5a6c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="45" y="20" width="5" height="5" fill="#3d5a6c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M32 16 H56" stroke="#c0392b" stroke-width="2"/>
+  <path d="M20 34 V4 M20 6 L6 30" stroke="#6d4c33" stroke-width="1.4"/>
+  <path d="M6 30 Q14 24 20 26" stroke="#5d6d7e" stroke-width="0.6" fill="none"/>
+  <path d="M2 48 Q35 51 68 48" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.8" fill="none"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10">
+  <!-- Odlesk na vodě: a four-point sparkle. Centre (5, 5). -->
+  <defs><radialGradient id="g" cx="0.5" cy="0.5" r="0.62"><stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle cx="5" cy="5" r="3" fill="url(#g)"/>
+  <path d="M5 0.4 Q5.5 4.5 9.6 5 Q5.5 5.5 5 9.6 Q4.5 5.5 0.4 5 Q4.5 4.5 5 0.4 Z" fill="#ffffff"/>
+</svg>

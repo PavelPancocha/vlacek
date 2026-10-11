@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="10" viewBox="0 0 14 10">
+  <!-- Žába: green frog sitting, faces right. Foot centre (7, 10). -->
+  <defs><linearGradient id="frog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc55a"/><stop offset="1" stop-color="#3f8a2a"/></linearGradient>
+  </defs>
+  <path d="M1 9.6 Q0 5 4 4 Q7 2 10 3 Q13 4 13 7 Q13 9.6 10 9.6 Z" fill="url(#frog)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M2 9.6 Q1 7 4 7.4 Q5 9 4 9.6 Z M10 9.6 Q12 7 13.6 9 Q12.6 9.6 11 9.6 Z" fill="#3f8a2a" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle cx="9.6" cy="2.8" r="1.8" fill="url(#frog)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><circle cx="6.6" cy="3" r="1.6" fill="url(#frog)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle cx="9.8" cy="2.6" r="0.7" fill="#1b1b1b"/><circle cx="10.04" cy="2.35" r="0.24" fill="#ffffff"/><circle cx="6.8" cy="2.8" r="0.6" fill="#1b1b1b"/><circle cx="7.01" cy="2.59" r="0.21" fill="#ffffff"/>
+  <path d="M10 6.4 Q11.6 7 13 6.2" stroke="#2e5e1f" stroke-width="0.4" fill="none"/>
+</svg>

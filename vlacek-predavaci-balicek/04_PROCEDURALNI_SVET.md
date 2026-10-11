@@ -44,40 +44,22 @@ Příklady klíčů: `terrain-boundary`, `route-template`, `major-feature`, `tre
 
 ID entity má podobu `g1:chunk:42:animal:3`; není to náhodné UUID při každém vykreslení. Kosmetické částice mohou mít vlastní omezený generátor a neovlivňují layout ani save.
 
-## 4. Kontinuita kolejí: referenční proveditelný profil
+## 4. Kontinuita kolejí: profil generátoru v1
 
-Pro V1 stačí monotónní trať s hladkým výškovým profilem, bez 2D fyzikálního solveru. Níže uvedená konstrukce dává nezávislé chunky a předem omezený sklon.
+Zadání [14 §6](14_UPRAVY_PRVNI_VERZE.md) mění charakter tratě: roviny a delší rovná stoupání a klesání spojená krátkými plynulými přechody, bez souvislého vlnění. Původní konstrukce tohoto oddílu (hraniční výšky `H(k)` v ±32 u a smootherstep přechody s nulovým sklonem na každé hranici chunku) zůstává jen jako generátor v0 verze 0.1. Měření ukázalo, že v ní se sklon mění na 91–95 % délky ([D-009](../docs/decisions/009-track-generator-v1.md)).
 
-Definovat `r(k) = 2 * unitRandom(seed, version, 'terrain-boundary', k) - 1` a výšku společné hranice:
+Generátor v1 (`src/domain/world/TrackProfile.ts`, parametry `world.profile` v dokumentu 13):
 
-```text
-H(k) = 8 * [r(k-1) + 2*r(k) + r(k+1)]
-```
+- **Bloky.** Trať se plánuje po blocích `blockChunks` (8) chunků. Každý blok začíná a končí rovinou ve výšce hranice bloku, kterou určuje klíč `block-height`; výška leží v intervalu ±`blockHeightRangeU` (160 u). Chunk se tak počítá jen ze svého bloku, nezávisle na pořadí a i daleko od startu.
+- **Plán bloku.** Lomená čára rovina → sklon → rovina → … → rovina. Roviny mají `flatMinU`–`flatMaxU` (384–1536 u), sklony `slopeMinU`–`slopeMaxU` (768–2304 u) v násobcích `lengthStepU` (64 u). Sklon se volí mezi `gradeRangeMin` a `gradeRangeMax` (0.03–0.08), směr nahoru nebo dolů podle seedu (klíče `flat`, `slope`, `grade`, `direction`). Výška nikdy nepřekročí ±`maxHeightU` (400 u): sklon, který by ji překročil, se otočí.
+- **Proveditelnost bez losování naslepo.** Náhodný sklon se přijme jen tehdy, když zbytek bloku ještě pojme rovinu a jediný závěrečný sklon na výšku další hranice při `gradeRangeMax`. Jinak plán skončí závěrečným sklonem a minimální rovinou. Validace konfigurace ověřuje, že blok vždy pojme nejdelší počáteční rovinu a nejdelší závěrečný sklon.
+- **Přechody.** Každý zlom lomené čáry nahrazuje parabola (výškový oblouk) délky `transitionU` (192 u). Sklon se v ní mění lineárně, takže výška i sklon jsou spojité a nevzniká ostrý zlom. Každý úsek plánu je alespoň tak dlouhý jako přechod, takže se oblouky nepřekrývají.
 
-Platí `H ∈ [-32,32]` a rozdíl sousedních hranic je nejvýše 32 u. Všechny hranice mají nulovou první a druhou derivaci. Terén a vzdálené hory mají větší výškový rozsah než samotná kolej; jejich výška není omezena na těchto 64 u.
+Výška a sklon jsou spojité na každém švu chunku i bloku. Sklon nikdy nepřekročí `gradeRangeMax`, a tedy ani absolutní mez `world.maxTrackGrade` (0.12), se kterou počítá model pohybu. Změna kteréhokoli parametru `world.profile` mění geometrii a vyžaduje nové `generatorVersion`.
 
-Pro hladký přechod použít:
+Nádraží a přejezdy (M2) se umístí na existující roviny plánu, mosty a tunely na terén kolem tratě, který může být členitější než kolejové těleso. Geometrie v1 se kvůli nim nemá měnit.
 
-```text
-q(t) = 6t^5 - 15t^4 + 10t^3,  t ∈ [0,1]
-y(x) = y0 + (y1-y0) * q((x-x0)/délka)
-```
-
-Maximální derivace q je 1.875. Proto pro požadovaný maximální sklon g musí platit `abs(y1-y0) <= g * délka / 1.875`. Toto pravidlo využít při výběru každého profilu.
-
-### Tři profily V1
-
-| Profil         | Konstrukce                                                                                                        |
-| -------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `smooth`       | Jeden přechod H(k) → H(k+1) přes celých 1 024 u.                                                                  |
-| `hill` / `dip` | Dva přechody po 512 u přes společný střed M; M vybrat z průniku dovolených výšek pro oba úseky při sklonu ≤ 0.12. |
-| `flat-middle`  | 256 u přechod H(k) → M, 512 u rovina M, 256 u přechod M → H(k+1), kde M je průměr hraničních výšek.               |
-
-`flat-middle` je vždy proveditelný: největší výškový rozdíl jedné rampy je 16 u, takže sklon nepřekročí 0.1172. Používá se pro stanici a přejezd. Most nebo tunel mohou využít `smooth`; některé varianty mají plochý střed.
-
-Nevybírat M opakovaným neomezeným losováním. Spočítat přípustný interval analyticky a uvnitř něj vybrat hodnotu podle seedu. Pokud umělecký template porušuje geometrii, přejít na validní jednoduchý profil. Švy nesmí opravovat fyzika vlaku.
-
-Další členitost lze získat strukturami, terénem pod mostem a delšími sledy profilů. První verze nemusí simulovat skutečné převýšení stovek metrů.
+Terén kolem tratě je samostatná seedovaná funkce, ne součást profilu koleje ([D-012](../docs/decisions/012-track-tiles-and-terrain.md)). `embankmentU(seed, x)` určuje výšku kolejového tělesa nad loukou v popředí: hodnotový šum s uzly po `world.terrain.latticeU` do `world.terrain.maxEmbankmentU`, spojitý se spojitým sklonem a počítaný jen z x. Klíč obsahuje verzi generátoru.
 
 ## 5. Biomy a návaznost krajiny
 
@@ -108,6 +90,12 @@ Tohle je výchozí gramatika, nikoli tvrzení, že celá mapa je unikátní bez 
 
 Poslední chunk biomového bloku provádí postupný vizuální přechod k dalšímu biomu. Krajinu míchat prostorově, ne časovým přepnutím celé obrazovky. Vzdálené hory či moře se objeví před hlavním přechodem. Nesmí následovat okamžitý skok ze zasněženého tunelu do tropické džungle.
 
+Implementace ([D-013](../docs/decisions/013-landscape-localities-and-backdrops.md)) má tři části.
+
+- **Biom a lokalita.** `biomeAt(seed, k)` počítá biom z gramatiky pro libovolný, i záporný chunk. `chunkScenery(seed, k)` vybere lokalitu ze šablon v `sceneryTemplates.ts`, například pastvinu, pole, farmu, vesnici, les, paseku, rybník, mlýn, přístav nebo horskou chatu. Pak rozmístí její rekvizity se stabilními ID `g1:chunk:k:prop:n`.
+- **Sloty.** Slot 0 je klidný, nádraží stojí ve slotu 1 nebo 2 na rovině aspoň 448 u. Slot 7 přepíná od x = 512 na klidnou lokalitu dalšího biomu, takže přechod je prostorový. Pozadí navíc změnu biomu prolne.
+- **Voda.** Je to rovná nádrž v rámci jednoho chunku se zaoblenými konci. Lodě i se svou trasou zůstávají na vodě, stavby a stromy na suchu, nádraží je suché. Traktor, auto a lodě nejezdí v polovině přechodového chunku.
+
 ## 6. Rozvržení výrazných motivů
 
 Generovat v pořadí: **biome → profil → rezervace velkých objektů → komunikace → vegetace → zvířata → drobné interakce**.
@@ -126,6 +114,14 @@ V prvním bloku nové cesty jsou pro rychlé předvedení pevně stanice ve slot
 
 Stanice dostane rovinu; přejezd není na otevřeném mostě ani uvnitř tunelu. Traktor dostane pole nebo cestu, vodní mlýn vodu, maják pobřeží. Jedna dekorace nesmí zabrat rezervovanou obslužnou dráhu silničního provozu.
 
+Implementace přejezdu ([D-015](../docs/decisions/015-level-crossings.md)): `crossingSite(seed, k)` ve slotu 3 vybere seedem jedno z míst, kde je kolej aspoň 96 u na obě strany rovná a silnice je aspoň 120 u od interaktivního zvířete. Bez takového místa blok přejezd nemá. Pruh silnice ±64 u je rezervovaný: voda se kolem něj rozdělí a žádná rekvizita ani její trasa do něj nezasahuje.
+
+Implementace mostu a tunelu ([D-018](../docs/decisions/018-bridges-and-tunnels.md)):
+
+- `bridgeSite(seed, k)` dává ve slotu 4 každého bloku bez souběhu kamenný mostek přes potok, tedy vždy v bloku 0. Potok drží 192 u od okrajů chunku i od interaktivního zvířete; voda za tratí se kolem něj rozdělí.
+- Louka pod mostem klesá do údolí 56 u hlubokého. Kolej se nemění.
+- `tunnelSite(seed, k)` dává ve slotu 6 krátký tunel (448 u): v bloku 0 vždy, jinde v blocích bez souběhu podle biomu (hory 1, podhůří 0,9, les 0,6, ostatní 0,3, klíč `tunnel`).
+
 Každý template deklaruje rezervované oblasti, rozměry, povolené biomy, případné navazující chunky a bezpečné oblasti pro dotykové cíle. Konfliktní kandidát se odmítne nejvýše osmkrát a pak se použije `safe-meadow` nebo biomová obdoba. Generátor se nikdy nesmí zacyklit ani vytvořit chybějící kolej.
 
 ## 7. Sekundární trať jako vícedílný motiv
@@ -135,6 +131,13 @@ Protijedoucí vlak používá rezervaci slotů 4–6 společně. Ve všech třec
 V1 nekombinuje tento motiv v témže místě s nepřipraveným tunelem či složitým mostem. Jediný validovaný tříchunkový template je lepší než nezávisle losované kusy kolejí. Délka protijedoucí soupravy nesmí překročit bezpečnou délku motivu.
 
 Tři chunky vymezují **viditelnou** vedlejší trať. Její geometrie má na obou koncích skryté pokračování alespoň o délku NPC soupravy plus 256 u. Může využít tentýž vzorkovač hlavního profilu s odsazením a držené sousední chunky. Skrytý nájezd a odjezd překrývá připravený terén nebo portál; jsou součástí tohoto template, ne další náhodně přidaný tunel. Vozidla se postupně odkrývají a zakrývají, nesmí všechna vzniknout nebo zmizet jedním přepnutím visibility. Logická reference na tuto rozšířenou dráhu trvá až do odjezdu celé soupravy.
+
+Implementace ([D-017](../docs/decisions/017-second-track-and-oncoming-train.md)):
+
+- `secondarySite` dává souběh ve slotech 4–6: vždy v bloku 1, nikdy v bloku 0, jinak s pravděpodobností z configu.
+- `SecondaryLine` je hlavní profil o 64 u hlouběji s vlastním oknem chunků, se skrytými konci o délku soupravy plus 256 u.
+- Pás tratě a portálové kopce (320 u za portály) drží zadní rekvizity za hloubkou 0,45 a vodu za tratí. Přejezd se drží mimo levý kopec.
+- Portál tvoří tmavé ústí pod vlakem a kopec s kamenným obloukem nad ním. Vozidla tak mizí po jednom.
 
 ## 8. Streaming a paměť
 
@@ -172,4 +175,4 @@ Roční období se v první verzi globálně nesimuluje. Sníh v horách je vlas
 
 Vývojový overlay ukáže seed, generatorVersion, chunkIndex, počet zachovaných chunků, počet renderovaných entit, délku vlaku, režim vstupu, v, simulační tick a profil kvality. Barevné švy a rezervace lze zapnout pouze v debug režimu.
 
-Musí existovat deterministické testovací seedy a profil, který postupně předvede stanici, přejezd, most, tunel a druhou kolej. Debug zkratky nejsou součást dětského menu. Chyby layoutu se mají dát reprodukovat seedem a indexem chunku.
+Musí existovat deterministické testovací seedy a profil, který postupně předvede stanici, přejezd, most, tunel a druhou kolej. Debug zkratky nejsou součást dětského menu. Chyby layoutu se mají dát reprodukovat seedem a indexem chunku. Pauza ukazuje drobně číslo světa (seed) pro dospělého a parametr adresy `?seed=N` založí každou novou cestu s tímto seedem; uloženou cestu nemění (rozhodnutí [D-007](../docs/decisions/007-world-seed-in-url.md)).

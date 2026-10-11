@@ -4,12 +4,14 @@ import {
   addWagon,
   createDraft,
   draftFromConsist,
+  isOverLimit,
   moveSelected,
   removeSelected,
   selectLocomotive,
   selectWagon,
   undoLastChange,
   type ConsistDraft,
+  type ConsistLengthRules,
 } from '../domain/consist/ConsistEditor.ts';
 import {
   RideSimulation,
@@ -22,7 +24,7 @@ import {
 } from '../domain/sim/FixedStep.ts';
 import type { VehicleGeometry } from '../domain/train/TrainGeometry.ts';
 import type { Consist } from '../domain/types.ts';
-import { TEST_TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
+import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import { InputRouter } from '../platform/InputRouter.ts';
 import type { SaveNotice, SaveRepository } from '../platform/SaveRepository.ts';
 import {
@@ -49,7 +51,12 @@ export interface SessionDeps {
 
 /** Parent-facing notices; shown as plain text outside the child's controls. */
 export type SessionNotice =
-  SaveNotice | 'storage-limited' | 'start-failed' | 'journey-unavailable';
+  | SaveNotice
+  | 'storage-limited'
+  | 'start-failed'
+  | 'journey-unavailable'
+  | 'train-too-long'
+  | 'track-changed';
 
 /** Session-level events for audio/visual feedback, alongside ride events. */
 export type SessionEvent =
@@ -84,6 +91,8 @@ export class GameSession {
   #events: SessionEvent[] = [];
   #notices = new Set<SessionNotice>();
   #fullSignals = 0;
+  /** Depot draft loaded from the save; continued once by the next depot visit. */
+  #restoredDraft: ConsistDraft | undefined;
   /** Wall-clock time of the latest frame, for debouncing edits. */
   #nowMs = 0;
 
@@ -99,12 +108,26 @@ export class GameSession {
       ),
       editDebounceMs: deps.config.save.editDebounceMs,
     });
+    const vehicles = new Map<string, VehicleGeometry>(
+      [...deps.catalog.locomotives, ...deps.catalog.wagons].map((vehicle) => [
+        vehicle.id,
+        vehicle,
+      ]),
+    );
+    this.lengthRules = {
+      maxLengthU: deps.config.train.maxConsistLengthU,
+      couplerGapU: deps.config.train.couplerGapU,
+      geometryOf: (id) => vehicles.get(id),
+    };
     this.router = new InputRouter(deps.config.input, {
       hitObject: (x, y) => this.#hitObject(x, y),
       onObjectTouched: (id) => this.#journey?.ride.activateObject(id),
       onAction: (action) => this.#onAction(action),
     });
   }
+
+  /** The length limit the depot and every departure respect (doc 14 §2). */
+  readonly lengthRules: ConsistLengthRules;
 
   get screen(): Screen {
     return this.#screen;
@@ -161,15 +184,40 @@ export class GameSession {
       this.#settings = save.settings;
       this.#lastConsist = save.lastConsist;
       this.#draft = draftFromConsist(save.builderDraft ?? save.lastConsist);
-      if (save.journey) {
+      // With a journey the app opens HOME; the draft waits for the next depot
+      // visit. Without one it is already the selection screen's draft.
+      if (save.builderDraft && save.journey) this.#restoredDraft = this.#draft;
+      const tooLong =
+        save.journey !== undefined &&
+        isOverLimit(draftFromConsist(save.journey.consist), this.lengthRules);
+      if (save.journey && tooLong) {
+        // A 0.1 save may hold a train longer than the screen (doc 14 §2).
+        // Keep every wagon in the depot instead of riding an unseen train.
+        this.#draft = draftFromConsist(
+          save.builderDraft ?? save.journey.consist,
+        );
+        this.#restoredDraft = undefined;
+        this.#notices.add('train-too-long');
+      } else if (save.journey) {
+        // Another generator would put the train on different track (D-005):
+        // keep the train and world number, start fresh and say so.
+        const sameTrack =
+          save.journey.generatorVersion === TRACK_GENERATOR_VERSION;
+        if (!sameTrack) this.#notices.add('track-changed');
         try {
           this.#journey = {
             seed: save.journey.seed,
             consist: save.journey.consist,
-            ride: this.#createRide(save.journey.seed, save.journey.consist, {
-              head: save.journey.head,
-              simulationTick: save.journey.simulationTick,
-            }),
+            ride: this.#createRide(
+              save.journey.seed,
+              save.journey.consist,
+              sameTrack
+                ? {
+                    head: save.journey.head,
+                    simulationTick: save.journey.simulationTick,
+                  }
+                : undefined,
+            ),
           };
         } catch {
           this.#notices.add('journey-unavailable');
@@ -205,9 +253,22 @@ export class GameSession {
       simulationTick: number;
     },
   ): RideSimulation {
+    const locomotive = this.#deps.catalog.locomotives.find(
+      (candidate) => candidate.id === consist.locomotiveId,
+    );
     return new RideSimulation({
       seed,
       vehicles: this.#vehicles(consist),
+      // Changing the locomotive starts a new journey (doc 03 §9).
+      electrified: locomotive?.requiresCatenary === true,
+      // Oncoming trains: steam or diesel locomotives (doc 03 §9).
+      npcFleet: {
+        locomotives: this.#deps.catalog.locomotives.filter(
+          (candidate) =>
+            candidate.power === 'steam' || candidate.power === 'diesel',
+        ),
+        wagons: this.#deps.catalog.wagons,
+      },
       speedFactor: this.#settings.maxSpeedFactor,
       config: this.#deps.config,
       ...(restore
@@ -288,6 +349,12 @@ export class GameSession {
   }
 
   #depart(): void {
+    if (isOverLimit(this.#draft, this.lengthRules)) {
+      this.#notices.add('train-too-long');
+      this.#fullSignals += 1;
+      this.#emit({ type: 'trainFull' });
+      return;
+    }
     let journey: Journey;
     try {
       const seed = this.#deps.randomSeed();
@@ -299,6 +366,9 @@ export class GameSession {
       return;
     }
     this.#notices.delete('start-failed');
+    this.#notices.delete('train-too-long');
+    this.#notices.delete('track-changed');
+    this.#restoredDraft = undefined;
     this.#journey = journey;
     this.#lastConsist = journey.consist;
     this.#apply({ type: 'depart' });
@@ -312,6 +382,12 @@ export class GameSession {
     if (draft === this.#draft) return;
     this.#draft = draft;
     this.#scheduler.noteEdit(this.#nowMs);
+  }
+
+  #takeRestoredDraft(): ConsistDraft | undefined {
+    const draft = this.#restoredDraft;
+    this.#restoredDraft = undefined;
+    return draft;
   }
 
   #onAction(action: string): void {
@@ -339,12 +415,15 @@ export class GameSession {
         this.#apply({ type: 'continueJourney' });
         return;
       case 'build-new':
-        this.#draft = draftFromConsist(this.#lastConsist);
+        this.#draft =
+          this.#takeRestoredDraft() ?? draftFromConsist(this.#lastConsist);
         this.#apply({ type: 'buildNew' });
         return;
       case 'open-depot':
         if (this.#journey) {
-          this.#draft = draftFromConsist(this.#journey.consist);
+          this.#draft =
+            this.#takeRestoredDraft() ??
+            draftFromConsist(this.#journey.consist);
           this.#apply({ type: 'openDepot' });
         }
         return;
@@ -368,11 +447,7 @@ export class GameSession {
           argument &&
           this.#deps.catalog.wagons.some((wagon) => wagon.id === argument)
         ) {
-          const result = addWagon(
-            this.#draft,
-            argument,
-            this.#deps.config.train.maxWagons,
-          );
+          const result = addWagon(this.#draft, argument, this.lengthRules);
           if (result.added) this.#edit(result.draft);
           else {
             this.#fullSignals += 1;
@@ -418,12 +493,15 @@ export class GameSession {
     const screen = this.#screen.name;
     if (screen === 'SELECT_LOCO' || screen === 'BUILD_TRAIN') {
       envelope.builderDraft = this.#draft.consist;
+    } else if (this.#restoredDraft) {
+      // Not yet used by the depot: keep it across ride checkpoints.
+      envelope.builderDraft = this.#restoredDraft.consist;
     }
     const journey = this.#journey;
     if (journey) {
       envelope.journey = {
         seed: journey.seed,
-        generatorVersion: TEST_TRACK_GENERATOR_VERSION,
+        generatorVersion: TRACK_GENERATOR_VERSION,
         consist: journey.consist,
         head: journey.ride.headCursor(),
         simulationTick: journey.ride.simulationTick,

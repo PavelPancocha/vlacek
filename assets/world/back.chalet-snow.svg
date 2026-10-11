@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="104" viewBox="0 0 120 104">
+  <!-- Zasněžená chata: snow on the roof and around. Foot centre (60, 104). -->
+  <defs><linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a5794a"/><stop offset="1" stop-color="#6d4c33"/></linearGradient><linearGradient id="roof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5c3e"/><stop offset="1" stop-color="#4a3222"/></linearGradient><clipPath id="upper"><rect x="10" y="49.92" width="100" height="15.6"/></clipPath>
+  </defs>
+  <ellipse cx="60" cy="103" rx="60" ry="2.4" fill="#1d2a14" fill-opacity="0.18"/>
+  <rect x="10" y="64.48" width="100" height="38.52" fill="#ece6d8" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <rect x="10" y="49.92" width="100" height="15.6" fill="url(#wood)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M14 52 V102 M18.6 52 V102 M23.2 52 V102 M27.8 52 V102 M32.4 52 V102 M37 52 V102 M41.6 52 V102 M46.2 52 V102 M50.8 52 V102 M55.4 52 V102 M60 52 V102 M64.6 52 V102 M69.2 52 V102 M73.8 52 V102 M78.4 52 V102 M83 52 V102 M87.6 52 V102 M92.2 52 V102 M96.8 52 V102 M101.4 52 V102 M106 52 V102 " stroke="#5a3e2b" stroke-width="0.4" clip-path="url(#upper)"/>
+  <path d="M2 52 L60 6 L118 52 Z" fill="url(#roof)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M2 52 L60 4 L118 52 L112 50 Q90 31.2 60 12 Q30 31.2 8 50 Z" fill="#f7fbff" stroke="#b8c8d6" stroke-width="0.4"/>
+  <rect x="52" y="26" width="16" height="12" fill="url(#wood)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="55" y="28.08" width="10" height="8" fill="#3d5a6c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M10 64.48 H110" stroke="#5a3e2b" stroke-width="2"/>
+  <path d="M14 62.4 H106" stroke="#8b6a4a" stroke-width="1.2" stroke-dasharray="1.6 2.4"/>
+  <rect x="22" y="70.72" width="14" height="11" fill="#3d5a6c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="84" y="70.72" width="14" height="11" fill="#3d5a6c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <rect x="20" y="81.72" width="18" height="2" fill="#c0392b" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><rect x="82" y="81.72" width="18" height="2" fill="#c0392b" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <rect x="54" y="80" width="12" height="22" fill="#6d4c33" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M10 103 Q60 99 110 103 Z" fill="#f7fbff"/>
+</svg>

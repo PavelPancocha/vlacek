@@ -6,7 +6,11 @@ export interface DomInputOptions {
   /** Element containing the canvas and all UI; receives every pointer. */
   root: HTMLElement;
   router: InputRouter;
-  /** Called inside each user gesture (audio unlock, doc 09 §6). */
+  /**
+   * Called inside each user gesture (audio unlock, doc 09 §6), before and
+   * after routing, so a gesture that changes the screen is seen in its new
+   * state.
+   */
   onGesture(): void;
   onInterrupt(reason: InterruptReason): void;
   /** Layout changed: re-measure hit areas. */
@@ -14,6 +18,7 @@ export interface DomInputOptions {
 }
 
 const DRIVING_KEYS = new Set(['Space', 'ArrowRight', 'ArrowLeft']);
+const ACTIVATION_KEYS = new Set(['Space', 'Enter', 'NumpadEnter']);
 
 function actionAt(target: Element | null): string | undefined {
   const control = target?.closest<HTMLElement>('[data-action]');
@@ -79,6 +84,7 @@ export class DomInputAdapter {
         id: event.pointerId,
         ...(action === undefined ? {} : { action }),
       });
+      options.onGesture();
     });
     listen(root, 'pointercancel', (event) =>
       router.pointerCancel({ id: event.pointerId }),
@@ -96,15 +102,22 @@ export class DomInputAdapter {
         event.target instanceof Element ? event.target : null,
       );
       if (action !== undefined) router.activateByKeyboard(action);
+      options.onGesture();
     });
 
     window.addEventListener(
       'keydown',
       (event) => {
         options.onGesture();
+        // A keyboard-focused control keeps its native Space/Enter activation
+        // (reported as a click with detail 0) instead of driving the train.
+        const target = event.target instanceof Element ? event.target : null;
+        if (ACTIVATION_KEYS.has(event.code) && actionAt(target) !== undefined)
+          return;
         if (router.mode === 'ride' && DRIVING_KEYS.has(event.code))
           event.preventDefault();
         router.keyDown({ code: event.code, repeat: event.repeat });
+        options.onGesture();
       },
       { signal },
     );

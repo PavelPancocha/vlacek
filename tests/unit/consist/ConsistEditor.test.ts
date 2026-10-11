@@ -1,24 +1,53 @@
 import { describe, expect, it } from 'vitest';
 import {
   addWagon,
+  canAddWagon,
   canMoveSelected,
   canUndo,
+  consistLengthU,
   createDraft,
   draftFromConsist,
   isFull,
+  isOverLimit,
   moveSelected,
   removeSelected,
   selectLocomotive,
   selectWagon,
   undoLastChange,
   type ConsistDraft,
+  type ConsistLengthRules,
 } from '../../../src/domain/consist/ConsistEditor.ts';
+import { layoutConsist } from '../../../src/domain/train/TrainGeometry.ts';
 
-const MAX = 100;
+/** Vehicle lengths in world units, independent of the shipped catalog. */
+const LENGTHS_U: Record<string, number> = {
+  steam_local: 156,
+  magic_stars: 164,
+  cargo_box: 164,
+  cargo_coal: 152,
+  fun_balloons: 164,
+  passenger_open: 144,
+};
+
+function rules(maxLengthU: number): ConsistLengthRules {
+  return {
+    maxLengthU,
+    couplerGapU: 8,
+    geometryOf: (id) => {
+      const lengthU = LENGTHS_U[id];
+      return lengthU === undefined
+        ? undefined
+        : { lengthU, bogieOffsetU: Math.round(lengthU * 0.31) };
+    },
+  };
+}
+
+/** Large enough that editing tests never meet the limit. */
+const RULES = rules(1_000_000);
 
 function withWagons(...ids: string[]): ConsistDraft {
   return ids.reduce(
-    (draft, id) => addWagon(draft, id, MAX).draft,
+    (draft, id) => addWagon(draft, id, RULES).draft,
     createDraft('steam_local'),
   );
 }
@@ -55,16 +84,64 @@ describe('ConsistEditor', () => {
     }
   });
 
-  it('UI-03: the 101st wagon is refused and the first 100 stay unchanged', () => {
-    const full = withWagons(
-      ...Array.from({ length: 100 }, (_, i) =>
-        i % 2 ? 'cargo_box' : 'cargo_coal',
-      ),
-    );
-    expect(isFull(full, MAX)).toBe(true);
-    const result = addWagon(full, 'fun_balloons', MAX);
-    expect(result.added).toBe(false);
-    expect(result.draft).toBe(full);
+  describe('doc 14 §2: length limit', () => {
+    it('measures front to tail with couplers, like the ride layout', () => {
+      const draft = withWagons('cargo_box', 'fun_balloons');
+      const layout = layoutConsist(
+        [156, 164, 164].map((lengthU) => ({ lengthU, bogieOffsetU: 0 })),
+        8,
+      );
+      expect(consistLengthU(draft.consist, RULES)).toBe(
+        layout.frontOffsetU + layout.tailOffsetU,
+      );
+      expect(consistLengthU(draft.consist, RULES)).toBe(
+        156 + 8 + 164 + 8 + 164,
+      );
+    });
+
+    it('accepts a wagon that exactly fits and refuses the next one unchanged', () => {
+      const limit = rules(156 + 8 + 164);
+      const one = addWagon(createDraft('steam_local'), 'cargo_box', limit);
+      expect(one.added).toBe(true);
+      const refused = addWagon(one.draft, 'cargo_coal', limit);
+      expect(refused.added).toBe(false);
+      expect(refused.draft).toBe(one.draft);
+      expect(isFull(one.draft, ['cargo_box', 'cargo_coal'], limit)).toBe(true);
+    });
+
+    it('a shorter wagon may still fit when a longer one does not', () => {
+      const limit = rules(156 + 8 + 164 + 8 + 144);
+      const draft = addWagon(
+        createDraft('steam_local'),
+        'cargo_box',
+        limit,
+      ).draft;
+      expect(canAddWagon(draft, 'cargo_box', limit)).toBe(false);
+      expect(canAddWagon(draft, 'passenger_open', limit)).toBe(true);
+      expect(isFull(draft, ['cargo_box', 'passenger_open'], limit)).toBe(false);
+    });
+
+    it('refuses wagons it cannot measure', () => {
+      expect(canAddWagon(createDraft('steam_local'), 'unknown', RULES)).toBe(
+        false,
+      );
+    });
+
+    it('keeps every wagon of a legacy over-limit consist; removing brings it back', () => {
+      const legacy = withWagons(
+        ...Array.from({ length: 10 }, () => 'cargo_coal'),
+      );
+      const limit = rules(1000);
+      expect(isOverLimit(legacy, limit)).toBe(true);
+      expect(addWagon(legacy, 'passenger_open', limit).added).toBe(false);
+      let draft = legacy;
+      while (isOverLimit(draft, limit)) {
+        const last = draft.consist.wagons.at(-1)?.instanceId ?? 'none';
+        draft = removeSelected(selectWagon(draft, last));
+      }
+      expect(draft.consist.wagons.length).toBe(5);
+      expect(consistLengthU(draft.consist, limit)).toBeLessThanOrEqual(1000);
+    });
   });
 
   describe('UI-02: select, move, remove and undo', () => {
@@ -120,7 +197,7 @@ describe('ConsistEditor', () => {
     it('a new addition clears the pending undo', () => {
       const { draft, first } = fixture();
       const removed = removeSelected(selectWagon(draft, first));
-      expect(canUndo(addWagon(removed, 'cargo_box', MAX).draft)).toBe(false);
+      expect(canUndo(addWagon(removed, 'cargo_box', RULES).draft)).toBe(false);
     });
 
     it('does nothing without a selection or for unknown ids', () => {
@@ -130,10 +207,20 @@ describe('ConsistEditor', () => {
     });
   });
 
+  it('undo after a locomotive change keeps the new locomotive', () => {
+    const draft = withWagons('cargo_box', 'cargo_coal');
+    const second = draft.consist.wagons[1]?.instanceId ?? 'missing';
+    const removed = removeSelected(selectWagon(draft, second));
+    const switched = selectLocomotive(removed, 'magic_stars');
+    const restored = undoLastChange(switched);
+    expect(restored.consist.locomotiveId).toBe('magic_stars');
+    expect(order(restored)).toEqual(['cargo_box', 'cargo_coal']);
+  });
+
   it('continues instance numbering for a restored consist without collisions', () => {
     const original = withWagons('cargo_box', 'cargo_coal');
     const restored = draftFromConsist(original.consist);
-    const next = addWagon(restored, 'cargo_box', MAX).draft;
+    const next = addWagon(restored, 'cargo_box', RULES).draft;
     const ids = next.consist.wagons.map((w) => w.instanceId);
     expect(new Set(ids).size).toBe(3);
   });

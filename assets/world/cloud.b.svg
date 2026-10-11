@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="50" viewBox="0 0 120 50">
+  <!-- Mrak: cumulus with a flat, shaded base and sunlit tops. Centre bottom (60, 50). -->
+  <defs>
+    <linearGradient id="cloudb-body" gradientUnits="userSpaceOnUse" x1="0" y1="-2" x2="0" y2="40">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#eef4f9"/>
+      <stop offset="1" stop-color="#bccfe0"/>
+    </linearGradient>
+    <linearGradient id="cloudb-light" gradientUnits="userSpaceOnUse" x1="0" y1="-2" x2="0" y2="40">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="cloudb-clip"><circle cx="22.49" cy="32.77" r="10.85"/><circle cx="44.51" cy="24.11" r="19.91"/><circle cx="61.11" cy="22.44" r="20.94"/><circle cx="75.43" cy="26.55" r="18.88"/><circle cx="94.63" cy="31.41" r="11.44"/><circle cx="41.42" cy="18.06" r="13.83"/><circle cx="61.6" cy="18.91" r="10.35"/><circle cx="80.95" cy="16.45" r="13.71"/><rect x="9.6" y="32" width="100.8" height="8" rx="4"/></clipPath>
+  </defs>
+  <g fill="#a9bfd3" fill-opacity="0.55" transform="translate(1.2 1.6)"><circle cx="22.49" cy="32.77" r="10.85"/><circle cx="44.51" cy="24.11" r="19.91"/><circle cx="61.11" cy="22.44" r="20.94"/><circle cx="75.43" cy="26.55" r="18.88"/><circle cx="94.63" cy="31.41" r="11.44"/><circle cx="41.42" cy="18.06" r="13.83"/><circle cx="61.6" cy="18.91" r="10.35"/><circle cx="80.95" cy="16.45" r="13.71"/><rect x="9.6" y="32" width="100.8" height="8" rx="4"/></g>
+  <g fill="url(#cloudb-body)"><circle cx="22.49" cy="32.77" r="10.85"/><circle cx="44.51" cy="24.11" r="19.91"/><circle cx="61.11" cy="22.44" r="20.94"/><circle cx="75.43" cy="26.55" r="18.88"/><circle cx="94.63" cy="31.41" r="11.44"/><circle cx="41.42" cy="18.06" r="13.83"/><circle cx="61.6" cy="18.91" r="10.35"/><circle cx="80.95" cy="16.45" r="13.71"/><rect x="9.6" y="32" width="100.8" height="8" rx="4"/></g>
+  <g clip-path="url(#cloudb-clip)">
+    <g fill="#c4d5e4" fill-opacity="0.55"><circle cx="26.29" cy="37.33" r="8.46"/><circle cx="51.48" cy="32.47" r="15.53"/><circle cx="68.44" cy="31.24" r="16.33"/><circle cx="46.26" cy="23.87" r="10.79"/><circle cx="65.22" cy="23.25" r="8.07"/></g>
+    <g fill="url(#cloudb-light)"><circle cx="21.41" cy="31.26" r="9.11"/><circle cx="42.52" cy="21.32" r="16.72"/><circle cx="59.01" cy="19.51" r="17.59"/><circle cx="73.55" cy="23.91" r="15.86"/><circle cx="93.49" cy="29.81" r="9.61"/><circle cx="40.03" cy="16.12" r="11.62"/><circle cx="60.57" cy="17.46" r="8.69"/><circle cx="79.58" cy="14.53" r="11.52"/></g>
+    <g fill="#ffffff"><circle cx="37.74" cy="15.75" r="5.97"/><circle cx="53.99" cy="13.65" r="6.28"/><circle cx="36.71" cy="12.25" r="4.15"/><circle cx="58.08" cy="14.56" r="3.1"/><circle cx="76.29" cy="10.69" r="4.11"/></g>
+    <rect x="0" y="36.5" width="120" height="5" fill="#aec4d8" fill-opacity="0.45"/>
+  </g>
+</svg>

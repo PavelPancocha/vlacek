@@ -77,3 +77,81 @@ test('canvas fills the game area in CSS pixels at any device pixel ratio', async
   expect(sizes?.canvas[0]).toBeCloseTo(sizes?.root[0] ?? -1, 0);
   expect(sizes?.canvas[1]).toBeCloseTo(sizes?.root[1] ?? -1, 0);
 });
+
+for (const [deviceScaleFactor, density] of [
+  [1, 1],
+  [2, 1.5],
+] as const)
+  test.describe(`at device pixel ratio ${deviceScaleFactor}`, () => {
+    test.use({ deviceScaleFactor });
+
+    test('the canvas follows a resize of the game area', async ({ page }) => {
+      await page.goto('./');
+      await expect(page.locator('#game-root')).toHaveAttribute(
+        'data-renderer',
+        /.+/,
+      );
+      const canvasSize = () =>
+        page.evaluate(() => {
+          const canvas = document.querySelector('#game-root canvas');
+          if (!(canvas instanceof HTMLCanvasElement)) return null;
+          const box = canvas.getBoundingClientRect();
+          return {
+            css: [Math.round(box.width), Math.round(box.height)],
+            buffer: [canvas.width, canvas.height],
+          };
+        });
+      // Phone rotation and window resizes: the picture must not stretch.
+      for (const size of [
+        { width: 1024, height: 560 },
+        { width: 1440, height: 900 },
+      ]) {
+        await page.setViewportSize(size);
+        await expect.poll(canvasSize).toEqual({
+          css: [size.width, size.height],
+          buffer: [size.width * density, size.height * density],
+        });
+      }
+    });
+  });
+
+test.describe('quality profile (doc 13 quality, D-014)', () => {
+  test.use({ deviceScaleFactor: 2 });
+
+  for (const [quality, density] of [
+    ['auto', 1.5],
+    ['low', 1],
+  ] as const)
+    test(`the ${quality} profile renders at density ${density} on a 2x screen`, async ({
+      page,
+    }) => {
+      const save = JSON.stringify({
+        schemaVersion: 1,
+        contentVersion: 1,
+        savedAtIso: '2026-10-10T00:00:00.000Z',
+        appBuildId: 'quality-test',
+        settings: {
+          sfxEnabled: false,
+          musicEnabled: false,
+          reducedEffects: false,
+          maxSpeedFactor: 1,
+          quality,
+        },
+        lastConsist: { locomotiveId: 'steam_local', wagons: [] },
+      });
+      await page.addInitScript((json) => {
+        localStorage.setItem('vlacek.save.v1', json);
+      }, save);
+      await page.goto('./');
+      await expect(page.locator('#game-root')).toHaveAttribute(
+        'data-renderer',
+        /.+/,
+      );
+      const ratio = await page.evaluate(() => {
+        const canvas = document.querySelector('#game-root canvas');
+        if (!(canvas instanceof HTMLCanvasElement)) return 0;
+        return canvas.width / canvas.getBoundingClientRect().width;
+      });
+      expect(ratio).toBeCloseTo(density, 1);
+    });
+});

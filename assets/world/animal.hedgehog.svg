@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="14" viewBox="0 0 22 14">
+  <!-- Ježek: hedgehog with spines, faces right. Foot centre (11, 14). -->
+  <defs>
+  </defs>
+  <ellipse cx="11" cy="13.6" rx="9" ry="0.8" fill="#1d2a14" fill-opacity="0.18"/>
+  <path d="M2 13 Q1 4 10 3 Q17 3 19 9 L21 11 Q20 13 17 13 Z" fill="#6d5640" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M2.1 9.75 l-3.37 -0.41" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M2.39 8.53 l-3.27 -0.8" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M2.87 7.37 l-3.12 -1.18" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M3.53 6.3 l-2.9 -1.53" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M4.34 5.34 l-2.64 -1.84" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M5.3 4.53 l-2.33 -2.1" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M6.37 3.87 l-1.98 -2.32" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M7.53 3.39 l-1.6 -2.47" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M8.75 3.1 l-1.21 -2.57" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M10 3 l-0.8 -2.6" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M11.25 3.1 l-0.39 -2.57" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M12.47 3.39 l0 -2.47" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M13.63 3.87 l0.38 -2.32" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M14.7 4.53 l0.73 -2.1" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M15.66 5.34 l1.04 -1.84" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/><path d="M16.47 6.3 l1.3 -1.53" stroke="#3a2a1f" stroke-width="0.7" stroke-linecap="round"/>
+  <path d="M16 6 Q20 7 21.6 11 Q19 12.6 16 12 Z" fill="#c9a77e" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle cx="21.4" cy="10.6" r="0.7" fill="#1b1b1b"/>
+  <circle cx="18.4" cy="8.6" r="0.55" fill="#1b1b1b"/><circle cx="18.59" cy="8.41" r="0.19" fill="#ffffff"/>
+</svg>

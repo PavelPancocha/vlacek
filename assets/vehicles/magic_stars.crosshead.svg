@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="7" viewBox="0 0 22 7">
+  <!-- Golden crosshead (pin at (3.5, 3.5)) and piston rod; the rod end
+       (x 22) stays inside the cylinder over the whole 12 u stroke. -->
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/>
+      <stop offset="0.45" stop-color="#f4d03f"/>
+      <stop offset="1" stop-color="#9a6f14"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#1a0b21" stroke-width="0.4">
+    <rect x="7" y="2.75" width="15" height="1.5" rx="0.6" fill="url(#gold)"/>
+    <rect x="0.2" y="0.3" width="7.4" height="1.5" rx="0.4" fill="#5b2c6f"/>
+    <rect x="0.2" y="5.2" width="7.4" height="1.5" rx="0.4" fill="#5b2c6f"/>
+    <rect x="0.8" y="1.4" width="6.2" height="4.2" rx="0.8" fill="url(#gold)"/>
+    <circle cx="3.5" cy="3.5" r="1.05" fill="#5b2c6f"/>
+  </g>
+</svg>

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="156" height="100" viewBox="0 0 156 100">
+  <!-- Malá parní mašinka: parts in front of the wheels and rods (fixed
+       light on the turning tyres, cylinder, guide bars, motion bracket,
+       steps). Same frame as the body. -->
+  <defs>
+    <linearGradient id="cyl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b2e34"/>
+      <stop offset="0.25" stop-color="#626872"/>
+      <stop offset="0.5" stop-color="#2e3137"/>
+      <stop offset="1" stop-color="#101113"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e3e7ec"/>
+      <stop offset="0.5" stop-color="#9aa0a8"/>
+      <stop offset="1" stop-color="#5b6068"/>
+    </linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6df9c"/>
+      <stop offset="0.45" stop-color="#cfa045"/>
+      <stop offset="1" stop-color="#86611f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Light from the upper left on the tyres; the wheels turn under it. -->
+  <g fill="none" stroke-linecap="round">
+    <g stroke="#ffffff" stroke-opacity="0.38" stroke-width="1.1">
+      <path d="M30.38 81.35 A14.1 14.1 0 0 1 47.65 71.38"/>
+      <path d="M62.38 81.35 A14.1 14.1 0 0 1 79.65 71.38"/>
+      <path d="M94.38 81.35 A14.1 14.1 0 0 1 111.65 71.38"/>
+      <path d="M130.18 88.9 A8.1 8.1 0 0 1 140.1 83.18"/>
+    </g>
+    <g stroke="#000000" stroke-opacity="0.3" stroke-width="1.4">
+      <path d="M57.62 88.65 A14.1 14.1 0 0 1 36.95 97.21"/>
+      <path d="M89.62 88.65 A14.1 14.1 0 0 1 68.95 97.21"/>
+      <path d="M121.62 88.65 A14.1 14.1 0 0 1 100.95 97.21"/>
+      <path d="M145.82 93.1 A8.1 8.1 0 0 1 133.95 98.01"/>
+    </g>
+  </g>
+
+  <g stroke="#111214" stroke-width="0.6" stroke-linejoin="round">
+    <!-- Motion bracket from the frame to the guide bars. -->
+    <path d="M105.4 69.8 H108.8 L108.4 81.8 H105.8 Z" fill="#26282c"/>
+    <circle cx="107.1" cy="76.8" r="0.9" fill="#4a4f57" stroke-width="0.3"/>
+    <!-- Guide bars (the crosshead slides between them). -->
+    <rect x="107" y="72.2" width="23" height="1.6" rx="0.5" fill="url(#steel)"/>
+    <rect x="107" y="80.2" width="23" height="1.6" rx="0.5" fill="url(#steel)"/>
+
+    <!-- Cylinder with valve chest, cladding bands, covers, drain cocks. -->
+    <rect x="130" y="63.4" width="17" height="7.2" rx="1" fill="url(#cyl)"/>
+    <path d="M131 64.8 H146" stroke="#7d838c" stroke-width="0.4" fill="none"/>
+    <rect x="146.4" y="64.2" width="2" height="5.6" rx="0.6" fill="url(#steel)" stroke-width="0.4"/>
+    <rect x="128" y="69.6" width="22" height="14.8" rx="3" fill="url(#cyl)"/>
+    <path d="M133.6 69.8 V84.2 M144.4 69.8 V84.2" stroke="#4a4f57" stroke-width="0.8" fill="none"/>
+    <path d="M129 72.4 H149" stroke="#ffffff" stroke-opacity="0.22" stroke-width="0.9" fill="none"/>
+    <rect x="127" y="70.6" width="2.6" height="12.8" rx="1" fill="url(#steel)"/>
+    <rect x="149" y="70.6" width="2.8" height="12.8" rx="1.2" fill="url(#steel)"/>
+    <g fill="#5b6068" stroke="none">
+      <circle cx="150.4" cy="72.4" r="0.5"/><circle cx="150.4" cy="77" r="0.5"/><circle cx="150.4" cy="81.6" r="0.5"/>
+      <circle cx="128.3" cy="72.4" r="0.5"/><circle cx="128.3" cy="81.6" r="0.5"/>
+    </g>
+    <rect x="137.6" y="66" width="2.8" height="1.6" rx="0.4" fill="url(#brass)" stroke-width="0.3"/>
+    <path d="M132 84.4 V87.4 M146 84.4 V87.4 M139 84.4 V86.6" stroke="#5b6068" stroke-width="0.8" fill="none"/>
+
+    <!-- Cab step under the doorway. -->
+    <path d="M24.6 69.8 V83 M31.4 69.8 V83" stroke="url(#steel)" stroke-width="1" fill="none"/>
+    <rect x="23.6" y="82.2" width="8.8" height="1.8" rx="0.5" fill="url(#steel)"/>
+    <rect x="24.2" y="76" width="7.6" height="1.4" rx="0.4" fill="url(#steel)"/>
+    <!-- Front step on the buffer beam. -->
+    <rect x="140.6" y="80.4" width="5.4" height="1.6" rx="0.4" fill="url(#steel)"/>
+    <path d="M141.4 80.4 V77 M145.2 80.4 V77" stroke="#5b6068" stroke-width="0.7" fill="none"/>
+  </g>
+</svg>

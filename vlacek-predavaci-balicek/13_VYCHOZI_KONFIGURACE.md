@@ -16,13 +16,13 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "resumeSpeedUPerSec": 0
   },
   "train": {
-    "maxWagons": 100,
+    "maxConsistLengthU": 1600,
     "maxVehicleLengthU": 220,
     "couplerGapU": 8,
-    "maxSpeedUPerSec": 180,
-    "accelerationUPerSec2": 65,
-    "coastDecelerationUPerSec2": 30,
-    "brakeDecelerationUPerSec2": 180,
+    "maxSpeedUPerSec": 480,
+    "accelerationUPerSec2": 160,
+    "coastDecelerationUPerSec2": 96,
+    "brakeDecelerationUPerSec2": 480,
     "stopEpsilonUPerSec": 0.5,
     "uphillSpeedReduction": 0.1,
     "gradeAccelerationFactor": 0.25,
@@ -42,7 +42,23 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "chunksPerBiomeBlock": 8,
     "blocksPerRouteCycle": 8,
     "maxTrackGrade": 0.12,
-    "boundaryHeightScale": 8,
+    "profile": {
+      "blockChunks": 8,
+      "maxHeightU": 400,
+      "blockHeightRangeU": 160,
+      "flatMinU": 384,
+      "flatMaxU": 1536,
+      "slopeMinU": 768,
+      "slopeMaxU": 2304,
+      "gradeRangeMin": 0.03,
+      "gradeRangeMax": 0.08,
+      "transitionU": 192,
+      "lengthStepU": 64
+    },
+    "terrain": {
+      "latticeU": 512,
+      "maxEmbankmentU": 40
+    },
     "arcSampleSpacingU": 8,
     "geometryLookAheadU": 2048,
     "geometryTailMarginU": 1024,
@@ -61,10 +77,11 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "catenaryContactHeightU": 160
   },
   "camera": {
-    "referenceWidthU": 1280,
-    "referenceHeightU": 720,
-    "locomotiveAnchorX": 0.3,
-    "railAnchorY": 0.65,
+    "trainWidthFraction": 0.72,
+    "rearMarginFraction": 0.06,
+    "minFrontFraction": 0.35,
+    "bandAnchor": 0.55,
+    "verticalFollowPerSec": 3,
     "manualPanDuringRide": false
   },
   "crossing": {
@@ -140,7 +157,7 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
 
 ## Odvozené hodnoty a pravidla
 
-`Dclose` není druhá nezávislá konstanta. Počítá se podle dokumentu 05 z rychlostního limitu a přejezdových časů. Při standardním limitu vychází 890 u. Každý relevantní konflikt má ještě vlastní fyzickou šířku; vzdálenost se měří od čela vlaku k bližšímu okraji rozšířené konfliktní zóny, ne k libovolnému středu budovy.
+`Dclose` není druhá nezávislá konstanta. Počítá se podle dokumentu 05 z rychlostního limitu a přejezdových časů. Při standardním limitu vychází 890 u. Každý relevantní konflikt má ještě vlastní fyzickou šířku; vzdálenost se měří od čela vlaku k bližšímu okraji rozšířené konfliktní zóny, ne k libovolnému středu budovy. Proto `roadClearanceSeconds` nesmí být kratší než nejhorší doba, za kterou silniční aktér za stop čárou opustí zónu (dnes 2,0 s, D-015); kratší hodnotu validace odmítne.
 
 `geometryLookAheadU` je minimum. Zvětší se, pokud širší viewport nebo vícedílná scénka vyžaduje více geometrie. `logicalActivationAheadU` je naopak základ deterministických spouštěčů scén a nesmí náhodně záviset na výkonnosti rendereru. Renderovat daleko viditelné statické objekty lze bez předčasného spuštění jejich scénky.
 

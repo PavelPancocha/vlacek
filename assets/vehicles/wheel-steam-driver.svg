@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
+  <!-- Steam driving wheel, r 15 u, centre (15, 15). Rotates in the game, so
+       every gradient is centred: light and shadow live in the vehicle's
+       overlay, which does not turn. Crank pin 7 u forward (+x) at rest,
+       counterweight opposite it. -->
+  <defs>
+    <radialGradient id="tyre" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.86" stop-color="#3a3e45"/>
+      <stop offset="0.92" stop-color="#8d939b"/>
+      <stop offset="0.96" stop-color="#5a5f67"/>
+      <stop offset="1" stop-color="#25272b"/>
+    </radialGradient>
+    <radialGradient id="centre" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#d9463f"/>
+      <stop offset="0.75" stop-color="#b3242b"/>
+      <stop offset="1" stop-color="#861a20"/>
+    </radialGradient>
+    <radialGradient id="pin" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#eef1f4"/>
+      <stop offset="0.7" stop-color="#a7adb5"/>
+      <stop offset="1" stop-color="#5b6068"/>
+    </radialGradient>
+  </defs>
+  <!-- Steel tyre with the flange line, then the red wheel centre. -->
+  <circle cx="15" cy="15" r="14.7" fill="url(#tyre)" stroke="#111214" stroke-width="0.6"/>
+  <circle cx="15" cy="15" r="14.05" fill="none" stroke="#1d1f23" stroke-width="0.25"/>
+  <circle cx="15" cy="15" r="13.2" fill="#8e1a21" stroke="#111214" stroke-width="0.4"/>
+  <circle cx="15" cy="15" r="12.25" fill="#2a0c0e"/>
+  <circle cx="15" cy="15" r="11.6" fill="none" stroke="#3d1013" stroke-width="0.6"/>
+  <!-- Fourteen tapered spokes. -->
+  <path d="M18.06 16.88 L26.95 18.37 L27.23 17.15 L18.57 14.64 Z M16.94 18.02 L24.31 23.22 L25.08 22.24 L18.38 16.22 Z M15.44 18.56 L19.82 26.44 L20.94 25.9 L17.51 17.56 Z M13.85 18.4 L14.38 27.4 L15.63 27.4 L16.15 18.4 Z M12.49 17.56 L9.06 25.9 L10.18 26.44 L14.56 18.56 Z M11.62 16.22 L4.92 22.24 L5.69 23.22 L13.06 18.02 Z M11.43 14.64 L2.77 17.15 L3.05 18.37 L11.94 16.88 Z M11.94 13.12 L3.05 11.63 L2.77 12.85 L11.43 15.36 Z M13.06 11.98 L5.69 6.78 L4.92 7.76 L11.62 13.78 Z M14.56 11.44 L10.18 3.56 L9.06 4.1 L12.49 12.44 Z M16.15 11.6 L15.62 2.6 L14.37 2.6 L13.85 11.6 Z M17.51 12.44 L20.94 4.1 L19.82 3.56 L15.44 11.44 Z M18.38 13.78 L25.08 7.76 L24.31 6.78 L16.94 11.98 Z M18.57 15.36 L27.23 12.85 L26.95 11.63 L18.06 13.12 Z" fill="url(#centre)" stroke="#5a1015" stroke-width="0.22"/>
+  <!-- Counterweight crescent with rivets, opposite the crank. -->
+  <path d="M7.09 24.42 A12.3 12.3 0 0 1 7.09 5.58 L10.37 9.48 A7.2 7.2 0 0 0 10.37 20.52 Z" fill="url(#centre)" stroke="#5a1015" stroke-width="0.3"/>
+  <path d="M8.3 22.2 A10.2 10.2 0 0 1 8.3 7.8" fill="none" stroke="#e0675f" stroke-width="0.3" stroke-opacity="0.8"/>
+  <g fill="#6b1419">
+    <circle cx="6.6" cy="19.85" r="0.45"/><circle cx="5.3" cy="15" r="0.45"/><circle cx="6.6" cy="10.15" r="0.45"/>
+  </g>
+  <circle cx="15" cy="15" r="12.55" fill="none" stroke="#c43a35" stroke-width="0.8"/>
+  <!-- Hub with six bolts and the axle end. -->
+  <circle cx="15" cy="15" r="3.7" fill="url(#centre)" stroke="#5a1015" stroke-width="0.35"/>
+  <g fill="#5a1015">
+    <circle cx="17.55" cy="15" r="0.42"/><circle cx="16.27" cy="17.21" r="0.42"/><circle cx="13.73" cy="17.21" r="0.42"/><circle cx="12.45" cy="15" r="0.42"/><circle cx="13.72" cy="12.79" r="0.42"/><circle cx="16.27" cy="12.79" r="0.42"/>
+  </g>
+  <circle cx="15" cy="15" r="1.6" fill="url(#pin)" stroke="#111214" stroke-width="0.3"/>
+  <!-- Crank boss and pin. -->
+  <circle cx="22" cy="15" r="2.7" fill="url(#centre)" stroke="#5a1015" stroke-width="0.35"/>
+  <circle cx="22" cy="15" r="1.3" fill="url(#pin)" stroke="#111214" stroke-width="0.3"/>
+</svg>

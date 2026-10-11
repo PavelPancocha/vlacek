@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Výfuk nafty: a small blue-grey exhaust wisp. Centre (8, 8). -->
+  <defs><radialGradient id="shade" cx="0.5" cy="0.55" r="0.62"><stop offset="0" stop-color="#8d949c" stop-opacity="0.95"/><stop offset="0.7" stop-color="#5f666e" stop-opacity="0.75"/><stop offset="1" stop-color="#5f666e" stop-opacity="0"/></radialGradient><radialGradient id="lit" cx="0.42" cy="0.38" r="0.62"><stop offset="0" stop-color="#b9c0c8" stop-opacity="0.9"/><stop offset="1" stop-color="#b9c0c8" stop-opacity="0"/></radialGradient>
+  </defs>
+  <g fill="url(#shade)"><circle cx="10.74" cy="8.57" r="3.51"/><circle cx="9.9" cy="10.84" r="3.41"/><circle cx="6.93" cy="11.14" r="3.91"/><circle cx="5.78" cy="8.87" r="3.48"/><circle cx="5.38" cy="6.91" r="3.94"/><circle cx="8.58" cy="5.97" r="3.29"/><circle cx="10.01" cy="6.68" r="3.62"/><circle cx="8" cy="8" r="4.16"/></g>
+  <g fill="url(#lit)"><circle cx="10.21" cy="7.39" r="2.53"/><circle cx="5.26" cy="7.7" r="2.5"/><circle cx="4.79" cy="5.64" r="2.84"/><circle cx="8.09" cy="4.84" r="2.37"/><circle cx="9.47" cy="5.48" r="2.61"/></g>
+</svg>

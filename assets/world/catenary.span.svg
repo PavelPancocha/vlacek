@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="28" viewBox="0 0 256 28">
+  <!-- Pole trolejového vedení: nosné lano s mírným průvěsem, věšáky a rovný trolejový drát. Pivot na levém konci troleje (0, 26); za běhu se natáhne na skutečné rozpětí. -->
+  <defs>
+  </defs>
+  <path d="M0 2 L8 2.48 L16 2.94 L24 3.36 L32 3.75 L40 4.11 L48 4.44 L56 4.73 L64 5 L72 5.23 L80 5.44 L88 5.61 L96 5.75 L104 5.86 L112 5.94 L120 5.98 L128 6 L136 5.98 L144 5.94 L152 5.86 L160 5.75 L168 5.61 L176 5.44 L184 5.23 L192 5 L200 4.73 L208 4.44 L216 4.11 L224 3.75 L232 3.36 L240 2.94 L248 2.48 L256 2" stroke="#2c3136" stroke-width="0.7" fill="none"/>
+  <path d="M16 2.94 V26 M48 4.44 V26 M80 5.44 V26 M112 5.94 V26 M144 5.94 V26 M176 5.44 V26 M208 4.44 V26 M240 2.94 V26 " stroke="#4d555c" stroke-width="0.35" fill="none"/>
+  <path d="M0 26 H256" stroke="#2c3136" stroke-width="0.9" fill="none"/>
+  <path d="M0 25.75 H256" stroke="#c98a4b" stroke-width="0.3" fill="none"/>
+</svg>

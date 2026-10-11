@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="34" viewBox="0 0 50 34">
+  <!-- Balvan: grey boulder with moss. Foot centre (25, 34). -->
+  <defs>
+  </defs>
+  <ellipse cx="25" cy="33" rx="25" ry="2" fill="#1d2a14" fill-opacity="0.18"/>
+  <path d="M1.05 33 L4.8 17 L13.26 5.44 L27.05 1.36 L39.22 7.48 L48.98 21.08 L49.77 33 Z" fill="#9a958c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M27.5 1.36 L25 20.4 L49 33 L48 21.08 L40 7.48 Z" fill="#747069"/><path d="M14 5.44 L25 20.4 L4 17 Z" fill="#aca8a1"/><path d="M25 20.4 L15 33 M25 20.4 L36 26.52" stroke="#64615b" stroke-width="0.5"/>
+  <path d="M6 15.64 Q15 10.2 23 11.56" stroke="#6b8e3a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M2.52 33.5 Q3.07 31.77 2.94 30.62 Q3.38 32.06 3.72 33.5 Z" fill="#6fae3e"/><path d="M34.04 33.5 Q34.3 31.13 33.52 29.55 Q34.71 31.53 35.24 33.5 Z" fill="#4e8a2c"/><path d="M26.06 33.5 Q26.6 31.78 26.47 30.64 Q26.92 32.07 27.26 33.5 Z" fill="#4e8a2c"/><path d="M15.96 33.5 Q16.79 31.74 17.34 30.56 Q17.01 32.03 17.16 33.5 Z" fill="#4e8a2c"/><path d="M12.79 33.5 Q13.08 30.69 12.33 28.81 Q13.48 31.16 13.99 33.5 Z" fill="#4e8a2c"/><path d="M41.72 33.5 Q42.08 30.96 41.51 29.27 Q42.46 31.39 42.92 33.5 Z" fill="#4e8a2c"/><path d="M24.49 33.5 Q25.07 31.24 25 29.74 Q25.37 31.62 25.69 33.5 Z" fill="#6fae3e"/><path d="M13.45 33.5 Q14.14 31.41 14.34 30.01 Q14.41 31.76 14.65 33.5 Z" fill="#6fae3e"/><path d="M31.49 33.5 Q32.25 31.71 32.62 30.51 Q32.5 32.01 32.69 33.5 Z" fill="#6fae3e"/><path d="M34.07 33.5 Q34.39 30.68 33.76 28.81 Q34.79 31.15 35.27 33.5 Z" fill="#4e8a2c"/>
+</svg>

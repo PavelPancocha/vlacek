@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="7" viewBox="0 0 50 7">
+  <!-- Connecting rod: big end on the crank pin at (3, 3.5), small end on
+       the crosshead at (47, 3.5), 44 u apart. Rotates about the big end. -->
+  <defs>
+    <linearGradient id="rod" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef1f4"/>
+      <stop offset="0.45" stop-color="#a7adb5"/>
+      <stop offset="1" stop-color="#5b6068"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#111214" stroke-width="0.4">
+    <path d="M3 1.4 L47 2.4 V4.6 L3 5.6 Z" fill="url(#rod)"/>
+    <path d="M7 3.5 H43" stroke="#6b7179" stroke-width="0.35" fill="none"/>
+    <rect x="0" y="0.3" width="6.4" height="6.4" rx="1.8" fill="url(#rod)"/>
+    <circle cx="3" cy="3.5" r="1.1" fill="#3a3d44"/>
+    <circle cx="47" cy="3.5" r="2.2" fill="url(#rod)"/>
+    <circle cx="47" cy="3.5" r="0.8" fill="#3a3d44"/>
+    <rect x="4.2" y="0" width="1.8" height="1.4" rx="0.4" fill="#c99a3c"/>
+  </g>
+</svg>

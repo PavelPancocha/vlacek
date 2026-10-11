@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="12" viewBox="0 0 22 12">
+  <!-- Kameny ve sněhu. Foot centre (11, 12). -->
+  <defs>
+  </defs>
+  <path d="M2 12 L4 6 L9 3 L14 5 L16 12 Z M12 12 L15 7 L19 6 L21 12 Z" fill="#9a958c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M3.4 6.6 L9 3 L14 5 Q9 4.6 3.4 6.6 Z M15 7 L19 6 L20 8 Q17 6.6 15 7 Z" fill="#f7fbff"/>
+  <path d="M0 12 Q11 10 22 12 Z" fill="#f7fbff"/>
+</svg>

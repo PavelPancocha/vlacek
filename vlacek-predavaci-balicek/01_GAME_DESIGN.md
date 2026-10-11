@@ -20,17 +20,17 @@ Během jízdy dítě drží prst v herním prostoru. Vlak zrychluje do klidné m
 
 ## 3. Co je součástí V1
 
-| Oblast    | Rozsah                                                                                                    |
-| --------- | --------------------------------------------------------------------------------------------------------- |
-| Souprava  | 10 odlišných lokomotiv, 32 druhů vagonků, opakování typů, 0–100 vagonků.                                  |
-| Sestavení | Klepnutím přidat, vybrat již přidaný vagónek, odebrat, změnit pořadí tlačítky; bez povinného přetahování. |
-| Jízda     | Jeden směr, boční 2D pohled, podržení pro jízdu, dojezd, brzda, píšťala.                                  |
-| Trať      | Kopce, klesání, zářezy, tunely, mosty, viadukty, náspy, přejezdy a stanice.                               |
-| Svět      | Šest biomů; vesnice a městské či průmyslové motivy jako scénky uvnitř nich.                               |
-| Život     | Auta, cyklisté, lidé a zvířata na oddělených drahách; protijedoucí vlak na druhé koleji.                  |
-| Interakce | Zvířecí reakce, mávání, balónky a další jednoduché dotykové animace.                                      |
-| Atmosféra | Pomalý den/noc, mírný déšť, sníh v horách; osvětlená a čitelná noc.                                       |
-| Provoz    | Online web, lokální pokračování, pauza, nastavení zvuku, PWA/offline tam, kde fungují.                    |
+| Oblast    | Rozsah                                                                                                                |
+| --------- | --------------------------------------------------------------------------------------------------------------------- |
+| Souprava  | 10 odlišných lokomotiv, 32 druhů vagonků, opakování typů, tolik vagonků, kolik dovolí délkový limit (dokument 14 §2). |
+| Sestavení | Klepnutím přidat, vybrat již přidaný vagónek, odebrat, změnit pořadí tlačítky; bez povinného přetahování.             |
+| Jízda     | Jeden směr, boční 2D pohled, podržení pro jízdu, dojezd, brzda, píšťala.                                              |
+| Trať      | Kopce, klesání, zářezy, tunely, mosty, viadukty, náspy, přejezdy a stanice.                                           |
+| Svět      | Šest biomů; vesnice a městské či průmyslové motivy jako scénky uvnitř nich.                                           |
+| Život     | Auta, cyklisté, lidé a zvířata na oddělených drahách; protijedoucí vlak na druhé koleji.                              |
+| Interakce | Zvířecí reakce, mávání, balónky a další jednoduché dotykové animace.                                                  |
+| Atmosféra | Pomalý den/noc, mírný déšť, sníh v horách; osvětlená a čitelná noc.                                                   |
+| Provoz    | Online web, lokální pokračování, pauza, nastavení zvuku, PWA/offline tam, kde fungují.                                |
 
 Všechny základní lokomotivy a vagonky jsou dostupné hned. Mezi typy není výkonnostní soutěž. Malá mašinka utáhne stejnou soupravu jako velká. Pohon nikdy nepotřebuje tankování, dobíjení ani doplňování vody.
 

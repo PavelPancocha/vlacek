@@ -40,6 +40,16 @@ Z-order není univerzální pravidlo „všechna zvířata před vlakem“: konk
 
 Pozadí používá dvě až tři parallax rychlosti. Nejbližší fyzický terén a kolej se pohybují přesně s kamerou. Na styku chunků nesmí zůstat prázdné místo v obloze či pozadí.
 
+Implementace vrstev 5 a 6 ([D-012](../docs/decisions/012-track-tiles-and-terrain.md)): kolej tvoří vektorové dlaždice z atlasu, pokládané po 64 u a otočené podle profilu. Pod nimi je svah náspu a louka v pásech, které k divákovi tmavnou. Zem každého chunku přesahuje do dalšího, aby na Canvasu nevznikl šev.
+
+Implementace vrstev 1–5 a 8–9 ([D-013](../docs/decisions/013-landscape-localities-and-backdrops.md)):
+
+- **Obloha a mraky.** Obloha je přechod barev. Mraky se posouvají rychlostí 0,06 a unášejí se podle simulačního času, takže v pauze stojí.
+- **Pozadí biomu.** Vzdálené pozadí se posouvá rychlostí 0,25, střední 0,55. Při změně biomu se prolne za 1,2 s.
+- **Zem za tratí.** Pole mají šikmé hranice ubíhající k obzoru a nádrže rovnou hladinu. Silnice je pod autem. Celá zem chunku se jednou vykreslí do textury.
+- **Rekvizity.** Zadní rekvizity se s hloubkou zmenšují, blízké se zvětšují. Žádná blízká rekvizita ani zvíře nepřesahuje do vlaku.
+- **Bez MSAA.** Hra se kreslí bez MSAA, protože hrany vznikají z textur: snímky atlasu mají 1 px průhledného okraje a zem je předkreslená. Bez MSAA běží jízda v softwarovém WebGL dvakrát rychleji.
+
 ## 4. Specifikace vozidlových assetů
 
 Každý vozidlový typ musí být rozpoznatelný při běžné velikosti a mít náhled pro katalog. Obrázky se připravují alespoň pro základní a vyšší hustotu nebo ve zdrojovém vektoru; runtime nemusí pracovat s velkým SVG DOM.
@@ -47,6 +57,8 @@ Každý vozidlový typ musí být rozpoznatelný při běžné velikosti a mít 
 Doporučené části: karoserie, kola či podvozky, volitelné táhlo, světla, pantograf, lokální interaktivní díl. Zdrojové soubory a exporty evidovat odděleně. Pro výkon běžně slučovat do atlasů; transparentní okraje nesmějí měnit pivot a geometrickou délku.
 
 Manifest definuje pivot a offsety, ne ručně vložené „magické posuny“ ve vykreslovací funkci. Pro každou sadu existuje kontrolní scéna: rovina, kopec, vrchol, tunel a noc. Nad jedním vagónkem nesmí být stín nebo kouř patřící jinému typu kvůli chybně sdílenému stavu.
+
+Implementace ([D-011](../docs/decisions/011-vector-vehicle-art-and-atlas.md)): zdrojem jsou SVG díly v `assets/vehicles/` v jednotkách u. Každé vozidlo má karoserii za koly, překryv před koly a táhly, sdílená kola a u parních lokomotiv spojnici, ojnici a křižák. Světlo dopadá zleva shora a lesk obručí nese neotáčivý překryv. Manifest `src/content/artManifest.ts` určuje rozměry, pivoty, polohy kol a parní rozvod; jízda i depo skládají díly stejnou funkcí `vehicleArtLayers`. Hra díly za běhu rasterizuje do jednoho atlasu v měřítku podle zoomu kamery a po změně velikosti okna atlas překreslí. `npm run validate:assets` kontroluje soubory, rozměry, délkový invariant, kola a táhla.
 
 ## 5. Barevnost, den a noc
 
@@ -79,6 +91,16 @@ Lokální hlasitost se může mírně měnit podle vzdálenosti, ale důležitá
 
 Režim omezených efektů sníží dekorativní pohyb, částice a houpání UI. Nezruší funkční signalizaci ani informace o reakci objektu. Veškeré důležité ovládání funguje i se zcela vypnutým zvukem.
 
+Implementace částic a drobných animací ([D-014](../docs/decisions/014-particles-and-small-animations.md)):
+
+- **Pole částic.** Vrstva 10 kreslí částice z omezeného, znovupoužívaného pole ve světových souřadnicích. Pole se posouvá simulačním časem, takže v pauze stojí.
+- **Zdroje částic.** Kouř, pára, výfuk a hvězdičky vycházejí z emitorů v manifestu vozidla, se sklonem modelu.
+  - Kouř jde v taktech hnacích kol.
+  - Jiskry přicházejí jen při prudkém brzdění.
+  - Sníh a listí víří kola jen nad sněhem či lesní půdou a jen za jízdy.
+- **Drobné pohyby.** Tráva a stromy se houpou, voda občas zableskne, zvířata jemně dýchají. Jen jednou za čas přeletí ptáci nebo motýli.
+- **Úsporný profil.** Profil `low` i omezené efekty snižují strop částic z 240 na 96 a hustotu na polovinu.
+
 Mluvené pojmenovávání věcí, automatický komentátor a další jazyky nejsou součást V1. Případně se později doplní jako volitelná zvuková vrstva, nikoli závislost herní logiky.
 
 ## 8. Rozložení obrazovky
@@ -107,6 +129,17 @@ Výchozí cíle, které se měří na skutečném buildu:
 - Úplný offline balík se všemi lokomotivami, vozy, prostředími a zvuky cílit do 45 MiB přenášených souborů.
 - Odhad dekódovaných textur: do 96 MiB v úsporném profilu, do 192 MiB ve standardním. To není totéž jako velikost PNG na disku.
 - Běžné atlasy nejvýše 2048 × 2048, skutečný limit respektuje zjištěná kapacita rendereru. Není nutné mít všech šest biomů současně na GPU.
+
+Stav ([D-013](../docs/decisions/013-landscape-localities-and-backdrops.md)): hra má dva atlasy, oba do 2048 × 2048:
+
+- hlavní atlas pro vozidla, kolej, rekvizity a zvířata, do 2 px/u;
+- atlas pozadí a mraků všech šesti biomů, do 1 px/u.
+
+Dekódované textury se odhadují asi na 60 MiB:
+
+- atlasy;
+- zdrojové obrázky dílů;
+- zem nejvýše šesti živých chunků v nejvýše 1 px/u.
 
 Přepínání biome nesmí na hlavním vlákně najednou dekódovat velkou novou sadu a zadrhnout řízení. Přednačíst aktuální a následující prostředí; po odjezdu a uvolnění referencí odložit nepotřebné textury. Dlouhý vlak za kamerou potřebuje geometrii, ne všechny dekódované obrázky minulého lesa.
 
