@@ -32,6 +32,7 @@ Katalog dosud elektrickou lokomotivu neměl; test to výslovně hlídal, dokud v
    - Příhradový stožár stojí 12 u za kolejí, ve vrstvě za vlakem. Jeho úchyt troleje je přesně nad bodem stožáru, kde drát drží doména.
    - Pole drátu (nosné lano s průvěsem, věšáky, trolej) visí nad vlakem ve vrstvě `wires`. Natahuje se na skutečné rozpětí a sklání se podle koleje.
    - Každý chunk kreslí své stožáry a pole k dalšímu stožáru, i když ten stojí už v dalším chunku. Na švech tak vedení nepřerušuje.
+   - U tunelu rozhoduje společná doménová hranice `TUNNEL_MAST_CLEARANCE_U` (60 u od portálu, bez krajních bodů): uvnitř kreslí `TunnelView` závěs ze stropu, vně včetně hranice zůstává stožár ([D-018](018-bridges-and-tunnels.md), R6). Polohy podpěr ani drát se nemění.
 5. **Pantograf.**
    - `pantographReachU` spočítá vzdálenost od základny na střeše po drát podél osy nakloněné lokomotivy, v bodě, kde se sběrač drátu skutečně dotkne.
    - `vehicleArtLayers` natáhne ramena na tuto délku. Přizpůsobení je omezené (`PANTOGRAPH_STRETCH`, 0,07–1,6 násobku kresby) a sběrač se nenatahuje.

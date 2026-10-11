@@ -131,7 +131,7 @@ Implementace ([D-016](../docs/decisions/016-electric-locomotive-and-catenary.md)
 - Stožáry stojí v globální fázi po 256 u. Stožár, který by padl na silnici přejezdu, se posune 48 u vedle ní.
 - Drát vede rovně mezi stožáry, u každého 160 u nad kolejí. Od této výšky se odchyluje nejvýš o 3,2 u.
 - Pantograf natahuje ramena k drátu v bodě dotyku, v mezích 0,07–1,6 násobku kresby. V depu leží sklopený.
-- Stožár se drží 80 u od středu potoka pod mostem. V tunelu a 72 u kolem něj drží drát závěs ze stropu ([D-018](../docs/decisions/018-bridges-and-tunnels.md)).
+- Stožár se drží 80 u od středu potoka pod mostem. V tunelu a méně než 60 u od portálů drží drát závěs ze stropu; na hranici a za ní stojí stožár na původním místě ([D-018](../docs/decisions/018-bridges-and-tunnels.md), oprava R6). Klasifikace a kreslení sdílejí tutéž hranici, polohy podpěr se nemění.
 - Portálové podpěry ve stanicích zatím chybějí.
 
 ## 10. Nekonečná jízda bez ztráty přesnosti

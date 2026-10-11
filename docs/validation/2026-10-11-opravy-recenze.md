@@ -34,3 +34,14 @@ Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/config/gameConf
 | `R5: keeps live crossing instances and does not recreate a crossing behind the stopped train` (svět 4242, 60 ticků stání) | `expected "LevelCrossing" to not be called at all, but actually been called 60 times` | PASS (soubor 20 PASS) |
 
 Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/ride/RideSimulation.test.ts -t 'R5:'`. Pravidla přejezdu ani save se nemění, proto [D-015](../decisions/015-level-crossings.md) zůstává beze změny.
+
+## R6 — podpěra vedení u portálu tunelu
+
+Klasifikace podpěry (`catenarySupport`) a kreslení závěsu v `TunnelView` sdílejí jednu hranici 60 u od portálu. Sloup na hranici a za ní má stožár na původním místě, sloup blíž portálu závěs ze stropu; nitro tunelu zůstává 64 u za portálem. Polohy podpěr, svět ani `TRACK_GENERATOR_VERSION` se nemění: otisk profilů, objektů, přejezdů, mostů, tunelů, druhých kolejí a podpěr je před a po změně shodný pro 5280 chunků (seedy 0–63, 123 a 4242, chunky −16 až 63; svět 123 má dál přejezd v chunku 3, tunel v chunku 6 a druhou kolej v bloku 1).
+
+| Test                                                                                    | Red                                                          | Green |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----- |
+| `R6: gives every support a mast or a drawn hanger in world 25, chunk 6`                 | `world 25 chunk 6 support 6912: expected false to be true`   | PASS  |
+| `R6: gives every support a mast or a drawn hanger across many tunnel worlds` (64 světů) | `world 0 chunk -10 support -9984: expected false to be true` | PASS  |
+
+Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- src/render/TunnelView.test.ts`. Test kreslení leží u rendereru (`src/render/*.test.ts`), protože typy Phaseru zná jen rendererový TypeScript projekt; Vitest ho pouští v Node a nahrazuje jen kreslicí platformu ([vývojový návod](../development.md)). Dokumentace: dokument 03 §9, [D-016](../decisions/016-electric-locomotive-and-catenary.md), [D-018](../decisions/018-bridges-and-tunnels.md). Recenze lane: LAND.

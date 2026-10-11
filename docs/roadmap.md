@@ -173,6 +173,7 @@ R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na ná
 - **Problém:** `catenarySupport` (`src/domain/world/Catenary.ts`) označí sloup do 72 u od portálu jako závěs ze stropu, takže stožár zmizí. `TunnelView` ale kreslí závěsy jen uvnitř zapečeného nitra (64 u za portálem, zkrácené o 4 u). Sloup 64–72 u za portálem nemá stožár ani závěs a drát se lomí ve vzduchu (například svět 25, chunk 6).
 - **Oprava:** jedna společná hranice pro obojí: buď závěs kreslit až do hranice klasifikace, nebo sloupu mimo nitro vrátit stožár.
 - **Test:** unit průchod tunely mnoha světů: každý sloup má buď stožár, nebo kreslený závěs; regresní svět 25.
+- **Stav:** hotovo. Klasifikace podpěry a kreslení závěsu sdílejí hranici 60 u od portálu; sloup na hranici a dál má stožár na původním místě. Svět ani verze generátoru se nemění (otisk 5280 chunků shodný).
 
 #### R7 — souběžná kolej i bez grafiky
 

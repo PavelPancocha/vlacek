@@ -14,8 +14,8 @@ export const POLE_ROAD_CLEARANCE_U = 48;
 /** A pole off a stream under a bridge, beside the abutments. */
 export const POLE_STREAM_CLEARANCE_U = BRIDGE_HALF_U + 8;
 
-/** No mast stands in a tunnel or this close to its portals (u). */
-export const TUNNEL_MAST_CLEARANCE_U = 72;
+/** Ceiling hangers fit this far beyond the portals (u); elsewhere use masts. */
+export const TUNNEL_MAST_CLEARANCE_U = 60;
 
 /**
  * What holds the wire at a pole (world x): a mast beside the track, or in
