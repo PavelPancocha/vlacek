@@ -266,7 +266,11 @@ export class RideSimulation {
     );
     for (let k = first; k <= last; k++) {
       const site = crossingSite(this.#seed, k);
-      if (site && !this.#crossings.has(site.id))
+      if (
+        site &&
+        crossingWorldX(site) >= behindX &&
+        !this.#crossings.has(site.id)
+      )
         this.#crossings.set(
           site.id,
           new LevelCrossing(

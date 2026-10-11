@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import * as crossingModule from '../../../src/domain/interaction/LevelCrossing.ts';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
 import { TRACK_GENERATOR_VERSION } from '../../../src/domain/world/TrackProfile.ts';
 import {
@@ -217,6 +218,38 @@ describe('RideSimulation restore guard', () => {
     const same = restored.crossings.find((c) => c.id === crossing.id);
     expect(same?.phase).toBe('CLOSED');
     expect(same?.barrier).toBe(1);
+  });
+
+  it('R5: keeps live crossing instances and does not recreate a crossing behind the stopped train', () => {
+    // Observe allocations while keeping the real crossing automaton.
+    const created = vi.spyOn(crossingModule, 'LevelCrossing');
+    try {
+      const ride = new RideSimulation(setup(0));
+      const crossing = ride.crossings[0];
+      if (!crossing) throw new Error('no crossing in world 4242');
+      const chunk = Math.floor(crossing.worldX / chunkWidthU);
+      const behindX = () => ride.sample(ride.tailS).x - 1024;
+      for (let i = 0; i < 6000 && behindX() <= crossing.worldX; i++) {
+        expect(ride.crossings.find((c) => c.id === crossing.id)).toBe(crossing);
+        ride.step('THROTTLE');
+      }
+      for (let i = 0; i < 120 && ride.speedUPerSec > 0; i++) ride.step('BRAKE');
+      expect(ride.speedUPerSec).toBe(0);
+      expect(behindX()).toBeGreaterThan(crossing.worldX);
+      expect(Math.floor(behindX() / chunkWidthU)).toBe(chunk);
+      expect(ride.crossings).not.toContain(crossing);
+      const live = ride.crossings;
+      created.mockClear();
+      for (let i = 0; i < 60; i++) {
+        ride.step('COAST');
+        expect(ride.crossings).toEqual(live);
+        for (const current of ride.crossings)
+          expect(live.find((c) => c.id === current.id)).toBe(current);
+      }
+      expect(created).not.toHaveBeenCalled();
+    } finally {
+      created.mockRestore();
+    }
   });
 });
 

@@ -166,6 +166,7 @@ R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na ná
 - **Problém:** `#updateCrossings` (`src/domain/ride/RideSimulation.ts`) prochází chunky od `behindX`. Když vlak stojí kousek za přejezdem, ale `behindX` je pořád v jeho chunku, vytvoří se v každém ticku nový `LevelCrossing` a hned se smaže. Při 60 Hz je to zbytečná alokace a riziko zadrhávání GC na slabém zařízení.
 - **Oprava:** přeskočit místa, jejichž `crossingWorldX` je už za `behindX`, ještě před vytvořením automatu.
 - **Test:** unit test zastaví vlak za přejezdem a ověří, že se instance automatu mezi ticky nemění a nevzniká nová.
+- **Stav:** hotovo. Místa, jejichž `crossingWorldX` už je za `behindX`, se přeskočí dřív, než vznikne automat; stojící vlak za přejezdem už nové instance nealokuje.
 
 #### R6 — podpěra vedení u portálu tunelu
 

@@ -24,3 +24,13 @@ Validace konfigurace vyžaduje, aby minimum i maximum `interaction.npcTrainSpeed
 | `R2: rejects an infinite maximum speed for oncoming trains` | `expected [] to deeply equal [ 'interaction.npcTrainSpeedUPerSec' ]` | PASS  |
 
 Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/config/gameConfig.test.ts` (red 1 FAIL / 15, green 15 PASS). Meze jsou zapsané v dokumentu 13 („Odvozené hodnoty a pravidla“).
+
+## R5 — přejezd za koncem vlaku se nevytváří znovu
+
+`RideSimulation.#updateCrossings` přeskočí místa, jejichž `crossingWorldX` je už za `behindX`, dřív než vytvoří automat. `behindX` leží 1024 u za koncem soupravy a konfliktní zóna přejezdu má poloviční šířku 62 u, takže filtr nikdy nevynechá přejezd, na kterém ještě stojí konec vlaku (dokument 05 §4).
+
+| Test                                                                                                                      | Red                                                                                   | Green                 |
+| ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------- |
+| `R5: keeps live crossing instances and does not recreate a crossing behind the stopped train` (svět 4242, 60 ticků stání) | `expected "LevelCrossing" to not be called at all, but actually been called 60 times` | PASS (soubor 20 PASS) |
+
+Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/ride/RideSimulation.test.ts -t 'R5:'`. Pravidla přejezdu ani save se nemění, proto [D-015](../decisions/015-level-crossings.md) zůstává beze změny.
