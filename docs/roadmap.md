@@ -201,6 +201,7 @@ R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na ná
 - **Problém:** `RideScene.#reset()` vyčistí chunky, částice i ticky, ale ne stav `Backdrop` (vrstvy, prolínání, biom). Když nová cesta začíná v jiném biomu, první snímek ukáže pozadí staré cesty a 1,2 s se prolíná.
 - **Oprava:** `Backdrop` dostane reset stavu jízdy, který zavolá `RideScene.#reset()`.
 - **Test:** E2E druhé cesty, jejíž první biom se liší: hned první snímek ukáže nový biom bez prolínání.
+- **Stav:** hotovo. `Backdrop` má reset stavu jízdy, který volá `RideScene.#reset()`; druhá cesta ukáže svůj biom hned v prvním snímku, bez staré vrstvy a bez prolínání.
 
 ### Potom (M3–M5)
 

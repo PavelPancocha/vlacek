@@ -50,6 +50,8 @@ Vlastník zvolil „vektory a vyřezaná scenérie“. Referenční listy ale ni
 
    Pozadí ukazuje biom v 65 % šířky obrazu a změnu biomu prolne za 1,2 s. Pod středním pozadím je výplň jen tam, kde zem za tratí klesne pod jeho spodní hranu. Posun pozadí a mraků se počítá z absolutní polohy ve světě, ne z polohy vůči počátku vykreslování. Ten se každých 4096 u posouvá kvůli přesnosti, a kopce by jinak při každém posunu poskočily o desítky až stovky u (Codex review PR #2).
 
+   Nová cesta vyčistí biom obou vrstev a stav prolínání přes `Backdrop.reset()`, který volá `RideScene.#reset()`. Atlas a obrázky se znovu použijí; první vykreslený snímek nové cesty ukáže její biom plně, bez prolínání se starou cestou (R10). Prolínání za 1,2 s zůstává pro změny biomu uvnitř jedné cesty. Save, seed ani geometrie tratě se nemění.
+
 5. **Grafika a atlasy.** Všech 114 dílů světa jsou ručně psané SVG v `assets/world/` v jednotkách u se stabilním pivotem. Generátory použité při kreslení jsou vývojová pomůcka; zdrojem jsou SVG soubory.
    - Obsah dílů:
      - kolej;
@@ -89,6 +91,7 @@ Vlastník zvolil „vektory a vyřezaná scenérie“. Referenční listy ale ni
 - Diagnostika `?debug=1` hlásí `backdropAtlas`, `backdrop` (skutečný `currentBiome`, `incomingBiome` a průběh prolínání `fade` od 0 do 1), `scenery` (cílový biom, lokality v obraze, blízké rekvizity, překryvy s vlakem a počty druhé koleje a portálů), `backdropMidOffsetU` a `chunkEdges`.
 - E2E kontroluje:
   - krajinu ze dvou atlasů;
+  - první snímek druhé cesty v jiném biomu bez staré vrstvy a bez prolínání (R10);
   - žádný překryv vlaku pro tři seedy;
   - zvířata na telefonu nad tlačítky.
 - Test švů na Canvasu hledá šev jen na hranicích chunků, protože tenké stonky rostlin vypadají jako šev.

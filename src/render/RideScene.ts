@@ -589,6 +589,7 @@ export class RideScene extends Phaser.Scene {
 
   #reset(): void {
     this.#particles.clear();
+    this.#backdrop?.reset();
     this.#npcEffects.clear();
     this.#frameTick = undefined;
     this.#destroyChunks();

@@ -75,3 +75,13 @@ Bez atlasu kreslí `ChunkView` souběžnou kolej a portálové kopce jednoduchý
 | `PWA-10: without art the parallel track and portals frame the oncoming train` (svět 123, SVG zablokovaná) | `oncoming.spec.ts:129` — `expect(scenery.secondaryTrackViews).toBeGreaterThan(0)`, `Received: 0` (desktop i tablet) | `oncoming.spec.ts` 4 PASS (1,3 min) |
 
 Red proti produkčnímu buildu před opravou, jen s testem a diagnostikou: `flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- tests/e2e/oncoming.spec.ts tests/e2e/backdrop-reset.spec.ts --grep 'PWA-10|R10:' --workers 2` (4 FAIL). Související E2E (`oncoming`, `landscape`, `art`, `game`): 90 PASS, 4 skipped (vícedotykové testy v desktopovém projektu). Dokumentace: [D-011](../decisions/011-vector-vehicle-art-and-atlas.md) §6, [D-013](../decisions/013-landscape-localities-and-backdrops.md) (diagnostika), [D-017](../decisions/017-second-track-and-oncoming-train.md), [vývojový návod](../development.md). Snímek: kolej a portál bez grafiky (`secondaryTrackViews: 2`, `secondaryPortalViews: 1`). Recenze lane: LAND.
+
+## R10 — pozadí se s novou cestou vrátí na začátek
+
+`Backdrop` má reset stavu jízdy (vrstvy, prolínání, biom), který volá `RideScene.#reset()`. Druhá cesta tak hned v prvním snímku ukáže svůj biom bez staré vrstvy a bez prolínání. Diagnostika `backdrop` hlásí `currentBiome`, `incomingBiome` a průběh prolínání `fade`.
+
+| Test                                                                                                    | Red                                                                                                                                                                | Green                     |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
+| `R10: the first frame of a second journey shows its biome without crossfade` (`backdrop-reset.spec.ts`) | `backdrop-reset.spec.ts:75` — první snímek `currentBiome: "forest"`, `incomingBiome: "countryside"`, `fade: 0` místo `countryside`, bez příchozí vrstvy, `fade: 1` | 2 PASS (desktop i tablet) |
+
+Příkaz: `flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- tests/e2e/backdrop-reset.spec.ts --workers 2`. Dokumentace: [D-013](../decisions/013-landscape-localities-and-backdrops.md), [vývojový návod](../development.md). Recenze lane: LAND.

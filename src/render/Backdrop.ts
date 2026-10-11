@@ -124,6 +124,14 @@ export class Backdrop {
     this.#fade = 1;
   }
 
+  /** Clears journey state while reusing the atlas and its images. */
+  reset(): void {
+    for (const layer of this.#layers) this.#hide(layer);
+    this.#fade = 1;
+    this.#midOffsetU = 0;
+    this.#groundTopY = 0;
+  }
+
   /** Biomes actually drawn by both layers and their crossfade progress. */
   get state() {
     return {
