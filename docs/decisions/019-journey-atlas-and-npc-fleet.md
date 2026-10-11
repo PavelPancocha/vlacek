@@ -1,0 +1,26 @@
+# D-019: Atlas vozidel jedné jízdy a sada protijedoucích vlaků
+
+Datum: 2026-10-11. Stav: přijato.
+
+## Kontext
+
+Katalog V1 má 10 lokomotiv a 32 druhů vagonků ([dokument 06](../../vlacek-predavaci-balicek/06_KATALOG_OBSAHU.md)). Dosavadní `RideScene` skládala díly všech vozidel a všech nepozadových dílů světa do společného atlasu ([D-011](011-vector-vehicle-art-and-atlas.md), [D-013](013-landscape-localities-and-backdrops.md)). Pouhé omezení vozidel na jednu jízdu tento atlas do 2048 × 2048 nezmenší: test s osmi největšími různými vozidly a největší zbývající NPC sadou při 2 px/u selhal (`art does not fit a 2048 × 2048 atlas`). Součet ploch je 4 332 156 px² bez paddingu proti kapacitě 4 194 304 px². Selhala i povolená souprava s jednou lokomotivou, dlouhá 1 568 u při limitu 1 600 u; s NPC sadou a světem zabírá 4 257 468 px² bez paddingu.
+
+## Rozhodnutí
+
+1. **Měřítko.** Autoritativní strop `ART_MAX_PX_PER_U` je **2 px/u**, krok 0,25 a minimum 0,5 px/u; pozadí má strop 1 px/u. Hodnota 2,5 v D-011 a roadmapě byla zastaralá: commit `9da99c3` při zavedení krajiny snížil strop na 2 a protokol D-013 zaznamenal nevyhovující test při 2,5 a green při 2 px/u. Potvrzuje to dokument 07 §10. Konstantu neměníme.
+2. **Tři atlasy.** Vozidla hráče a NPC sady mají vlastní atlas; díly světa mají oddělený atlas a pozadí zůstává ve svém dosavadním atlasu. `journeyArtKeys(vehicles, fleet)` sbírá bez duplicit karoserie, překryvy, kola, táhla a pantografy. Atlas vozidel se přestaví při změně jízdy, tedy při výjezdu z depa a obnově; atlas světa se kvůli tomu nepřestavuje. Změna zoomového kroku dál rasterizuje každý atlas samostatně. Všechny SVG zdroje se načtou jednou při startu. Depo dál skládá SVG vrstvy `<image>`.
+3. **NPC sada.** Čistá doménová funkce `npcFleetFor(seed, catalog)` používá samostatný klíč `npc-fleet`. Vybere dva různé parní či naftové typy lokomotiv a šest různých typů vagonků, vždy bez `placeholder: true`. Elektrické a fantazijní lokomotivy do sady nepatří. Je-li způsobilých vozidel méně než 2/6, vrátí všechna způsobilá. Příznak `placeholder?: true` patří do `VehicleBase`: doména potřebuje katalogový údaj o dostupnosti kresby, nikoli import manifestu nebo rendereru. `GameSession` předává sadu simulaci; `OncomingTrain` dál vybírá obsazení každého místa z této sady.
+4. **Dávkování.** [D-010](010-webgl-single-texture-batches.md) zůstává: `maxTextures: 1`. Hlavní vrstvy jsou zem a kolej → vlak → popředí, rekvizity a zvířata → částice. Částice zůstávají ve vrstvě 10 nad vedením, krytem tunelu, blízkými rekvizitami a zvířaty podle dokumentu 07 §3; pořadí hlídá test `RideSceneDepth`. Popředí i částice používají atlas světa, jejich vzájemné pořadí proto nepřidává přechod mezi atlasem světa a vozidel. Každý takový přechod ukončí dávku. V běžné parní jízdě bez NPC byly v Chromium headless shell 1248 naměřeny dva přechody (svět → vozidla → svět) v každém z 12 po sobě jdoucích snímků WebGL, s aktivními částicemi. Další dva přechody při viditelném NPC jsou odvozené z pořadí vrstev, nikoli změřené. Textury pozadí, předkreslené země a grafických překryvů mají své vlastní přechody.
+5. **Fallback.** D-011 §6 platí samostatně pro každý atlas: selhání vozidel nevyřadí svět a opačně. Atlas bez textury se zahodí a použijí se siluety či jednoduché tvary; při selhání změny měřítka může atlas zachovat funkční starou texturu. Neúspěšný krok se neopakuje každý snímek. Načtené zdrojové textury `art-source:*` se uvolní i při selhání a zahozený atlas uvolní dekódované obrázky.
+
+## Důsledky
+
+- Unit test rozpočtu používá skutečné manifesty a dočasnou fixture rozměrů vozidel, která ještě nemají kresbu, podle smlouvy vozidel zmrazené před kreslením (pracovní podklad mimo repozitář). Fixture se odstraní, až každé katalogové vozidlo bude mít kresbu. Výběr největších vozidel je odvozen z ploch unikátních dílů, nikoli z ručního seznamu ID.
+- Při 2 px/u má atlas světa 134 rámečků a 2042 × 1332 px, roadmapová sada vozidel 46 rámečků a 1950 × 1356 px, povolená souprava s NPC sadou 44 rámečků a 1932 × 1328 px. Test hlídá oba samostatné atlasy a obě vozidlové fixture.
+- Diagnostika `artAtlas` popisuje atlas světa, `vehicleAtlas` atlas vozidel včetně držených ID a klíče textury. `artVehicles` počítá skutečně vykreslená hráčova vozidla z kresby. E2E pokrývá smíšené skupiny, opakovaný výjezd, obnovu a fallback jednotlivých atlasů ([protokol](../validation/2026-10-10-iterace-upravy.md)).
+- Rozdělení atlasů nemění zdrojové soubory; přenos a rozpočty se znovu změří po přidání celé kresby V1. Dopad na FPS měří `measure:perf` po integraci; fyzická zařízení jsou NEOVĚŘENO.
+
+## Kompatibilita
+
+Nic nového se neukládá. NPC sada se obnoví ze seedu a katalogu, atlasy jsou pouze rendererový stav. Přidání 31 katalogových ID **nezvyšuje `contentVersion` dokumentu 08**: ID se pouze přidávají, staré savy obsahují nadále existující ID, proto není potřeba migrace (fixture `v1-catalog-0.1.json`). Schéma, generátor ani geometrie rozehrané trasy se nemění.

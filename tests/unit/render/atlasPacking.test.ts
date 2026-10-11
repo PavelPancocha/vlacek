@@ -1,5 +1,9 @@
+import { artParts, vehicleArt } from '../../../src/content/artManifest.ts';
+import { vehicleArtLayers } from '../../../src/content/artLayers.ts';
+import { locomotives, wagons } from '../../../src/content/vehicles.ts';
+import { gameConfig } from '../../../src/config/gameConfig.ts';
+import { worstJourneyFixtures } from './journeyBudgetFixture.ts';
 import { describe, expect, it } from 'vitest';
-import { artParts } from '../../../src/content/artManifest.ts';
 import { isBackdropPart, worldParts } from '../../../src/content/worldArt.ts';
 import {
   ART_MAX_PX_PER_U,
@@ -12,6 +16,7 @@ import {
   frameOrigin,
   framesWithMargin,
   packAtlas,
+  journeyArtKeys,
 } from '../../../src/render/atlasPacking.ts';
 
 const sizes = (count: number, seed = 1) =>
@@ -90,27 +95,39 @@ describe('vehicle art atlas', () => {
     expect(artScaleFor(0.576, BACKDROP_MAX_PX_PER_U)).toBe(0.75);
   });
 
-  it('fits vehicles, track and props into one atlas at the largest raster scale (doc 13 budget)', () => {
-    const world = Object.fromEntries(
-      Object.entries(worldParts).filter(([key]) => !isBackdropPart(key)),
-    );
-    const parts = { ...artParts, ...world };
-    const items = artAtlasItems(parts, ART_MAX_PX_PER_U);
-    expect(items.map((item) => item.key).sort()).toEqual(
-      Object.keys(parts).sort(),
-    );
-    const body = items.find((item) => item.key === 'steam_local.body');
-    expect(body).toEqual({
-      key: 'steam_local.body',
-      width: 156 * ART_MAX_PX_PER_U,
-      height: 100 * ART_MAX_PX_PER_U,
+  for (const fixture of worstJourneyFixtures) {
+    it(`fits ${fixture.name} and the separate world atlas at ART_MAX_PX_PER_U`, () => {
+      expect(fixture.vehicles).toHaveLength(8);
+      expect(
+        fixture.fleet.filter((v) => v.kind === 'steam' || v.kind === 'diesel'),
+      ).toHaveLength(2);
+      expect(fixture.fleet).toHaveLength(8);
+      if (fixture.name.startsWith('legal')) {
+        expect(
+          fixture.vehicles.filter((v) =>
+            ['steam', 'diesel', 'electric', 'fantasy'].includes(v.kind),
+          ),
+        ).toHaveLength(1);
+        const lengthU =
+          fixture.vehicles.reduce((sum, v) => sum + v.lengthU, 0) +
+          (fixture.vehicles.length - 1) * gameConfig.train.couplerGapU;
+        expect(lengthU).toBeLessThanOrEqual(gameConfig.train.maxConsistLengthU);
+      }
+      const world = Object.fromEntries(
+        Object.entries(worldParts).filter(([key]) => !isBackdropPart(key)),
+      );
+      for (const parts of [world, fixture.parts]) {
+        const items = artAtlasItems(parts, ART_MAX_PX_PER_U);
+        const atlas = packAtlas(items, {
+          maxSize: MAX_ATLAS_EDGE_PX,
+          paddingPx: ATLAS_PADDING_PX,
+        });
+        expect(atlas.frames.size).toBe(items.length);
+        expect(atlas.width).toBeLessThanOrEqual(MAX_ATLAS_EDGE_PX);
+        expect(atlas.height).toBeLessThanOrEqual(MAX_ATLAS_EDGE_PX);
+      }
     });
-    const atlas = packAtlas(items, {
-      maxSize: MAX_ATLAS_EDGE_PX,
-      paddingPx: ATLAS_PADDING_PX,
-    });
-    expect(atlas.frames.size).toBe(items.length);
-  });
+  }
 
   it('fits the backdrops and clouds into their own atlas at 1 px/u', () => {
     const backdrops = Object.fromEntries(
@@ -172,5 +189,51 @@ describe('vehicle art atlas', () => {
     const origin = frameOrigin({ x: 15, y: 10 }, 2, frame);
     expect(origin.x * frame.width).toBeCloseTo(30 + FRAME_MARGIN_PX, 9);
     expect(origin.y * frame.height).toBeCloseTo(20 + FRAME_MARGIN_PX, 9);
+  });
+});
+
+describe('journeyArtKeys (H0, D-019)', () => {
+  it('includes bodies, overlays, wheels, steam rods and pantographs of player and fleet, once each', () => {
+    const vehicles = [...locomotives, ...wagons].filter((v) =>
+      ['steam_local', 'electric_retro', 'cargo_box'].includes(v.id),
+    );
+    const fleet = {
+      locomotives: locomotives.filter(
+        (v) => v.id === 'diesel_mainline' || v.id === 'steam_local',
+      ),
+      wagons: wagons.filter(
+        (v) => v.id === 'cargo_box' || v.id === 'fun_balloons',
+      ),
+    };
+    const keys = journeyArtKeys([...vehicles, ...vehicles], fleet);
+    const expected = new Set(
+      [...vehicles, ...fleet.locomotives, ...fleet.wagons].flatMap((v) => {
+        const art = vehicleArt[v.id];
+        if (!art) throw new Error(v.id);
+        return vehicleArtLayers(art, v.lengthU, 0).map((layer) => layer.part);
+      }),
+    );
+    expect(new Set(keys)).toEqual(expected);
+    expect(keys).toHaveLength(expected.size);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        'steam_local.coupling-rod',
+        'steam_local.connecting-rod',
+        'steam_local.crosshead',
+        'electric_retro.pantograph',
+        'electric_retro.pantograph-head',
+        'wheel.diesel',
+      ]),
+    );
+    expect(keys).not.toContain('magic_stars.body');
+    for (const key of keys) expect(artParts[key]).toBeDefined();
+  });
+  it('has no keys for vehicles without art or an empty journey', () => {
+    expect(
+      journeyArtKeys([{ id: 'not-drawn-yet', lengthU: 164 }], {
+        locomotives: [],
+        wagons: [],
+      }),
+    ).toEqual([]);
   });
 });

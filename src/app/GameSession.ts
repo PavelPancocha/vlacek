@@ -1,3 +1,5 @@
+import type { NpcFleet } from '../domain/interaction/OncomingTrain.ts';
+import { npcFleetFor } from '../domain/interaction/npcFleet.ts';
 import type { GameConfig } from '../config/gameConfig.ts';
 import type { CatalogLocomotive, CatalogWagon } from '../content/vehicles.ts';
 import {
@@ -149,6 +151,13 @@ export class GameSession {
     return this.#journey?.seed;
   }
 
+  /** Reconstructed from seed and catalog; no additional save field (D-019). */
+  get journeyNpcFleet(): NpcFleet | undefined {
+    return this.#journey
+      ? npcFleetFor(this.#journey.seed, this.#deps.catalog)
+      : undefined;
+  }
+
   get journeyConsist(): Consist | undefined {
     return this.#journey?.consist;
   }
@@ -261,19 +270,9 @@ export class GameSession {
       vehicles: this.#vehicles(consist),
       // Changing the locomotive starts a new journey (doc 03 §9).
       electrified: locomotive?.requiresCatenary === true,
-      // Oncoming trains: steam or diesel locomotives (doc 03 §9), only
-      // vehicles that already have their art (doc 06 §8). H0 moves this
-      // choice into the domain's journey fleet (D-019).
-      npcFleet: {
-        locomotives: this.#deps.catalog.locomotives.filter(
-          (candidate) =>
-            !candidate.placeholder &&
-            (candidate.power === 'steam' || candidate.power === 'diesel'),
-        ),
-        wagons: this.#deps.catalog.wagons.filter(
-          (candidate) => !candidate.placeholder,
-        ),
-      },
+      // Oncoming trains: the journey's seeded fleet of steam or diesel
+      // locomotives and wagons that have their art (D-019).
+      npcFleet: npcFleetFor(seed, this.#deps.catalog),
       speedFactor: this.#settings.maxSpeedFactor,
       config: this.#deps.config,
       ...(restore

@@ -12,9 +12,26 @@ export interface DebugSnapshot {
   renderedVehicles: number;
   /** Rendered vehicles drawn from their art (doc 14 §3). */
   artVehicles: number;
-  /** The vehicle art atlas (D-011); undefined if the art failed to load. */
+  /** The world art atlas (D-019); undefined if this atlas failed. */
   artAtlas:
-    | { width: number; height: number; frames: number; pxPerU: number }
+    | {
+        width: number;
+        height: number;
+        frames: number;
+        pxPerU: number;
+        textureKey: string;
+      }
+    | undefined;
+  /** Journey vehicle atlas; IDs include the NPC fleet (D-019). */
+  vehicleAtlas:
+    | {
+        width: number;
+        height: number;
+        frames: number;
+        pxPerU: number;
+        textureKey: string;
+        vehicleIds: string[];
+      }
     | undefined;
   /** Decorative particles (doc 14 §4, D-014): counts and a position sum. */
   effects: {

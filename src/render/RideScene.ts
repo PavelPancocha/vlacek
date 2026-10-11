@@ -17,6 +17,7 @@ import {
   isBackdropPart,
   worldParts,
 } from '../content/worldArt.ts';
+import type { NpcFleet } from '../domain/interaction/OncomingTrain.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import type { Biome } from '../domain/world/Biomes.ts';
 import { heightAtX } from '../domain/world/ArcLengthTable.ts';
@@ -44,8 +45,10 @@ import {
   ART_MAX_PX_PER_U,
   BACKDROP_MAX_PX_PER_U,
   frameOrigin,
+  journeyArtKeys,
 } from './atlasPacking.ts';
 import { placeAnimal } from './animalPlacement.ts';
+import { DEPTH } from './RideSceneDepth.ts';
 import { AmbientLife } from './particles/AmbientLife.ts';
 import { EffectsView } from './particles/EffectsView.ts';
 import { emitterWorldPoint, passEffectAt } from './particles/emission.ts';
@@ -77,6 +80,7 @@ export interface RideSceneHost {
   ride(): RideSimulation | undefined;
   /** Vehicle definitions of the current journey, locomotive first. */
   journeyVehicles(): readonly ShapedVehicle[];
+  journeyNpcFleet(): NpcFleet | undefined;
   catalogVehicles(): readonly ShapedVehicle[];
   /** Effects density profile (doc 13 `quality`, reduced effects). */
   effectsQuality(): 'low' | 'standard';
@@ -146,40 +150,24 @@ const BIOME_AHEAD_SHARE = 0.65;
 /** Time constant of the backdrop following the rails up and down (s). */
 const HORIZON_EASE_SEC = 0.8;
 
-/** Drawing order (doc 07 §3): sky at the back, objects at the front. */
-const DEPTH = {
-  sky: 0,
-  clouds: 0.5,
-  far: 1,
-  mid: 2,
-  backGround: 3,
-  backProps: 4,
-  ground: 5,
-  track: 6,
-  train: 7,
-  wires: 7.5,
-  nearProps: 8,
-  objects: 9,
-  effects: 10,
-} as const;
-
-/** Vehicles, track, props and animals: the main art atlas. */
-const ART_SOURCES: readonly ArtSource[] = [
-  ...Object.entries(artParts).map(([key, part]) => ({
+/** Sources decode once; only the journey subset is rasterised (D-019). */
+const VEHICLE_SOURCES: readonly ArtSource[] = Object.entries(artParts).map(
+  ([key, part]) => ({
     key,
     url: artFileUrl(part.file),
     widthU: part.widthU,
     heightU: part.heightU,
-  })),
-  ...Object.entries(worldParts)
-    .filter(([key]) => !isBackdropPart(key))
-    .map(([key, part]) => ({
-      key,
-      url: worldFileUrl(part.file),
-      widthU: part.widthU,
-      heightU: part.heightU,
-    })),
-];
+  }),
+);
+/** World parts have a persistent atlas, independent of the journey vehicles. */
+const ART_SOURCES: readonly ArtSource[] = Object.entries(worldParts)
+  .filter(([key]) => !isBackdropPart(key))
+  .map(([key, part]) => ({
+    key,
+    url: worldFileUrl(part.file),
+    widthU: part.widthU,
+    heightU: part.heightU,
+  }));
 
 /** Backdrops and clouds: their own, coarser atlas (D-013). */
 const BACKDROP_SOURCES: readonly ArtSource[] = Object.entries(worldParts)
@@ -298,8 +286,10 @@ export class RideScene extends Phaser.Scene {
   /** Visible world rectangle (render-local units) of the latest frame. */
   #view = { left: 0, top: 0, zoom: 1 };
   #visibleObjects: VisibleObject[] = [];
-  /** Vehicle and world art; undefined if it failed (placeholders drawn). */
+  /** World art; undefined if it failed (plain shapes drawn). */
   #art: ArtAtlas | undefined;
+  /** Journey vehicles and NPC fleet, independent of world art failure. */
+  #vehicleArt: ArtAtlas | undefined;
   /** Backdrop art; undefined if it failed (plain sky only). */
   #backdropArt: ArtAtlas | undefined;
   #backdrop: Backdrop | undefined;
@@ -342,8 +332,25 @@ export class RideScene extends Phaser.Scene {
   }
 
   /** Size of the art atlas, for diagnostics; undefined if it failed. */
-  get artAtlas(): ArtAtlasInfo | undefined {
-    return this.#art?.info;
+  get artAtlas(): (ArtAtlasInfo & { textureKey: string }) | undefined {
+    const info = this.#art?.info;
+    const textureKey = this.#art?.textureKey;
+    return info && textureKey ? { ...info, textureKey } : undefined;
+  }
+
+  get vehicleAtlas():
+    (ArtAtlasInfo & { textureKey: string; vehicleIds: string[] }) | undefined {
+    const info = this.#vehicleArt?.info;
+    const textureKey = this.#vehicleArt?.textureKey;
+    return info && textureKey
+      ? {
+          ...info,
+          textureKey,
+          vehicleIds: Object.entries(vehicleArt).flatMap(([id, art]) =>
+            art && this.textures.get(textureKey).has(art.body) ? [id] : [],
+          ),
+        }
+      : undefined;
   }
 
   /** Size of the backdrop atlas, for diagnostics. */
@@ -358,6 +365,7 @@ export class RideScene extends Phaser.Scene {
 
   preload(): void {
     preloadArt(this, ART_SOURCES, ART_MAX_PX_PER_U);
+    preloadArt(this, VEHICLE_SOURCES, ART_MAX_PX_PER_U);
     preloadArt(this, BACKDROP_SOURCES, BACKDROP_MAX_PX_PER_U);
   }
 
@@ -369,6 +377,14 @@ export class RideScene extends Phaser.Scene {
       this.#art = new ArtAtlas(this, ART_SOURCES, {
         maxPxPerU: ART_MAX_PX_PER_U,
         texturePrefix: 'art@',
+      });
+    } catch (error) {
+      console.error(error);
+    }
+    try {
+      this.#vehicleArt = new ArtAtlas(this, VEHICLE_SOURCES, {
+        maxPxPerU: ART_MAX_PX_PER_U,
+        texturePrefix: 'vehicle@',
       });
     } catch (error) {
       console.error(error);
@@ -392,6 +408,7 @@ export class RideScene extends Phaser.Scene {
       this.#backdrop?.destroy();
       this.#effectsView?.destroy();
       this.#art?.destroy();
+      this.#vehicleArt?.destroy();
       this.#backdropArt?.destroy();
     });
     let tallestU = 0;
@@ -400,7 +417,7 @@ export class RideScene extends Phaser.Scene {
       const height = PLACEHOLDER_BODY_HEIGHT_U;
       tallestU = Math.max(
         tallestU,
-        art && this.#art ? art.heightU : height + vehicle.wheelRadiusU * 1.3,
+        art ? art.heightU : height + vehicle.wheelRadiusU * 1.3,
       );
       // A transparent margin keeps rotated edges smooth without MSAA.
       const g = this.make.graphics({}, false);
@@ -553,7 +570,7 @@ export class RideScene extends Phaser.Scene {
       .flatMap((slot) => slot.images.filter((image) => image.visible))
       .map((image) => ({
         frame: image.frame.name,
-        box: drawnBounds(image, this.#art?.info?.pxPerU),
+        box: drawnBounds(image, this.#vehicleArt?.info?.pxPerU),
       }));
     let inView = 0;
     let overTrain = 0;
@@ -590,6 +607,12 @@ export class RideScene extends Phaser.Scene {
       slot.container.destroy();
     this.#slots.length = 0;
     this.#npcSlots.length = 0;
+    const vehicles = this.#host.journeyVehicles();
+    const fleet = this.#host.journeyNpcFleet() ?? {
+      locomotives: [],
+      wagons: [],
+    };
+    this.#vehicleArt?.selectParts(journeyArtKeys(vehicles, fleet));
     this.#cameraTopY = undefined;
     this.#horizonY = undefined;
     this.#visibleObjects = [];
@@ -664,6 +687,7 @@ export class RideScene extends Phaser.Scene {
     );
     camera.setZoom(zoom);
     this.#updateArtScale(zoom);
+    this.#updateVehicleArtScale(zoom);
     const viewW = this.scale.width / zoom;
     const viewH = this.scale.height / zoom;
 
@@ -1291,6 +1315,16 @@ export class RideScene extends Phaser.Scene {
     this.#destroyChunks();
     this.#destroyObjects();
 
+    art?.release(replaced);
+  }
+
+  /** Vehicle scale changes never rebuild world chunks or world textures. */
+  #updateVehicleArtScale(zoom: number): void {
+    const step = this.#rasterise(this.#vehicleArt, zoom);
+    this.#vehicleArt = step.atlas;
+    const key = step.atlas?.textureKey;
+    const replaced = step.replaced;
+    if (replaced === undefined || key === undefined) return;
     for (const slot of [...this.#slots, ...this.#npcSlots]) {
       slot.images.forEach((image, i) => {
         const shown = slot.frames[i];
@@ -1300,7 +1334,7 @@ export class RideScene extends Phaser.Scene {
         slot.frames[i] = `${key}/${frame}`;
       });
     }
-    art?.release(replaced);
+    step.atlas?.release(replaced);
   }
 
   /**
@@ -1356,8 +1390,8 @@ export class RideScene extends Phaser.Scene {
     pantographReach?: number,
   ): number {
     const art = vehicleArt[vehicle.id];
-    const texture = this.#art?.textureKey;
-    const pxPerU = this.#art?.info?.pxPerU;
+    const texture = this.#vehicleArt?.textureKey;
+    const pxPerU = this.#vehicleArt?.info?.pxPerU;
     if (!art || texture === undefined || pxPerU === undefined) return 0;
     const layers = vehicleArtLayers(
       art,
@@ -1429,7 +1463,7 @@ export class RideScene extends Phaser.Scene {
       // Wheels turn with travelled distance, not with time (doc 03 §3).
       const distanceU = headS - (ride.layout.centerOffsetsU[i] ?? 0);
       let used = 0;
-      if (this.#art) {
+      if (this.#vehicleArt) {
         const reach =
           i === 0 && ride.electrified
             ? this.#pantographReach(ride, vehicle, pose)

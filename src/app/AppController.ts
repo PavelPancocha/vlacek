@@ -85,6 +85,7 @@ export class AppController {
       frame: (deltaSec, nowMs) => this.#frame(deltaSec, nowMs),
       ride: () => this.#session.ride,
       journeyVehicles: () => this.#vehiclesOfJourney(),
+      journeyNpcFleet: () => this.#session.journeyNpcFleet,
       catalogVehicles: () => [...locomotives, ...wagons],
       // Reduced effects or the low profile halve the particles (doc 07 §9).
       effectsQuality: () =>
@@ -289,6 +290,7 @@ export class AppController {
       renderedVehicles: this.#scene.stats.renderedVehicles,
       artVehicles: this.#scene.stats.artVehicles,
       artAtlas: this.#scene.artAtlas,
+      vehicleAtlas: this.#scene.vehicleAtlas,
       effects: this.#scene.effectsStats,
       backdropAtlas: this.#scene.backdropAtlas,
       artSourceTextures: this.#scene.artSourceTextures,

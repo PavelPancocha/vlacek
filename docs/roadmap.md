@@ -26,19 +26,13 @@ Cíl je celý katalog dokumentu 06 §2–3: 10 lokomotiv a 32 druhů vagonků. V
 
 ### H0 — atlas pro jednu jízdu a sada protijedoucích vlaků (D-019)
 
-Podmínka z [D-011](decisions/011-vector-vehicle-art-and-atlas.md): celý katalog se do jednoho atlasu při 2,5 px/u nevejde. Dnes navíc protijedoucí vlak bere vagonky z celého katalogu (`GameSession` → `npcFleet.wagons = catalog.wagons`).
+**Stav: hotovo** ([D-019](decisions/019-journey-atlas-and-npc-fleet.md)). Podmínka z [D-011](decisions/011-vector-vehicle-art-and-atlas.md) je splněna: společný atlas nejhorší jízdy a světa se do 2048 × 2048 nevejde ani při autoritativních 2 px/u (údaj 2,5 px/u byl zastaralý). Selhala i povolená souprava s jednou lokomotivou.
 
-- **Doména:** čistá funkce `npcFleetFor(seed, catalog)` u `src/domain/interaction/OncomingTrain.ts`.
-  - Seedem (klíč `npc-fleet`) vybere sadu jízdy: 2 parní nebo naftové lokomotivy a 6 druhů vagonků.
-  - `GameSession.#createRide` ji předá místo celého katalogu. `OncomingTrain` dál volí pro každé místo z této sady.
-  - Unit testy (nejdřív red): stabilita pro stejný seed, jen parní a naftový pohon, velikost sady, žádná elektrická.
-- **Vykreslování:** `journeyArtKeys(vehicles, fleet)` v `src/render/atlasPacking.ts` vrátí díly vozidel jízdy a sady protijedoucích vlaků.
-  - `RideScene` z nich a z dílů světa sestaví `ArtAtlas`. Při změně jízdy (výjezd z depa, obnova) ho přestaví.
-  - Zdroje SVG se dál načtou jednou při startu, zhruba 1 MB. Ověří to `report:budgets`.
-- **Test rozpočtu:** `atlasPacking` místo „všech vozidel“ zabalí nejhorší jízdu při `ART_MAX_PX_PER_U`, tedy 8 největších různých vozidel a největší sadu protijedoucích vlaků.
-- **Depo** zůstává u SVG vrstev (`<image>`), beze změny.
-- **E2E:** jízda s vozidly z různých skupin má `artVehicles === vehicles`. Po změně v depu a novém výjezdu má atlas nová vozidla.
-- **Dokumentace:** D-019 (rozhodnutí, důsledky; kompatibilita: nic se neukládá). V D-011 se podmínka označí jako splněná.
+- `npcFleetFor(seed, catalog)` (`src/domain/interaction/npcFleet.ts`) klíčem `npc-fleet` vybere dva parní nebo naftové typy lokomotiv a šest typů vagonků bez `placeholder: true`; při menším počtu vrátí všechny způsobilé. Doména neimportuje manifest.
+- `journeyArtKeys(vehicles, fleet)` sbírá všechny unikátní díly vozidel jízdy. `RideScene` má samostatný atlas vozidel jízdy s NPC sadou a trvalý atlas světa; atlas pozadí zůstává zvlášť. Výjezd z depa a obnova přestaví jen atlas vozidel. SVG zdroje se načtou jednou při startu, depo používá SVG `<image>`.
+- Test rozpočtu při `ART_MAX_PX_PER_U = 2` ověřuje atlas světa a dvě sady vozidel samostatně: osm největších různých vozidel s největší zbývající NPC sadou a povolenou soupravu s jednou lokomotivou. Rozměry vozidel, která ještě nemají kresbu, dává označená dočasná fixture; odstraní se, až celý katalog dostane kresbu.
+- E2E kontroluje `artVehicles === vehicles` pro smíšené skupiny, nový atlas po výjezdu z depa a po obnově, zachování atlasu světa a fallback jednotlivých atlasů. Diagnostika vystavuje `vehicleAtlas` včetně ID a klíče textury; `artAtlas` je atlas světa.
+- D-010 (`maxTextures: 1`) zůstává; vrstvy jsou zem a kolej → vlak → popředí, rekvizity a zvířata → částice. Částice zůstávají nad popředím podle dokumentu 07 §3; pořadí hlídá test `RideSceneDepth`. V běžné parní jízdě bez NPC byly naměřeny dva přechody svět ↔ vozidla na snímek. D-011 §6 platí pro každý atlas samostatně.
 
 ### H1 — šest chybějících lokomotiv
 
