@@ -108,9 +108,9 @@ Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
   - prasknutí bubliny.
 - **Fyzická zařízení:** NEOVĚŘENO, dokud je někdo neotestuje.
 
-### Nálezy recenze odložené po sloučení PR #2 (R1–R8)
+### Nálezy recenze odložené po sloučení PR #2 (R1–R10)
 
-Codex je našel při recenzi PR #2 (`1c35d8f` a dřív). Všechny jsou ověřené v kódu a podle vlastníka nepatří do PR #2. Každý půjde přes red → green jako samostatný PR z `master`: nejdřív malé opravy R1, R2 a R5–R8 (lze je spojit do jednoho PR), potom R3 jako jeden PR s migrací a R4 samostatně.
+Codex je našel při recenzi PR #2 (`f5cde58` a dřív). Všechny jsou ověřené v kódu a podle vlastníka nepatří do PR #2. Každý půjde přes red → green jako samostatný PR z `master`: nejdřív malé opravy R1, R2 a R5–R10 (lze je spojit do jednoho PR), potom R3 jako jeden PR s migrací a R4 samostatně.
 
 Generátor v1 i veškerý obsah světa zatím existují jen v PR #2 (`master` má generátor 0). Po sloučení se v1 vydá, takže každá oprava, která mění svět v1 (R3), už potřebuje generátor v2 a migraci uložených cest.
 
@@ -180,6 +180,18 @@ Generátor v1 i veškerý obsah světa zatím existují jen v PR #2 (`master` m�
 - **Problém:** validace přijme jakékoli kladné `world.chunksPerBiomeBlock`, ale rozvržení slotů (přejezd ve slotu 3, most 4, tunel 6, druhá kolej 4–6, přechod 7) počítá s osmi chunky. Při hodnotě 4 by simulace pustila protijedoucí vlak tam, kde se koleje nekreslí.
 - **Oprava:** validace vyžaduje 8, stejně jako u `blocksPerRouteCycle`. Odvození slotů z konfigurace se odkládá, dokud pro něj nebude konkrétní důvod.
 - **Test:** unit test validace s hodnotou 4.
+
+#### R9 — konečný předstih geometrie
+
+- **Problém:** validace `world.geometryLookAheadU` (`src/config/gameConfig.ts`) hlídá jen dolní mez 2048, takže `Infinity` projde. `RideSimulation.#streamTrack()` pak předá `TrackWindow.ensureRange()` nekonečnou mez a smyčka `while (endS < toS)` neskončí: start i obnova cesty zamrznou.
+- **Oprava:** hodnota musí být konečná a aspoň 2048.
+- **Test:** unit test validace s `Infinity`.
+
+#### R10 — pozadí se s novou cestou vrátí na začátek
+
+- **Problém:** `RideScene.#reset()` vyčistí chunky, částice i ticky, ale ne stav `Backdrop` (vrstvy, prolínání, biom). Když nová cesta začíná v jiném biomu, první snímek ukáže pozadí staré cesty a 1,2 s se prolíná.
+- **Oprava:** `Backdrop` dostane reset stavu jízdy, který zavolá `RideScene.#reset()`.
+- **Test:** E2E druhé cesty, jejíž první biom se liší: hned první snímek ukáže nový biom bez prolínání.
 
 ### Potom (M3–M5)
 
