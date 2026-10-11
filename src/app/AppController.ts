@@ -4,7 +4,7 @@ import { locomotives, wagons } from '../content/vehicles.ts';
 import type { Consist } from '../domain/types.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
-import { AudioManager, type SoundId } from '../platform/AudioManager.ts';
+import { AudioManager } from '../platform/AudioManager.ts';
 import { isPortrait } from '../platform/browserEnvironment.ts';
 import type { RendererPreference } from '../platform/CapabilityProbe.ts';
 import { DomInputAdapter } from '../platform/DomInputAdapter.ts';
@@ -23,13 +23,6 @@ export interface AppControllerOptions {
   debug: boolean;
   buildId: string;
 }
-
-const HORN_BY_POWER: Record<string, SoundId> = {
-  steam: 'horn-steam',
-  diesel: 'horn-diesel',
-  electric: 'horn-diesel',
-  fantasy: 'horn-fantasy',
-};
 
 /**
  * Browser shell (doc 08 §8): owns the DOM layers, the Phaser host, the input
@@ -189,12 +182,12 @@ export class AppController {
           (candidate) =>
             candidate.id === this.#session.journeyConsist?.locomotiveId,
         );
-        this.#audio.play(HORN_BY_POWER[loco?.power ?? 'steam'] ?? 'horn-steam');
+        if (loco) this.#audio.play(loco.hornAudio);
         return;
       }
       case 'locomotivePreview': {
         const loco = locomotives.find((candidate) => candidate.id === event.id);
-        this.#audio.play(HORN_BY_POWER[loco?.power ?? 'steam'] ?? 'horn-steam');
+        if (loco) this.#audio.play(loco.hornAudio);
         return;
       }
       case 'npcHorn': {
@@ -205,9 +198,7 @@ export class AppController {
         const loco = locomotives.find(
           (candidate) => candidate.id === train?.vehicles[0]?.id,
         );
-        this.#audio.play(
-          HORN_BY_POWER[loco?.power ?? 'diesel'] ?? 'horn-diesel',
-        );
+        if (loco) this.#audio.play(loco.hornAudio);
         return;
       }
       case 'objectReacted':
