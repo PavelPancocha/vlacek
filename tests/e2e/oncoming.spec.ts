@@ -104,4 +104,36 @@ test.describe('the oncoming train (doc 05 §6, SCN-09, D-017)', () => {
     expect(lastDrawn).toBe(0);
     expect((await snapshot(page)).oncoming.trains).toEqual([]);
   });
+
+  test('PWA-10: without its art the oncoming train is drawn as placeholders', async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await page.route(/steam_local\.body-[^/]*\.svg$/, (route) => route.abort());
+    await continueBeforeSecondTrack(page);
+    expect((await snapshot(page)).artAtlas).toBeUndefined();
+    await page.mouse.move(700, 300);
+    await page.mouse.down();
+    await expect
+      .poll(async () => (await snapshot(page)).oncoming.trains.length, {
+        timeout: 15_000,
+        intervals: [50],
+      })
+      .toBe(1);
+    await page.mouse.up();
+    // Stop and wait for it in the open: it must not pass invisibly.
+    const brake = (await snapshot(page)).brakeRect;
+    if (!brake) throw new Error('no brake');
+    await page.mouse.move(
+      brake.left + brake.width / 2,
+      brake.top + brake.height / 2,
+    );
+    await page.mouse.down();
+    await expect
+      .poll(async () => (await snapshot(page)).oncoming.drawnInOpen, {
+        timeout: 30_000,
+      })
+      .toBeGreaterThanOrEqual(2);
+    await page.mouse.up();
+  });
 });

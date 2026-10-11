@@ -1197,14 +1197,16 @@ export class RideScene extends Phaser.Scene {
           .setPosition(pose.centerX - this.#originX, -pose.centerY)
           .setRotation(-pose.angleRad)
           .setScale(-SECONDARY_SCALE, SECONDARY_SCALE);
-        const drawn = this.#drawArtVehicle(
-          slot,
-          shaped,
-          train.travelledU / SECONDARY_SCALE,
-        );
+        const distanceU = train.travelledU / SECONDARY_SCALE;
+        // Without the art, the marked placeholder (PWA-10): a train that
+        // moves and whistles is never invisible.
+        const drawn =
+          this.#drawArtVehicle(slot, shaped, distanceU) ||
+          this.#drawPlaceholderVehicle(slot, shaped, distanceU);
         for (let k = drawn; k < slot.images.length; k++)
           slot.images[k]?.setVisible(false);
-        if (pose.centerX > site.fromX && pose.centerX < site.toX) open += 1;
+        if (drawn > 0 && pose.centerX > site.fromX && pose.centerX < site.toX)
+          open += 1;
       });
     }
     for (let i = used; i < this.#npcSlots.length; i++)
