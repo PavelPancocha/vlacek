@@ -17,6 +17,7 @@ Dokument 14 je splněný v §1–7: pořadí soupravy, celý vlak v obraze s dé
 ## Rozhodnutí, která čekají na vlastníka
 
 - **Číslo světa u příliš dlouhé jízdy z 0.1.** Taková jízda nemůže pokračovat; hráč vlak zkrátí v depu a vyjede v novém světě, stejně jako po každé úpravě vlaku. Codex navrhl staré číslo zachovat. Zatím beze změny, rozhodnutí je ve vlákně PR #2.
+- **Nádraží v prvním bloku.** Dokument 04 chce v prvním bloku nové cesty pevně nádraží ve slotu 1. Dnes stojí ve slotu 1 nebo 2 jen tam, kde trať generátoru v1 má rovinu aspoň 448 u; v 53 % světů (1056 z 2000) první blok nádraží nemá. Oprava znamená generátor v2: první blok dostane rovinu ve slotu 1. Uložené cesty v1 by prošly migrací jako v0 (vlak a číslo světa zůstanou), a aby se ostatní bloky nezměnily, musí se klíče náhodnosti oddělit od čísla verze (dnes 36 míst). Návrh: samostatná změna po sloučení PR #2. Rozhodnutí je ve vlákně PR #2.
 
 ## Další kroky v pořadí
 

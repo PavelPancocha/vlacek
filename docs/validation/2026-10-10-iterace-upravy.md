@@ -460,3 +460,27 @@ Celá brána po opravách (`18a5005` a tento zápis):
 - `npm run report:budgets`: úvodní přenos 2968 KiB (gzip 756 KiB) z rozpočtu 10 240 KiB.
 
 Vše lokálně v kontejneru (headless Chromium, softwarové GL). Fyzický tablet a Tesla: **NEOVĚŘENO**.
+
+## CI a Codex review PR #2 (`2ee4a3f`, `1b4130b`)
+
+**CI.** Běh E2E pro PR na `2ee4a3f` selhal na „near-meadow props never cover the longest train (seed 7)“ na obou projektech (`nearPropsOverTrain` 1). Běh pro push stejného commitu prošel. Stopa z CI ukázala vzorek při čele na x 3810 v chunku 3, tedy u přejezdu prvního bloku. Test bral vzorek každých 250 ms, takže okno kolem 0,25 s zachytil jen někdy.
+
+Sonda, která kontrolovala každý snímek, to zopakovala pokaždé: `crossing.post-low over wheel.steam-driver` při čele na x 3760–3960, i při 4× zpomaleném CPU. Překryv byl jen mezi obdélníky. Rámeček otáčejícího se kola (30 u) narostl při natočení na 45,8 u, protože obsahuje i průhledný okraj. Vykreslený kotouč končí asi 7 u nad obdélníkem výstražníku. Kontrola teď měří kola jako kotouč a jmenuje, co se překrylo (`nearPropOverlaps`). Test kontroluje každý snímek až za přejezd prvního bloku.
+
+| Nález                                         | Red                                                                                           | Green                                                                                   |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| CI: výstražník „přes“ kolo ve světě 7         | E2E po snímcích: 5 a 3 překryvy `crossing.post-low over wheel.steam-driver` (desktop, tablet) | 28 E2E PASS (krajina, přejezdy, elektrika, stavby)                                      |
+| Protijedoucí vlaky sdílely stav emisí         | unit: rytmus výfuku dvou vlaků se lišil od samotného vlaku (proti stubu se sdílenou instancí) | 78 unit PASS (render)                                                                   |
+| Kouř protijedoucího vlaku letěl doprava       | unit: střední vx kouře vlaku jedoucího doleva +93 u/s                                         | 78 unit PASS (render)                                                                   |
+| Protijedoucí vlak bez grafiky byl neviditelný | E2E s nenačteným SVG: 0 vozidel na volné trati                                                | 14 E2E PASS (souběh, grafika)                                                           |
+| Selhaná rasterizace atlasu zastavila jízdu    | E2E se selháním kreslení SVG do plátna: simulace stála na ticku 0–1                           | 12 E2E PASS (grafika)                                                                   |
+| Nádraží v prvním bloku chybí ve 53 % světů    | ověřeno měřením: 1056 z 2000 seedů                                                            | neopraveno: vyžaduje generátor v2, rozhodnutí čeká na vlastníka ([stav](../roadmap.md)) |
+
+Celá brána po opravách (`9c6b662` a tento zápis):
+
+- `npm run check`: 465 unit testů PASS, lint, typecheck, validace assetů, odkazy, tajné údaje a velikosti PASS.
+- `npm run test:e2e`: 130 PASS / 4 skipped; přepsaný test louky ve 3 opakováních 18 PASS.
+- `PERF_SECONDS=30 npm run measure:perf` s nejdelší soupravou: parní i elektrická medián 30 FPS, p95 50 ms, nejhorší snímek 67 ms, ve všech vzorcích celý vlak (9 z 9, 8 z 8).
+- `npm run report:budgets`: úvodní přenos 2970 KiB (gzip 757 KiB) z 10 240 KiB.
+
+Vše lokálně v kontejneru. Fyzický tablet a Tesla: **NEOVĚŘENO**.

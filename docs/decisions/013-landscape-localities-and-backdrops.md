@@ -13,7 +13,7 @@ Vlastník zvolil „vektory a vyřezaná scenérie“. Referenční listy ale ni
    - `chunkScenery(seed, k)` (`src/domain/world/Scenery.ts`) vybere lokalitu podle slotu a rozmístí její rekvizity. Šablony lokalit jsou data v `sceneryTemplates.ts`.
    - Sloty:
      - Slot 0 je klidný.
-     - Nádraží stojí ve slotu 1 nebo 2 na rovině dlouhé aspoň 448 u.
+     - Nádraží stojí ve slotu 1 nebo 2 na rovině dlouhé aspoň 448 u. Kde ji trať nemá, blok je bez nádraží. Pevné nádraží ve slotu 1 prvního bloku podle dokumentu 04 zatím chybí (v 53 % světů ho první blok nemá); oprava potřebuje generátor v2, viz [stav a další kroky](../roadmap.md).
      - Slot 7 je přechod: od x = 512 platí klidná lokalita dalšího biomu.
    - Rozmístění rekvizit:
      - Každé pravidlo má omezený počet pokusů (`world.maxPlacementAttempts`).
