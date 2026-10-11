@@ -448,7 +448,11 @@ export function validateGameConfig(config: GameConfig): string[] {
       'world.arcSampleSpacingU',
       positive(world.arcSampleSpacingU) && world.arcSampleSpacingU <= 8,
     ],
-    ['world.geometryLookAheadU', world.geometryLookAheadU >= 2048],
+    [
+      'world.geometryLookAheadU',
+      Number.isFinite(world.geometryLookAheadU) &&
+        world.geometryLookAheadU >= 2048,
+    ],
     ['world.geometryTailMarginU', positive(world.geometryTailMarginU)],
     ['world.spawnChunkIndex', Number.isSafeInteger(world.spawnChunkIndex)],
     [

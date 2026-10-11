@@ -55,3 +55,13 @@ Validace konfigurace vyžaduje `world.chunksPerBiomeBlock === 8`, stejně jako u
 | `R8: rejects a biome block with four chunks instead of eight` | `expected [] to deeply equal [ 'world.chunksPerBiomeBlock' ]` | PASS  |
 
 Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/config/gameConfig.test.ts` (red 1 FAIL / 16, green 16 PASS). Pevná velikost je zapsaná v dokumentu 13.
+
+## R9 — konečný předstih geometrie
+
+Validace vyžaduje konečné `world.geometryLookAheadU` nejméně 2048 u; `Infinity` by zacyklila `TrackWindow.ensureRange()` při startu i obnově cesty.
+
+| Test                                          | Red                                                          | Green |
+| --------------------------------------------- | ------------------------------------------------------------ | ----- |
+| `R9: rejects an infinite geometry look-ahead` | `expected [] to deeply equal [ 'world.geometryLookAheadU' ]` | PASS  |
+
+Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/config/gameConfig.test.ts` (red 1 FAIL / 17, green 17 PASS). Mez je zapsaná v dokumentu 13.

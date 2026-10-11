@@ -163,7 +163,7 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
 
 `world.chunksPerBiomeBlock` je pevně 8, stejně jako `world.blocksPerRouteCycle`. Rozvržení motivů podle dokumentu 04 §6 používá sloty 0–7; validace proto odmítá jinou velikost bloku, včetně 4 (R8). Odvození slotů pro jiné velikosti se zavede až při konkrétním požadavku spolu s novou verzí generátoru. Výchozí konfigurace ani uložené cesty se touto kontrolou nemění.
 
-`geometryLookAheadU` je minimum. Zvětší se, pokud širší viewport nebo vícedílná scénka vyžaduje více geometrie. `logicalActivationAheadU` je naopak základ deterministických spouštěčů scén a nesmí náhodně záviset na výkonnosti rendereru. Renderovat daleko viditelné statické objekty lze bez předčasného spuštění jejich scénky.
+`world.geometryLookAheadU` musí být konečné číslo nejméně 2048 u. Validace odmítne i `Infinity`, aby generování předstihu při startu nebo obnově cesty nemohlo běžet donekonečna (R9). Výchozí hodnota 2048 u ani uložená data se nemění. Předstih se zvětší, pokud širší viewport nebo vícedílná scénka vyžaduje více geometrie. `logicalActivationAheadU` je naopak základ deterministických spouštěčů scén a nesmí náhodně záviset na výkonnosti rendereru. Renderovat daleko viditelné statické objekty lze bez předčasného spuštění jejich scénky.
 
 `spawnLocalXU` se při startu převádí na `arcOffsetU` pomocí LUT; tyto hodnoty nejsou zaměnitelné.
 

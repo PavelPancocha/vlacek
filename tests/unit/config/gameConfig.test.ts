@@ -223,4 +223,12 @@ describe('gameConfig', () => {
     };
     expect(validateGameConfig(broken)).toEqual(['world.chunksPerBiomeBlock']);
   });
+
+  it('R9: rejects an infinite geometry look-ahead', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      world: { ...gameConfig.world, geometryLookAheadU: Infinity },
+    };
+    expect(validateGameConfig(broken)).toEqual(['world.geometryLookAheadU']);
+  });
 });

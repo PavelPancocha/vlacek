@@ -193,6 +193,7 @@ R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na ná
 - **Problém:** validace `world.geometryLookAheadU` (`src/config/gameConfig.ts`) hlídá jen dolní mez 2048, takže `Infinity` projde. `RideSimulation.#streamTrack()` pak předá `TrackWindow.ensureRange()` nekonečnou mez a smyčka `while (endS < toS)` neskončí: start i obnova cesty zamrznou.
 - **Oprava:** hodnota musí být konečná a aspoň 2048.
 - **Test:** unit test validace s `Infinity`.
+- **Stav:** hotovo. `world.geometryLookAheadU` musí být konečné a nejméně 2048 u; `Infinity` validace odmítne dřív, než by zacyklila start cesty (dokument 13).
 
 #### R10 — pozadí se s novou cestou vrátí na začátek
 
