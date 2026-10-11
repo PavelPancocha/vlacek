@@ -129,6 +129,7 @@ R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na ná
 - **Problém:** kontrola `interaction.npcTrainSpeedUPerSec` v `src/config/gameConfig.ts` ověří konečnost jen u minima. S maximem `Infinity` projde, protijedoucí vlak pak skočí na `headS = -Infinity` a `SecondaryLine.sample()` vyhodí výjimku v aktualizaci jízdy.
 - **Oprava:** minimum i maximum musí být konečná kladná čísla a minimum nejvýš maximum.
 - **Test:** unit test validace s `Infinity` (červený před opravou).
+- **Stav:** hotovo. Obě meze jsou konečná kladná čísla a minimum nejvýš maximum; maximum `Infinity` validace odmítne (dokument 13).
 
 #### R3 — generátor v2: dvě opravy světa v jedné změně kompatibility
 

@@ -357,6 +357,7 @@ export function validateGameConfig(config: GameConfig): string[] {
     [
       'interaction.npcTrainSpeedUPerSec',
       positive(interaction.npcTrainMinSpeedUPerSec) &&
+        positive(interaction.npcTrainMaxSpeedUPerSec) &&
         interaction.npcTrainMinSpeedUPerSec <=
           interaction.npcTrainMaxSpeedUPerSec,
     ],

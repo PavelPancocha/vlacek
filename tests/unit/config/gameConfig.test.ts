@@ -95,6 +95,19 @@ describe('gameConfig', () => {
     ]);
   });
 
+  it('R2: rejects an infinite maximum speed for oncoming trains', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      interaction: {
+        ...gameConfig.interaction,
+        npcTrainMaxSpeedUPerSec: Infinity,
+      },
+    };
+    expect(validateGameConfig(broken)).toEqual([
+      'interaction.npcTrainSpeedUPerSec',
+    ]);
+  });
+
   it('carries the doc 13 quality profiles with their particle budgets', () => {
     expect(gameConfig.quality).toEqual({
       low: { maxDpr: 1, targetFps: 30, maxDecorativeParticles: 96 },

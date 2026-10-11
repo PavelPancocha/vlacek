@@ -14,3 +14,13 @@ Protokol PR s opravami nálezů, které Codex našel při recenzi PR #2 a které
 | `DATA-04 R1: keeps a newer primary written after load across repeated saves` (nález recenze lane)        | `expected 'saved' to be 'memory-only'`         | PASS  |
 
 Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/platform/SaveValidation.test.ts tests/unit/platform/SaveRepository.test.ts` (red 3 FAIL / 35, potom 1 FAIL / 13; green 38 a 13 PASS). Dokumentace: dokument 08 §7, [D-009](../decisions/009-track-generator-v1.md), [fixtury](../../tests/fixtures/save/README.md). Atomická transakce `localStorage` mezi kartami se nezavádí; souběh skutečných karet prohlížeče je NEOVĚŘENO.
+
+## R2 — konečná nejvyšší rychlost protijedoucího vlaku
+
+Validace konfigurace vyžaduje, aby minimum i maximum `interaction.npcTrainSpeedUPerSec` byla konečná kladná čísla a minimum nejvýš maximum.
+
+| Test                                                        | Red                                                                  | Green |
+| ----------------------------------------------------------- | -------------------------------------------------------------------- | ----- |
+| `R2: rejects an infinite maximum speed for oncoming trains` | `expected [] to deeply equal [ 'interaction.npcTrainSpeedUPerSec' ]` | PASS  |
+
+Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/config/gameConfig.test.ts` (red 1 FAIL / 15, green 15 PASS). Meze jsou zapsané v dokumentu 13 („Odvozené hodnoty a pravidla“).
