@@ -149,6 +149,40 @@ describe('SaveRepository', () => {
     expect(storage.getItem(BACKUP_KEY)).toBeNull();
   });
 
+  it('DATA-04 R1: keeps a newer primary with unknown catalog IDs despite a valid backup', () => {
+    const storage = new MemoryStorage();
+    const primary = fixture('v1-future-catalog.json');
+    const backup = fixture('v1-journey.json');
+    storage.data.set(PRIMARY_KEY, primary);
+    storage.data.set(BACKUP_KEY, backup);
+    const repo = new SaveRepository(storage, rules, gameConfig.save);
+    expect(repo.load()).toEqual({ source: 'none', notice: 'newer-save-kept' });
+    expect(repo.status).toBe('memory-only');
+    expect(repo.save(valid('v1-no-journey.json'))).toBe('memory-only');
+    expect(storage.getItem(PRIMARY_KEY)).toBe(primary);
+    expect(storage.getItem(BACKUP_KEY)).toBe(backup);
+  });
+
+  it('DATA-04 R1: keeps a newer primary written after load across repeated saves', () => {
+    const storage = new MemoryStorage();
+    const older = valid('v1-journey.json');
+    const newer = fixture('v1-future-catalog.json');
+    const backup = fixture('v1-no-journey.json');
+    storage.data.set(PRIMARY_KEY, fixture('v1-journey.json'));
+    storage.data.set(BACKUP_KEY, backup);
+    const repo = new SaveRepository(storage, rules, gameConfig.save);
+    expect(repo.load()).toEqual({ source: 'primary', save: older });
+    expect(repo.status).toBe('ok');
+    storage.data.set(PRIMARY_KEY, newer);
+    for (const save of [valid('v1-no-journey.json'), older]) {
+      expect(repo.save(save)).toBe('memory-only');
+      expect(repo.status).toBe('memory-only');
+      expect(repo.lastSaved).toEqual(save);
+      expect(storage.getItem(PRIMARY_KEY)).toBe(newer);
+      expect(storage.getItem(BACKUP_KEY)).toBe(backup);
+    }
+  });
+
   it('DATA-07: a failed primary write after the backup keeps a valid restore point', () => {
     const storage = new MemoryStorage();
     const repo = new SaveRepository(storage, rules, gameConfig.save);

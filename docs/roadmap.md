@@ -114,12 +114,15 @@ Codex je našel při recenzi PR #2 (`f5cde58` a dřív). Všechny jsou ověřen�
 
 Generátor v1 i veškerý obsah světa zatím existují jen v PR #2 (`master` má generátor 0). Po sloučení se v1 vydá, takže každá oprava, která mění svět v1 (R3), už potřebuje generátor v2 a migraci uložených cest.
 
+R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na nález; red a green jsou v [protokolu oprav recenze](validation/2026-10-11-opravy-recenze.md). R3 a R4 zůstávají otevřené.
+
 #### R1 — novější save se pozná dřív, než se ověří jeho obsah
 
 - **Problém:** `parseSave` (`src/platform/SaveValidation.ts`) porovná `journey.generatorVersion` s verzí buildu až po ověření `lastConsist`, `builderDraft` a cesty proti současnému katalogu. Save z novějšího buildu s novou lokomotivou nebo vagonkem tak skončí jako `invalid`, ne `newer`. `SaveRepository` pak může obnovit starší zálohu a příští uložení novější primární save přepíše (AGENTS.md: neznámou novější verzi nepřepisuj).
 - **Oprava:** před ověřením polí, která závisí na katalogu, se přečtou surové údaje. `newer` vrátí `schemaVersion` nad 1, `contentVersion` nad podporovanou (dokument 08: změna obsahu mapuje ID) i `journey.generatorVersion` nad verzí buildu.
 - **Test:** fixture se schématem 1, generátorem 2 a neznámou lokomotivou dá `newer`. `SaveRepository` nechá primární save beze změny i při platné záloze a oznámí `newer-save-kept`.
 - **Dokumentace:** poznámka v dokumentu 08 a v [D-009](decisions/009-track-generator-v1.md), řádek v README fixtures.
+- **Stav:** hotovo. Verze se kontrolují před katalogovými ID; při každém dalším ukládání se primární save znovu přečte. Novější save, který mezitím zapsala jiná karta, přepne relaci do `memory-only` dřív, než se cokoli zapíše; primár i platná záloha zůstanou beze změny.
 
 #### R2 — konečná nejvyšší rychlost protijedoucího vlaku
 

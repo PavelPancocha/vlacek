@@ -283,8 +283,26 @@ export function parseSave(json: string, rules: SaveRules): ParseResult {
     );
     if (schemaVersion > 1) return { status: 'newer', schemaVersion };
     if (schemaVersion !== 1) throw new Invalid('schemaVersion: unknown');
-    if (raw['contentVersion'] !== 1)
-      throw new Invalid('contentVersion: unsupported');
+    const contentVersion = integer(
+      raw['contentVersion'],
+      'contentVersion',
+      0,
+      Number.MAX_SAFE_INTEGER,
+    );
+    if (contentVersion > 1) return { status: 'newer', schemaVersion };
+    if (contentVersion !== 1) throw new Invalid('contentVersion: unsupported');
+    // Check version markers before catalog IDs that a newer build may add.
+    if (raw['journey'] !== undefined) {
+      const rawJourney = object(raw['journey'], 'journey');
+      const generatorVersion = integer(
+        rawJourney['generatorVersion'],
+        'journey.generatorVersion',
+        0,
+        Number.MAX_SAFE_INTEGER,
+      );
+      if (generatorVersion > rules.trackGeneratorVersion)
+        return { status: 'newer', schemaVersion, generatorVersion };
+    }
     const save: SaveEnvelopeV1 = {
       schemaVersion: 1,
       contentVersion: 1,
@@ -298,16 +316,6 @@ export function parseSave(json: string, rules: SaveRules): ParseResult {
     }
     if (raw['journey'] !== undefined)
       save.journey = journey(raw['journey'], rules);
-    // A newer build's track: never replace it with this build's journey.
-    if (
-      save.journey &&
-      save.journey.generatorVersion > rules.trackGeneratorVersion
-    )
-      return {
-        status: 'newer',
-        schemaVersion,
-        generatorVersion: save.journey.generatorVersion,
-      };
     return { status: 'valid', save };
   } catch (error) {
     if (error instanceof Invalid)

@@ -64,6 +64,26 @@ describe('parseSave', () => {
     });
   });
 
+  it('DATA-04 R1: detects a newer generator before validating catalog IDs', () => {
+    expect(parseSave(fixture('v1-future-catalog.json'), rules)).toEqual({
+      status: 'newer',
+      schemaVersion: 1,
+      generatorVersion: 2,
+    });
+  });
+
+  it('DATA-04 R1: detects newer content before validating catalog IDs', () => {
+    expect(
+      parseSave(
+        mutate('v1-future-catalog.json', (s) => {
+          s['contentVersion'] = 2;
+          delete s['journey'];
+        }),
+        rules,
+      ),
+    ).toEqual({ status: 'newer', schemaVersion: 1 });
+  });
+
   describe('DATA-06: hostile or broken values', () => {
     const cases: [string, (save: Record<string, unknown>) => void][] = [
       [
@@ -103,7 +123,7 @@ describe('parseSave', () => {
         (s) => ((s['journey'] as Record<string, unknown>)['seed'] = 2 ** 32),
       ],
       [
-        // Any known or newer generator is readable; GameSession decides.
+        // Older generators are readable; newer ones must stay untouched.
         'invalid generator version',
         (s) =>
           ((s['journey'] as Record<string, unknown>)['generatorVersion'] = -1),
@@ -159,7 +179,9 @@ describe('parseSave', () => {
           ((s['journey'] as Record<string, unknown>)['activeEntities'] =
             Array.from({ length: 513 }, () => ({}))),
       ],
-      ['wrong content version', (s) => (s['contentVersion'] = 2)],
+      ['unknown older content version', (s) => (s['contentVersion'] = 0)],
+      ['fractional content version', (s) => (s['contentVersion'] = 1.5)],
+      ['non-numeric content version', (s) => (s['contentVersion'] = '2')],
     ];
     for (const [name, change] of cases) {
       it(`rejects ${name}`, () => {
