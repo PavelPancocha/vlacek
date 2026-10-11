@@ -1233,10 +1233,33 @@ export class RideScene extends Phaser.Scene {
     return image.setVisible(true);
   }
 
+  /**
+   * Re-rasterises an atlas for a zoom step; returns the replaced texture.
+   * A failure (no canvas, no texture) must not stop the ride (PWA-10): an
+   * atlas with a texture keeps it at its old scale, one without any is
+   * dropped, so placeholders and plain shapes are drawn instead.
+   */
+  #rasterise(
+    atlas: ArtAtlas | undefined,
+    zoom: number,
+  ): { atlas: ArtAtlas | undefined; replaced: string | undefined } {
+    try {
+      return { atlas, replaced: atlas?.update(zoom) };
+    } catch (error) {
+      console.error(error);
+      if (atlas?.textureKey !== undefined)
+        return { atlas, replaced: undefined };
+      atlas?.destroy();
+      return { atlas: undefined, replaced: undefined };
+    }
+  }
+
   /** Re-rasterises the art for a new zoom step and moves every image over. */
   #updateArtScale(zoom: number): void {
-    const backdropArt = this.#backdropArt;
-    const replacedBackdrop = backdropArt?.update(zoom);
+    const backdropStep = this.#rasterise(this.#backdropArt, zoom);
+    this.#backdropArt = backdropStep.atlas;
+    const backdropArt = backdropStep.atlas;
+    const replacedBackdrop = backdropStep.replaced;
     const backdropKey = backdropArt?.textureKey;
     const backdropPxPerU = backdropArt?.info?.pxPerU;
     if (
@@ -1249,8 +1272,10 @@ export class RideScene extends Phaser.Scene {
       if (replacedBackdrop !== undefined)
         backdropArt?.release(replacedBackdrop);
     }
-    const art = this.#art;
-    const replaced = art?.update(zoom);
+    const artStep = this.#rasterise(this.#art, zoom);
+    this.#art = artStep.atlas;
+    const art = artStep.atlas;
+    const replaced = artStep.replaced;
     const key = art?.textureKey;
     const pxPerU = art?.info?.pxPerU;
     if (

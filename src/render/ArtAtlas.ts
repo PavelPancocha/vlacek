@@ -79,6 +79,8 @@ export class ArtAtlas {
   #version = 0;
   #textureKey: string | undefined;
   #info: ArtAtlasInfo | undefined;
+  /** Raster scale whose rasterisation failed; never retried. */
+  #failedPxPerU: number | undefined;
 
   /**
    * Takes over the loaded sources; throws if a part did not load. Either
@@ -133,7 +135,18 @@ export class ArtAtlas {
    */
   update(zoom: number): string | undefined {
     const pxPerU = artScaleFor(zoom, this.#options.maxPxPerU);
-    if (this.#info?.pxPerU === pxPerU) return undefined;
+    if (this.#info?.pxPerU === pxPerU || this.#failedPxPerU === pxPerU)
+      return undefined;
+    try {
+      return this.#rasterise(pxPerU);
+    } catch (error) {
+      // Throws once per scale step; the caller keeps or drops the atlas.
+      this.#failedPxPerU = pxPerU;
+      throw error;
+    }
+  }
+
+  #rasterise(pxPerU: number): string | undefined {
     const items = artAtlasItems(this.#parts, pxPerU);
     const plan = packAtlas(items, {
       maxSize: MAX_ATLAS_EDGE_PX,

@@ -64,6 +64,43 @@ test.describe('vehicle art (doc 14 §3)', () => {
     expect(state.artSourceTextures).toBe(0);
   });
 
+  test('PWA-10: an atlas that fails to rasterise falls back instead of stopping the ride', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    // Drawing a loaded SVG part into a canvas fails (as when the browser
+    // cannot allocate the atlas canvas); only the atlases do that.
+    await page.addInitScript(() => {
+      // Re-applied below with the context as `this`, so it stays bound.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const draw = CanvasRenderingContext2D.prototype.drawImage;
+      CanvasRenderingContext2D.prototype.drawImage = function (
+        this: CanvasRenderingContext2D,
+        ...args: Parameters<typeof draw>
+      ) {
+        const [source] = args;
+        if (
+          source instanceof HTMLImageElement &&
+          /^(data:image\/svg|blob:)/.test(source.src)
+        )
+          throw new Error('atlas canvas lost (test)');
+        return draw.apply(this, args);
+      } as typeof draw;
+    });
+    await startRide(page, ['cargo_box']);
+    const tick = (await snapshot(page)).simulationTick;
+    await expect
+      .poll(async () => (await snapshot(page)).simulationTick)
+      .toBeGreaterThan(tick + 30);
+    const state = await snapshot(page);
+    expect(errors).toEqual([]);
+    expect(state.artAtlas).toBeUndefined();
+    expect(state.backdropAtlas).toBeUndefined();
+    expect(state.artVehicles).toBe(0);
+    expect(state.renderedVehicles).toBe(2);
+  });
+
   test('PWA-10: without its art the ride still shows the wire, the crossing and the tunnel', async ({
     page,
   }) => {
