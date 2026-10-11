@@ -108,9 +108,9 @@ Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
   - prasknutí bubliny.
 - **Fyzická zařízení:** NEOVĚŘENO, dokud je někdo neotestuje.
 
-### Nálezy recenze odložené po sloučení PR #2 (R1–R4)
+### Nálezy recenze odložené po sloučení PR #2 (R1–R8)
 
-Codex je našel při recenzi PR #2 (`21a37d5` a dřív). Všechny jsou ověřené v kódu a podle vlastníka nepatří do PR #2. Každý půjde přes red → green jako samostatný PR z `master`: R1 a R2 jako první (malé), R3 jako jeden PR s migrací, R4 samostatně.
+Codex je našel při recenzi PR #2 (`1c35d8f` a dřív). Všechny jsou ověřené v kódu a podle vlastníka nepatří do PR #2. Každý půjde přes red → green jako samostatný PR z `master`: nejdřív malé opravy R1, R2 a R5–R8 (lze je spojit do jednoho PR), potom R3 jako jeden PR s migrací a R4 samostatně.
 
 Generátor v1 i veškerý obsah světa zatím existují jen v PR #2 (`master` má generátor 0). Po sloučení se v1 vydá, takže každá oprava, která mění svět v1 (R3), už potřebuje generátor v2 a migraci uložených cest.
 
@@ -156,6 +156,30 @@ Generátor v1 i veškerý obsah světa zatím existují jen v PR #2 (`master` m�
 - **Test:** unit testy se syntetickými časy snímků; E2E při zpomaleném CPU ukáže snížení úrovně.
 - **Mez:** prahy zůstanou NEOVĚŘENO, dokud se nezměří na skutečných zařízeních.
 - **Dokumentace:** nové rozhodnutí a úprava [D-014](decisions/014-particles-and-small-animations.md).
+
+#### R5 — přejezd za koncem vlaku se nevytváří znovu
+
+- **Problém:** `#updateCrossings` (`src/domain/ride/RideSimulation.ts`) prochází chunky od `behindX`. Když vlak stojí kousek za přejezdem, ale `behindX` je pořád v jeho chunku, vytvoří se v každém ticku nový `LevelCrossing` a hned se smaže. Při 60 Hz je to zbytečná alokace a riziko zadrhávání GC na slabém zařízení.
+- **Oprava:** přeskočit místa, jejichž `crossingWorldX` je už za `behindX`, ještě před vytvořením automatu.
+- **Test:** unit test zastaví vlak za přejezdem a ověří, že se instance automatu mezi ticky nemění a nevzniká nová.
+
+#### R6 — podpěra vedení u portálu tunelu
+
+- **Problém:** `catenarySupport` (`src/domain/world/Catenary.ts`) označí sloup do 72 u od portálu jako závěs ze stropu, takže stožár zmizí. `TunnelView` ale kreslí závěsy jen uvnitř zapečeného nitra (64 u za portálem, zkrácené o 4 u). Sloup 64–72 u za portálem nemá stožár ani závěs a drát se lomí ve vzduchu (například svět 25, chunk 6).
+- **Oprava:** jedna společná hranice pro obojí: buď závěs kreslit až do hranice klasifikace, nebo sloupu mimo nitro vrátit stožár.
+- **Test:** unit průchod tunely mnoha světů: každý sloup má buď stožár, nebo kreslený závěs; regresní svět 25.
+
+#### R7 — souběžná kolej i bez grafiky
+
+- **Problém:** bez atlasu `ChunkView` skončí v `#addPlainInfrastructure` dřív, než zavolá `chunkSecondaryTrack`. Protijedoucí vlak se kreslí jako silueta (oprava `d90534b`), ale jede bez kolejí a bez portálových kopců a mizí na neoznačené hranici.
+- **Oprava:** jednoduchá souběžná kolej a portálové kopce v náhradním kreslení, na stejných místech jako s grafikou.
+- **Test:** E2E PWA-10 s nenačteným SVG u druhé koleje světa 123: kolej je vidět (nová diagnostika) a vlak mizí v portálu.
+
+#### R8 — velikost bloku biomu je pevná
+
+- **Problém:** validace přijme jakékoli kladné `world.chunksPerBiomeBlock`, ale rozvržení slotů (přejezd ve slotu 3, most 4, tunel 6, druhá kolej 4–6, přechod 7) počítá s osmi chunky. Při hodnotě 4 by simulace pustila protijedoucí vlak tam, kde se koleje nekreslí.
+- **Oprava:** validace vyžaduje 8, stejně jako u `blocksPerRouteCycle`. Odvození slotů z konfigurace se odkládá, dokud pro něj nebude konkrétní důvod.
+- **Test:** unit test validace s hodnotou 4.
 
 ### Potom (M3–M5)
 
