@@ -86,7 +86,7 @@ Vlastník zvolil „vektory a vyřezaná scenérie“. Referenční listy ale ni
 
 ## Důsledky
 
-- Diagnostika `?debug=1` hlásí `backdropAtlas`, `scenery` (biom, lokality v obraze, blízké rekvizity, překryvy s vlakem) a `chunkEdges`.
+- Diagnostika `?debug=1` hlásí `backdropAtlas`, `backdrop` (skutečný `currentBiome`, `incomingBiome` a průběh prolínání `fade` od 0 do 1), `scenery` (cílový biom, lokality v obraze, blízké rekvizity, překryvy s vlakem a počty druhé koleje a portálů), `backdropMidOffsetU` a `chunkEdges`.
 - E2E kontroluje:
   - krajinu ze dvou atlasů;
   - žádný překryv vlaku pro tři seedy;

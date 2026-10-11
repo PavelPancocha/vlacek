@@ -124,6 +124,15 @@ export class Backdrop {
     this.#fade = 1;
   }
 
+  /** Biomes actually drawn by both layers and their crossfade progress. */
+  get state() {
+    return {
+      currentBiome: this.#layers[0].biome,
+      incomingBiome: this.#layers[1].biome,
+      fade: this.#fade,
+    };
+  }
+
   /** Parallax phase of the mid hills, u (diagnostics). */
   get midOffsetU(): number {
     return this.#midOffsetU;

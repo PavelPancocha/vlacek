@@ -32,6 +32,7 @@ import type {
   NearGround,
 } from '../domain/world/sceneryTemplates.ts';
 import { bankHeightU } from '../domain/world/Terrain.ts';
+import { secondarySiteOfChunk } from '../domain/world/SecondaryTrack.ts';
 import {
   BRIDGE_HALF_U,
   RIVER_HALF_U,
@@ -223,6 +224,9 @@ export class ChunkView {
   #tunnel: TunnelView | undefined;
   /** Catenary masts of an electric journey (doc 03 §9). */
   #poles = 0;
+  /** Drawn second-track layers, retained for fallback diagnostics. */
+  #secondaryTrack: Phaser.GameObjects.Container | undefined;
+  #secondaryPortals = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -536,13 +540,14 @@ export class ChunkView {
       );
     // The second track behind the main one, its tunnel mouths and portal
     // hills; the oncoming train is drawn between them (doc 04 §7).
-    this.#objects.push(
-      ...chunkSecondaryTrack(scene, art, table, seed, {
-        track: depths.backProps + SECONDARY_DEPTH.track,
-        mouth: depths.backProps + SECONDARY_DEPTH.mouth,
-        hill: depths.backProps + SECONDARY_DEPTH.hill,
-      }),
-    );
+    const secondary = chunkSecondaryTrack(scene, art, table, seed, {
+      track: depths.backProps + SECONDARY_DEPTH.track,
+      mouth: depths.backProps + SECONDARY_DEPTH.mouth,
+      hill: depths.backProps + SECONDARY_DEPTH.hill,
+    });
+    this.#secondaryTrack = secondary[0];
+    this.#secondaryPortals = secondary[2]?.length ?? 0;
+    this.#objects.push(...secondary);
     if (electrified) {
       const catenary = chunkCatenary(scene, art, table, seed, {
         poles: depths.backProps + 0.6,
@@ -596,8 +601,18 @@ export class ChunkView {
     return this.#crossing !== undefined;
   }
 
+  /** Whether a second track is actually drawn in this chunk. */
+  get hasSecondaryTrackView(): boolean {
+    return this.#secondaryTrack !== undefined;
+  }
+
+  /** Drawn portal hills of the second track (art or plain). */
+  get secondaryPortalViews(): number {
+    return this.#secondaryPortals;
+  }
+
   /**
-   * Crossing, tunnel and catenary drawn plain when the art failed to load
+   * Crossing, tunnel, catenary and second track drawn plain if art failed
    * (PWA-10): the barriers still warn, the hill still clears over the
    * train and an electric journey keeps its wire (AGENTS.md).
    */
@@ -636,6 +651,87 @@ export class ChunkView {
         electrified,
         bake,
       );
+    const secondary = secondarySiteOfChunk(seed, table.chunkIndex);
+    if (secondary) {
+      const offsetU = gameConfig.world.secondaryTrackOffsetU;
+      this.#secondaryTrack = bake(
+        (g) => {
+          // Chunk positioning resets containers; bake the offset inside.
+          g.translateCanvas(0, -offsetU);
+          paintPlainTrack(g, table);
+        },
+        {
+          left: -4,
+          right: CHUNK_WIDTH_U + 4,
+          top: -Math.max(...table.ys) - offsetU - 4,
+          bottom: -Math.min(...table.ys) - offsetU + 12,
+        },
+      ).setDepth(depths.backProps + SECONDARY_DEPTH.track);
+      this.#objects.push(this.#secondaryTrack);
+      const x0 = table.chunkIndex * CHUNK_WIDTH_U;
+      for (const [worldX, mirrored] of [
+        [secondary.fromX, false],
+        [secondary.toX, true],
+      ] as const) {
+        if (
+          mirrored
+            ? worldX <= x0 || worldX > x0 + CHUNK_WIDTH_U
+            : worldX < x0 || worldX >= x0 + CHUNK_WIDTH_U
+        )
+          continue;
+        const x = worldX - x0;
+        const y = -this.#railAt(x) - offsetU;
+        const point = (dx: number, dy: number) =>
+          new Phaser.Math.Vector2(x + (mirrored ? -dx : dx), y + dy);
+        // Same pivot and open arch as the SVG portal; the hill covers
+        // vehicles behind it while the dark mouth stays below the train.
+        const arch: Phaser.Math.Vector2[] = [];
+        for (let step = 0; step <= 12; step++) {
+          const angle = (-Math.PI * step) / 12;
+          arch.push(point(36 * Math.cos(angle), -68 + 36 * Math.sin(angle)));
+        }
+        this.#objects.push(
+          bake(
+            (g) => {
+              g.fillStyle(0x24211e, 1);
+              g.fillCircle(x, y - 68, 36);
+              g.fillRect(x - 36, y - 68, 72, 74);
+            },
+            { left: x - 38, right: x + 38, top: y - 106, bottom: y + 8 },
+          ).setDepth(depths.backProps + SECONDARY_DEPTH.mouth),
+          bake(
+            (g) => {
+              g.fillStyle(0x6eae43, 1);
+              g.fillPoints(
+                [
+                  point(-380, 6),
+                  point(-350, -60),
+                  point(-300, -130),
+                  point(-230, -168),
+                  point(-140, -174),
+                  point(-60, -140),
+                  point(58, -136),
+                  point(60, 6),
+                  point(36, 6),
+                  ...arch,
+                  point(-36, 6),
+                ],
+                true,
+              );
+              g.lineStyle(10, 0xb9ae94, 1);
+              g.strokePoints([point(36, 6), ...arch, point(-36, 6)]);
+            },
+            {
+              left: x - (mirrored ? 62 : 382),
+              right: x + (mirrored ? 382 : 62),
+              top: y - 176,
+              bottom: y + 12,
+            },
+          ).setDepth(depths.backProps + SECONDARY_DEPTH.hill),
+        );
+        this.#secondaryPortals += 1;
+      }
+    }
     if (electrified) {
       const catenary = chunkCatenaryFallback(
         table,

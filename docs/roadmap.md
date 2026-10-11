@@ -180,6 +180,7 @@ R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na ná
 - **Problém:** bez atlasu `ChunkView` skončí v `#addPlainInfrastructure` dřív, než zavolá `chunkSecondaryTrack`. Protijedoucí vlak se kreslí jako silueta (oprava `d90534b`), ale jede bez kolejí a bez portálových kopců a mizí na neoznačené hranici.
 - **Oprava:** jednoduchá souběžná kolej a portálové kopce v náhradním kreslení, na stejných místech jako s grafikou.
 - **Test:** E2E PWA-10 s nenačteným SVG u druhé koleje světa 123: kolej je vidět (nová diagnostika) a vlak mizí v portálu.
+- **Stav:** hotovo. Bez grafiky se souběžná kolej a portálové kopce kreslí jednoduchými tvary na stejných místech jako s grafikou a protijedoucí vlak mizí po vozidlech v portálu (E2E PWA-10 ve světě 123).
 
 #### R8 — velikost bloku biomu je pevná
 

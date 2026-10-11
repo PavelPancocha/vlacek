@@ -65,3 +65,13 @@ Validace vyžaduje konečné `world.geometryLookAheadU` nejméně 2048 u; `Infin
 | `R9: rejects an infinite geometry look-ahead` | `expected [] to deeply equal [ 'world.geometryLookAheadU' ]` | PASS  |
 
 Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/config/gameConfig.test.ts` (red 1 FAIL / 17, green 17 PASS). Mez je zapsaná v dokumentu 13.
+
+## R7 — souběžná kolej i bez grafiky
+
+Bez atlasu kreslí `ChunkView` souběžnou kolej a portálové kopce jednoduchými tvary na stejných místech jako s grafikou; na obou koncích je tmavé ústí pod protijedoucím vlakem a kopec nad ním. Náhradní siluety tak mizí po vozidlech v označeném portálu. Diagnostika `scenery.secondaryTrackViews` a `scenery.secondaryPortalViews` počítá, co se skutečně vykreslilo.
+
+| Test                                                                                                      | Red                                                                                                                 | Green                               |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `PWA-10: without art the parallel track and portals frame the oncoming train` (svět 123, SVG zablokovaná) | `oncoming.spec.ts:129` — `expect(scenery.secondaryTrackViews).toBeGreaterThan(0)`, `Received: 0` (desktop i tablet) | `oncoming.spec.ts` 4 PASS (1,3 min) |
+
+Red proti produkčnímu buildu před opravou, jen s testem a diagnostikou: `flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- tests/e2e/oncoming.spec.ts tests/e2e/backdrop-reset.spec.ts --grep 'PWA-10|R10:' --workers 2` (4 FAIL). Související E2E (`oncoming`, `landscape`, `art`, `game`): 90 PASS, 4 skipped (vícedotykové testy v desktopovém projektu). Dokumentace: [D-011](../decisions/011-vector-vehicle-art-and-atlas.md) §6, [D-013](../decisions/013-landscape-localities-and-backdrops.md) (diagnostika), [D-017](../decisions/017-second-track-and-oncoming-train.md), [vývojový návod](../development.md). Snímek: kolej a portál bez grafiky (`secondaryTrackViews: 2`, `secondaryPortalViews: 1`). Recenze lane: LAND.

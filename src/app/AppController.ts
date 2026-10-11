@@ -291,12 +291,15 @@ export class AppController {
       artAtlas: this.#scene.artAtlas,
       effects: this.#scene.effectsStats,
       backdropAtlas: this.#scene.backdropAtlas,
+      backdrop: this.#scene.stats.backdrop,
       artSourceTextures: this.#scene.artSourceTextures,
       scenery: {
         biome: this.#scene.stats.biome,
         localities: [...this.#scene.stats.localities],
         ...this.#nearPropCheck(),
         crossingViews: this.#scene.stats.crossingViews,
+        secondaryTrackViews: this.#scene.stats.secondaryTrackViews,
+        secondaryPortalViews: this.#scene.stats.secondaryPortalViews,
       },
       catenary: {
         electrified: ride?.electrified ?? false,

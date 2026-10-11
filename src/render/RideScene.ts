@@ -87,14 +87,19 @@ export interface RenderStats {
   /** Rendered vehicles drawn from their art (the rest are placeholders). */
   artVehicles: number;
   renderedChunks: number;
-  /** Biome of the backdrop (the landscape ahead of the train). */
+  /** Target biome of the backdrop (the landscape ahead of the train). */
   biome: Biome | undefined;
+  /** Actual backdrop layers and their crossfade progress. */
+  backdrop: Backdrop['state'] | undefined;
   /** Localities of the chunks in view, left to right. */
   localities: string[];
   /** Catenary masts in the rendered chunks (doc 03 §9). */
   catenaryPoles: number;
   /** Level crossings drawn in the rendered chunks (art or plain). */
   crossingViews: number;
+  /** Second-track chunks and portal hills drawn with art or plain. */
+  secondaryTrackViews: number;
+  secondaryPortalViews: number;
   /** The first mid backdrop tile's x from the view's left edge, u. */
   backdropMidOffsetU: number;
   /**
@@ -113,9 +118,12 @@ const NO_STATS: RenderStats = {
   artVehicles: 0,
   renderedChunks: 0,
   biome: undefined,
+  backdrop: undefined,
   localities: [],
   catenaryPoles: 0,
   crossingViews: 0,
+  secondaryTrackViews: 0,
+  secondaryPortalViews: 0,
   backdropMidOffsetU: 0,
   pantographGapU: undefined,
   oncomingVehicles: 0,
@@ -763,6 +771,7 @@ export class RideScene extends Phaser.Scene {
       timeSec,
       simDtSec,
     );
+    this.stats.backdrop = this.#backdrop?.state;
     this.stats.backdropMidOffsetU = this.#backdrop?.midOffsetU ?? 0;
     const localities: string[] = [];
     for (
@@ -859,6 +868,13 @@ export class RideScene extends Phaser.Scene {
     this.stats.crossingViews = [...this.#chunks.values()].filter(
       (chunk) => chunk.hasCrossingView,
     ).length;
+    this.stats.secondaryTrackViews = [...this.#chunks.values()].filter(
+      (chunk) => chunk.hasSecondaryTrackView,
+    ).length;
+    this.stats.secondaryPortalViews = [...this.#chunks.values()].reduce(
+      (sum, chunk) => sum + chunk.secondaryPortalViews,
+      0,
+    );
     this.stats.catenaryPoles = [...this.#chunks.values()].reduce(
       (sum, chunk) => sum + chunk.catenaryPoles,
       0,

@@ -35,7 +35,7 @@ export interface DebugSnapshot {
     | undefined;
   /** Landscape in view (doc 14 §5). */
   scenery: {
-    /** Biome of the backdrop, undefined outside a ride. */
+    /** Target biome of the backdrop, undefined outside a ride. */
     biome: string | undefined;
     /** Localities of the chunks in view, left to right. */
     localities: string[];
@@ -47,6 +47,9 @@ export interface DebugSnapshot {
     nearPropOverlaps: string[];
     /** Level crossings drawn in view, with art or its fallback. */
     crossingViews: number;
+    /** Second-track chunks and portal hills drawn with art or plain. */
+    secondaryTrackViews: number;
+    secondaryPortalViews: number;
   };
   /** Catenary of an electric journey (doc 03 §9, D-016). */
   catenary: {
@@ -65,6 +68,14 @@ export interface DebugSnapshot {
     alpha: number;
     train: 'outside' | 'partly' | 'inside';
   }[];
+  /** Actual backdrop layers and crossfade progress (0 … 1), if a journey exists. */
+  backdrop:
+    | {
+        currentBiome: string | undefined;
+        incomingBiome: string | undefined;
+        fade: number;
+      }
+    | undefined;
   /** Parallax: the first mid backdrop tile's x from the view's left, u. */
   backdropMidOffsetU: number;
   /** Oncoming trains on second tracks (doc 05 §6, D-017). */
