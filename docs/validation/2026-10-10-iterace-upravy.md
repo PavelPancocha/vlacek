@@ -484,3 +484,37 @@ Celá brána po opravách (`9c6b662` a tento zápis):
 - `npm run report:budgets`: úvodní přenos 2970 KiB (gzip 757 KiB) z 10 240 KiB.
 
 Vše lokálně v kontejneru. Fyzický tablet a Tesla: **NEOVĚŘENO**.
+
+## Katalog V1 — výchozí stav a doplnění katalogu (seed)
+
+Další iterace doplní celý katalog dokumentu 06 ([stav](../roadmap.md), H0–H3). Lokální běhy na pracovní stanici s Linuxem (16 jader), headless Chromium; GitHub Actions a fyzická zařízení zvlášť.
+
+**Výchozí stav (build `0.1.0+2563ef4`, `master` po sloučení PR #2).**
+
+- `npm run check` PASS: 58 souborů, 465 unit testů, 11 vozidel s grafikou, 0 placeholderů, 43,6 s. Vitest běží lokálně se 4 workery (`VITEST_MAX_WORKERS=4`, zhruba jako v CI). S výchozími 16 workery na tomto stroji sdíleném s dalšími běhy překročí `GEN-10` (dlouhá jízda v `RideSimulation.test.ts`) limit 5000 ms (6,1–6,6 s; samotný 3,0 s, se 4 workery 3,7 s). Je to vytížení procesoru, ne chyba logiky; timeout testu se nemění. CI na `2563ef4` prošlo ([běh](https://github.com/PavelPancocha/vlacek/actions/runs/38132010540)).
+- `npm run test:e2e` na tomto stroji zatím neproběhl: Playwright 1.64 potřebuje Chromium headless shell revize 1248 a jeho stažení přes pomalé připojení trvá. Výsledek se zapíše k dalšímu kroku.
+
+**Seed katalogu.** `src/content/vehicles.ts` má všech 10 lokomotiv a 32 druhů vagonků v pořadí dokumentu 06. 31 vozidel bez grafiky nese `placeholder: true` a kreslí se označenou siluetou. Pojezd, efekty a píšťaly nových lokomotiv odpovídají smlouvě vozidel, která byla zmrazena před kreslením (rozměry a čepy podle dokumentu 10 §8; pracovní podklad orchestrace mimo repozitář). Vagonky mají dál `bogieOffsetU = round(0,31 · délka)` a kola o poloměru 12 u.
+
+| Test                                                                                                                                | Red                                                                                                                  | Green  |
+| ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------ |
+| CNT-01: přesně 10 lokomotiv a 32 vagonků dokumentu 06 (`catalog.test.ts`)                                                           | 4 FAIL proti katalogu 4/7: 4 místo 10 lokomotiv, 7 místo 32 vagonků, 11 místo 42 ID, jen `electric_retro` elektrická | 4 PASS |
+| Protijedoucí vlak jen z vozidel s grafikou (`session.test.ts`)                                                                      | FAIL: vlak světa 1000 vezl `fun_aquarium`, `cargo_excavator`, `service_tools`, `service_snowplow`, `fun_lights`      | PASS   |
+| DATA-05: save sestavení `0.1.0+2563ef4` (generátor v1, všech 11 vozidel) se s katalogem V1 načte beze změny (`v1-catalog-0.1.json`) | charakterizační test kompatibility, zelený před i po změně                                                           | PASS   |
+
+**Dočasné zúžení.** Tři kontroly „každé vozidlo má grafiku“ v `artManifest.test.ts` (release bez placeholderů, emitor u každé lokomotivy s efektem, sběrač u každé elektrické) a test `validate:assets --release` dočasně pomíjejí vozidla s `placeholder`. Release test ověřuje, že odmítne právě tato vozidla a nic jiného. Komentář „Seed scope (catalog V1)“ u každé kontroly uvádí podmínku odstranění: před dokončením katalogu se vrátí na celý katalog a `--release` musí projít.
+
+Brána seedu: `npm run check` PASS (58 souborů, 469 testů; `validate:assets`: 42 vozidel, 11 s grafikou, 31 placeholderů). `validate:assets -- --release` podle očekávání selže a vypíše 31 placeholderů.
+
+## H1/H2 — výběr lokomotivy a depo s celým katalogem
+
+Seed katalogu rozbil depo: s 32 kartami zůstala karta `add:cargo_box` mimo výhled i po posunu, celá E2E sada na seedu `00f8077` skončila **52 FAIL / 78 PASS / 4 skipped** (výchozí stav 130 PASS). Oprava drží katalog vagonků ve vodorovně posuvném řádku na všech displejích, se čtyřmi nezmenšenými skupinami; obrazovka ani Vyjet se neposouvají. Při aktualizaci depa zůstane pozice katalogu i pickeru a fokus.
+
+| Test (`tests/e2e/picker.spec.ts`, oba projekty)                                                                          | Red                                                                                                          | Green            |
+| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ---------------- |
+| Geometrie: všech 10 lokomotiv a 32 vagonků bez překryvu, na výřezu projektu a telefonech 844 × 390, 667 × 375, 568 × 320 | na seedu 2 FAIL (desktop, tablet): karta po posunu na x = −352 px; telefony a picker už procházely (ochrana) | 16 PASS          |
+| Tah začínající na kartách dosáhne lokomotivy 10 a vagonku 32, tah nic nepřidá, katalog a souprava se posouvají nezávisle | proti `994d56f`: katalog `Expected: 2804–3484, Received: 0` (návrat na začátek)                              | PASS (8 případů) |
+| Vodorovné kolečko dosáhne posledních karet a přidá stejný druh dvakrát na stejném místě                                  | `Expected: 3240 / 2804, Received: 0`                                                                         | PASS (4 případy) |
+| Tab odkryje celou kartu s viditelným fokusem, Enter a mezerník ji aktivují                                               | `Expected: focused, Received: inactive`; poté `viewport ratio 1`, `Received: 0.755`                          | PASS (8 případů) |
+
+Příkaz: `flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- tests/e2e/picker.spec.ts --workers=2`. Celá sada lane: **166 PASS / 4 skipped**; `npm run check` 469 PASS. Recenze lane: první FIX (dosažitelnost dokazoval programový posun; po přidání se katalog vracel na začátek), po opravě LAND. Dokumentace: [dokument 02 §7](../../vlacek-predavaci-balicek/02_OVLADANI_A_STAVY.md).

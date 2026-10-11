@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": 1,
+  "savedAtIso": "2026-10-11T12:00:00.000Z",
+  "appBuildId": "0.1.0+2563ef4",
+  "settings": {
+    "sfxEnabled": true,
+    "musicEnabled": false,
+    "reducedEffects": false,
+    "maxSpeedFactor": 1,
+    "quality": "auto"
+  },
+  "lastConsist": {
+    "locomotiveId": "electric_retro",
+    "wagons": [
+      {
+        "instanceId": "w1",
+        "definitionId": "passenger_classic",
+        "visualSeed": 11
+      },
+      {
+        "instanceId": "w2",
+        "definitionId": "passenger_open",
+        "visualSeed": 12
+      },
+      { "instanceId": "w3", "definitionId": "cargo_box", "visualSeed": 13 },
+      { "instanceId": "w4", "definitionId": "cargo_coal", "visualSeed": 14 },
+      {
+        "instanceId": "w5",
+        "definitionId": "cargo_container",
+        "visualSeed": 15
+      },
+      { "instanceId": "w6", "definitionId": "service_crane", "visualSeed": 16 },
+      { "instanceId": "w7", "definitionId": "fun_balloons", "visualSeed": 17 }
+    ]
+  },
+  "builderDraft": {
+    "locomotiveId": "magic_stars",
+    "wagons": [
+      { "instanceId": "w8", "definitionId": "cargo_coal", "visualSeed": 18 }
+    ]
+  },
+  "journey": {
+    "seed": 123,
+    "generatorVersion": 1,
+    "consist": {
+      "locomotiveId": "electric_retro",
+      "wagons": [
+        {
+          "instanceId": "w1",
+          "definitionId": "passenger_classic",
+          "visualSeed": 11
+        },
+        {
+          "instanceId": "w2",
+          "definitionId": "passenger_open",
+          "visualSeed": 12
+        },
+        { "instanceId": "w3", "definitionId": "cargo_box", "visualSeed": 13 },
+        { "instanceId": "w4", "definitionId": "cargo_coal", "visualSeed": 14 },
+        {
+          "instanceId": "w5",
+          "definitionId": "cargo_container",
+          "visualSeed": 15
+        },
+        {
+          "instanceId": "w6",
+          "definitionId": "service_crane",
+          "visualSeed": 16
+        },
+        { "instanceId": "w7", "definitionId": "fun_balloons", "visualSeed": 17 }
+      ]
+    },
+    "head": { "chunkIndex": 5, "arcOffsetU": 200 },
+    "simulationTick": 9000,
+    "activeEntities": []
+  }
+}

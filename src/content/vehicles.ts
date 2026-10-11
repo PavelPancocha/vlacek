@@ -18,7 +18,12 @@ const assets = (id: string) => ({
   previewAsset: `vehicle.${id}.preview`,
 });
 
-/** Temporary subset of doc 06 §2 (stable IDs and lengths). */
+/**
+ * The ten locomotives of doc 06 §2 in its order (stable IDs and lengths).
+ * Running gear, effects and horns of the vehicles still marked
+ * `placeholder` follow the frozen vehicle contract of the catalog V1 slice;
+ * each loses the marker when its art lands (H1).
+ */
 export const locomotives: readonly CatalogLocomotive[] = [
   {
     kind: 'locomotive',
@@ -32,6 +37,34 @@ export const locomotives: readonly CatalogLocomotive[] = [
     hornAudio: 'audio.horn.steam_local',
     effect: 'steam',
     ...assets('steam_local'),
+  },
+  {
+    kind: 'locomotive',
+    id: 'steam_express',
+    labelCs: 'Velká parní lokomotiva',
+    power: 'steam',
+    requiresCatenary: false,
+    lengthU: 216,
+    bogieOffsetU: 78,
+    wheelRadiusU: 19,
+    hornAudio: 'audio.horn.steam_express',
+    effect: 'steam',
+    placeholder: true,
+    ...assets('steam_express'),
+  },
+  {
+    kind: 'locomotive',
+    id: 'diesel_shunter',
+    labelCs: 'Naftový posunovač',
+    power: 'diesel',
+    requiresCatenary: false,
+    lengthU: 148,
+    bogieOffsetU: 44,
+    wheelRadiusU: 13,
+    hornAudio: 'audio.horn.diesel_shunter',
+    effect: 'diesel',
+    placeholder: true,
+    ...assets('diesel_shunter'),
   },
   {
     kind: 'locomotive',
@@ -62,6 +95,36 @@ export const locomotives: readonly CatalogLocomotive[] = [
   },
   {
     kind: 'locomotive',
+    id: 'electric_modern',
+    labelCs: 'Moderní elektrická',
+    power: 'electric',
+    // The journey gets its catenary (doc 03 §9, D-016).
+    requiresCatenary: true,
+    lengthU: 204,
+    bogieOffsetU: 66,
+    wheelRadiusU: 13,
+    hornAudio: 'audio.horn.electric_modern',
+    effect: 'none',
+    placeholder: true,
+    ...assets('electric_modern'),
+  },
+  {
+    kind: 'locomotive',
+    id: 'electric_mountain',
+    labelCs: 'Horská elektrická',
+    power: 'electric',
+    // The journey gets its catenary (doc 03 §9, D-016).
+    requiresCatenary: true,
+    lengthU: 160,
+    bogieOffsetU: 48,
+    wheelRadiusU: 13,
+    hornAudio: 'audio.horn.electric_mountain',
+    effect: 'none',
+    placeholder: true,
+    ...assets('electric_mountain'),
+  },
+  {
+    kind: 'locomotive',
     id: 'magic_stars',
     labelCs: 'Hvězdičková mašinka',
     power: 'fantasy',
@@ -72,6 +135,34 @@ export const locomotives: readonly CatalogLocomotive[] = [
     hornAudio: 'audio.horn.magic_stars',
     effect: 'stars',
     ...assets('magic_stars'),
+  },
+  {
+    kind: 'locomotive',
+    id: 'magic_bubbles',
+    labelCs: 'Bublinková mašinka',
+    power: 'fantasy',
+    requiresCatenary: false,
+    lengthU: 164,
+    bogieOffsetU: 46,
+    wheelRadiusU: 13,
+    hornAudio: 'audio.horn.magic_bubbles',
+    effect: 'bubbles',
+    placeholder: true,
+    ...assets('magic_bubbles'),
+  },
+  {
+    kind: 'locomotive',
+    id: 'magic_rainbow',
+    labelCs: 'Duhová mašinka',
+    power: 'fantasy',
+    requiresCatenary: false,
+    lengthU: 176,
+    bogieOffsetU: 52,
+    wheelRadiusU: 12,
+    hornAudio: 'audio.horn.magic_rainbow',
+    effect: 'rainbow',
+    placeholder: true,
+    ...assets('magic_rainbow'),
   },
 ];
 
@@ -93,13 +184,47 @@ function wagon(
   };
 }
 
-/** Temporary subset of doc 06 §3 covering all four groups. */
+/**
+ * A catalog vehicle whose art has not landed yet: drawn as the marked
+ * silhouette, never in a release (doc 06 §8). Removed per vehicle by its
+ * art (H2); none may remain at the end of the catalog V1 slice.
+ */
+function withoutArt(definition: CatalogWagon): CatalogWagon {
+  return { ...definition, placeholder: true };
+}
+
+/** The 32 wagon types of doc 06 §3 in its order and four groups. */
 export const wagons: readonly CatalogWagon[] = [
   wagon('passenger_classic', 'Osobní vagón', 'passenger', 176),
+  withoutArt(wagon('passenger_double', 'Patrový vagón', 'passenger', 192)),
+  withoutArt(wagon('passenger_sleeper', 'Lůžkový vagón', 'passenger', 184)),
+  withoutArt(wagon('passenger_dining', 'Jídelní vagón', 'passenger', 184)),
+  withoutArt(wagon('passenger_panorama', 'Vyhlídkový vagón', 'passenger', 192)),
   wagon('passenger_open', 'Otevřený výletní vagónek', 'passenger', 144),
   wagon('cargo_box', 'Krytý nákladní', 'cargo', 164),
+  withoutArt(wagon('cargo_logs', 'Klády', 'cargo', 176)),
   wagon('cargo_coal', 'Uhlák', 'cargo', 152),
+  withoutArt(wagon('cargo_sand', 'Písek', 'cargo', 152)),
+  withoutArt(wagon('cargo_gravel', 'Kamení', 'cargo', 152)),
   wagon('cargo_container', 'Kontejnerový', 'cargo', 188),
+  withoutArt(wagon('cargo_tank', 'Cisterna', 'cargo', 176)),
+  withoutArt(wagon('cargo_milk', 'Mléčný vagón', 'cargo', 168)),
+  withoutArt(wagon('cargo_grain', 'Obilný vagón', 'cargo', 172)),
+  withoutArt(wagon('cargo_hay', 'Sláma', 'cargo', 164)),
+  withoutArt(wagon('cargo_apples', 'Jablka', 'cargo', 156)),
+  withoutArt(wagon('cargo_cars', 'Přepravník aut', 'cargo', 204)),
+  withoutArt(wagon('cargo_tractor', 'Vagón s traktorem', 'cargo', 184)),
+  withoutArt(wagon('cargo_excavator', 'Vagón s bagrem', 'cargo', 192)),
+  withoutArt(wagon('cargo_mail', 'Poštovní vagón', 'cargo', 164)),
+  withoutArt(wagon('cargo_refrigerated', 'Chladírenský vagón', 'cargo', 176)),
   wagon('service_crane', 'Jeřábový vagón', 'service', 188),
+  withoutArt(wagon('service_tools', 'Dílenský vagón', 'service', 164)),
+  withoutArt(wagon('service_snowplow', 'Vagón s pluhem', 'service', 156)),
   wagon('fun_balloons', 'Balónkový vagónek', 'fun', 164),
+  withoutArt(wagon('fun_stars', 'Hvězdičkový vagónek', 'fun', 164)),
+  withoutArt(wagon('fun_garden', 'Zahrádkový vagónek', 'fun', 172)),
+  withoutArt(wagon('fun_aquarium', 'Akvarijní vagónek', 'fun', 176)),
+  withoutArt(wagon('fun_windmill', 'Větrníkový vagónek', 'fun', 160)),
+  withoutArt(wagon('fun_lights', 'Světýlkový vagónek', 'fun', 168)),
+  withoutArt(wagon('fun_toyblocks', 'Vagónek s kostkami', 'fun', 164)),
 ];

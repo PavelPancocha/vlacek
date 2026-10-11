@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../src/config/gameConfig.ts';
 import { consistLengthU } from '../../src/domain/consist/ConsistEditor.ts';
+import { locomotives, wagons } from '../../src/content/vehicles.ts';
 import { PRIMARY_KEY } from '../../src/platform/SaveRepository.ts';
 import {
   MemoryStorage,
@@ -191,6 +192,27 @@ describe('GameSession: depot, saving and restoring', () => {
     tap(session, 'add:cargo_box');
     expect(session.draft.consist.wagons).toHaveLength(count);
     expect(session.fullSignals).toBe(before + 1);
+  });
+
+  it('doc 05 §6: oncoming trains are made only of vehicles that have their art', () => {
+    const awaitingArt = new Set(
+      [...locomotives, ...wagons]
+        .filter((vehicle) => vehicle.placeholder)
+        .map((vehicle) => vehicle.id),
+    );
+    const session = createSession();
+    buildAndDepart(session);
+    const ride = session.ride;
+    if (!ride) throw new Error('no ride');
+    const seen = new Set<string>();
+    // Ten simulated minutes at full throttle pass several second tracks.
+    for (let tick = 0; tick < 60 * 600 && seen.size < 6; tick++) {
+      ride.step('THROTTLE');
+      for (const train of ride.oncomingTrains)
+        for (const vehicle of train.vehicles) seen.add(vehicle.id);
+    }
+    expect(seen.size).toBeGreaterThan(0);
+    expect([...seen].filter((id) => awaitingArt.has(id))).toEqual([]);
   });
 
   it('doc 03 §9: a journey behind the electric locomotive is electrified throughout, also after a reload', () => {

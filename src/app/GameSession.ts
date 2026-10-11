@@ -261,13 +261,18 @@ export class GameSession {
       vehicles: this.#vehicles(consist),
       // Changing the locomotive starts a new journey (doc 03 §9).
       electrified: locomotive?.requiresCatenary === true,
-      // Oncoming trains: steam or diesel locomotives (doc 03 §9).
+      // Oncoming trains: steam or diesel locomotives (doc 03 §9), only
+      // vehicles that already have their art (doc 06 §8). H0 moves this
+      // choice into the domain's journey fleet (D-019).
       npcFleet: {
         locomotives: this.#deps.catalog.locomotives.filter(
           (candidate) =>
-            candidate.power === 'steam' || candidate.power === 'diesel',
+            !candidate.placeholder &&
+            (candidate.power === 'steam' || candidate.power === 'diesel'),
         ),
-        wagons: this.#deps.catalog.wagons,
+        wagons: this.#deps.catalog.wagons.filter(
+          (candidate) => !candidate.placeholder,
+        ),
       },
       speedFactor: this.#settings.maxSpeedFactor,
       config: this.#deps.config,

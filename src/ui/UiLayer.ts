@@ -122,11 +122,32 @@ export class UiLayer {
     this.#signature = signature;
     const strip = this.#root.querySelector('.strip');
     if (strip) this.#stripScrollLeft = strip.scrollLeft;
+    const scrollPositions = ['.cards', '.catalog'].map((selector) => ({
+      selector,
+      left: this.#root.querySelector(selector)?.scrollLeft,
+    }));
+    const focused = document.activeElement;
+    const focusedAction =
+      focused instanceof HTMLElement && this.#root.contains(focused)
+        ? focused.dataset['action']
+        : undefined;
     this.#renderScope?.abort();
     this.#renderScope = new AbortController();
-    this.#root.replaceChildren(
-      ...this.#render(model, this.#renderScope.signal),
-    );
+    const signal = this.#renderScope.signal;
+    this.#root.replaceChildren(...this.#render(model, signal));
+    for (const { selector, left } of scrollPositions) {
+      const row = this.#root.querySelector(selector);
+      if (row && left !== undefined) row.scrollLeft = left;
+    }
+    if (focusedAction !== undefined) {
+      // The strip creates its visible buttons in a microtask too.
+      queueMicrotask(() => {
+        if (signal.aborted) return;
+        [...this.#root.querySelectorAll<HTMLElement>('[data-action]')]
+          .find((node) => node.dataset['action'] === focusedAction)
+          ?.focus({ preventScroll: true });
+      });
+    }
     this.#root.dataset['screen'] = model.screen.name;
   }
 

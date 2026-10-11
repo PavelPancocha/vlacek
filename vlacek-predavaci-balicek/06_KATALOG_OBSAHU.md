@@ -156,3 +156,10 @@ Každá lokomotiva a vagón má minimálně náhled, karoserii a informaci o poj
 ```
 
 Konkrétní schéma v dokumentu 08 dovolí doplnit další vrstvy. Produkční build nesmí potichu nahradit chybějící typ šedým obdélníkem. Dočasné generované tvary jsou vhodné pro M0/M1, ne důkaz dokončení vizuálního katalogu.
+
+## 9. Poznámky k implementaci
+
+- **Katalog V1.** `src/content/vehicles.ts` obsahuje všech 10 lokomotiv a 32 druhů vagonků v pořadí a se skupinami tohoto dokumentu. Test katalogu (CNT-01, `tests/unit/content/catalog.test.ts`) hlídá ID, české názvy, pohon, skupiny, délky a `requiresCatenary` právě u elektrických lokomotiv.
+- **Vozidla bez grafiky.** Vozidlo, jehož kresba ještě nevznikla, nese `placeholder: true` a kreslí se označenou siluetou ([D-011](../docs/decisions/011-vector-vehicle-art-and-atlas.md)). Protijedoucí vlaky taková vozidla nepoužívají. `validate:assets --release` neprojde, dokud nějaké zbývá; příznak odebírá každá grafika zvlášť ([stav](../docs/roadmap.md)).
+- **Uložené hry.** ID se jen přidávají, takže save z katalogu 0.1 se načte beze změny a verze obsahu dokumentu 08 se nemění (fixture `v1-catalog-0.1.json`).
+- **Dosažitelnost katalogu.** Všech 10 lokomotiv a 32 druhů vagonků ve čtyřech skupinách je dosažitelných na telefonu, tabletu i desktopu: řádek karet se posouvá vodorovně tahem, kolečkem i klávesou Tab. Aktualizace depa zachová pozici katalogu a fokus; posun katalogu a soupravy je nezávislý ([dokument 02 §7](02_OVLADANI_A_STAVY.md)).

@@ -40,6 +40,29 @@ describe('parseSave', () => {
     ).toEqual(['w1', 'w2']);
   });
 
+  it('DATA-05: a 0.1 save from the 11-vehicle catalog loads unchanged with the V1 catalog', () => {
+    // Catalog IDs are only added (doc 08 §7): every ID of the
+    // 0.1 catalog stays valid, so no migration and no content version bump.
+    const result = parseSave(fixture('v1-catalog-0.1.json'), rules);
+    expect(result.status).toBe('valid');
+    if (result.status !== 'valid') return;
+    expect(result.save.journey?.generatorVersion).toBe(1);
+    expect(result.save.journey?.consist.locomotiveId).toBe('electric_retro');
+    expect(
+      result.save.journey?.consist.wagons.map((w) => w.definitionId),
+    ).toEqual([
+      'passenger_classic',
+      'passenger_open',
+      'cargo_box',
+      'cargo_coal',
+      'cargo_container',
+      'service_crane',
+      'fun_balloons',
+    ]);
+    expect(result.save.lastConsist.wagons).toHaveLength(7);
+    expect(result.save.builderDraft?.locomotiveId).toBe('magic_stars');
+  });
+
   it('accepts a save without a journey but with a builder draft', () => {
     const result = parseSave(fixture('v1-no-journey.json'), rules);
     expect(result.status).toBe('valid');
