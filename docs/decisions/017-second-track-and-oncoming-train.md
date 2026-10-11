@@ -42,7 +42,7 @@ Dokument 14 §5 chce druhou kolej s jiným vlakem, který nikdy nejede po hráč
 5. **Kresba.**
    - `SecondaryView` kreslí koleje druhé tratě ve viditelném úseku a na obou koncích tunelový portál, napravo zrcadlený. Portál má dvě vrstvy: tmavé ústí pod vlakem a kopec s kamennou zdí a obloukem nad ním, otvor oblouku je průhledný.
    - Vlak se kreslí zrcadlený (jede doleva) v měřítku 0,9 mezi těmito vrstvami, za hlavní tratí a stožáry. Vozidlo hluboko v portálu se nekreslí.
-   - Parní a naftový protijedoucí vlak kouří; mimo portály `emitterWorldPoint` zrcadlí emitor.
+   - Parní a naftový protijedoucí vlak kouří; mimo portály `emitterWorldPoint` zrcadlí emitor. Obláčky zdědí část rychlosti ve směru jízdy, tedy doleva (`travelDirection`). Každý vlak má vlastní stav emisí (`TrainEffectsByTrain`): dva souběžně jedoucí vlaky si takty výfuku nepředávají a stav skončeného vlaku zanikne s ním (Codex review PR #2).
 6. **Diagnostika.** Snímek `?debug=1` hlásí `oncoming`: soupravy s intervalem x, úsek mezi portály a počet vozidel vykreslených v otevřené krajině.
 
 ## Důsledky

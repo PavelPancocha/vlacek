@@ -6,6 +6,7 @@ import {
 } from '../../../../src/render/particles/particleKinds.ts';
 import {
   TrainEffects,
+  TrainEffectsByTrain,
   type TrainEffectsInput,
 } from '../../../../src/render/particles/TrainEffects.ts';
 
@@ -21,6 +22,7 @@ const MAX = 480;
 const base: TrainEffectsInput = {
   dtSec: 1 / 60,
   speedUPerSec: 0,
+  travelDirection: 1,
   maxSpeedUPerSec: MAX,
   intent: 'COAST',
   emitters: [],
@@ -199,6 +201,80 @@ describe('TrainEffects (doc 14 §4)', () => {
       'snow',
     ])
       expect(kindIndex(name)).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('oncoming trains (doc 05 §6, D-017)', () => {
+  const diesel = [{ kind: 'diesel' as const, x: 0, y: -80, tiltDeg: 0 }];
+  const pulling: Partial<TrainEffectsInput> = {
+    speedUPerSec: 300,
+    intent: 'THROTTLE',
+    travelDirection: -1,
+  };
+
+  it('keeps puffs moving with a train that drives left', () => {
+    for (const [travelDirection, sign] of [
+      [1, 1],
+      [-1, -1],
+    ] as const) {
+      const { field } = run(
+        {
+          speedUPerSec: 400,
+          emitters: steam,
+          intent: 'THROTTLE',
+          travelDirection,
+        },
+        0.5,
+      );
+      const smoke = field
+        .particles()
+        .filter((p) => p.kind === kindIndex('smoke'));
+      expect(smoke.length).toBeGreaterThan(0);
+      const meanVx = smoke.reduce((sum, p) => sum + p.vx, 0) / smoke.length;
+      // 0.3 × 400 u/s inherited, against a few u/s of the puff's own drift.
+      expect(meanVx * sign).toBeGreaterThan(60);
+    }
+  });
+
+  it('gives each oncoming train its own emission clock', () => {
+    // Per-frame diesel puffs of a train that runs alone.
+    const frames = 600;
+    const loneField = new ParticleField(PARTICLE_KINDS, 100_000, lcg(11));
+    const loneEffects = new TrainEffects(loneField, lcg(12));
+    const lone = Array.from(
+      { length: frames },
+      () =>
+        loneEffects
+          .step({ ...base, ...pulling, emitters: diesel })
+          .get('diesel') ?? 0,
+    );
+    expect(lone.some((n) => n > 0)).toBe(true);
+    // Two trains overlapping (seed 11 at full speed): each keeps the lone
+    // train's rhythm, whatever order they are stepped in.
+    const field = new ParticleField(PARTICLE_KINDS, 100_000, lcg(11));
+    const trains = new TrainEffectsByTrain(field, lcg(12));
+    const puffs = { a: [] as number[], b: [] as number[] };
+    for (let i = 0; i < frames; i++)
+      for (const id of ['a', 'b'] as const)
+        puffs[id].push(
+          trains
+            .step(id, { ...base, ...pulling, emitters: diesel })
+            .get('diesel') ?? 0,
+        );
+    expect(puffs.a).toEqual(lone);
+    expect(puffs.b).toEqual(lone);
+  });
+
+  it('forgets a train once it has finished', () => {
+    const field = new ParticleField(PARTICLE_KINDS, 1000, lcg(11));
+    const trains = new TrainEffectsByTrain(field, lcg(12));
+    for (const id of ['a', 'b'])
+      trains.step(id, { ...base, ...pulling, emitters: diesel });
+    expect(trains.size).toBe(2);
+    trains.retain(new Set(['b']));
+    expect(trains.size).toBe(1);
+    trains.clear();
+    expect(trains.size).toBe(0);
   });
 });
 

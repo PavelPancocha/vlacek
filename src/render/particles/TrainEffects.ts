@@ -15,6 +15,8 @@ export interface TrainEffectsInput {
   /** Simulation time since the last frame; 0 while paused. */
   dtSec: number;
   speedUPerSec: number;
+  /** +1 drives right (the player's train), −1 left (oncoming trains). */
+  travelDirection: 1 | -1;
   maxSpeedUPerSec: number;
   intent: MotionIntent;
   /** Emitters of the locomotive; none for an electric one. */
@@ -104,7 +106,7 @@ export class TrainEffects {
 
     for (const [i, emitter] of input.emitters.entries()) {
       const puff = {
-        vxU: speed * PUFF_INHERIT,
+        vxU: input.travelDirection * speed * PUFF_INHERIT,
         jitterU: 1.5,
         directionOffsetDeg: emitter.tiltDeg,
       };
@@ -211,5 +213,47 @@ export class TrainEffects {
       );
     }
     return emitted;
+  }
+}
+
+/**
+ * Effects of the oncoming trains, one `TrainEffects` per train: two trains
+ * can overlap (doc 05 §6), and a shared emission clock would hand one
+ * train's puffs to the other by stepping order. A finished train's state
+ * is dropped with it.
+ */
+export class TrainEffectsByTrain {
+  readonly #field: ParticleField;
+  readonly #random: () => number;
+  readonly #trains = new Map<string, TrainEffects>();
+
+  constructor(field: ParticleField, random: () => number) {
+    this.#field = field;
+    this.#random = random;
+  }
+
+  /** Emits this frame's particles of train `id`; see `TrainEffects`. */
+  step(id: string, input: TrainEffectsInput): Map<string, number> {
+    let effects = this.#trains.get(id);
+    if (!effects) {
+      effects = new TrainEffects(this.#field, this.#random);
+      this.#trains.set(id, effects);
+    }
+    return effects.step(input);
+  }
+
+  /** Forgets the trains that are no longer running. */
+  retain(running: ReadonlySet<string>): void {
+    for (const id of this.#trains.keys())
+      if (!running.has(id)) this.#trains.delete(id);
+  }
+
+  clear(): void {
+    this.#trains.clear();
+  }
+
+  /** Trains with effect state (diagnostics, tests). */
+  get size(): number {
+    return this.#trains.size;
   }
 }

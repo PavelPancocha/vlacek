@@ -53,6 +53,7 @@ import { ParticleField } from './particles/ParticleField.ts';
 import { PARTICLE_KINDS, kindName } from './particles/particleKinds.ts';
 import {
   TrainEffects,
+  TrainEffectsByTrain,
   type PlacedEmitter,
   type TrainEffectsInput,
 } from './particles/TrainEffects.ts';
@@ -313,7 +314,8 @@ export class RideScene extends Phaser.Scene {
     Math.random,
   );
   readonly #trainEffects = new TrainEffects(this.#particles, Math.random);
-  readonly #npcEffects = new TrainEffects(this.#particles, Math.random);
+  /** Oncoming trains' smoke, one emission state per train. */
+  readonly #npcEffects = new TrainEffectsByTrain(this.#particles, Math.random);
   readonly #ambient = new AmbientLife(this.#particles, Math.random);
   #effectsView: EffectsView | undefined;
   #effectsTexture: string | undefined;
@@ -579,6 +581,7 @@ export class RideScene extends Phaser.Scene {
 
   #reset(): void {
     this.#particles.clear();
+    this.#npcEffects.clear();
     this.#frameTick = undefined;
     this.#destroyChunks();
     this.#destroyObjects();
@@ -1023,6 +1026,7 @@ export class RideScene extends Phaser.Scene {
     this.#trainEffects.step({
       dtSec,
       speedUPerSec: ride.speedUPerSec,
+      travelDirection: 1,
       maxSpeedUPerSec: gameConfig.train.maxSpeedUPerSec,
       intent: ride.lastIntent,
       emitters,
@@ -1035,6 +1039,7 @@ export class RideScene extends Phaser.Scene {
         : {}),
     });
     // Oncoming steam and diesel trains smoke too, out of their tunnels.
+    this.#npcEffects.retain(new Set(ride.oncomingTrains.map((t) => t.id)));
     for (const train of ride.oncomingTrains) {
       const loco = train.vehicles[0];
       const shaped = this.#host
@@ -1061,9 +1066,10 @@ export class RideScene extends Phaser.Scene {
           (emitter) =>
             emitter.x > train.site.fromX && emitter.x < train.site.toX,
         );
-      this.#npcEffects.step({
+      this.#npcEffects.step(train.id, {
         dtSec,
         speedUPerSec: train.speedUPerSec,
+        travelDirection: -1,
         maxSpeedUPerSec: gameConfig.train.maxSpeedUPerSec,
         intent: 'THROTTLE',
         emitters: npcEmitters,
