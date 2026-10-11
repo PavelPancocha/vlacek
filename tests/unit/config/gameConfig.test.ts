@@ -215,4 +215,12 @@ describe('gameConfig', () => {
       'world.terrain.maxEmbankmentU',
     ]);
   });
+
+  it('R8: rejects a biome block with four chunks instead of eight', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      world: { ...gameConfig.world, chunksPerBiomeBlock: 4 },
+    };
+    expect(validateGameConfig(broken)).toEqual(['world.chunksPerBiomeBlock']);
+  });
 });

@@ -45,3 +45,13 @@ Klasifikace podpěry (`catenarySupport`) a kreslení závěsu v `TunnelView` sd�
 | `R6: gives every support a mast or a drawn hanger across many tunnel worlds` (64 světů) | `world 0 chunk -10 support -9984: expected false to be true` | PASS  |
 
 Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- src/render/TunnelView.test.ts`. Test kreslení leží u rendereru (`src/render/*.test.ts`), protože typy Phaseru zná jen rendererový TypeScript projekt; Vitest ho pouští v Node a nahrazuje jen kreslicí platformu ([vývojový návod](../development.md)). Dokumentace: dokument 03 §9, [D-016](../decisions/016-electric-locomotive-and-catenary.md), [D-018](../decisions/018-bridges-and-tunnels.md). Recenze lane: LAND.
+
+## R8 — velikost bloku biomu je pevná
+
+Validace konfigurace vyžaduje `world.chunksPerBiomeBlock === 8`, stejně jako u `blocksPerRouteCycle`; rozvržení slotů (přejezd, most, tunel, druhá kolej, přechod) s osmi chunky počítá.
+
+| Test                                                          | Red                                                           | Green |
+| ------------------------------------------------------------- | ------------------------------------------------------------- | ----- |
+| `R8: rejects a biome block with four chunks instead of eight` | `expected [] to deeply equal [ 'world.chunksPerBiomeBlock' ]` | PASS  |
+
+Příkaz: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/config/gameConfig.test.ts` (red 1 FAIL / 16, green 16 PASS). Pevná velikost je zapsaná v dokumentu 13.

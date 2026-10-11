@@ -385,7 +385,7 @@ export function validateGameConfig(config: GameConfig): string[] {
       positive(train.slowModeSpeedFactor) && train.slowModeSpeedFactor <= 1,
     ],
     ['world.chunkWidthU', positive(world.chunkWidthU)],
-    ['world.chunksPerBiomeBlock', positiveInteger(world.chunksPerBiomeBlock)],
+    ['world.chunksPerBiomeBlock', world.chunksPerBiomeBlock === 8],
     [
       'world.blocksPerRouteCycle',
       // One block per biome of the itinerary (doc 04 §5).

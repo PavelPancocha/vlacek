@@ -186,6 +186,7 @@ R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na ná
 - **Problém:** validace přijme jakékoli kladné `world.chunksPerBiomeBlock`, ale rozvržení slotů (přejezd ve slotu 3, most 4, tunel 6, druhá kolej 4–6, přechod 7) počítá s osmi chunky. Při hodnotě 4 by simulace pustila protijedoucí vlak tam, kde se koleje nekreslí.
 - **Oprava:** validace vyžaduje 8, stejně jako u `blocksPerRouteCycle`. Odvození slotů z konfigurace se odkládá, dokud pro něj nebude konkrétní důvod.
 - **Test:** unit test validace s hodnotou 4.
+- **Stav:** hotovo. Validace vyžaduje `world.chunksPerBiomeBlock === 8`; hodnotu 4 odmítne (dokument 13). Odvození slotů z konfigurace zůstává odložené.
 
 #### R9 — konečný předstih geometrie
 
