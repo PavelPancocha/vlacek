@@ -582,3 +582,15 @@ Příkazy: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/tooling/validate-as
 | `PERF_WAGON` vyplní délkový limit zvoleným typem, odmítne neznámé ID, ID lokomotivy a prázdné ID, výchozí mix beze změny (`perf-consist.test.ts`) | 4 FAIL / 5 (`expected false to be true`, funkce nevyhodila)           | 5 PASS  |
 
 Lane po H0: `npm run check` 61 souborů / 485 testů PASS napoprvé; E2E `effects.spec.ts` a `art.spec.ts` 26 PASS na obou projektech (s opravou depa, která přichází samostatně). Jízdy na snímcích kreslí obě vozidla z atlasu vozidel (`artVehicles === vehicles`), s kouřem a výfukem. Recenze lane: LAND.
+
+## H2, dávka 1 — osobní vozy
+
+`passenger_double`, `passenger_sleeper`, `passenger_dining` a `passenger_panorama` mají vlastní ruční SVG kresbu podle zmrazené smlouvy vozidel. Cestující, kuchař a hosté jsou jen náznaky bez obličejů; jídelní vůz má jediný piktogram, překříženou vidličku se lžící.
+
+| Test                                                                                                                                                         | Red                                                                           | Green                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------- |
+| `gives passenger_<id> art with the frozen H2 geometry` pro všechny čtyři (`artManifest.test.ts`): výšky, délky, pivoty, opěrné body, kola, žádný placeholder | 4 FAIL: `expected … to not have property "placeholder"`                       | PASS                               |
+| `validate:assets` přijme katalog s novou kresbou (`validate-assets.test.ts`)                                                                                 | FAIL: souhrn seedu neodpovídal                                                | PASS                               |
+| Napojení karoserie na podvozky (nález recenze lane: lůžkový a jídelní vůz „visely“ nad podvozky)                                                             | pixelová kontrola mezery mezi podélníkem a podvozky selhala u všech čtyř vozů | PASS po doplnění příčníků a pružin |
+
+Lane po H0: `npm run check` 60 souborů / 481 testů PASS; `art.spec.ts` 18 PASS na obou projektech; jízda se všemi čtyřmi vozy kreslí 5 vozidel z atlasu vozidel (2024 × 750 px při 2 px/u). Recenze lane: FIX (mezera u podvozků), po opravě připraveno.

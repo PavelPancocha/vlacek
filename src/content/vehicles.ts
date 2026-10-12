@@ -192,10 +192,10 @@ function withoutArt(definition: CatalogWagon): CatalogWagon {
 /** The 32 wagon types of doc 06 §3 in its order and four groups. */
 export const wagons: readonly CatalogWagon[] = [
   wagon('passenger_classic', 'Osobní vagón', 'passenger', 176),
-  withoutArt(wagon('passenger_double', 'Patrový vagón', 'passenger', 192)),
-  withoutArt(wagon('passenger_sleeper', 'Lůžkový vagón', 'passenger', 184)),
-  withoutArt(wagon('passenger_dining', 'Jídelní vagón', 'passenger', 184)),
-  withoutArt(wagon('passenger_panorama', 'Vyhlídkový vagón', 'passenger', 192)),
+  wagon('passenger_double', 'Patrový vagón', 'passenger', 192),
+  wagon('passenger_sleeper', 'Lůžkový vagón', 'passenger', 184),
+  wagon('passenger_dining', 'Jídelní vagón', 'passenger', 184),
+  wagon('passenger_panorama', 'Vyhlídkový vagón', 'passenger', 192),
   wagon('passenger_open', 'Otevřený výletní vagónek', 'passenger', 144),
   wagon('cargo_box', 'Krytý nákladní', 'cargo', 164),
   withoutArt(wagon('cargo_logs', 'Klády', 'cargo', 176)),

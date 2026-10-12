@@ -73,6 +73,7 @@ Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
    - Žádná skutečná loga ani dopravci.
 4. Hravé: `fun_stars`, `fun_garden`, `fun_aquarium`, `fun_windmill`, `fun_lights`, `fun_toyblocks`.
 
+- **Stav dávky 1 (osobní):** hotovo. Patrový, lůžkový, jídelní a vyhlídkový vůz mají vlastní kresbu.
 - **Data:** délky, skupiny a české názvy jsou z dokumentu 06 §3. Dvounápravový nebo podvozkový pojezd určuje manifest u každého vagonku.
 - **Depo:** katalog si nechá čtyři skupiny. E2E telefonů ověří, že je dosažitelná i poslední z 32 karet.
 - **Testy a kontroly:**

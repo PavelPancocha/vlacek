@@ -63,6 +63,45 @@ describe('vehicle art manifest (doc 06 §8, doc 07 §4, CNT-02)', () => {
       expect(crosshead.x + 108 + 26).toBeLessThanOrEqual(198);
     }
   });
+  it.each([
+    ['passenger_double', 192, 100, 60, 'wheel.wagon-disc', [23, 49, 143, 169]],
+    [
+      'passenger_sleeper',
+      184,
+      82,
+      57,
+      'wheel.wagon-spoked',
+      [22, 48, 136, 162],
+    ],
+    ['passenger_dining', 184, 82, 57, 'wheel.wagon-spoked', [22, 48, 136, 162]],
+    ['passenger_panorama', 192, 92, 60, 'wheel.wagon-disc', [23, 49, 143, 169]],
+  ] as const)(
+    'gives %s art with the frozen H2 geometry',
+    (id, lengthU, heightU, bogieOffsetU, part, axles) => {
+      const vehicle = wagons.find((wagon) => wagon.id === id);
+      expect(vehicle).toMatchObject({
+        lengthU,
+        bogieOffsetU,
+        wheelRadiusU: 12,
+      });
+      expect(vehicle).not.toHaveProperty('placeholder');
+      const art = vehicleArt[id];
+      expect(art).toEqual({
+        heightU,
+        body: `${id}.body`,
+        overlay: `${id}.overlay`,
+        wheels: axles.map((xU) => ({ part, xU })),
+      });
+      if (!art?.overlay) throw new Error(`${id}: body and overlay required`);
+      for (const key of [art.body, art.overlay]) {
+        expect(artParts[key]).toMatchObject({
+          widthU: lengthU,
+          heightU,
+          pivotU: { x: lengthU / 2, y: heightU },
+        });
+      }
+    },
+  );
 
   it('validates as shipped', () => {
     expect(validateVehicleArt(shipped)).toEqual([]);

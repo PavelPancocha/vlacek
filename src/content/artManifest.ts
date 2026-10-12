@@ -322,6 +322,54 @@ export const artParts = {
     heightU: 82,
     pivotU: { x: 74, y: 82 },
   },
+  'passenger_double.body': {
+    file: 'passenger_double.body.svg',
+    widthU: 192,
+    heightU: 100,
+    pivotU: { x: 96, y: 100 },
+  },
+  'passenger_double.overlay': {
+    file: 'passenger_double.overlay.svg',
+    widthU: 192,
+    heightU: 100,
+    pivotU: { x: 96, y: 100 },
+  },
+  'passenger_sleeper.body': {
+    file: 'passenger_sleeper.body.svg',
+    widthU: 184,
+    heightU: 82,
+    pivotU: { x: 92, y: 82 },
+  },
+  'passenger_sleeper.overlay': {
+    file: 'passenger_sleeper.overlay.svg',
+    widthU: 184,
+    heightU: 82,
+    pivotU: { x: 92, y: 82 },
+  },
+  'passenger_dining.body': {
+    file: 'passenger_dining.body.svg',
+    widthU: 184,
+    heightU: 82,
+    pivotU: { x: 92, y: 82 },
+  },
+  'passenger_dining.overlay': {
+    file: 'passenger_dining.overlay.svg',
+    widthU: 184,
+    heightU: 82,
+    pivotU: { x: 92, y: 82 },
+  },
+  'passenger_panorama.body': {
+    file: 'passenger_panorama.body.svg',
+    widthU: 192,
+    heightU: 92,
+    pivotU: { x: 96, y: 92 },
+  },
+  'passenger_panorama.overlay': {
+    file: 'passenger_panorama.overlay.svg',
+    widthU: 192,
+    heightU: 92,
+    pivotU: { x: 96, y: 92 },
+  },
 } satisfies Record<string, ArtPart>;
 
 export type ArtPartKey = keyof typeof artParts;
@@ -599,5 +647,49 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       { part: 'wheel.diesel', xU: 118 },
     ],
     emitters: [{ xU: 96, yU: 25 }],
+  },
+  passenger_double: {
+    heightU: 100,
+    body: 'passenger_double.body',
+    overlay: 'passenger_double.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 23 },
+      { part: 'wheel.wagon-disc', xU: 49 },
+      { part: 'wheel.wagon-disc', xU: 143 },
+      { part: 'wheel.wagon-disc', xU: 169 },
+    ],
+  },
+  passenger_sleeper: {
+    heightU: 82,
+    body: 'passenger_sleeper.body',
+    overlay: 'passenger_sleeper.overlay',
+    wheels: [
+      { part: 'wheel.wagon-spoked', xU: 22 },
+      { part: 'wheel.wagon-spoked', xU: 48 },
+      { part: 'wheel.wagon-spoked', xU: 136 },
+      { part: 'wheel.wagon-spoked', xU: 162 },
+    ],
+  },
+  passenger_dining: {
+    heightU: 82,
+    body: 'passenger_dining.body',
+    overlay: 'passenger_dining.overlay',
+    wheels: [
+      { part: 'wheel.wagon-spoked', xU: 22 },
+      { part: 'wheel.wagon-spoked', xU: 48 },
+      { part: 'wheel.wagon-spoked', xU: 136 },
+      { part: 'wheel.wagon-spoked', xU: 162 },
+    ],
+  },
+  passenger_panorama: {
+    heightU: 92,
+    body: 'passenger_panorama.body',
+    overlay: 'passenger_panorama.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 23 },
+      { part: 'wheel.wagon-disc', xU: 49 },
+      { part: 'wheel.wagon-disc', xU: 143 },
+      { part: 'wheel.wagon-disc', xU: 169 },
+    ],
   },
 };
