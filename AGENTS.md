@@ -89,6 +89,13 @@ Nejdřív stabilizuj jednotky, vzorkování tratě, soupravu a input kontrakt; p
 
 Před dokončením změny spusť relevantní testy, typecheck, lint a build. U celého vydání také validaci katalogu/assetů, E2E, offline aktualizační testy a rozpočty. Neoznačuj neprovedený test jako úspěšný.
 
+Pojmenování větví:
+
+- Větev, která jde na GitHub, se jmenuje `<typ>/<téma>`. Typ je stejný jako u commitů (`feat`, `fix`, `perf`, `test`, `ci`, `docs`, `chore`). Téma jsou dvě až čtyři anglická slova v kebab-case, která pojmenují změnu, s ID z roadmapy, pokud existuje: `fix/r3-generator-v2`, `feat/r4-auto-quality`.
+- Název neobsahuje jméno nástroje ani agenta (`codex/`, `claude/`), samotnou verzi jako `v1` ani náhodnou příponu. Když nástroj prefix vynucuje, konvence následuje za ním: `claude/fix-r3-generator-v2`.
+- Lokální pracovní větve (paralelní linky agentů, zkušební sloučení) se jmenují `wip/<téma>-<linka>`, nikdy se nepushují a po přistání se smažou.
+- Cíl se plánuje jako jeden PR, takže spojovací větev není potřeba. Otevřený PR se označuje číslem, ne písmenem. Hlavní větev PR po sloučení smaže GitHub.
+
 ## Co vykazovat při předání implementace
 
 Co skutečně funguje, co bylo ověřeno, příkazy ke spuštění, build/release ID, testovací výsledky a známá omezení. U Tesly uveď konkrétní firmware a zařízení, nebo výslovně NEOVĚŘENO. Desktopová emulace není fyzický test Tesly.
