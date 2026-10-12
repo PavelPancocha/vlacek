@@ -493,3 +493,62 @@ describe('GameSession: a journey from track generator v0 (version 0.1)', () => {
     expect(session.screen.name).toBe('RIDING');
   });
 });
+
+describe('GameSession: bubble touch routing (H3, INP-05)', () => {
+  it('pops once through the world hit boundary, emits sound feedback once and leaves throttle/coast/brake priority intact', () => {
+    const session = createSession();
+    buildAndDepart(session, []);
+    session.drainEvents();
+    let live = true;
+    session.setWorldHitTest(
+      () => ({ bubbleId: 42 }),
+      (id) => {
+        if (id !== 42 || !live) return false;
+        live = false;
+        return true;
+      },
+    );
+    expect(session.router.intent()).toBe('COAST');
+    const first = touchWorld(session);
+    expect(live).toBe(false);
+    expect(session.router.intent()).toBe('THROTTLE');
+    expect(session.drainEvents()).toEqual([{ type: 'bubblePopped' }]);
+    const second = touchWorld(session);
+    expect(session.drainEvents()).toEqual([]);
+    session.router.pointerDown({
+      id: 9001,
+      clientX: 10,
+      clientY: 10,
+      timeMs: 0,
+      action: 'brake',
+    });
+    live = true;
+    const third = touchWorld(session);
+    expect(live).toBe(false);
+    expect(session.router.intent()).toBe('BRAKE');
+    expect(session.drainEvents()).toEqual([{ type: 'bubblePopped' }]);
+    release(session, first);
+    release(session, second);
+    release(session, third);
+    expect(session.router.intent()).toBe('BRAKE');
+    release(session, 9001);
+    expect(session.router.intent()).toBe('COAST');
+  });
+
+  it('a missed world touch emits no pop or sound feedback and still drives', () => {
+    const session = createSession();
+    buildAndDepart(session, []);
+    session.drainEvents();
+    session.setWorldHitTest(
+      () => undefined,
+      () => {
+        throw new Error('miss must not pop');
+      },
+    );
+    const finger = touchWorld(session);
+    expect(session.drainEvents()).toEqual([]);
+    expect(session.router.intent()).toBe('THROTTLE');
+    release(session, finger);
+    expect(session.router.intent()).toBe('COAST');
+  });
+});

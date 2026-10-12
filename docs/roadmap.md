@@ -53,6 +53,7 @@ Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
 | `magic_bubbles` 164 u     | Zaoblená karoserie; nový druh částic `bubble`                                                                                    |
 | `magic_rainbow` 176 u     | Vlastní silueta, barevné díly; nový druh částic `rainbow-puff`                                                                   |
 
+- **Stav fantazijních:** hotovo. `magic_bubbles` pouští bubliny a `magic_rainbow` barevné obláčky (nové druhy částic `bubble` a `rainbow-puff`).
 - **Stav velké parní a posunovače:** hotovo. `steam_express` (nová velká hnací kola, parní rozvod, uhlí v zadní části, kouř) a `diesel_shunter` (kapota, kabina, ochoz, výfuk) mají vlastní kresbu; `measure:perf` umí `PERF_WAGON`.
 - **Stav elektrických:** hotovo. `electric_modern` a `electric_mountain` mají vlastní kresbu a sdílený pantograf; TRN-08 prošel se všemi třemi elektrickými lokomotivami.
 - **Stav píšťal:** hotovo. Všech 10 lokomotiv má vlastní tón (velká parní o oktávu níž než malá, hranatá elektrická už nezní jako naftová); hráčova píšťala, náhled při výběru i odpověď protijedoucího vlaku používají identitu lokomotivy (E2E `horns.spec.ts`).
@@ -82,6 +83,8 @@ Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
   - E2E vyfotí kontaktní list všech 42 vozidel ze skutečné aplikace.
 
 ### H3 — bubliny a duha (dokument 06 §2)
+
+**Stav: hotovo.** Ťuknutí na bublinu ji přes `GameSession.setWorldHitTest` odstraní s malou částicí a krátkým zvukem (se ztišením i hlasovým limitem); tentýž dotyk současně pohání vlak a brzda má přednost. Duhová mašinka pouští měkké barevné obláčky. Unit, integrační i E2E testy na obou projektech; fyzická zařízení NEOVĚŘENO.
 
 - **Bubliny:** viditelné bubliny bublinkové mašinky jde prasknout dotykem.
   - Zásah hledá stávající `GameSession.setWorldHitTest`. Dotyk funguje souběžně s plynem, stejně jako reakce zvířat.

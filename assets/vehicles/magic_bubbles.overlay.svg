@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="96" viewBox="0 0 164 96">
+  <defs>
+    <linearGradient id="bronze" x2="0" y2="1"><stop stop-color="#f1d2a1"/><stop offset=".5" stop-color="#b8784c"/><stop offset="1" stop-color="#5e493b"/></linearGradient>
+    <linearGradient id="steel" x2="0" y2="1"><stop stop-color="#a6b3b0"/><stop offset=".4" stop-color="#526769"/><stop offset="1" stop-color="#243235"/></linearGradient>
+  </defs>
+  <g fill="none" stroke-linecap="round">
+    <path d="M24.4 80 A12 12 0 0 1 39 71.4 M116.4 80 A12 12 0 0 1 131 71.4" stroke="#eef1da" stroke-opacity=".5" stroke-width=".8"/>
+    <path d="M47.5 86 A12 12 0 0 1 32 94.3 M139.5 86 A12 12 0 0 1 124 94.3" stroke="#122a2d" stroke-opacity=".5" stroke-width=".9"/>
+  </g>
+  <g stroke="#253a3c" stroke-width=".5" stroke-linejoin="round">
+    <path d="M22 75 Q36 80 50 75 L48 77 Q36 82 24 77Z M114 75 Q128 80 142 75 L140 77 Q128 82 116 77Z" fill="url(#bronze)"/>
+    <rect x="32" y="79" width="8" height="8" rx="1.5" fill="url(#steel)"/>
+    <rect x="124" y="79" width="8" height="8" rx="1.5" fill="url(#steel)"/>
+    <circle cx="36" cy="83" r="2" fill="url(#bronze)"/><circle cx="128" cy="83" r="2" fill="url(#bronze)"/>
+    <path d="M14 72 V85 M21 72 V85" fill="none" stroke="url(#bronze)" stroke-width="1"/>
+    <rect x="13" y="79" width="9" height="1.7" rx=".4" fill="url(#steel)"/>
+    <rect x="13" y="84" width="9" height="1.7" rx=".4" fill="url(#steel)"/>
+  </g>
+</svg>

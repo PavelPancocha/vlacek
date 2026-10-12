@@ -40,6 +40,7 @@ export interface DebugSnapshot {
     kinds: Record<string, number>;
     /** Sum of particle positions; unchanged while the ride is paused. */
     checksum: number;
+    bubblePops: number;
   };
   /**
    * Loaded SVG sources still held as textures; 0 once the atlases are
@@ -132,6 +133,8 @@ export interface DebugSnapshot {
   p95FrameMs: number;
   worstFrameMs: number;
   frameSamples: number;
+  /** Visible bubbles: stable ID and drawn center/radius in CSS px (H3). */
+  bubbles: { id: number; x: number; y: number; radiusCssPx: number }[];
   objects: { id: string; x: number; y: number }[];
   /** Screen x of the chunk boundaries in view, CSS px (seam checks). */
   chunkEdges: number[];

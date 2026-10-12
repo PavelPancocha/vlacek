@@ -143,7 +143,6 @@ export const locomotives: readonly CatalogLocomotive[] = [
     wheelRadiusU: 13,
     hornAudio: 'audio.horn.magic_bubbles',
     effect: 'bubbles',
-    placeholder: true,
     ...assets('magic_bubbles'),
   },
   {
@@ -157,7 +156,6 @@ export const locomotives: readonly CatalogLocomotive[] = [
     wheelRadiusU: 12,
     hornAudio: 'audio.horn.magic_rainbow',
     effect: 'rainbow',
-    placeholder: true,
     ...assets('magic_rainbow'),
   },
 ];

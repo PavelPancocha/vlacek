@@ -370,6 +370,30 @@ export const artParts = {
     heightU: 92,
     pivotU: { x: 96, y: 92 },
   },
+  'magic_bubbles.body': {
+    file: 'magic_bubbles.body.svg',
+    widthU: 164,
+    heightU: 96,
+    pivotU: { x: 82, y: 96 },
+  },
+  'magic_bubbles.overlay': {
+    file: 'magic_bubbles.overlay.svg',
+    widthU: 164,
+    heightU: 96,
+    pivotU: { x: 82, y: 96 },
+  },
+  'magic_rainbow.body': {
+    file: 'magic_rainbow.body.svg',
+    widthU: 176,
+    heightU: 100,
+    pivotU: { x: 88, y: 100 },
+  },
+  'magic_rainbow.overlay': {
+    file: 'magic_rainbow.overlay.svg',
+    widthU: 176,
+    heightU: 100,
+    pivotU: { x: 88, y: 100 },
+  },
 } satisfies Record<string, ArtPart>;
 
 export type ArtPartKey = keyof typeof artParts;
@@ -691,5 +715,27 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       { part: 'wheel.wagon-disc', xU: 143 },
       { part: 'wheel.wagon-disc', xU: 169 },
     ],
+  },
+  magic_bubbles: {
+    heightU: 96,
+    body: 'magic_bubbles.body',
+    overlay: 'magic_bubbles.overlay',
+    wheels: [
+      { part: 'wheel.diesel', xU: 36 },
+      { part: 'wheel.diesel', xU: 128 },
+    ],
+    emitters: [{ xU: 127, yU: 12 }],
+  },
+  magic_rainbow: {
+    heightU: 100,
+    body: 'magic_rainbow.body',
+    overlay: 'magic_rainbow.overlay',
+    wheels: [
+      { part: 'wheel.wagon-spoked', xU: 23 },
+      { part: 'wheel.wagon-spoked', xU: 49 },
+      { part: 'wheel.wagon-spoked', xU: 127 },
+      { part: 'wheel.wagon-spoked', xU: 153 },
+    ],
+    emitters: [{ xU: 138, yU: 10 }],
   },
 };

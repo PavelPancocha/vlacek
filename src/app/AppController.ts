@@ -98,8 +98,10 @@ export class AppController {
         gameRoot.dataset['renderer'] = renderer;
       },
     });
-    session.setWorldHitTest((x, y) =>
-      this.#scene.hitObject(x, y, this.#host.canvas.getBoundingClientRect()),
+    session.setWorldHitTest(
+      (x, y) =>
+        this.#scene.hitObject(x, y, this.#host.canvas.getBoundingClientRect()),
+      (id) => this.#scene.popBubble(id),
     );
     session.setUnhandledActionHandler((action) => {
       if (action === 'strip-start') {
@@ -201,6 +203,9 @@ export class AppController {
         if (loco) this.#audio.play(loco.hornAudio);
         return;
       }
+      case 'bubblePopped':
+        this.#audio.play('bubble-pop');
+        return;
       case 'objectReacted':
         this.#audio.play('reaction');
         return;
@@ -328,6 +333,9 @@ export class AppController {
       p95FrameMs: frames.p95FrameMs,
       worstFrameMs: frames.worstFrameMs,
       frameSamples: frames.samples,
+      bubbles: canvas
+        ? this.#scene.bubbleScreenPositions(canvas.getBoundingClientRect())
+        : [],
       objects: canvas
         ? this.#scene.objectScreenPositions(canvas.getBoundingClientRect())
         : [],

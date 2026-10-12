@@ -174,6 +174,38 @@ describe('TrainEffects (doc 14 §4)', () => {
     expect((counts.get('smoke') ?? 0) + (counts.get('steam') ?? 0)).toBe(0);
   });
 
+  it.each([
+    ['bubbles', 'bubble'],
+    ['rainbow', 'rainbow-puff'],
+  ] as const)(
+    'emits %s at its anchor without stars or smoke, respecting pause and reduced effects',
+    (effect, kind) => {
+      const emitters = [{ kind: effect, x: 127, y: -84, tiltDeg: 0 }];
+      const input = { emitters, speedUPerSec: 200 };
+      const full = run(input);
+      const low = run({ ...input, rateScale: 0.5 }, 60, 96);
+      const standard = run(input, 60, 240);
+      expect(full.counts.get(kind) ?? 0).toBeGreaterThan(10);
+      expect([...full.counts.keys()]).toEqual([kind]);
+      const ratio =
+        (low.counts.get(kind) ?? 0) / (standard.counts.get(kind) ?? 1);
+      expect(ratio).toBeGreaterThan(0.45);
+      expect(ratio).toBeLessThan(0.55);
+      expect(standard.maxLive).toBeLessThanOrEqual(240);
+      expect(low.maxLive).toBeLessThanOrEqual(96);
+      expect(run({ ...input, dtSec: 0 }).counts.size).toBe(0);
+      const field = new ParticleField(PARTICLE_KINDS, 96, lcg(11));
+      new TrainEffects(field, lcg(12)).step({ ...base, emitters, dtSec: 1 });
+      expect(field.live).toBeGreaterThan(0);
+      for (const p of field.particles()) {
+        expect(p.x).toBeGreaterThanOrEqual(125.5);
+        expect(p.x).toBeLessThanOrEqual(128.5);
+        expect(p.y).toBeGreaterThanOrEqual(-85.5);
+        expect(p.y).toBeLessThanOrEqual(-82.5);
+      }
+    },
+  );
+
   it('keeps a locomotive without emitters clean (electric)', () => {
     const { counts } = run({ speedUPerSec: 400, intent: 'THROTTLE' });
     expect([...counts.values()].reduce((a, b) => a + b, 0)).toBe(0);

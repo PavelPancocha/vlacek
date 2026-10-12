@@ -594,3 +594,19 @@ Lane po H0: `npm run check` 61 souborů / 485 testů PASS napoprvé; E2E `effect
 | Napojení karoserie na podvozky (nález recenze lane: lůžkový a jídelní vůz „visely“ nad podvozky)                                                             | pixelová kontrola mezery mezi podélníkem a podvozky selhala u všech čtyř vozů | PASS po doplnění příčníků a pružin |
 
 Lane po H0: `npm run check` 60 souborů / 481 testů PASS; `art.spec.ts` 18 PASS na obou projektech; jízda se všemi čtyřmi vozy kreslí 5 vozidel z atlasu vozidel (2024 × 750 px při 2 px/u). Recenze lane: FIX (mezera u podvozků), po opravě připraveno.
+
+## H1 a H3 — bublinková a duhová mašinka, praskání bublin
+
+Obě mašinky mají vlastní ruční SVG kresbu. Doména si ponechává `EffectId` `bubbles` a `rainbow`; renderer je výslovně mapuje na nové druhy částic `bubble` a `rainbow-puff` (ručně kreslené SVG ve světovém atlasu). Bubliny mají stabilní identitu, takže dotyk najde právě zasaženou bublinu přes `GameSession.setWorldHitTest`; tentýž dotyk dál pohání vlak a brzda má přednost.
+
+| Test                                                                                                                              | Red                                                    | Green                     |
+| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------- |
+| Emitory `bubbles` a `rainbow` na kotvách smlouvy, bez hvězdiček a kouře, s pauzou a omezenými efekty (`TrainEffects.test.ts`)     | 2 FAIL: `expected 0 to be greater than 10`             | PASS                      |
+| Druhy `bubble` a `rainbow-puff` stoupají a unášejí se několik sekund (`ParticleField.test.ts`)                                    | 2 FAIL                                                 | PASS                      |
+| Stabilní identita bubliny při recyklaci záznamů                                                                                   | FAIL: `expected undefined to deeply equal Any<Number>` | PASS                      |
+| Zásah, prasknutí jediné bubliny, jedna částice prasknutí, menší efekt při omezených efektech, úklid (`bubbleInteraction.test.ts`) | 5 FAIL / 30 (zásah vracel `undefined`)                 | PASS                      |
+| Session: prasknutí nezmění plyn, dojezd ani brzdu; minutí nic nepraskne a dotyk dál pohání (`session.test.ts`)                    | FAIL: bublina zůstala                                  | PASS                      |
+| Zvuk prasknutí: jeden krátký tón, ztišení a zamčený zvuk mlčí, hlasový limit (`AudioManager.test.ts`)                             | 2 FAIL: 0 tónů místo 1                                 | PASS                      |
+| E2E: ťuknutí odstraní konkrétní bublinu, právě jedno prasknutí, vlak jede dál (`effects.spec.ts`)                                 | proti buildu bez H3: 2 FAIL (`received undefined`)     | 2 PASS na obou projektech |
+
+E2E zpočátku občas selhal na závodu testu: bublina se posunula mezi čtením polohy a doručením dotyku. Test nyní čte polohu a posílá událost v jednom kroku prohlížeče; očekávání, zásahový poloměr ani časy se nezměnily. Tón prasknutí je v tabulce `src/content/soundTones.ts` vedle píšťal. Lane: `npm run check` 516 PASS, `effects.spec.ts` a `horns.spec.ts` PASS. Recenze lane: LAND. Dokumentace: [D-014](../decisions/014-particles-and-small-animations.md). Fyzický dotyk na zařízeních: NEOVĚŘENO.

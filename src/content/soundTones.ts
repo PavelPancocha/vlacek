@@ -76,6 +76,13 @@ export const soundTones: Readonly<Record<string, Tone>> = {
     volume: 0.15,
     glideTo: 420,
   },
+  'bubble-pop': {
+    type: 'sine',
+    frequencies: [900],
+    durationSec: 0.12,
+    volume: 0.08,
+    glideTo: 300,
+  },
   'train-full': {
     type: 'sine',
     frequencies: [196],

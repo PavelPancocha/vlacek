@@ -154,3 +154,85 @@ describe('H1 / O5: AudioManager synthesis', () => {
     ]);
   });
 });
+
+function setup() {
+  const ended: (() => void)[] = [];
+  const frequency = {
+    setValueAtTime: vi.fn(),
+    exponentialRampToValueAtTime: vi.fn(),
+  };
+  const gain = {
+    gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  };
+  const oscillator = {
+    frequency,
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    start: vi.fn(),
+    stop: vi.fn(),
+    addEventListener: vi.fn((_name: string, callback: () => void) =>
+      ended.push(callback),
+    ),
+  };
+  const createOscillator = vi.fn(() => oscillator);
+  vi.stubGlobal(
+    'AudioContext',
+    class {
+      state = 'running';
+      currentTime = 10;
+      destination = {};
+      createGain = () => gain;
+      createOscillator = createOscillator;
+      suspend() {
+        this.state = 'suspended';
+        return Promise.resolve();
+      }
+      close() {
+        this.state = 'closed';
+        return Promise.resolve();
+      }
+    },
+  );
+  return {
+    audio: new AudioManager(),
+    createOscillator,
+    oscillator,
+    gain,
+    ended,
+  };
+}
+
+describe('bubble pop placeholder sound (H3)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('plays one short falling note per pop, and remains silent while locked or suspended', () => {
+    const { audio, createOscillator, oscillator } = setup();
+    audio.play('bubble-pop');
+    expect(createOscillator).not.toHaveBeenCalled();
+    audio.unlock();
+    audio.play('bubble-pop');
+    expect(createOscillator).toHaveBeenCalledTimes(1);
+    expect(oscillator.frequency.setValueAtTime).toHaveBeenCalledWith(900, 10);
+    expect(
+      oscillator.frequency.exponentialRampToValueAtTime,
+    ).toHaveBeenCalledWith(300, 10.12);
+    expect(oscillator.stop.mock.calls[0]?.[0]).toBeCloseTo(10.14, 10);
+    audio.suspend();
+    audio.play('bubble-pop');
+    expect(createOscillator).toHaveBeenCalledTimes(1);
+    audio.dispose();
+  });
+
+  it('refuses pops beyond the voice budget and releases the voice when the sound ends', () => {
+    const { audio, createOscillator, ended } = setup();
+    audio.unlock();
+    for (let i = 0; i < 6; i++) audio.play('bubble-pop');
+    expect(createOscillator).toHaveBeenCalledTimes(5);
+    ended[0]?.();
+    audio.play('bubble-pop');
+    expect(createOscillator).toHaveBeenCalledTimes(6);
+    audio.dispose();
+  });
+});

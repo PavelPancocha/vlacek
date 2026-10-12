@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <defs>
+    <radialGradient id="film" cx=".35" cy=".3" r=".65"><stop stop-color="#eefcff" stop-opacity=".04"/><stop offset=".7" stop-color="#ade6e2" stop-opacity=".12"/><stop offset=".93" stop-color="#aed9ed" stop-opacity=".45"/><stop offset="1" stop-color="#d7a8d6" stop-opacity=".65"/></radialGradient>
+    <linearGradient id="rim" x2=".8" y2="1"><stop stop-color="#fff" stop-opacity=".95"/><stop offset=".4" stop-color="#9cd4dc" stop-opacity=".6"/><stop offset=".75" stop-color="#c3a4dc" stop-opacity=".7"/><stop offset="1" stop-color="#f9dfa7" stop-opacity=".8"/></linearGradient>
+  </defs>
+  <circle cx="12" cy="12" r="10.5" fill="url(#film)" stroke="url(#rim)" stroke-width=".7"/>
+  <path d="M4.1 10 A8.5 8.5 0 0 1 10 3.8" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1.2" stroke-linecap="round"/>
+  <ellipse cx="7" cy="6.5" rx="1.4" ry=".8" transform="rotate(-40 7 6.5)" fill="#fff" fill-opacity=".8"/>
+  <path d="M14 20.3 A8.5 8.5 0 0 0 20.1 14" fill="none" stroke="#fff1b9" stroke-opacity=".5" stroke-width=".55"/>
+</svg>

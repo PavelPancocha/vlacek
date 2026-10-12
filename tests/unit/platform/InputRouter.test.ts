@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
-import { InputRouter } from '../../../src/platform/InputRouter.ts';
+import {
+  InputRouter,
+  type WorldHit,
+} from '../../../src/platform/InputRouter.ts';
 
 function setup(objectAt?: (x: number, y: number) => string | undefined) {
   const actions: string[] = [];
-  const touched: string[] = [];
+  const touched: WorldHit[] = [];
   const router = new InputRouter(gameConfig.input, {
     hitObject: objectAt ?? (() => undefined),
     onObjectTouched: (id) => touched.push(id),

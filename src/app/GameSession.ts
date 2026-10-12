@@ -27,7 +27,7 @@ import {
 import type { VehicleGeometry } from '../domain/train/TrainGeometry.ts';
 import type { Consist } from '../domain/types.ts';
 import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
-import { InputRouter } from '../platform/InputRouter.ts';
+import { InputRouter, type WorldHit } from '../platform/InputRouter.ts';
 import type { SaveNotice, SaveRepository } from '../platform/SaveRepository.ts';
 import {
   defaultSettings,
@@ -62,7 +62,10 @@ export type SessionNotice =
 
 /** Session-level events for audio/visual feedback, alongside ride events. */
 export type SessionEvent =
-  RideEvent | { type: 'locomotivePreview'; id: string } | { type: 'trainFull' };
+  | RideEvent
+  | { type: 'locomotivePreview'; id: string }
+  | { type: 'trainFull' }
+  | { type: 'bubblePopped' };
 
 interface Journey {
   seed: number;
@@ -87,8 +90,9 @@ export class GameSession {
   #draft: ConsistDraft;
   #journey: Journey | undefined;
   #fixedStep: FixedStepState = initialFixedStep();
-  #hitObject: (clientX: number, clientY: number) => string | undefined = () =>
+  #hitObject: (clientX: number, clientY: number) => WorldHit | undefined = () =>
     undefined;
+  #popBubble: (id: number) => boolean = () => false;
   #unhandledAction: (action: string) => void = () => undefined;
   #events: SessionEvent[] = [];
   #notices = new Set<SessionNotice>();
@@ -123,7 +127,11 @@ export class GameSession {
     };
     this.router = new InputRouter(deps.config.input, {
       hitObject: (x, y) => this.#hitObject(x, y),
-      onObjectTouched: (id) => this.#journey?.ride.activateObject(id),
+      onObjectTouched: (hit) => {
+        if (typeof hit === 'string') this.#journey?.ride.activateObject(hit);
+        else if (this.#popBubble(hit.bubbleId))
+          this.#emit({ type: 'bubblePopped' });
+      },
       onAction: (action) => this.#onAction(action),
     });
   }
@@ -171,11 +179,13 @@ export class GameSession {
     return this.#fullSignals;
   }
 
-  /** Render layer: CSS px → interactive object id under the finger. */
+  /** Render layer: CSS px → world target; the renderer owns bubble lifetime and removal. */
   setWorldHitTest(
-    hitTest: (clientX: number, clientY: number) => string | undefined,
+    hitTest: (clientX: number, clientY: number) => WorldHit | undefined,
+    popBubble: (id: number) => boolean = () => false,
   ): void {
     this.#hitObject = hitTest;
+    this.#popBubble = popBubble;
   }
 
   /** Shell-only actions (e.g. scrolling the depot strip) go here. */

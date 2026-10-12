@@ -21,6 +21,8 @@ export interface ParticleKind {
   /** Peak opacity between the fade in and the fade out. */
   alpha: number;
   spinDegPerSec: readonly [number, number];
+  /** Fixed orientation for sprites lit from the upper left. */
+  rotationDeg?: number;
   /** Sideways flutter (leaves, butterflies), drawn on top of the motion. */
   wobble?: { ampU: number; hz: number };
   /** Drawn along the direction of motion (sparks) instead of spinning. */
@@ -28,6 +30,8 @@ export interface ParticleKind {
 }
 
 export interface Particle {
+  /** Unique emission identity, stable until death even when the pool is reused. */
+  id: number;
   kind: number;
   /** World x and render y (down) of the particle, u. */
   x: number;
@@ -62,6 +66,7 @@ const FADE_OUT_SHARE = 0.35;
 
 function blankParticle(): Particle {
   return {
+    id: 0,
     kind: 0,
     x: 0,
     y: 0,
@@ -93,6 +98,7 @@ export class ParticleField {
   readonly #particles: Particle[] = [];
   readonly #spare: Particle[] = [];
   #capacity: number;
+  #nextId = 1;
 
   constructor(
     kinds: readonly ParticleKind[],
@@ -139,6 +145,7 @@ export class ParticleField {
         180;
       const speed = between(kind.speedU, r());
       const particle = this.#spare.pop() ?? blankParticle();
+      particle.id = this.#nextId++;
       particle.kind = kindIndex;
       particle.x = x + (r() * 2 - 1) * jitter;
       particle.y = y + (r() * 2 - 1) * jitter;
@@ -146,7 +153,11 @@ export class ParticleField {
       particle.vy = Math.sin(direction) * speed + (options.vyU ?? 0);
       particle.age = 0;
       particle.life = between(kind.lifeSec, r());
-      particle.rotation = r() * Math.PI * 2;
+      const rotation = r() * Math.PI * 2;
+      particle.rotation =
+        kind.rotationDeg === undefined
+          ? rotation
+          : (kind.rotationDeg * Math.PI) / 180;
       particle.spin = (between(kind.spinDegPerSec, r()) * Math.PI) / 180;
       particle.sizeStart = kind.sizeU[0] * scale;
       particle.sizeEnd = kind.sizeU[1] * scale;
@@ -165,10 +176,7 @@ export class ParticleField {
       if (!p) continue;
       p.age += dtSec;
       if (p.age >= p.life) {
-        // Swap-remove; the record is reused by the next emission.
-        const last = particles.pop();
-        if (last && last !== p) particles[i] = last;
-        this.#spare.push(p);
+        this.#removeAt(i);
         continue;
       }
       const kind = this.#kinds[p.kind];
@@ -183,6 +191,22 @@ export class ParticleField {
       }
       p.rotation += p.spin * dtSec;
     }
+  }
+
+  /** Removes one emission by stable identity; stale ids never remove a reused record. */
+  remove(id: number): boolean {
+    const index = this.#particles.findIndex((p) => p.id === id);
+    if (index < 0) return false;
+    this.#removeAt(index);
+    return true;
+  }
+
+  #removeAt(index: number): void {
+    const p = this.#particles[index];
+    if (!p) return;
+    const last = this.#particles.pop();
+    if (last && last !== p) this.#particles[index] = last;
+    this.#spare.push(p);
   }
 
   particles(): readonly Particle[] {

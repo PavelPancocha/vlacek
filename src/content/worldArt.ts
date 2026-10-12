@@ -907,6 +907,48 @@ export const worldParts = {
     heightU: 100,
     pivotU: { x: 50, y: 100 },
   },
+  'fx.bubble': {
+    file: 'fx.bubble.svg',
+    widthU: 24,
+    heightU: 24,
+    pivotU: { x: 12, y: 12 },
+  },
+  'fx.rainbow-red': {
+    file: 'fx.rainbow-red.svg',
+    widthU: 24,
+    heightU: 24,
+    pivotU: { x: 12, y: 12 },
+  },
+  'fx.rainbow-yellow': {
+    file: 'fx.rainbow-yellow.svg',
+    widthU: 24,
+    heightU: 24,
+    pivotU: { x: 12, y: 12 },
+  },
+  'fx.rainbow-green': {
+    file: 'fx.rainbow-green.svg',
+    widthU: 24,
+    heightU: 24,
+    pivotU: { x: 12, y: 12 },
+  },
+  'fx.rainbow-blue': {
+    file: 'fx.rainbow-blue.svg',
+    widthU: 24,
+    heightU: 24,
+    pivotU: { x: 12, y: 12 },
+  },
+  'fx.rainbow-plum': {
+    file: 'fx.rainbow-plum.svg',
+    widthU: 24,
+    heightU: 24,
+    pivotU: { x: 12, y: 12 },
+  },
+  'fx.bubble-pop': {
+    file: 'fx.bubble-pop.svg',
+    widthU: 24,
+    heightU: 24,
+    pivotU: { x: 12, y: 12 },
+  },
 } satisfies Record<string, ArtPart>;
 
 export type WorldPartKey = keyof typeof worldParts;
@@ -993,6 +1035,13 @@ export const effectParts: readonly WorldPartKey[] = [
   'fx.butterfly-b-open',
   'fx.butterfly-b-closed',
   'fx.glint',
+  'fx.bubble',
+  'fx.rainbow-red',
+  'fx.rainbow-yellow',
+  'fx.rainbow-green',
+  'fx.rainbow-blue',
+  'fx.rainbow-plum',
+  'fx.bubble-pop',
 ];
 
 /**

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="96" viewBox="0 0 164 96">
+  <defs>
+    <linearGradient id="teal" x2=".2" y2="1"><stop stop-color="#b5e3dd"/><stop offset=".28" stop-color="#59afaf"/><stop offset=".7" stop-color="#438c90"/><stop offset="1" stop-color="#28585f"/></linearGradient>
+    <linearGradient id="pearl" x2=".15" y2="1"><stop stop-color="#fffdf0"/><stop offset=".3" stop-color="#e7f0e8"/><stop offset=".7" stop-color="#c5d1c7"/><stop offset="1" stop-color="#829b98"/></linearGradient>
+    <linearGradient id="copper" x2=".2" y2="1"><stop stop-color="#ffe0a4"/><stop offset=".3" stop-color="#d5a071"/><stop offset=".65" stop-color="#b8784c"/><stop offset="1" stop-color="#70462e"/></linearGradient>
+    <linearGradient id="glass" x2=".8" y2="1"><stop stop-color="#b5dfe1"/><stop offset=".35" stop-color="#527981"/><stop offset="1" stop-color="#1f323c"/></linearGradient>
+    <linearGradient id="steel" x2="0" y2="1"><stop stop-color="#a9b8b7"/><stop offset=".35" stop-color="#526569"/><stop offset="1" stop-color="#202d32"/></linearGradient>
+    <pattern id="rivets" width="7" height="4" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".55" fill="#e8c89e" stroke="#69563e" stroke-width=".2"/></pattern>
+  </defs>
+  <g stroke="#253a3c" stroke-width=".6" stroke-linejoin="round">
+    <!-- Rám pod dvěma samostatnými nápravami; nárazníky 30 u nad kolejí. -->
+    <path d="M9 65 H150 V74 H9Z" fill="url(#steel)"/>
+    <path d="M10 67 H149" fill="none" stroke="#cad3c8" stroke-width=".5"/>
+    <path d="M18 73 H45 L48 83 H22Z M114 73 H139 L139 83 H112Z" fill="#23383a"/>
+    <rect x="7" y="61" width="7" height="17" rx="1.3" fill="url(#teal)"/>
+    <rect x="149" y="61" width="7" height="17" rx="1.3" fill="url(#teal)"/>
+    <path d="M3 64.4 H7 V67.6 H3Z M156 64.4 H161 V67.6 H156Z" fill="url(#copper)"/>
+    <rect x=".7" y="62.2" width="2" height="7.6" rx=".8" fill="url(#steel)"/>
+    <rect x="161.3" y="62.2" width="2" height="7.6" rx=".8" fill="url(#steel)"/>
+    <path d="M6 73 Q3 78 5 80 M156 73 Q160 77 158 80" fill="none" stroke-width="1"/>
+    <!-- Perleťová tlaková nádoba s měděnými pásy a sedly. -->
+    <path d="M47 31 C61 23 91 24 107 32 Q118 40 114 54 Q110 65 91 66 H51Z" fill="url(#pearl)"/>
+    <path d="M54 34 Q79 28 102 34" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.5"/>
+    <path d="M56 30 Q52 46 56 63 M98 29 Q107 45 99 64" fill="none" stroke="#694931" stroke-width="3.4"/>
+    <path d="M56 30 Q52 46 56 63 M98 29 Q107 45 99 64" fill="none" stroke="url(#copper)" stroke-width="2.5"/>
+    <path d="M65 62 V68 H74 V65 M96 62 V68 H105 V62" fill="url(#copper)"/>
+    <path d="M70 27 Q70 20 80 20 Q88 20 90 27Z" fill="url(#teal)"/>
+    <rect x="69" y="26" width="22" height="2" rx="1" fill="url(#copper)"/>
+    <path d="M77 20 V17 H83 V20Z" fill="url(#copper)"/>
+    <ellipse cx="80" cy="17" rx="5" ry="1.5" fill="url(#copper)"/>
+    <!-- Kruhové ústí je v přesném bočním pohledu vidět z hrany. -->
+    <path d="M105 35 Q116 35 124 15 V60 Q116 49 108 52Z" fill="url(#teal)"/>
+    <path d="M108 36 Q118 33 124 20 M110 50 Q118 50 124 57" fill="none" stroke="url(#copper)" stroke-width="1"/>
+    <path d="M122 15 H125 V60 H122Z" fill="url(#copper)"/>
+    <path d="M125 12 H129 V63 H125Z" fill="url(#copper)"/>
+    <path d="M128.5 15 V60" stroke="#483b30" stroke-width=".65"/>
+    <path d="M125.7 15 V59" stroke="#ffdda7" stroke-width=".6"/>
+    <path d="M126 12 H128" stroke="#fdf5d4" stroke-width=".5"/>
+    <!-- Kulatá kabina s velkým kruhovým zasklením. -->
+    <path d="M13 66 V31 Q13 18 30 15 Q45 14 51 25 V66Z" fill="url(#pearl)"/>
+    <path d="M10 65 V32 Q8 17 27 12 Q45 7 55 19 Q59 24 52 27 Q49 19 37 19 Q21 19 20 34 V65Z" fill="url(#teal)"/>
+    <path d="M11 31 Q11 16 28 13 Q44 10 52 19" fill="none" stroke="#daf4e8" stroke-opacity=".65" stroke-width=".8"/>
+    <path d="M14 66 V34 Q14 24 23 21 M50 27 V64" fill="none" stroke="url(#copper)" stroke-width="1.2"/>
+    <circle cx="35" cy="37" r="12" fill="url(#copper)"/>
+    <circle cx="35" cy="37" r="10.1" fill="url(#glass)"/>
+    <path d="M27 35 Q28 29 34 28 L30 36Z M32 40 L38 30 L41 32 L35 43Z" fill="#fff" fill-opacity=".45" stroke="none"/>
+    <circle cx="35" cy="37" r="11" fill="none" stroke="url(#rivets)" stroke-width="1.2"/>
+    <path d="M23 52 H47 V65 H23Z" fill="url(#teal)"/>
+    <path d="M26 54 H44 M26 62 H44" stroke="#b8ddc9" stroke-width=".35"/>
+    <circle cx="45" cy="56" r=".8" fill="url(#copper)"/>
+    <path d="M18 67 Q23 55 36 55 Q48 55 52 67 H113 Q120 57 131 57 Q143 57 147 67 V71 H12 V67Z" fill="url(#teal)"/>
+    <path d="M18 67 Q23 55 36 55 Q48 55 52 67 H113 Q120 57 131 57 Q143 57 147 67" fill="none" stroke="url(#copper)" stroke-width="1.1"/>
+    <path d="M13 69 H148" stroke="url(#rivets)" stroke-width="2"/>
+    <!-- Potrubí, stlačovač a připevněný přední kryt. -->
+    <path d="M54 49 H91 Q100 49 100 58 V63" fill="none" stroke="#634b32" stroke-width="1.8"/>
+    <path d="M54 48.6 H91 Q99.5 48.6 99.5 58 V63" fill="none" stroke="url(#copper)" stroke-width="1.1"/>
+    <rect x="66" y="58" width="23" height="7" rx="3.5" fill="url(#teal)"/>
+    <path d="M71 58 V65 M83 58 V65" stroke="url(#copper)" stroke-width="1.3"/>
+    <path d="M141 70 H151 L157 88 H146Z" fill="url(#teal)"/>
+    <path d="M144 73 L149 87 M148 73 L153 87" stroke="url(#copper)" stroke-width="1"/>
+    <rect x="143" y="53" width="6" height="8" rx="2" fill="url(#copper)"/>
+    <rect x="145" y="54.5" width="2" height="5" rx="1" fill="#fff0b7"/>
+  </g>
+  <g fill="#f3d5aa" stroke="#735b40" stroke-width=".2">
+    <circle cx="56" cy="34" r=".55"/><circle cx="55" cy="43" r=".55"/><circle cx="55" cy="53" r=".55"/>
+    <circle cx="100" cy="34" r=".55"/><circle cx="103" cy="44" r=".55"/><circle cx="101" cy="56" r=".55"/>
+    <circle cx="127" cy="19" r=".5"/><circle cx="127" cy="28" r=".5"/><circle cx="127" cy="47" r=".5"/><circle cx="127" cy="57" r=".5"/>
+  </g>
+</svg>

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { WorldHit } from '../platform/InputRouter.ts';
 import { gameConfig } from '../config/gameConfig.ts';
 import { vehicleArtLayers } from '../content/artLayers.ts';
 import { artFileUrl, worldFileUrl } from '../content/artFiles.ts';
@@ -53,6 +54,12 @@ import { AmbientLife } from './particles/AmbientLife.ts';
 import { EffectsView } from './particles/EffectsView.ts';
 import { emitterWorldPoint, passEffectAt } from './particles/emission.ts';
 import { ParticleField } from './particles/ParticleField.ts';
+import {
+  bubbleAt,
+  bubbleRadiusU,
+  popBubble,
+  visibleBubbles,
+} from './particles/bubbleInteraction.ts';
 import { PARTICLE_KINDS, kindName } from './particles/particleKinds.ts';
 import {
   TrainEffects,
@@ -303,6 +310,7 @@ export class RideScene extends Phaser.Scene {
     gameConfig.quality.standard.maxDecorativeParticles,
     Math.random,
   );
+  #bubblePops = 0;
   readonly #trainEffects = new TrainEffects(this.#particles, Math.random);
   /** Oncoming trains' smoke, one emission state per train. */
   readonly #npcEffects = new TrainEffectsByTrain(this.#particles, Math.random);
@@ -472,8 +480,16 @@ export class RideScene extends Phaser.Scene {
     cssX: number,
     cssY: number,
     canvasRect: DOMRect,
-  ): string | undefined {
+  ): WorldHit | undefined {
     const world = this.#toWorld(cssX, cssY, canvasRect);
+    if (this.#effectsTexture !== undefined) {
+      const bubbleId = bubbleAt(
+        this.#particles,
+        world.x + this.#originX,
+        world.y,
+      );
+      if (bubbleId !== undefined) return { bubbleId };
+    }
     let best: { id: string; distance: number } | undefined;
     for (const object of this.#visibleObjects) {
       // At least ~40 CSS px around the object, larger than the drawing.
@@ -484,6 +500,45 @@ export class RideScene extends Phaser.Scene {
       }
     }
     return best?.id;
+  }
+
+  popBubble(id: number): boolean {
+    if (
+      !popBubble(
+        this.#particles,
+        id,
+        this.#host.effectsQuality() === 'low' ? 0.5 : 1,
+      )
+    )
+      return false;
+    this.#bubblePops += 1;
+    return true;
+  }
+
+  /** Visible bubbles in CSS px; the hit test uses the same drawn positions. */
+  bubbleScreenPositions(
+    canvasRect: DOMRect,
+  ): { id: number; x: number; y: number; radiusCssPx: number }[] {
+    if (this.#effectsTexture === undefined) return [];
+    const scale =
+      (this.#view.zoom * Math.max(1, canvasRect.width)) / this.scale.width;
+    return visibleBubbles(this.#particles)
+      .map((bubble) => {
+        const at = this.#particles.positionOf(bubble);
+        return {
+          id: bubble.id,
+          x: canvasRect.left + (at.x - this.#originX - this.#view.left) * scale,
+          y: canvasRect.top + (at.y - this.#view.top) * scale,
+          radiusCssPx: bubbleRadiusU(this.#particles, bubble) * scale,
+        };
+      })
+      .filter(
+        ({ x, y }) =>
+          x >= canvasRect.left &&
+          x <= canvasRect.right &&
+          y >= canvasRect.top &&
+          y <= canvasRect.bottom,
+      );
   }
 
   /** Screen box (CSS px) of the drawn vehicles, for diagnostics and E2E. */
@@ -598,6 +653,7 @@ export class RideScene extends Phaser.Scene {
 
   #reset(): void {
     this.#particles.clear();
+    this.#bubblePops = 0;
     this.#npcEffects.clear();
     this.#frameTick = undefined;
     this.#destroyChunks();
@@ -1006,12 +1062,7 @@ export class RideScene extends Phaser.Scene {
     if (locomotive) {
       const pose = ride.vehiclePose(0, headS);
       const effect = locomotive.effect;
-      const kind =
-        effect === 'steam' || effect === 'diesel'
-          ? effect
-          : effect === 'stars'
-            ? 'stars'
-            : undefined;
+      const kind = effect === 'none' ? undefined : effect;
       if (art && kind !== undefined)
         for (const emitter of art.emitters ?? [])
           emitters.push({
@@ -1062,7 +1113,7 @@ export class RideScene extends Phaser.Scene {
         ? { pantograph: this.#pantographContact }
         : {}),
     });
-    // Oncoming steam and diesel trains smoke too, out of their tunnels.
+    // Oncoming locomotives emit their own effect outside their tunnels.
     this.#npcEffects.retain(new Set(ride.oncomingTrains.map((t) => t.id)));
     for (const train of ride.oncomingTrains) {
       const loco = train.vehicles[0];
@@ -1070,10 +1121,7 @@ export class RideScene extends Phaser.Scene {
         .catalogVehicles()
         .find((candidate) => candidate.id === loco?.id);
       const npcArt = shaped ? vehicleArt[shaped.id] : undefined;
-      const kind =
-        shaped?.effect === 'steam' || shaped?.effect === 'diesel'
-          ? shaped.effect
-          : undefined;
+      const kind = shaped?.effect === 'none' ? undefined : shaped?.effect;
       if (!loco || !shaped || !npcArt || kind === undefined) continue;
       const pose = train.vehiclePose(0);
       const npcEmitters: PlacedEmitter[] = (npcArt.emitters ?? [])
@@ -1138,6 +1186,7 @@ export class RideScene extends Phaser.Scene {
     capacity: number;
     kinds: Record<string, number>;
     checksum: number;
+    bubblePops: number;
   } {
     const kinds: Record<string, number> = {};
     let checksum = 0;
@@ -1151,6 +1200,7 @@ export class RideScene extends Phaser.Scene {
       capacity: this.#particles.capacity,
       kinds,
       checksum,
+      bubblePops: this.#bubblePops,
     };
   }
 
