@@ -610,3 +610,14 @@ Obě mašinky mají vlastní ruční SVG kresbu. Doména si ponechává `EffectI
 | E2E: ťuknutí odstraní konkrétní bublinu, právě jedno prasknutí, vlak jede dál (`effects.spec.ts`)                                 | proti buildu bez H3: 2 FAIL (`received undefined`)     | 2 PASS na obou projektech |
 
 E2E zpočátku občas selhal na závodu testu: bublina se posunula mezi čtením polohy a doručením dotyku. Test nyní čte polohu a posílá událost v jednom kroku prohlížeče; očekávání, zásahový poloměr ani časy se nezměnily. Tón prasknutí je v tabulce `src/content/soundTones.ts` vedle píšťal. Lane: `npm run check` 516 PASS, `effects.spec.ts` a `horns.spec.ts` PASS. Recenze lane: LAND. Dokumentace: [D-014](../decisions/014-particles-and-small-animations.md). Fyzický dotyk na zařízeních: NEOVĚŘENO.
+
+## H2, dávka 2 — služební vozy
+
+`service_tools` (dílenská skříň s nářadím za sklem, pevnými skříňkami a jednoduchým symbolem klíče) a `service_snowplow` (kompaktní kabina, zvednutá radlice zamčená uvnitř obrysu vozu, nic nepřesahuje před rám) mají vlastní ruční SVG kresbu podle zmrazené smlouvy vozidel. Koncept dílenského vozu se nejdřív podobal posunovací lokomotivě a byl přegenerován jako vůz bez kabiny strojvedoucího.
+
+| Test                                                                                                                                                                     | Red                                                   | Green |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- | ----- |
+| `<id> has layered vector art and the specified running gear` pro oba vozy (`serviceFlatArt.test.ts`): katalog, rozměry, pivoty, kola, žádný rastr, text ani skript v SVG | 2 FAIL: `expected true to be undefined` (placeholder) | PASS  |
+| `validate:assets` přijme katalog s novou kresbou                                                                                                                         | FAIL: souhrn seedu                                    | PASS  |
+
+Lane po H0: `npm run check` a `art.spec.ts` PASS; jízda se služební dvojicí kreslí obě vozidla z atlasu vozidel. Recenze lane: nálezy jen v nákladní části lane, služební commit beze změny.

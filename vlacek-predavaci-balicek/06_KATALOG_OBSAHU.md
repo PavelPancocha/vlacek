@@ -174,3 +174,5 @@ Konkrétní schéma v dokumentu 08 dovolí doplnit další vrstvy. Produkční b
 - **Vyhlídkový vagón (`passenger_panorama`).** Vlastní vektorová kresba má zvýšenou prosklenou kupoli s tenkými žebry, viditelná sedadla a nižší vestibuly; rám 192 × 92 u, dva podvozky, samostatná kotoučová kola.
 - **Bublinková mašinka (`magic_bubbles`).** Vlastní tyrkysovo-perleťová vektorová kresba se dvěma nápravami vypouští z bodu `(127,12)` bubliny s životností 3–5 s; dotyk odstraní právě zasaženou bublinu, ukáže malé prasknutí a při zapnutých efektech přehraje krátký zvuk, přičemž tentýž držený dotyk zůstává plynem a priorita brzdy se nemění.
 - **Duhová mašinka (`magic_rainbow`).** Vlastní barevná vektorová kresba se dvěma podvozky vypouští z bodu `(138,10)` pět barev měkkých obláčků s životností 3–4 s.
+- **Dílenský vagón (`service_tools`).** Vlastní vektorová dílenská skříň má asymetrické dveře, nářadí uchycené za sklem, pevné servisní skříňky a jednoduchý symbol klíče.
+- **Vagón s pluhem (`service_snowplow`).** Vlastní vektorový vůz má kompaktní kabinu a zvednutou zakřivenou radlici s čepy, podpěrami a transportními zámky; radlice nepřesahuje obrys vozu.

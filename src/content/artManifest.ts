@@ -394,6 +394,30 @@ export const artParts = {
     heightU: 100,
     pivotU: { x: 88, y: 100 },
   },
+  'service_tools.body': {
+    file: 'service_tools.body.svg',
+    widthU: 164,
+    heightU: 80,
+    pivotU: { x: 82, y: 80 },
+  },
+  'service_tools.overlay': {
+    file: 'service_tools.overlay.svg',
+    widthU: 164,
+    heightU: 80,
+    pivotU: { x: 82, y: 80 },
+  },
+  'service_snowplow.body': {
+    file: 'service_snowplow.body.svg',
+    widthU: 156,
+    heightU: 80,
+    pivotU: { x: 78, y: 80 },
+  },
+  'service_snowplow.overlay': {
+    file: 'service_snowplow.overlay.svg',
+    widthU: 156,
+    heightU: 80,
+    pivotU: { x: 78, y: 80 },
+  },
 } satisfies Record<string, ArtPart>;
 
 export type ArtPartKey = keyof typeof artParts;
@@ -737,5 +761,23 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       { part: 'wheel.wagon-spoked', xU: 153 },
     ],
     emitters: [{ xU: 138, yU: 10 }],
+  },
+  service_tools: {
+    heightU: 80,
+    body: 'service_tools.body',
+    overlay: 'service_tools.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 31 },
+      { part: 'wheel.wagon-disc', xU: 133 },
+    ],
+  },
+  service_snowplow: {
+    heightU: 80,
+    body: 'service_snowplow.body',
+    overlay: 'service_snowplow.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 30 },
+      { part: 'wheel.wagon-disc', xU: 126 },
+    ],
   },
 };
