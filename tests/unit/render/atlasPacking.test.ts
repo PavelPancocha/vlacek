@@ -2,7 +2,6 @@ import { artParts, vehicleArt } from '../../../src/content/artManifest.ts';
 import { vehicleArtLayers } from '../../../src/content/artLayers.ts';
 import { locomotives, wagons } from '../../../src/content/vehicles.ts';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
-import { worstJourneyFixtures } from './journeyBudgetFixture.ts';
 import { describe, expect, it } from 'vitest';
 import { isBackdropPart, worldParts } from '../../../src/content/worldArt.ts';
 import {
@@ -18,6 +17,64 @@ import {
   packAtlas,
   journeyArtKeys,
 } from '../../../src/render/atlasPacking.ts';
+
+// Budget cases use only shipped manifest frames, including shared parts once.
+const budgetVehicles = [...locomotives, ...wagons].map((v) => {
+  if (!vehicleArt[v.id]) throw new Error(`${v.id}: missing budget art`);
+  return {
+    id: v.id,
+    lengthU: v.lengthU,
+    kind: v.kind === 'locomotive' ? v.power : v.group,
+    keys: journeyArtKeys([v], { locomotives: [], wagons: [] }),
+  };
+});
+const area = (v: (typeof budgetVehicles)[number]) =>
+  v.keys.reduce((sum, key) => {
+    const part = artParts[key];
+    if (!part) throw new Error(`Missing budget part ${key}`);
+    return sum + part.widthU * part.heightU;
+  }, 0);
+const ranked = [...budgetVehicles].sort(
+  (a, b) => area(b) - area(a) || a.id.localeCompare(b.id),
+);
+const isLocomotive = (v: (typeof budgetVehicles)[number]) =>
+  ['steam', 'diesel', 'electric', 'fantasy'].includes(v.kind);
+const roadmap = ranked.slice(0, 8);
+const legal = ranked.filter(isLocomotive).slice(0, 1);
+let lengthU = legal.reduce((sum, v) => sum + v.lengthU, 0);
+for (const v of ranked.filter((v) => !isLocomotive(v))) {
+  const nextU = lengthU + gameConfig.train.couplerGapU + v.lengthU;
+  if (nextU > gameConfig.train.maxConsistLengthU) break;
+  legal.push(v);
+  lengthU = nextU;
+}
+const worstJourneyCases = [
+  { name: 'roadmap eight largest distinct vehicles', vehicles: roadmap },
+  { name: 'legal playable consist (contract C.3)', vehicles: legal },
+].map(({ name, vehicles }) => {
+  const available = ranked.filter(
+    (v) => !vehicles.some((chosen) => chosen.id === v.id),
+  );
+  const fleet = [
+    ...available
+      .filter((v) => v.kind === 'steam' || v.kind === 'diesel')
+      .slice(0, 2),
+    ...available.filter((v) => !isLocomotive(v)).slice(0, 6),
+  ];
+  const keys = [...new Set([...vehicles, ...fleet].flatMap((v) => v.keys))];
+  return {
+    name,
+    vehicles,
+    fleet,
+    parts: Object.fromEntries(
+      keys.map((key) => {
+        const part = artParts[key];
+        if (!part) throw new Error(`Missing budget part ${key}`);
+        return [key, part];
+      }),
+    ),
+  };
+});
 
 const sizes = (count: number, seed = 1) =>
   Array.from({ length: count }, (_, i) => ({
@@ -95,7 +152,7 @@ describe('vehicle art atlas', () => {
     expect(artScaleFor(0.576, BACKDROP_MAX_PX_PER_U)).toBe(0.75);
   });
 
-  for (const fixture of worstJourneyFixtures) {
+  for (const fixture of worstJourneyCases) {
     it(`fits ${fixture.name} and the separate world atlas at ART_MAX_PX_PER_U`, () => {
       expect(fixture.vehicles).toHaveLength(8);
       expect(

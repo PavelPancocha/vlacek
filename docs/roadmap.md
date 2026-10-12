@@ -30,7 +30,7 @@ Cíl je celý katalog dokumentu 06 §2–3: 10 lokomotiv a 32 druhů vagonků. V
 
 - `npcFleetFor(seed, catalog)` (`src/domain/interaction/npcFleet.ts`) klíčem `npc-fleet` vybere dva parní nebo naftové typy lokomotiv a šest typů vagonků bez `placeholder: true`; při menším počtu vrátí všechny způsobilé. Doména neimportuje manifest.
 - `journeyArtKeys(vehicles, fleet)` sbírá všechny unikátní díly vozidel jízdy. `RideScene` má samostatný atlas vozidel jízdy s NPC sadou a trvalý atlas světa; atlas pozadí zůstává zvlášť. Výjezd z depa a obnova přestaví jen atlas vozidel. SVG zdroje se načtou jednou při startu, depo používá SVG `<image>`.
-- Test rozpočtu při `ART_MAX_PX_PER_U = 2` ověřuje atlas světa a dvě sady vozidel samostatně: osm největších různých vozidel s největší zbývající NPC sadou a povolenou soupravu s jednou lokomotivou. Rozměry vozidel, která ještě nemají kresbu, dává označená dočasná fixture; odstraní se, až celý katalog dostane kresbu.
+- Test rozpočtu při `ART_MAX_PX_PER_U = 2` odvozuje všechny rámy z manifestu: atlas světa 2042 × 1344 px, osm největších různých vozidel s NPC sadou 1950 × 1356 px a povolená souprava s jednou lokomotivou 1932 × 1328 px; vše se vejde do 2048².
 - E2E kontroluje `artVehicles === vehicles` pro smíšené skupiny, nový atlas po výjezdu z depa a po obnově, zachování atlasu světa a fallback jednotlivých atlasů. Diagnostika vystavuje `vehicleAtlas` včetně ID a klíče textury; `artAtlas` je atlas světa.
 - D-010 (`maxTextures: 1`) zůstává; vrstvy jsou zem a kolej → vlak → popředí, rekvizity a zvířata → částice. Částice zůstávají nad popředím podle dokumentu 07 §3; pořadí hlídá test `RideSceneDepth`. V běžné parní jízdě bez NPC byly naměřeny dva přechody svět ↔ vozidla na snímek. D-011 §6 platí pro každý atlas samostatně.
 
@@ -75,6 +75,7 @@ Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
 4. Hravé: `fun_stars`, `fun_garden`, `fun_aquarium`, `fun_windmill`, `fun_lights`, `fun_toyblocks`.
 
 - **Stav dávky 4 (hravé):** hotovo. Šest hravých vozů má vlastní statickou kresbu; katalog má grafiku u všech 42 vozidel.
+- **Kontroly celého katalogu:** test grafiky, emitorů a sběračů i `validate:assets --release` zahrnují všech 42 vozidel bez placeholderů; E2E `catalog-contact-sheet.spec.ts` vyfotí kontaktní list všech 42 vozidel ze skutečné aplikace.
 - **Stav dávky 3 (nákladní):** hotovo. Všech 13 nákladních druhů má vlastní kresbu s pevně ukotveným nákladem.
 - **Stav dávky 2 (služební):** hotovo. Dílenský vůz a vůz s pluhem (radlice v obrysu vozu) mají vlastní kresbu.
 - **Stav dávky 1 (osobní):** hotovo. Patrový, lůžkový, jídelní a vyhlídkový vůz mají vlastní kresbu.

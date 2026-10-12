@@ -647,3 +647,50 @@ Lanes po H0: `npm run check` PASS kromě opakovaného timeoutu `GEN-10` na zatí
 Lane po H0: `npm run check` 501/501, `art.spec.ts` 18/18 na obou projektech; jízda se všemi šesti vozy kreslí 7 vozidel z atlasu vozidel (1934 × 904 px při 2 px/u). Recenze lane: LAND.
 
 Tímto commitem má **všech 42 vozidel katalogu vlastní kresbu**: `validate:assets` hlásí 42 vozidel s grafikou, 103 díly a 0 placeholderů. Pomocná funkce `withoutArt` zmizela z katalogu.
+
+## H2 — dokončení katalogu a obrazové důkazy
+
+Dočasné zúžení ze seedu je pryč: testy grafiky, emitorů a sběračů opět zahrnují celý katalog a `validate:assets --release` končí s kódem 0 a prázdným stderr (42 vozidel s grafikou, 103 díly, 0 placeholderů). Lokální pokus s `placeholder: true` u `steam_local` (necommitnutý) shodil obnovené kontroly: 13 FAIL / 5 PASS a release s kódem 1. Dočasná fixture rozměrů z H0 je odstraněná; rozpočty atlasů vycházejí jen z manifestu (svět 2042 × 1344, osm největších vozidel s NPC 1950 × 1356, povolená souprava 1932 × 1328 px při 2 px/u).
+
+| Test                                                                                                                                                                                                          | Red                                                                                               | Green                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------- |
+| `H2: contact sheet draws all 42 catalog vehicles from built art` (`catalog-contact-sheet.spec.ts`): 42 unikátních ID ze skutečných karet výběru a depa, žádný placeholder, dekódované obrázky shodné s assety | s uměle přerušeným `steam_local.body`: 1 FAIL `EncodingError: The source image cannot be decoded` | 2 PASS (desktop i tablet) |
+
+Lane: `npm run check` 67 souborů / 539 testů PASS (dva běhy předtím s timeoutem `GEN-10` na zatíženém stroji); `report:budgets` 3 429,4 KiB (gzip 851,9 KiB) z 10 240 KiB. Snímky ze skutečné aplikace (build `0.1.0+fcfe3db`, svět 123, bez diagnostiky, každý pod 1 MiB):
+
+- [Kontaktní list všech 42 vozidel](img/2026-10-12-kontaktni-list-42-vozidel.png)
+- [Výběr deseti lokomotiv — desktop](img/2026-10-12-vyber-10-lokomotiv.png), [telefon 844 × 390](img/2026-10-12-vyber-10-lokomotiv-telefon.png)
+- [Depo — všechny čtyři skupiny](img/2026-10-12-depo-vsechny-skupiny.png)
+- [Velká parní](img/2026-10-12-jizda-steam_express.png), [naftový posunovač](img/2026-10-12-jizda-diesel_shunter.png)
+- [Moderní elektrická](img/2026-10-12-jizda-electric_modern.png), [horská elektrická](img/2026-10-12-jizda-electric_mountain.png) — pod vedením, mezera sběrače 0 u
+- [Bublinková](img/2026-10-12-jizda-magic_bubbles.png), [duhová](img/2026-10-12-jizda-magic_rainbow.png)
+- [Prasknutí bubliny](img/2026-10-12-prasknuti-bubliny.png) — skutečná reakce přes vstup, počet prasknutí 0 → 1
+
+Celá E2E sada a výkon na hotovém katalogu: viz závěrečnou bránu níže.
+
+## Závěrečná brána PR A — každý commit samostatně a hotový katalog
+
+Recenze celého PR upozornila, že mezilehlé commity neprošly vlastní branou: seed bez opravy depa (52 E2E selhání) a kresby, které odhalily chybějící integrační opravy. Historie je proto upravená: oprava depa je součástí seedu a integrační opravy stojí před kresbami, které chyby odhalily. Každý commit pak prošel samostatně v čistém worktree. Lokální běhy na pracovní stanici s Linuxem (16 jader, headless Chromium 156, softwarový WebGL): Vitest se 4 workery (`VITEST_MAX_WORKERS=4`) a Playwright se 2 workery (`npm run test:e2e -- --workers=2`), zhruba jako v CI. Bez omezení Playwright spustí 8 prohlížečů se softwarovým WebGL, stroj zahltí a nejtěžší testy depa pak narážejí na limit 30 s; timeouty ani testy se kvůli tomu neměnily.
+
+| Commit                        | `npm run check` (unit testy) | Celá E2E sada       |
+| ----------------------------- | ---------------------------- | ------------------- |
+| seed katalogu s opravou depa  | PASS (469)                   | 166 PASS, 4 skipped |
+| H0 — atlas vozidel jízdy      | PASS (477)                   | 172 PASS, 4 skipped |
+| H1 — píšťaly                  | PASS (495)                   | 218 PASS, 4 skipped |
+| integrační opravy             | PASS (495)                   | 222 PASS, 4 skipped |
+| H1 — elektrické               | PASS (495)                   | 226 PASS, 4 skipped |
+| H1 — parní a posunovač        | PASS (503)                   | 226 PASS, 4 skipped |
+| H2 — osobní                   | PASS (507)                   | 226 PASS, 4 skipped |
+| H1, H3 — fantazijní a bubliny | PASS (520)                   | 228 PASS, 4 skipped |
+| H2 — služební                 | PASS (522)                   | 228 PASS, 4 skipped |
+| H2 — nákladní                 | PASS (533)                   | 230 PASS, 4 skipped |
+| H2 — hravé                    | PASS (539)                   | 230 PASS, 4 skipped |
+| kontroly celého katalogu      | PASS (539)                   | 232 PASS, 4 skipped |
+
+Čtyři skipped jsou stávající vícedotykové testy, které desktopový projekt bez dotyku přeskakuje.
+
+**Hotový katalog:** `validate:assets -- --release` exit 0 (42 vozidel s grafikou, 103 díly, 156 dílů světa, 0 placeholderů); `report:budgets` počáteční přenos 3 429,4 KiB (gzip 851,9 KiB) z 10 240 KiB.
+
+**Výkon** (`PERF_SECONDS=30 npm run measure:perf`, bez dalších běhů na stroji): nejdelší souprava z největších vozidel, `PERF_LOCOMOTIVE=steam_express PERF_WAGON=cargo_cars` (7 vozidel, ve všech vzorcích vykreslených všech 7), tři běhy: medián 59,9 FPS, 95. percentil 33,4 ms, nejhorší snímek 33,5 / 50 / 100 ms. Rozpočty dokumentu 11 (medián aspoň 30 FPS, 95. percentil nejvýše 50 ms) splněny. Srovnání výchozí soupravy (9 vozidel) střídavě na `master` a na hotovém katalogu, po třech bězích: medián 59,9 FPS a 95. percentil 33,4 ms na obou; nejhorší snímek `master` 33,5 / 50 / 83,3 ms, katalog 83,4 / 83,4 / 49,9 ms. Ojedinělé delší snímky se objevují na obou stranách, nejde o regresi. Dřívější měření za plného vytížení stroje (medián 20 FPS) nebylo reprezentativní. Měření je 30sekundové na stolním počítači, ne pětiminutové na cílovém zařízení; fyzický tablet, telefon a Tesla zůstávají NEOVĚŘENO.
+
+**Recenze celého PR** (nezávislý Codex GPT-6-Astra). První kolo FIX: (1) mezilehlé commity neprošly vlastní branou — opraveno úpravou historie výše, každý commit ověřen samostatně; (2) chyběla závěrečná E2E a výkonová brána hotového katalogu — doplněna v tomto oddílu; (3) D-019 uváděl rozměry atlasu z doby před dokončením a odstraněnou fixture — opraveno. Potvrzující kolo: jediný nález nízké závažnosti, poznámka v D-019 o `diesel_shunter` se objevila o dva commity dřív, než lokomotiva dostala kresbu — přesunuta do commitu, který kresbu přidává. Ostatní body potvrzující recenze (historie, záznamy ověření, brána, D-019) bez nálezu.

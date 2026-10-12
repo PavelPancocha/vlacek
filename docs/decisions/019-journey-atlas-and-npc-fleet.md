@@ -16,8 +16,8 @@ Katalog V1 má 10 lokomotiv a 32 druhů vagonků ([dokument 06](../../vlacek-pre
 
 ## Důsledky
 
-- Unit test rozpočtu používá skutečné manifesty a dočasnou fixture rozměrů vozidel, která ještě nemají kresbu, podle smlouvy vozidel zmrazené před kreslením (pracovní podklad mimo repozitář). Fixture se odstraní, až každé katalogové vozidlo bude mít kresbu. Výběr největších vozidel je odvozen z ploch unikátních dílů, nikoli z ručního seznamu ID.
-- Při 2 px/u má atlas světa 134 rámečků a 2042 × 1332 px, roadmapová sada vozidel 46 rámečků a 1950 × 1356 px, povolená souprava s NPC sadou 44 rámečků a 1932 × 1328 px. Test hlídá oba samostatné atlasy a obě vozidlové fixture.
+- Unit test rozpočtu odvozuje nejhorší jízdu z manifestu, z ploch unikátních dílů, nikoli z ručního seznamu ID. Dokud část katalogu neměla kresbu, doplňovala ji dočasná fixture rozměrů podle smlouvy vozidel zmrazené před kreslením (pracovní podklad mimo repozitář); s kresbou všech 42 vozidel je odstraněná.
+- Při 2 px/u a s kresbou celého katalogu má atlas světa 141 rámečků a 2042 × 1344 px (včetně částic bublin a duhy), sada osmi největších různých vozidel s NPC sadou 46 rámečků a 1950 × 1356 px a povolená souprava s NPC sadou 44 rámečků a 1932 × 1328 px. Při zavedení rozdělení měl atlas světa 134 rámečků a 2042 × 1332 px. Test hlídá oba samostatné atlasy a obě vozidlové sady.
 - Diagnostika `artAtlas` popisuje atlas světa, `vehicleAtlas` atlas vozidel včetně držených ID a klíče textury. `artVehicles` počítá skutečně vykreslená hráčova vozidla z kresby. E2E pokrývá smíšené skupiny, opakovaný výjezd, obnovu a fallback jednotlivých atlasů ([protokol](../validation/2026-10-10-iterace-upravy.md)).
 - Diagnostika `oncoming.trains[].locomotiveId` zpřístupňuje skutečnou lokomotivu každého protijedoucího vlaku. Testy proto nepředpokládají konkrétní typ: seedovaná sada se mění, když další vozidla dostanou kresbu (se seedem 123 dnes odpovídá `diesel_shunter`). Diagnostické ID se neukládá.
 - Rozdělení atlasů nemění zdrojové soubory; přenos a rozpočty se znovu změří po přidání celé kresby V1. Dopad na FPS měří `measure:perf` po integraci; fyzická zařízení jsou NEOVĚŘENO.
