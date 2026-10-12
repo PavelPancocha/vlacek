@@ -1,3 +1,6 @@
+import type { NpcFleet } from '../domain/interaction/OncomingTrain.ts';
+import { vehicleArt, type ArtPartKey } from '../content/artManifest.ts';
+import { vehicleArtLayers } from '../content/artLayers.ts';
 /**
  * Shelf packing of rasterised art parts into one atlas texture, so all
  * vehicle parts share a texture (doc 07 §4/§10, D-010). Pure: sizes in,
@@ -55,7 +58,7 @@ export function packAtlas(
 /**
  * Largest raster scale of vehicle and world art, px per u: above the
  * camera zoom of common screens (≈ 1.7 on a 2560 CSS px wide window at the
- * capped DPR, D-008). Vehicles, track and props must fit one atlas at it.
+ * capped DPR, D-008). The journey vehicle atlas and the world atlas each fit at it (D-019).
  */
 export const ART_MAX_PX_PER_U = 2;
 /** Backdrops are distant and soft: their own atlas stops at 1 px/u (D-013). */
@@ -135,4 +138,25 @@ export function artAtlasItems(
     width: Math.ceil(part.widthU * pxPerU),
     height: Math.ceil(part.heightU * pxPerU),
   }));
+}
+
+/** All unique vehicle parts needed by one journey and its NPC fleet (D-019). */
+export function journeyArtKeys(
+  vehicles: readonly { id: string; lengthU: number }[],
+  fleet: NpcFleet,
+): ArtPartKey[] {
+  return [
+    ...new Set(
+      [...vehicles, ...fleet.locomotives, ...fleet.wagons].flatMap(
+        (vehicle) => {
+          const art = vehicleArt[vehicle.id];
+          return art
+            ? vehicleArtLayers(art, vehicle.lengthU, 0).map(
+                (layer) => layer.part,
+              )
+            : [];
+        },
+      ),
+    ),
+  ];
 }

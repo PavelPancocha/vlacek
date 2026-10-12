@@ -1,50 +1,5 @@
+import { soundTones } from '../content/soundTones.ts';
 import { VoiceBudget } from './VoiceBudget.ts';
-
-export type SoundId =
-  'horn-steam' | 'horn-diesel' | 'horn-fantasy' | 'reaction' | 'train-full';
-
-interface Tone {
-  type: OscillatorType;
-  frequencies: readonly number[];
-  durationSec: number;
-  volume: number;
-  glideTo?: number;
-}
-
-/** PLACEHOLDER sounds synthesized with Web Audio (no audio files yet). */
-const TONES: Record<SoundId, Tone> = {
-  'horn-steam': {
-    type: 'sine',
-    frequencies: [880, 1108],
-    durationSec: 0.7,
-    volume: 0.18,
-  },
-  'horn-diesel': {
-    type: 'triangle',
-    frequencies: [220, 277, 330],
-    durationSec: 0.8,
-    volume: 0.16,
-  },
-  'horn-fantasy': {
-    type: 'sine',
-    frequencies: [1046, 1318, 1568],
-    durationSec: 0.6,
-    volume: 0.12,
-  },
-  reaction: {
-    type: 'sine',
-    frequencies: [620],
-    durationSec: 0.25,
-    volume: 0.15,
-    glideTo: 420,
-  },
-  'train-full': {
-    type: 'sine',
-    frequencies: [196],
-    durationSec: 0.3,
-    volume: 0.12,
-  },
-};
 
 /**
  * Owns the single AudioContext (doc 09 §6). It is created and resumed only
@@ -83,11 +38,11 @@ export class AudioManager {
       void this.#context.suspend().catch(() => undefined);
   }
 
-  play(id: SoundId): void {
+  play(id: string): void {
     const context = this.#context;
-    if (!context || context.state !== 'running') return;
+    const tone = Object.hasOwn(soundTones, id) ? soundTones[id] : undefined;
+    if (!context || context.state !== 'running' || !tone) return;
     if (!this.#budget.acquire('oneShot')) return;
-    const tone = TONES[id];
     const now = context.currentTime;
     const gain = context.createGain();
     gain.gain.setValueAtTime(0.0001, now);

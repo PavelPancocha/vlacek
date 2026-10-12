@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { WorldHit } from '../platform/InputRouter.ts';
 import { gameConfig } from '../config/gameConfig.ts';
 import { vehicleArtLayers } from '../content/artLayers.ts';
 import { artFileUrl, worldFileUrl } from '../content/artFiles.ts';
@@ -17,6 +18,7 @@ import {
   isBackdropPart,
   worldParts,
 } from '../content/worldArt.ts';
+import type { NpcFleet } from '../domain/interaction/OncomingTrain.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import type { Biome } from '../domain/world/Biomes.ts';
 import { heightAtX } from '../domain/world/ArcLengthTable.ts';
@@ -44,12 +46,20 @@ import {
   ART_MAX_PX_PER_U,
   BACKDROP_MAX_PX_PER_U,
   frameOrigin,
+  journeyArtKeys,
 } from './atlasPacking.ts';
 import { placeAnimal } from './animalPlacement.ts';
+import { DEPTH } from './RideSceneDepth.ts';
 import { AmbientLife } from './particles/AmbientLife.ts';
 import { EffectsView } from './particles/EffectsView.ts';
 import { emitterWorldPoint, passEffectAt } from './particles/emission.ts';
 import { ParticleField } from './particles/ParticleField.ts';
+import {
+  bubbleAt,
+  bubbleRadiusU,
+  popBubble,
+  visibleBubbles,
+} from './particles/bubbleInteraction.ts';
 import { PARTICLE_KINDS, kindName } from './particles/particleKinds.ts';
 import {
   TrainEffects,
@@ -77,6 +87,7 @@ export interface RideSceneHost {
   ride(): RideSimulation | undefined;
   /** Vehicle definitions of the current journey, locomotive first. */
   journeyVehicles(): readonly ShapedVehicle[];
+  journeyNpcFleet(): NpcFleet | undefined;
   catalogVehicles(): readonly ShapedVehicle[];
   /** Effects density profile (doc 13 `quality`, reduced effects). */
   effectsQuality(): 'low' | 'standard';
@@ -154,40 +165,24 @@ const BIOME_AHEAD_SHARE = 0.65;
 /** Time constant of the backdrop following the rails up and down (s). */
 const HORIZON_EASE_SEC = 0.8;
 
-/** Drawing order (doc 07 §3): sky at the back, objects at the front. */
-const DEPTH = {
-  sky: 0,
-  clouds: 0.5,
-  far: 1,
-  mid: 2,
-  backGround: 3,
-  backProps: 4,
-  ground: 5,
-  track: 6,
-  train: 7,
-  wires: 7.5,
-  nearProps: 8,
-  objects: 9,
-  effects: 10,
-} as const;
-
-/** Vehicles, track, props and animals: the main art atlas. */
-const ART_SOURCES: readonly ArtSource[] = [
-  ...Object.entries(artParts).map(([key, part]) => ({
+/** Sources decode once; only the journey subset is rasterised (D-019). */
+const VEHICLE_SOURCES: readonly ArtSource[] = Object.entries(artParts).map(
+  ([key, part]) => ({
     key,
     url: artFileUrl(part.file),
     widthU: part.widthU,
     heightU: part.heightU,
-  })),
-  ...Object.entries(worldParts)
-    .filter(([key]) => !isBackdropPart(key))
-    .map(([key, part]) => ({
-      key,
-      url: worldFileUrl(part.file),
-      widthU: part.widthU,
-      heightU: part.heightU,
-    })),
-];
+  }),
+);
+/** World parts have a persistent atlas, independent of the journey vehicles. */
+const ART_SOURCES: readonly ArtSource[] = Object.entries(worldParts)
+  .filter(([key]) => !isBackdropPart(key))
+  .map(([key, part]) => ({
+    key,
+    url: worldFileUrl(part.file),
+    widthU: part.widthU,
+    heightU: part.heightU,
+  }));
 
 /** Backdrops and clouds: their own, coarser atlas (D-013). */
 const BACKDROP_SOURCES: readonly ArtSource[] = Object.entries(worldParts)
@@ -306,8 +301,10 @@ export class RideScene extends Phaser.Scene {
   /** Visible world rectangle (render-local units) of the latest frame. */
   #view = { left: 0, top: 0, zoom: 1 };
   #visibleObjects: VisibleObject[] = [];
-  /** Vehicle and world art; undefined if it failed (placeholders drawn). */
+  /** World art; undefined if it failed (plain shapes drawn). */
   #art: ArtAtlas | undefined;
+  /** Journey vehicles and NPC fleet, independent of world art failure. */
+  #vehicleArt: ArtAtlas | undefined;
   /** Backdrop art; undefined if it failed (plain sky only). */
   #backdropArt: ArtAtlas | undefined;
   #backdrop: Backdrop | undefined;
@@ -321,6 +318,7 @@ export class RideScene extends Phaser.Scene {
     gameConfig.quality.standard.maxDecorativeParticles,
     Math.random,
   );
+  #bubblePops = 0;
   readonly #trainEffects = new TrainEffects(this.#particles, Math.random);
   /** Oncoming trains' smoke, one emission state per train. */
   readonly #npcEffects = new TrainEffectsByTrain(this.#particles, Math.random);
@@ -350,8 +348,25 @@ export class RideScene extends Phaser.Scene {
   }
 
   /** Size of the art atlas, for diagnostics; undefined if it failed. */
-  get artAtlas(): ArtAtlasInfo | undefined {
-    return this.#art?.info;
+  get artAtlas(): (ArtAtlasInfo & { textureKey: string }) | undefined {
+    const info = this.#art?.info;
+    const textureKey = this.#art?.textureKey;
+    return info && textureKey ? { ...info, textureKey } : undefined;
+  }
+
+  get vehicleAtlas():
+    (ArtAtlasInfo & { textureKey: string; vehicleIds: string[] }) | undefined {
+    const info = this.#vehicleArt?.info;
+    const textureKey = this.#vehicleArt?.textureKey;
+    return info && textureKey
+      ? {
+          ...info,
+          textureKey,
+          vehicleIds: Object.entries(vehicleArt).flatMap(([id, art]) =>
+            art && this.textures.get(textureKey).has(art.body) ? [id] : [],
+          ),
+        }
+      : undefined;
   }
 
   /** Size of the backdrop atlas, for diagnostics. */
@@ -366,6 +381,7 @@ export class RideScene extends Phaser.Scene {
 
   preload(): void {
     preloadArt(this, ART_SOURCES, ART_MAX_PX_PER_U);
+    preloadArt(this, VEHICLE_SOURCES, ART_MAX_PX_PER_U);
     preloadArt(this, BACKDROP_SOURCES, BACKDROP_MAX_PX_PER_U);
   }
 
@@ -377,6 +393,14 @@ export class RideScene extends Phaser.Scene {
       this.#art = new ArtAtlas(this, ART_SOURCES, {
         maxPxPerU: ART_MAX_PX_PER_U,
         texturePrefix: 'art@',
+      });
+    } catch (error) {
+      console.error(error);
+    }
+    try {
+      this.#vehicleArt = new ArtAtlas(this, VEHICLE_SOURCES, {
+        maxPxPerU: ART_MAX_PX_PER_U,
+        texturePrefix: 'vehicle@',
       });
     } catch (error) {
       console.error(error);
@@ -400,6 +424,7 @@ export class RideScene extends Phaser.Scene {
       this.#backdrop?.destroy();
       this.#effectsView?.destroy();
       this.#art?.destroy();
+      this.#vehicleArt?.destroy();
       this.#backdropArt?.destroy();
     });
     let tallestU = 0;
@@ -408,7 +433,7 @@ export class RideScene extends Phaser.Scene {
       const height = PLACEHOLDER_BODY_HEIGHT_U;
       tallestU = Math.max(
         tallestU,
-        art && this.#art ? art.heightU : height + vehicle.wheelRadiusU * 1.3,
+        art ? art.heightU : height + vehicle.wheelRadiusU * 1.3,
       );
       // A transparent margin keeps rotated edges smooth without MSAA.
       const g = this.make.graphics({}, false);
@@ -463,8 +488,16 @@ export class RideScene extends Phaser.Scene {
     cssX: number,
     cssY: number,
     canvasRect: DOMRect,
-  ): string | undefined {
+  ): WorldHit | undefined {
     const world = this.#toWorld(cssX, cssY, canvasRect);
+    if (this.#effectsTexture !== undefined) {
+      const bubbleId = bubbleAt(
+        this.#particles,
+        world.x + this.#originX,
+        world.y,
+      );
+      if (bubbleId !== undefined) return { bubbleId };
+    }
     let best: { id: string; distance: number } | undefined;
     for (const object of this.#visibleObjects) {
       // At least ~40 CSS px around the object, larger than the drawing.
@@ -475,6 +508,45 @@ export class RideScene extends Phaser.Scene {
       }
     }
     return best?.id;
+  }
+
+  popBubble(id: number): boolean {
+    if (
+      !popBubble(
+        this.#particles,
+        id,
+        this.#host.effectsQuality() === 'low' ? 0.5 : 1,
+      )
+    )
+      return false;
+    this.#bubblePops += 1;
+    return true;
+  }
+
+  /** Visible bubbles in CSS px; the hit test uses the same drawn positions. */
+  bubbleScreenPositions(
+    canvasRect: DOMRect,
+  ): { id: number; x: number; y: number; radiusCssPx: number }[] {
+    if (this.#effectsTexture === undefined) return [];
+    const scale =
+      (this.#view.zoom * Math.max(1, canvasRect.width)) / this.scale.width;
+    return visibleBubbles(this.#particles)
+      .map((bubble) => {
+        const at = this.#particles.positionOf(bubble);
+        return {
+          id: bubble.id,
+          x: canvasRect.left + (at.x - this.#originX - this.#view.left) * scale,
+          y: canvasRect.top + (at.y - this.#view.top) * scale,
+          radiusCssPx: bubbleRadiusU(this.#particles, bubble) * scale,
+        };
+      })
+      .filter(
+        ({ x, y }) =>
+          x >= canvasRect.left &&
+          x <= canvasRect.right &&
+          y >= canvasRect.top &&
+          y <= canvasRect.bottom,
+      );
   }
 
   /** Screen box (CSS px) of the drawn vehicles, for diagnostics and E2E. */
@@ -561,7 +633,7 @@ export class RideScene extends Phaser.Scene {
       .flatMap((slot) => slot.images.filter((image) => image.visible))
       .map((image) => ({
         frame: image.frame.name,
-        box: drawnBounds(image, this.#art?.info?.pxPerU),
+        box: drawnBounds(image, this.#vehicleArt?.info?.pxPerU),
       }));
     let inView = 0;
     let overTrain = 0;
@@ -590,6 +662,7 @@ export class RideScene extends Phaser.Scene {
   #reset(): void {
     this.#particles.clear();
     this.#backdrop?.reset();
+    this.#bubblePops = 0;
     this.#npcEffects.clear();
     this.#frameTick = undefined;
     this.#destroyChunks();
@@ -599,6 +672,12 @@ export class RideScene extends Phaser.Scene {
       slot.container.destroy();
     this.#slots.length = 0;
     this.#npcSlots.length = 0;
+    const vehicles = this.#host.journeyVehicles();
+    const fleet = this.#host.journeyNpcFleet() ?? {
+      locomotives: [],
+      wagons: [],
+    };
+    this.#vehicleArt?.selectParts(journeyArtKeys(vehicles, fleet));
     this.#cameraTopY = undefined;
     this.#horizonY = undefined;
     this.#visibleObjects = [];
@@ -673,6 +752,7 @@ export class RideScene extends Phaser.Scene {
     );
     camera.setZoom(zoom);
     this.#updateArtScale(zoom);
+    this.#updateVehicleArtScale(zoom);
     const viewW = this.scale.width / zoom;
     const viewH = this.scale.height / zoom;
 
@@ -999,12 +1079,7 @@ export class RideScene extends Phaser.Scene {
     if (locomotive) {
       const pose = ride.vehiclePose(0, headS);
       const effect = locomotive.effect;
-      const kind =
-        effect === 'steam' || effect === 'diesel'
-          ? effect
-          : effect === 'stars'
-            ? 'stars'
-            : undefined;
+      const kind = effect === 'none' ? undefined : effect;
       if (art && kind !== undefined)
         for (const emitter of art.emitters ?? [])
           emitters.push({
@@ -1055,7 +1130,7 @@ export class RideScene extends Phaser.Scene {
         ? { pantograph: this.#pantographContact }
         : {}),
     });
-    // Oncoming steam and diesel trains smoke too, out of their tunnels.
+    // Oncoming locomotives emit their own effect outside their tunnels.
     this.#npcEffects.retain(new Set(ride.oncomingTrains.map((t) => t.id)));
     for (const train of ride.oncomingTrains) {
       const loco = train.vehicles[0];
@@ -1063,10 +1138,7 @@ export class RideScene extends Phaser.Scene {
         .catalogVehicles()
         .find((candidate) => candidate.id === loco?.id);
       const npcArt = shaped ? vehicleArt[shaped.id] : undefined;
-      const kind =
-        shaped?.effect === 'steam' || shaped?.effect === 'diesel'
-          ? shaped.effect
-          : undefined;
+      const kind = shaped?.effect === 'none' ? undefined : shaped?.effect;
       if (!loco || !shaped || !npcArt || kind === undefined) continue;
       const pose = train.vehiclePose(0);
       const npcEmitters: PlacedEmitter[] = (npcArt.emitters ?? [])
@@ -1131,6 +1203,7 @@ export class RideScene extends Phaser.Scene {
     capacity: number;
     kinds: Record<string, number>;
     checksum: number;
+    bubblePops: number;
   } {
     const kinds: Record<string, number> = {};
     let checksum = 0;
@@ -1144,6 +1217,7 @@ export class RideScene extends Phaser.Scene {
       capacity: this.#particles.capacity,
       kinds,
       checksum,
+      bubblePops: this.#bubblePops,
     };
   }
 
@@ -1308,6 +1382,16 @@ export class RideScene extends Phaser.Scene {
     this.#destroyChunks();
     this.#destroyObjects();
 
+    art?.release(replaced);
+  }
+
+  /** Vehicle scale changes never rebuild world chunks or world textures. */
+  #updateVehicleArtScale(zoom: number): void {
+    const step = this.#rasterise(this.#vehicleArt, zoom);
+    this.#vehicleArt = step.atlas;
+    const key = step.atlas?.textureKey;
+    const replaced = step.replaced;
+    if (replaced === undefined || key === undefined) return;
     for (const slot of [...this.#slots, ...this.#npcSlots]) {
       slot.images.forEach((image, i) => {
         const shown = slot.frames[i];
@@ -1317,7 +1401,7 @@ export class RideScene extends Phaser.Scene {
         slot.frames[i] = `${key}/${frame}`;
       });
     }
-    art?.release(replaced);
+    step.atlas?.release(replaced);
   }
 
   /**
@@ -1373,8 +1457,8 @@ export class RideScene extends Phaser.Scene {
     pantographReach?: number,
   ): number {
     const art = vehicleArt[vehicle.id];
-    const texture = this.#art?.textureKey;
-    const pxPerU = this.#art?.info?.pxPerU;
+    const texture = this.#vehicleArt?.textureKey;
+    const pxPerU = this.#vehicleArt?.info?.pxPerU;
     if (!art || texture === undefined || pxPerU === undefined) return 0;
     const layers = vehicleArtLayers(
       art,
@@ -1446,7 +1530,7 @@ export class RideScene extends Phaser.Scene {
       // Wheels turn with travelled distance, not with time (doc 03 §3).
       const distanceU = headS - (ride.layout.centerOffsetsU[i] ?? 0);
       let used = 0;
-      if (this.#art) {
+      if (this.#vehicleArt) {
         const reach =
           i === 0 && ride.electrified
             ? this.#pantographReach(ride, vehicle, pose)

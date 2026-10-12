@@ -179,6 +179,12 @@ h1 {
   max-width: 100px;
 }
 
+.cards,
+.catalog {
+  /* Native keyboard focus must reveal the whole card, even if partly visible. */
+  scroll-padding-inline: 50%;
+}
+
 .cards {
   display: flex;
   gap: 16px;
@@ -293,12 +299,16 @@ h1 {
 .catalog {
   display: flex;
   gap: 18px;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  touch-action: pan-x;
 }
 
 .group {
   display: flex;
+  flex: none;
   gap: 8px;
   padding: 6px;
   border-radius: 12px;
@@ -454,12 +464,6 @@ h1 {
   }
   .builder .strip {
     height: 100px;
-  }
-  .builder > .catalog {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    touch-action: pan-x;
   }
   .builder .card.small {
     min-height: 64px;

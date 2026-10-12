@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="176" height="100" viewBox="0 0 176 100">
+  <defs>
+    <linearGradient id="bogie" x2=".15" y2="1"><stop stop-color="#9bb7c5"/><stop offset=".35" stop-color="#507fa2"/><stop offset="1" stop-color="#293d4e"/></linearGradient>
+    <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#f7df95"/><stop offset=".5" stop-color="#d6ae4c"/><stop offset="1" stop-color="#7a6235"/></linearGradient>
+  </defs>
+  <g fill="none" stroke-linecap="round">
+    <path d="M12.4 85 A11 11 0 0 1 26 77.4 M38.4 85 A11 11 0 0 1 52 77.4 M116.4 85 A11 11 0 0 1 130 77.4 M142.4 85 A11 11 0 0 1 156 77.4" stroke="#edf0de" stroke-opacity=".45" stroke-width=".8"/>
+    <path d="M33.6 91 A11 11 0 0 1 20 98.6 M59.6 91 A11 11 0 0 1 46 98.6 M137.6 91 A11 11 0 0 1 124 98.6 M163.6 91 A11 11 0 0 1 150 98.6" stroke="#161f2b" stroke-opacity=".4" stroke-width=".8"/>
+  </g>
+  <g stroke="#2c303b" stroke-width=".55" stroke-linejoin="round">
+    <!-- Čelníky podvozků nechávají čtyři malá kola viditelná a otočná. -->
+    <path d="M11 84 Q12 79 22 80 L29 78 H43 L50 80 Q59 79 61 84 V88 H55 V84 H43 V89 H29 V84 H17 V88 H11Z" fill="url(#bogie)"/>
+    <path d="M115 84 Q116 79 126 80 L133 78 H147 L154 80 Q163 79 165 84 V88 H159 V84 H147 V89 H133 V84 H121 V88 H115Z" fill="url(#bogie)"/>
+    <path d="M32 80 H40 V87 H32Z M136 80 H144 V87 H136Z" fill="#263442"/>
+    <path d="M33 81 H39 M33 83 H39 M33 85 H39 M137 81 H143 M137 83 H143 M137 85 H143" stroke="url(#gold)" stroke-width=".9"/>
+    <g fill="url(#gold)"><circle cx="23" cy="88" r="2.5"/><circle cx="49" cy="88" r="2.5"/><circle cx="127" cy="88" r="2.5"/><circle cx="153" cy="88" r="2.5"/></g>
+    <path d="M8 75 V83 H13 M163 75 V83 H168" fill="none" stroke="url(#gold)" stroke-width="1"/>
+  </g>
+</svg>

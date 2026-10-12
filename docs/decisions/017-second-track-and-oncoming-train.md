@@ -38,7 +38,7 @@ Dokument 14 §5 chce druhou kolej s jiným vlakem, který nikdy nejede po hráč
    - Jízda si pamatuje jen místa souběhu aktuálního a příštího bloku a vlaky, které ještě jedou. Starší záznamy zahodí, takže historie na nekonečné jízdě neroste (dokument 10, brána M2; Codex review PR #2).
    - Při setkání v otevřeném úseku jednou zahouká, pokud mu to dovolí vlastní cooldown 8 s.
    - Na hráčovu píšťalu v dosahu 800 u odpoví nejvýš jednou za 8 s. Jeho houkání nic dalšího nespouští.
-   - Zvuk je klakson jeho lokomotivy (dočasný syntetizovaný tón).
+   - Zvuk je klakson jeho lokomotivy podle jejího katalogového `hornAudio`, ze stejné tabulky jako hráčova píšťala a náhled při výběru (H1, [D-006](006-runtime-architecture.md)); dočasný syntetizovaný tón nahradí nahraný zvuk při dokončení zvukových assetů.
 5. **Kresba.**
    - `SecondaryView` kreslí koleje druhé tratě ve viditelném úseku a na obou koncích tunelový portál, napravo zrcadlený. Portál má dvě vrstvy: tmavé ústí pod vlakem a kopec s kamennou zdí a obloukem nad ním, otvor oblouku je průhledný.
    - Bez hlavního atlasu `ChunkView` kreslí jednoduchou zapečenou kolej ve stejném odsazení a na stejných koncích tmavá ústí pod vlakem a portálové kopce nad ním. Protijedoucí vlak zůstává náhradní siluetou a mizí v označeném portálu, nikoli na prázdné hranici (PWA-10, R7).

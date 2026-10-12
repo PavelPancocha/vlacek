@@ -12,9 +12,26 @@ export interface DebugSnapshot {
   renderedVehicles: number;
   /** Rendered vehicles drawn from their art (doc 14 §3). */
   artVehicles: number;
-  /** The vehicle art atlas (D-011); undefined if the art failed to load. */
+  /** The world art atlas (D-019); undefined if this atlas failed. */
   artAtlas:
-    | { width: number; height: number; frames: number; pxPerU: number }
+    | {
+        width: number;
+        height: number;
+        frames: number;
+        pxPerU: number;
+        textureKey: string;
+      }
+    | undefined;
+  /** Journey vehicle atlas; IDs include the NPC fleet (D-019). */
+  vehicleAtlas:
+    | {
+        width: number;
+        height: number;
+        frames: number;
+        pxPerU: number;
+        textureKey: string;
+        vehicleIds: string[];
+      }
     | undefined;
   /** Decorative particles (doc 14 §4, D-014): counts and a position sum. */
   effects: {
@@ -23,6 +40,7 @@ export interface DebugSnapshot {
     kinds: Record<string, number>;
     /** Sum of particle positions; unchanged while the ride is paused. */
     checksum: number;
+    bubblePops: number;
   };
   /**
    * Loaded SVG sources still held as textures; 0 once the atlases are
@@ -82,6 +100,8 @@ export interface DebugSnapshot {
   oncoming: {
     trains: {
       id: string;
+      /** Catalog identity of the actual NPC locomotive (horn checks). */
+      locomotiveId: string | undefined;
       /** World x interval of the whole train. */
       minX: number;
       maxX: number;
@@ -124,6 +144,8 @@ export interface DebugSnapshot {
   p95FrameMs: number;
   worstFrameMs: number;
   frameSamples: number;
+  /** Visible bubbles: stable ID and drawn center/radius in CSS px (H3). */
+  bubbles: { id: number; x: number; y: number; radiusCssPx: number }[];
   objects: { id: string; x: number; y: number }[];
   /** Screen x of the chunk boundaries in view, CSS px (seam checks). */
   chunkEdges: number[];

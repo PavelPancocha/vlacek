@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { vehicleArt } from '../../../../src/content/artManifest.ts';
+import { locomotives } from '../../../../src/content/vehicles.ts';
 import { ParticleField } from '../../../../src/render/particles/ParticleField.ts';
 import {
   PARTICLE_KINDS,
@@ -57,6 +59,63 @@ function run(
 const steam = [{ kind: 'steam' as const, x: 0, y: -94, tiltDeg: 0 }];
 
 describe('TrainEffects (doc 14 §4)', () => {
+  it.each([
+    {
+      id: 'steam_express',
+      kind: 'steam',
+      xU: 186,
+      yU: 8,
+      heightU: 108,
+      particle: 'smoke',
+    },
+    {
+      id: 'diesel_shunter',
+      kind: 'diesel',
+      xU: 96,
+      yU: 25,
+      heightU: 82,
+      particle: 'diesel',
+    },
+  ] as const)(
+    'emits $particle at the $id contract outlet',
+    ({ id, kind, xU, yU, heightU, particle }) => {
+      const locomotive = locomotives.find((entry) => entry.id === id);
+      const art = vehicleArt[id];
+      expect(locomotive?.effect).toBe(kind);
+      expect(art?.emitters).toEqual([{ xU, yU }]);
+      if (!locomotive || !art) throw new Error(`${id}: missing art`);
+      const field = new ParticleField(PARTICLE_KINDS, 100, () => 0.5);
+      const effects = new TrainEffects(field, () => 0.5);
+      effects.step({
+        ...base,
+        dtSec: 1,
+        speedUPerSec: 120,
+        intent: 'THROTTLE',
+        driverRadiusU: locomotive.wheelRadiusU,
+        emitters: (art.emitters ?? []).map((emitter) => ({
+          kind,
+          x: emitter.xU - locomotive.lengthU / 2,
+          y: emitter.yU - art.heightU,
+          tiltDeg: 0,
+        })),
+      });
+      const particles = field
+        .particles()
+        .filter((entry) => entry.kind === kindIndex(particle));
+      expect(particles.length).toBeGreaterThan(0);
+      for (const puff of particles) {
+        expect(puff.x).toBe(xU - locomotive.lengthU / 2);
+        expect(puff.y).toBe(yU - heightU);
+      }
+      if (kind === 'diesel')
+        expect(
+          field
+            .particles()
+            .every((entry) => entry.kind === kindIndex('diesel')),
+        ).toBe(true);
+    },
+  );
+
   it('emits nothing while the ride is paused', () => {
     const { counts } = run({
       dtSec: 0,
@@ -114,6 +173,38 @@ describe('TrainEffects (doc 14 §4)', () => {
     expect(counts.get('star') ?? 0).toBeGreaterThan(10);
     expect((counts.get('smoke') ?? 0) + (counts.get('steam') ?? 0)).toBe(0);
   });
+
+  it.each([
+    ['bubbles', 'bubble'],
+    ['rainbow', 'rainbow-puff'],
+  ] as const)(
+    'emits %s at its anchor without stars or smoke, respecting pause and reduced effects',
+    (effect, kind) => {
+      const emitters = [{ kind: effect, x: 127, y: -84, tiltDeg: 0 }];
+      const input = { emitters, speedUPerSec: 200 };
+      const full = run(input);
+      const low = run({ ...input, rateScale: 0.5 }, 60, 96);
+      const standard = run(input, 60, 240);
+      expect(full.counts.get(kind) ?? 0).toBeGreaterThan(10);
+      expect([...full.counts.keys()]).toEqual([kind]);
+      const ratio =
+        (low.counts.get(kind) ?? 0) / (standard.counts.get(kind) ?? 1);
+      expect(ratio).toBeGreaterThan(0.45);
+      expect(ratio).toBeLessThan(0.55);
+      expect(standard.maxLive).toBeLessThanOrEqual(240);
+      expect(low.maxLive).toBeLessThanOrEqual(96);
+      expect(run({ ...input, dtSec: 0 }).counts.size).toBe(0);
+      const field = new ParticleField(PARTICLE_KINDS, 96, lcg(11));
+      new TrainEffects(field, lcg(12)).step({ ...base, emitters, dtSec: 1 });
+      expect(field.live).toBeGreaterThan(0);
+      for (const p of field.particles()) {
+        expect(p.x).toBeGreaterThanOrEqual(125.5);
+        expect(p.x).toBeLessThanOrEqual(128.5);
+        expect(p.y).toBeGreaterThanOrEqual(-85.5);
+        expect(p.y).toBeLessThanOrEqual(-82.5);
+      }
+    },
+  );
 
   it('keeps a locomotive without emitters clean (electric)', () => {
     const { counts } = run({ speedUPerSec: 400, intent: 'THROTTLE' });

@@ -15,6 +15,8 @@ export interface VehicleBase {
   bodyAsset: string;
   previewAsset: string;
   interactionId?: string;
+  /** Art is not available yet; excluded from the journey NPC fleet (D-019). */
+  placeholder?: true;
 }
 
 export interface LocomotiveDefinition extends VehicleBase {

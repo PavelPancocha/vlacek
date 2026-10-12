@@ -484,3 +484,225 @@ Celá brána po opravách (`9c6b662` a tento zápis):
 - `npm run report:budgets`: úvodní přenos 2970 KiB (gzip 757 KiB) z 10 240 KiB.
 
 Vše lokálně v kontejneru. Fyzický tablet a Tesla: **NEOVĚŘENO**.
+
+## Katalog V1 — výchozí stav a doplnění katalogu (seed)
+
+Další iterace doplní celý katalog dokumentu 06 ([stav](../roadmap.md), H0–H3). Lokální běhy na pracovní stanici s Linuxem (16 jader), headless Chromium; GitHub Actions a fyzická zařízení zvlášť.
+
+**Výchozí stav (build `0.1.0+2563ef4`, `master` po sloučení PR #2).**
+
+- `npm run check` PASS: 58 souborů, 465 unit testů, 11 vozidel s grafikou, 0 placeholderů, 43,6 s. Vitest běží lokálně se 4 workery (`VITEST_MAX_WORKERS=4`, zhruba jako v CI). S výchozími 16 workery na tomto stroji sdíleném s dalšími běhy překročí `GEN-10` (dlouhá jízda v `RideSimulation.test.ts`) limit 5000 ms (6,1–6,6 s; samotný 3,0 s, se 4 workery 3,7 s). Je to vytížení procesoru, ne chyba logiky; timeout testu se nemění. CI na `2563ef4` prošlo ([běh](https://github.com/PavelPancocha/vlacek/actions/runs/38132010540)).
+- `npm run test:e2e` na tomto stroji zatím neproběhl: Playwright 1.64 potřebuje Chromium headless shell revize 1248 a jeho stažení přes pomalé připojení trvá. Výsledek se zapíše k dalšímu kroku.
+
+**Seed katalogu.** `src/content/vehicles.ts` má všech 10 lokomotiv a 32 druhů vagonků v pořadí dokumentu 06. 31 vozidel bez grafiky nese `placeholder: true` a kreslí se označenou siluetou. Pojezd, efekty a píšťaly nových lokomotiv odpovídají smlouvě vozidel, která byla zmrazena před kreslením (rozměry a čepy podle dokumentu 10 §8; pracovní podklad orchestrace mimo repozitář). Vagonky mají dál `bogieOffsetU = round(0,31 · délka)` a kola o poloměru 12 u.
+
+| Test                                                                                                                                | Red                                                                                                                  | Green  |
+| ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------ |
+| CNT-01: přesně 10 lokomotiv a 32 vagonků dokumentu 06 (`catalog.test.ts`)                                                           | 4 FAIL proti katalogu 4/7: 4 místo 10 lokomotiv, 7 místo 32 vagonků, 11 místo 42 ID, jen `electric_retro` elektrická | 4 PASS |
+| Protijedoucí vlak jen z vozidel s grafikou (`session.test.ts`)                                                                      | FAIL: vlak světa 1000 vezl `fun_aquarium`, `cargo_excavator`, `service_tools`, `service_snowplow`, `fun_lights`      | PASS   |
+| DATA-05: save sestavení `0.1.0+2563ef4` (generátor v1, všech 11 vozidel) se s katalogem V1 načte beze změny (`v1-catalog-0.1.json`) | charakterizační test kompatibility, zelený před i po změně                                                           | PASS   |
+
+**Dočasné zúžení.** Tři kontroly „každé vozidlo má grafiku“ v `artManifest.test.ts` (release bez placeholderů, emitor u každé lokomotivy s efektem, sběrač u každé elektrické) a test `validate:assets --release` dočasně pomíjejí vozidla s `placeholder`. Release test ověřuje, že odmítne právě tato vozidla a nic jiného. Komentář „Seed scope (catalog V1)“ u každé kontroly uvádí podmínku odstranění: před dokončením katalogu se vrátí na celý katalog a `--release` musí projít.
+
+Brána seedu: `npm run check` PASS (58 souborů, 469 testů; `validate:assets`: 42 vozidel, 11 s grafikou, 31 placeholderů). `validate:assets -- --release` podle očekávání selže a vypíše 31 placeholderů.
+
+## H1/H2 — výběr lokomotivy a depo s celým katalogem
+
+Seed katalogu rozbil depo: s 32 kartami zůstala karta `add:cargo_box` mimo výhled i po posunu, celá E2E sada na seedu `00f8077` skončila **52 FAIL / 78 PASS / 4 skipped** (výchozí stav 130 PASS). Oprava drží katalog vagonků ve vodorovně posuvném řádku na všech displejích, se čtyřmi nezmenšenými skupinami; obrazovka ani Vyjet se neposouvají. Při aktualizaci depa zůstane pozice katalogu i pickeru a fokus.
+
+| Test (`tests/e2e/picker.spec.ts`, oba projekty)                                                                          | Red                                                                                                          | Green            |
+| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ---------------- |
+| Geometrie: všech 10 lokomotiv a 32 vagonků bez překryvu, na výřezu projektu a telefonech 844 × 390, 667 × 375, 568 × 320 | na seedu 2 FAIL (desktop, tablet): karta po posunu na x = −352 px; telefony a picker už procházely (ochrana) | 16 PASS          |
+| Tah začínající na kartách dosáhne lokomotivy 10 a vagonku 32, tah nic nepřidá, katalog a souprava se posouvají nezávisle | proti `994d56f`: katalog `Expected: 2804–3484, Received: 0` (návrat na začátek)                              | PASS (8 případů) |
+| Vodorovné kolečko dosáhne posledních karet a přidá stejný druh dvakrát na stejném místě                                  | `Expected: 3240 / 2804, Received: 0`                                                                         | PASS (4 případy) |
+| Tab odkryje celou kartu s viditelným fokusem, Enter a mezerník ji aktivují                                               | `Expected: focused, Received: inactive`; poté `viewport ratio 1`, `Received: 0.755`                          | PASS (8 případů) |
+
+Příkaz: `flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- tests/e2e/picker.spec.ts --workers=2`. Celá sada lane: **166 PASS / 4 skipped**; `npm run check` 469 PASS. Recenze lane: první FIX (dosažitelnost dokazoval programový posun; po přidání se katalog vracel na začátek), po opravě LAND. Dokumentace: [dokument 02 §7](../../vlacek-predavaci-balicek/02_OVLADANI_A_STAVY.md).
+
+## H0 — atlas vozidel jedné jízdy a sada protijedoucích vlaků ([D-019](../decisions/019-journey-atlas-and-npc-fleet.md))
+
+Smlouva vozidel spočítala a test potvrdil, že společný atlas nejhorší jízdy a světa se do 2048 × 2048 nevejde ani při 2 px/u. Vozidla jízdy proto mají vlastní atlas.
+
+| Test                                                                                                                                               | Red                                                                  | Green                                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `npcFleetFor`: stejný seed, 2 parní/naftové a 6 vagonových typů, bez placeholderů, elektrických a fantazijních, menší katalog (`npcFleet.test.ts`) | 3 FAIL / 4, např. sada délky 7 místo 2                               | 4 PASS                                                                                                         |
+| Rozpočet atlasu: roadmapová sada a povolená souprava se světem (`atlasPacking.test.ts`)                                                            | 2 FAIL: `RangeError: art does not fit a 2048 × 2048 atlas`           | 11 PASS po rozdělení: svět 2042 × 1332, roadmapová vozidla 1950 × 1356, povolená souprava 1932 × 1328 (2 px/u) |
+| `journeyArtKeys`: všechny unikátní díly jízdy a NPC sady                                                                                           | 1 FAIL: prázdná množina místo 20 dílů                                | PASS                                                                                                           |
+| E2E: fallback jednotlivých atlasů (`oncoming.spec.ts`, SVG vozidla zablokovaná)                                                                    | proti buildu `0.1.0+00f8077` před rozdělením: `artAtlas` `undefined` | `render.spec.ts` a `oncoming.spec.ts` 8 PASS na obou projektech                                                |
+| Pořadí vrstev: částice nad popředím (`RideSceneDepth.test.ts`, nález recenze lane)                                                                 | `expected 7.1 to be greater than 9`                                  | PASS po návratu vrstvy 10                                                                                      |
+
+Příkazy: `VITEST_MAX_WORKERS=4 volta run npm test -- <soubor>`; E2E pod zámkem `flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- <spec>`. Očekávání E2E se změnila jen podle vlastnictví textur: `landscape.spec.ts` počítá 134 rámečků světa, `oncoming.spec.ts` při chybě SVG vozidla vyžaduje chybějící `vehicleAtlas` a funkční `artAtlas`, `art.spec.ts` hlídá limit 2048² u obou atlasů. Celá dotčená sada (`art`, `render`, `electric`, `landscape`, `oncoming`) prošla s opravou depa 46 PASS; první běh s osmi workery měl jeden timeout 30 s při „Pokračovat“ na tabletu, se dvěma workery 46/46. Smíšená souprava: `artVehicles === vehicles` 5, po změně v depu a novém výjezdu 6; atlas vozidel `vehicle@1 → vehicle@2`, atlas světa zůstal `art@1`. Ve 12 snímcích WebGL běžné parní jízdy dva přechody svět ↔ vozidla na snímek.
+
+Brána lane: `npm run check` 60 souborů / 477 testů PASS; `report:budgets` 2 973,6 KiB (gzip 757,7 KiB) z 10 240 KiB. `measure:perf` po H0 a celá E2E sada po integraci opravy depa: viz další záznam.
+
+## H1 — píšťala každé lokomotivy
+
+Tóny všech 10 lokomotiv jsou data v `src/content/soundTones.ts` podle klíče `hornAudio`; `AudioManager` je jen syntetizuje. Dřív se tón volil podle pohonu, takže `diesel_mainline` a `electric_retro` zněly stejně. Změna tónu `electric_retro` je záměrná.
+
+| Test                                                                                                                                            | Red                                                                                                                                              | Green                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| Tabulka pokrývá katalog, tóny se liší, `steam_express` je o oktávu níž než `steam_local`, přesné parametry všech 10 typů (`soundTones.test.ts`) | 38 FAIL / 40 (s typovaným prázdným stubem), např. `expected 1 to be 10`                                                                          | 40 PASS (včetně syntézy v `AudioManager.test.ts`) |
+| E2E `horns.spec.ts`: náhled každé lokomotivy a hráčova píšťala skutečným kliknutím či dotykem, s instrumentací jen nativního `AudioContext`     | proti `AppController`/`AudioManager` seedu: 15 FAIL / 23, např. `steam_express` `[880,1108]` místo `[440,554]`, `electric_retro` 3 hlasy místo 2 | 46 PASS (desktop i tablet)                        |
+| E2E: odemknutí zvuku gestem                                                                                                                     | s odpojeným `unlock()`: 1 FAIL (0 hlasů místo 2)                                                                                                 | PASS                                              |
+| E2E: protijedoucí vlak odpoví vlastní parní píšťalou hráčově elektrické; vypnutý zvuk mlčí                                                      | s hráčovou identitou v odpovědi a bez brány `sfxEnabled`: 3 FAIL (`[330,415]` místo `[880,1108]`, 4 hlasy místo žádného)                         | PASS                                              |
+
+Příkazy: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/content/soundTones.test.ts tests/unit/platform/AudioManager.test.ts`; `flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- horns.spec.ts --workers=2`. Recenze lane: první FIX (integrační unit test nahrazoval i vstup, scénu a UI), po přesunu do E2E LAND. Fyzický poslech na zařízeních: NEOVĚŘENO.
+
+## Integrace PR A — tři příčiny selhání, které žádná lane sama neměla
+
+Každá lane byla na své větvi zelená, ale celá E2E sada na integrované revizi `2c2b0ff` (seed, H0, píšťaly, elektrické a parní/naftové kresby, oprava depa) skončila v čistém worktree **196 PASS / 26 FAIL / 4 skipped**; `npm run check` byl zelený (503 testů).
+
+| Příčina                                                                                                                                                                             | Red                                                                                                                                                             | Green                                                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Depo při každé změně návrhu nahrazovalo celou obrazovku a znovu skládalo SVG vrstvy všech karet; s přibývající kresbou to zpomalilo přidávání, Tab i obnovu nad 30 s                | plný gate: 30 s timeouty (`picker.spec` přidání 32 vagonků a Tab, obnova, H0 na tabletu); nové pojistky identity DOM 4 FAIL (`Expected: true, Received: false`) | karty a náhledy se znovu používají: 96 úprav návrhu 292,6 → 29,9 ms (medián 2,7 → 0,3 ms); pojistky 4 PASS, dotčené testy 34 PASS             |
+| `horns.spec.ts` předpokládal protijedoucí `steam_local`, ale od H0 vybírá sadu seed (`npcFleetFor`) a s novou kresbou je to `diesel_shunter`                                        | `expected [880,1108], received [164.81,220]`                                                                                                                    | test ověřuje přesný tón skutečné NPC lokomotivy (nová diagnostika `locomotiveId`)                                                             |
+| Pozitivní kontrola pixelového testu oblohy kreslila čáru do řádku, který po přidání 108 u vysoké `steam_express` (rámování jízdy podle nejvyššího vozidla katalogu) splýval s kopci | `expect(lines.probe.length).toBeGreaterThan(0)`, `Received: 0` (4×)                                                                                             | kontrolní čára v kontrastním řádku musí zachytit všech 844 sloupců; měřený rozsah, algoritmus a prahy beze změny, skutečný snímek dál bez čar |
+
+Celá E2E sada lane jedním během: **226 PASS / 0 FAIL / 4 skipped** (11,9 min); `npm run check` 63 souborů / 503 testů. Recenze lane: LAND. Dokumentace: [dokument 02 §7](../../vlacek-predavaci-balicek/02_OVLADANI_A_STAVY.md), [dokument 04](../../vlacek-predavaci-balicek/04_PROCEDURALNI_SVET.md) §11, [D-019](../decisions/019-journey-atlas-and-npc-fleet.md), [vývojový návod](../development.md).
+
+## H1 — moderní a horská elektrická lokomotiva
+
+Obě lokomotivy mají vlastní ruční SVG kresbu podle zmrazené smlouvy vozidel a sdílejí díly pantografu `electric_retro.pantograph` a `electric_retro.pantograph-head`.
+
+| Test                                                                                                                           | Red                                                                                   | Green                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `validate:assets` přijme katalog s novou kresbou (`validate-assets.test.ts`)                                                   | očekáváno `13 with art, 41 art parts … 29 placeholders`, seed dal `11 … 37 … 31`      | PASS                                                                                               |
+| TRN-08 pro všechny tři elektrické lokomotivy: drát celou trasou, most, tunel, švy chunků, sběrač na drátu (`electric.spec.ts`) | proti buildu seedu: 4 FAIL, `pantographGapU` `undefined` (placeholder nemá pantograf) | 10 PASS na obou projektech; jízda kreslí obě vozidla z atlasu vozidel (`artVehicles === vehicles`) |
+
+Příkazy: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/tooling/validate-assets.test.ts tests/unit/content/artManifest.test.ts`; `flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- electric.spec.ts --workers=2` (lane běžela s opravou depa, která přichází samostatně). `npm run check` lane: 60 souborů / 477 testů PASS. Snímky depa a jízdy po mostě, sběrač na drátu (`pantographGapU` 0); recenze lane: LAND.
+
+## H1 — velká parní lokomotiva a naftový posunovač, `PERF_WAGON`
+
+`steam_express` má nový sdílený díl `wheel-steam-driver-large` (poloměr 19 u) a vlastní parní rozvod (spojnice, 56u ojnice, křižák; hlavní kolo 2, klika 8 u, vodítko y 82 u). `diesel_shunter` sdílí naftová kola. Kouř a výfuk vycházejí z kotev smlouvy.
+
+| Test                                                                                                                                              | Red                                                                   | Green   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------- |
+| `emits $particle at the $id contract outlet` pro obě lokomotivy (`TrainEffects.test.ts`)                                                          | 2 FAIL / 18: chybějící kotvy (`expected undefined to deeply equal …`) | 18 PASS |
+| `keeps the express connecting rod on the crosshead through a complete revolution` (`artManifest.test.ts`)                                         | 1 FAIL / 12: `expected undefined to be defined`                       | PASS    |
+| `PERF_WAGON` vyplní délkový limit zvoleným typem, odmítne neznámé ID, ID lokomotivy a prázdné ID, výchozí mix beze změny (`perf-consist.test.ts`) | 4 FAIL / 5 (`expected false to be true`, funkce nevyhodila)           | 5 PASS  |
+
+Lane po H0: `npm run check` 61 souborů / 485 testů PASS napoprvé; E2E `effects.spec.ts` a `art.spec.ts` 26 PASS na obou projektech (s opravou depa, která přichází samostatně). Jízdy na snímcích kreslí obě vozidla z atlasu vozidel (`artVehicles === vehicles`), s kouřem a výfukem. Recenze lane: LAND.
+
+## H2, dávka 1 — osobní vozy
+
+`passenger_double`, `passenger_sleeper`, `passenger_dining` a `passenger_panorama` mají vlastní ruční SVG kresbu podle zmrazené smlouvy vozidel. Cestující, kuchař a hosté jsou jen náznaky bez obličejů; jídelní vůz má jediný piktogram, překříženou vidličku se lžící.
+
+| Test                                                                                                                                                         | Red                                                                           | Green                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------- |
+| `gives passenger_<id> art with the frozen H2 geometry` pro všechny čtyři (`artManifest.test.ts`): výšky, délky, pivoty, opěrné body, kola, žádný placeholder | 4 FAIL: `expected … to not have property "placeholder"`                       | PASS                               |
+| `validate:assets` přijme katalog s novou kresbou (`validate-assets.test.ts`)                                                                                 | FAIL: souhrn seedu neodpovídal                                                | PASS                               |
+| Napojení karoserie na podvozky (nález recenze lane: lůžkový a jídelní vůz „visely“ nad podvozky)                                                             | pixelová kontrola mezery mezi podélníkem a podvozky selhala u všech čtyř vozů | PASS po doplnění příčníků a pružin |
+
+Lane po H0: `npm run check` 60 souborů / 481 testů PASS; `art.spec.ts` 18 PASS na obou projektech; jízda se všemi čtyřmi vozy kreslí 5 vozidel z atlasu vozidel (2024 × 750 px při 2 px/u). Recenze lane: FIX (mezera u podvozků), po opravě připraveno.
+
+## H1 a H3 — bublinková a duhová mašinka, praskání bublin
+
+Obě mašinky mají vlastní ruční SVG kresbu. Doména si ponechává `EffectId` `bubbles` a `rainbow`; renderer je výslovně mapuje na nové druhy částic `bubble` a `rainbow-puff` (ručně kreslené SVG ve světovém atlasu). Bubliny mají stabilní identitu, takže dotyk najde právě zasaženou bublinu přes `GameSession.setWorldHitTest`; tentýž dotyk dál pohání vlak a brzda má přednost.
+
+| Test                                                                                                                              | Red                                                    | Green                     |
+| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------- |
+| Emitory `bubbles` a `rainbow` na kotvách smlouvy, bez hvězdiček a kouře, s pauzou a omezenými efekty (`TrainEffects.test.ts`)     | 2 FAIL: `expected 0 to be greater than 10`             | PASS                      |
+| Druhy `bubble` a `rainbow-puff` stoupají a unášejí se několik sekund (`ParticleField.test.ts`)                                    | 2 FAIL                                                 | PASS                      |
+| Stabilní identita bubliny při recyklaci záznamů                                                                                   | FAIL: `expected undefined to deeply equal Any<Number>` | PASS                      |
+| Zásah, prasknutí jediné bubliny, jedna částice prasknutí, menší efekt při omezených efektech, úklid (`bubbleInteraction.test.ts`) | 5 FAIL / 30 (zásah vracel `undefined`)                 | PASS                      |
+| Session: prasknutí nezmění plyn, dojezd ani brzdu; minutí nic nepraskne a dotyk dál pohání (`session.test.ts`)                    | FAIL: bublina zůstala                                  | PASS                      |
+| Zvuk prasknutí: jeden krátký tón, ztišení a zamčený zvuk mlčí, hlasový limit (`AudioManager.test.ts`)                             | 2 FAIL: 0 tónů místo 1                                 | PASS                      |
+| E2E: ťuknutí odstraní konkrétní bublinu, právě jedno prasknutí, vlak jede dál (`effects.spec.ts`)                                 | proti buildu bez H3: 2 FAIL (`received undefined`)     | 2 PASS na obou projektech |
+
+E2E zpočátku občas selhal na závodu testu: bublina se posunula mezi čtením polohy a doručením dotyku. Test nyní čte polohu a posílá událost v jednom kroku prohlížeče; očekávání, zásahový poloměr ani časy se nezměnily. Tón prasknutí je v tabulce `src/content/soundTones.ts` vedle píšťal. Lane: `npm run check` 516 PASS, `effects.spec.ts` a `horns.spec.ts` PASS. Recenze lane: LAND. Dokumentace: [D-014](../decisions/014-particles-and-small-animations.md). Fyzický dotyk na zařízeních: NEOVĚŘENO.
+
+## H2, dávka 2 — služební vozy
+
+`service_tools` (dílenská skříň s nářadím za sklem, pevnými skříňkami a jednoduchým symbolem klíče) a `service_snowplow` (kompaktní kabina, zvednutá radlice zamčená uvnitř obrysu vozu, nic nepřesahuje před rám) mají vlastní ruční SVG kresbu podle zmrazené smlouvy vozidel. Koncept dílenského vozu se nejdřív podobal posunovací lokomotivě a byl přegenerován jako vůz bez kabiny strojvedoucího.
+
+| Test                                                                                                                                                                     | Red                                                   | Green |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- | ----- |
+| `<id> has layered vector art and the specified running gear` pro oba vozy (`serviceFlatArt.test.ts`): katalog, rozměry, pivoty, kola, žádný rastr, text ani skript v SVG | 2 FAIL: `expected true to be undefined` (placeholder) | PASS  |
+| `validate:assets` přijme katalog s novou kresbou                                                                                                                         | FAIL: souhrn seedu                                    | PASS  |
+
+Lane po H0: `npm run check` a `art.spec.ts` PASS; jízda se služební dvojicí kreslí obě vozidla z atlasu vozidel. Recenze lane: nálezy jen v nákladní části lane, služební commit beze změny.
+
+## H2, dávka 3 — nákladní vozy
+
+Třináct nákladních druhů má vlastní ruční SVG kresbu podle zmrazené smlouvy vozidel: klády, písek, kamení, sláma, jablka (otevřené vozy), cisterna, mléčný, obilný, poštovní a chladírenský vůz (uzavřené) a přepravník aut, vagón s traktorem a vagón s bagrem (plošiny). Náklad je pevně ukotvený (klanice a popruhy, vázací pásy, lišty, sedla a pásy nádrží, klíny a řetězy). Písek tvoří hladkou hromadu viditelně nad okrajem korby; kamení vezou dvě oddělené lichoběžníkové násypky s výsypkami, aby nešlo o přebarvený uhlák. Piktogramy jen podle dokumentu 06: kapka, konev, klasy, obálka bez skutečného dopravce, vločka; žádný text ani čísla, auta a stroje bez značek a SPZ.
+
+| Test                                                                                                                                                                            | Red                                             | Green  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------ |
+| Geometrie, pojezd a vlastní kresba každého vozu (`artManifest.test.ts`, `serviceFlatArt.test.ts`): rozměry, pivoty, kola, žádný placeholder, žádný rastr, text ani skript v SVG | FAIL u každé dávky lane: `placeholder: true`    | PASS   |
+| `validate:assets` přijme katalog s novou kresbou                                                                                                                                | FAIL: souhrn seedu                              | PASS   |
+| Nosné spojení rámu s podvozky u uzavřených vozů (`cargo-supports.spec.ts`, nález recenze: rám cisterny a obilného vozu „visel“ nad podvozky)                                    | 2 FAIL: průsvitná mezera cisterny v y 55,5–58,5 | 2 PASS |
+| Ukotvení traktoru a bagru (nález recenze: klíny nedosedaly na pneumatiku, rameno bagru neleželo na podpěře, řetěz končil ve vzduchu)                                            | 3 regresní testy FAIL                           | PASS   |
+
+Lanes po H0: `npm run check` PASS kromě opakovaného timeoutu `GEN-10` na zatíženém stroji (stejný čas jako na `master`, viz záznam integrace); `art.spec.ts` 18–20 PASS na obou projektech; jízdy kreslí všechny vozy z atlasu vozidel. Recenze lanes: otevřené vozy LAND, uzavřené a plošiny po opravě nálezů připravené.
+
+## H2, dávka 4 — hravé vozy; katalog kompletní
+
+`fun_stars`, `fun_garden`, `fun_aquarium`, `fun_windmill`, `fun_lights` a `fun_toyblocks` mají vlastní ruční SVG kresbu. Podle rozhodnutí smlouvy jde o statickou kresbu: volitelné místní reakce na dotyk (dokument 06 §3) zůstávají mimo tento krok. Vše je pevně uchycené (šrouby, držáky, kolíky, popruhy); rybky jsou stylizované bez výrazů tváře.
+
+| Test                                                                                                | Red                         | Green |
+| --------------------------------------------------------------------------------------------------- | --------------------------- | ----- |
+| `<id> has vector art with the frozen frame and running gear` pro všech šest (`artManifest.test.ts`) | 6 FAIL: `placeholder: true` | PASS  |
+| `validate:assets` přijme katalog s novou kresbou                                                    | FAIL: souhrn seedu          | PASS  |
+
+Lane po H0: `npm run check` 501/501, `art.spec.ts` 18/18 na obou projektech; jízda se všemi šesti vozy kreslí 7 vozidel z atlasu vozidel (1934 × 904 px při 2 px/u). Recenze lane: LAND.
+
+Tímto commitem má **všech 42 vozidel katalogu vlastní kresbu**: `validate:assets` hlásí 42 vozidel s grafikou, 103 díly a 0 placeholderů. Pomocná funkce `withoutArt` zmizela z katalogu.
+
+## H2 — dokončení katalogu a obrazové důkazy
+
+Dočasné zúžení ze seedu je pryč: testy grafiky, emitorů a sběračů opět zahrnují celý katalog a `validate:assets --release` končí s kódem 0 a prázdným stderr (42 vozidel s grafikou, 103 díly, 0 placeholderů). Lokální pokus s `placeholder: true` u `steam_local` (necommitnutý) shodil obnovené kontroly: 13 FAIL / 5 PASS a release s kódem 1. Dočasná fixture rozměrů z H0 je odstraněná; rozpočty atlasů vycházejí jen z manifestu (svět 2042 × 1344, osm největších vozidel s NPC 1950 × 1356, povolená souprava 1932 × 1328 px při 2 px/u).
+
+| Test                                                                                                                                                                                                          | Red                                                                                               | Green                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------- |
+| `H2: contact sheet draws all 42 catalog vehicles from built art` (`catalog-contact-sheet.spec.ts`): 42 unikátních ID ze skutečných karet výběru a depa, žádný placeholder, dekódované obrázky shodné s assety | s uměle přerušeným `steam_local.body`: 1 FAIL `EncodingError: The source image cannot be decoded` | 2 PASS (desktop i tablet) |
+
+Lane: `npm run check` 67 souborů / 539 testů PASS (dva běhy předtím s timeoutem `GEN-10` na zatíženém stroji); `report:budgets` 3 429,4 KiB (gzip 851,9 KiB) z 10 240 KiB. Snímky ze skutečné aplikace (build `0.1.0+fcfe3db`, svět 123, bez diagnostiky, každý pod 1 MiB):
+
+- [Kontaktní list všech 42 vozidel](img/2026-10-12-kontaktni-list-42-vozidel.png)
+- [Výběr deseti lokomotiv — desktop](img/2026-10-12-vyber-10-lokomotiv.png), [telefon 844 × 390](img/2026-10-12-vyber-10-lokomotiv-telefon.png)
+- [Depo — všechny čtyři skupiny](img/2026-10-12-depo-vsechny-skupiny.png)
+- [Velká parní](img/2026-10-12-jizda-steam_express.png), [naftový posunovač](img/2026-10-12-jizda-diesel_shunter.png)
+- [Moderní elektrická](img/2026-10-12-jizda-electric_modern.png), [horská elektrická](img/2026-10-12-jizda-electric_mountain.png) — pod vedením, mezera sběrače 0 u
+- [Bublinková](img/2026-10-12-jizda-magic_bubbles.png), [duhová](img/2026-10-12-jizda-magic_rainbow.png)
+- [Prasknutí bubliny](img/2026-10-12-prasknuti-bubliny.png) — skutečná reakce přes vstup, počet prasknutí 0 → 1
+
+Celá E2E sada a výkon na hotovém katalogu: viz závěrečnou bránu níže.
+
+## Závěrečná brána PR A — každý commit samostatně a hotový katalog
+
+Recenze celého PR upozornila, že mezilehlé commity neprošly vlastní branou: seed bez opravy depa (52 E2E selhání) a kresby, které odhalily chybějící integrační opravy. Historie je proto upravená: oprava depa je součástí seedu a integrační opravy stojí před kresbami, které chyby odhalily. Každý commit pak prošel samostatně v čistém worktree. Lokální běhy na pracovní stanici s Linuxem (16 jader, headless Chromium 156, softwarový WebGL): Vitest se 4 workery (`VITEST_MAX_WORKERS=4`) a Playwright se 2 workery (`npm run test:e2e -- --workers=2`), zhruba jako v CI. Bez omezení Playwright spustí 8 prohlížečů se softwarovým WebGL, stroj zahltí a nejtěžší testy depa pak narážejí na limit 30 s; timeouty ani testy se kvůli tomu neměnily.
+
+| Commit                        | `npm run check` (unit testy) | Celá E2E sada       |
+| ----------------------------- | ---------------------------- | ------------------- |
+| seed katalogu s opravou depa  | PASS (469)                   | 166 PASS, 4 skipped |
+| H0 — atlas vozidel jízdy      | PASS (477)                   | 172 PASS, 4 skipped |
+| H1 — píšťaly                  | PASS (495)                   | 218 PASS, 4 skipped |
+| integrační opravy             | PASS (495)                   | 222 PASS, 4 skipped |
+| H1 — elektrické               | PASS (495)                   | 226 PASS, 4 skipped |
+| H1 — parní a posunovač        | PASS (503)                   | 226 PASS, 4 skipped |
+| H2 — osobní                   | PASS (507)                   | 226 PASS, 4 skipped |
+| H1, H3 — fantazijní a bubliny | PASS (520)                   | 228 PASS, 4 skipped |
+| H2 — služební                 | PASS (522)                   | 228 PASS, 4 skipped |
+| H2 — nákladní                 | PASS (533)                   | 230 PASS, 4 skipped |
+| H2 — hravé                    | PASS (539)                   | 230 PASS, 4 skipped |
+| kontroly celého katalogu      | PASS (539)                   | 232 PASS, 4 skipped |
+
+Čtyři skipped jsou stávající vícedotykové testy, které desktopový projekt bez dotyku přeskakuje.
+
+**Hotový katalog:** `validate:assets -- --release` exit 0 (42 vozidel s grafikou, 103 díly, 156 dílů světa, 0 placeholderů); `report:budgets` počáteční přenos 3 429,4 KiB (gzip 851,9 KiB) z 10 240 KiB.
+
+**Výkon** (`PERF_SECONDS=30 npm run measure:perf`, bez dalších běhů na stroji): nejdelší souprava z největších vozidel, `PERF_LOCOMOTIVE=steam_express PERF_WAGON=cargo_cars` (7 vozidel, ve všech vzorcích vykreslených všech 7), tři běhy: medián 59,9 FPS, 95. percentil 33,4 ms, nejhorší snímek 33,5 / 50 / 100 ms. Rozpočty dokumentu 11 (medián aspoň 30 FPS, 95. percentil nejvýše 50 ms) splněny. Srovnání výchozí soupravy (9 vozidel) střídavě na `master` a na hotovém katalogu, po třech bězích: medián 59,9 FPS a 95. percentil 33,4 ms na obou; nejhorší snímek `master` 33,5 / 50 / 83,3 ms, katalog 83,4 / 83,4 / 49,9 ms. Ojedinělé delší snímky se objevují na obou stranách, nejde o regresi. Dřívější měření za plného vytížení stroje (medián 20 FPS) nebylo reprezentativní. Měření je 30sekundové na stolním počítači, ne pětiminutové na cílovém zařízení; fyzický tablet, telefon a Tesla zůstávají NEOVĚŘENO.
+
+**Recenze celého PR** (nezávislý Codex GPT-6-Astra). První kolo FIX: (1) mezilehlé commity neprošly vlastní branou — opraveno úpravou historie výše, každý commit ověřen samostatně; (2) chyběla závěrečná E2E a výkonová brána hotového katalogu — doplněna v tomto oddílu; (3) D-019 uváděl rozměry atlasu z doby před dokončením a odstraněnou fixture — opraveno. Potvrzující kolo: jediný nález nízké závažnosti, poznámka v D-019 o `diesel_shunter` se objevila o dva commity dřív, než lokomotiva dostala kresbu — přesunuta do commitu, který kresbu přidává. Ostatní body potvrzující recenze (historie, záznamy ověření, brána, D-019) bez nálezu.
+
+## CI PR A — shardy E2E a rozdělení dlouhých picker průchodů
+
+**GitHub Actions na PR #4.** Na GitHub runneru (ubuntu-24.04, 4 vCPU, 2 workery Playwright, softwarové WebGL) skončil job E2E na 15minutovém timeoutu jobu: obě spuštění (push i pull_request) byla zrušena po 195 prošlých testech z 236, bez jediného selhání. Commit `ci: run the E2E suite in two parallel shards` proto dělí sadu přes `--shard` na dva joby po 118 testech; timeout jobu zůstal 15 minut. V shardovaném běhu pak selhal jediný test: `UI-02/05/06: all 32 wagon cards add without overlap` ve výchozím viewportu, 34,5–35,2 s proti 30sekundovému limitu testu (lokálně na nezatíženém stroji kolem 10 s). Ostatní běhy téhož testu trvaly 22,5 a 29,5 s a klávesnicový průchod UI-05/06/07 až 23,2 s. Záznam trace ukázal rovnoměrných přibližně 0,8 s na každou kartu, bez jednoho pomalého kroku. Za depem dál kreslí smyčka Phaseru, stejně jako na `master`. To je námět na samostatnou úpravu mimo tento PR.
+
+**Rozdělení.** Průchod UI-02/05/06 je rozdělen na čtyři pevné bloky po osmi kartách v pořadí katalogu (1–8, 9–16, 17–24, 25–32). Každý blok ověřuje 32 karet a čtyři skupiny. Původní kroky a assertiony každé karty zůstaly zachované a Vyjet → HUD ověřuje poslední blok pro každou velikost. UI-05/06/07 je rozdělen na lokomotivy a vagonky; vagonková část před prvním Tab ověřuje fokus na `body`. Timeouty, retries ani produktový kód se nezměnily.
+
+**Lokální ověření** (12. 10. 2026, stroj zatížený prací vlastníka). Celý picker na obou projektech prošel 72/72 se dvěma workery při vstupním loadu 11,36 / 9,55 / 10,80; bloky trvaly 12,3–22,8 s a vagonková klávesnice nejvýše 28,9 s. Původní verze ve stejných podmínkách měla 12 timeoutů.
+
+**Negativní kontrola.** Dočasné poškození pouze karty `cargo_box` shodilo právě blok 1–8 a klávesnicovou kontrolu vagonků; ostatní bloky prošly a injekce byla odstraněna.
+
+**Check.** `check` měl 538/539: jediné selhání byl známý zátěžový timeout GEN-10 (5723 / 6278 / 6006 ms), samostatně soubor prošel 19/19. Ostatní validátory i build prošly.

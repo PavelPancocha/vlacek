@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="184" height="90" viewBox="0 0 184 90">
+  <defs><linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e4e5"/><stop offset="0.5" stop-color="#9aa0a8"/><stop offset="1" stop-color="#535c61"/></linearGradient><linearGradient id="dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d6569"/><stop offset="0.5" stop-color="#30383c"/><stop offset="1" stop-color="#171b1e"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e0f0f2"/><stop offset="0.5" stop-color="#9ec3cc"/><stop offset="1" stop-color="#526d77"/></linearGradient><radialGradient id="tyre"><stop offset="0" stop-color="#565e5f"/><stop offset="0.7" stop-color="#252a2c"/><stop offset="0.87" stop-color="#42494a"/><stop offset="1" stop-color="#1b2022"/></radialGradient><linearGradient id="deck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a08b6d"/><stop offset="0.5" stop-color="#78644d"/><stop offset="1" stop-color="#514632"/></linearGradient><linearGradient id="green" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#94b07b"/><stop offset="0.5" stop-color="#5d875b"/><stop offset="1" stop-color="#3d603c"/></linearGradient><linearGradient id="chock" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3bd68"/><stop offset="1" stop-color="#bb9047"/></linearGradient></defs>
+  <g stroke="#20262a" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round">
+<rect x="4" y="53" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+<rect x="173" y="53" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+<path d="M2 60 H6 M178 60 H182" stroke="url(#steel)" stroke-width="3.2"/>
+<rect x="0.4" y="56.2" width="1.9" height="7.6" rx="0.7" fill="url(#steel)"/>
+<rect x="181.7" y="56.2" width="1.9" height="7.6" rx="0.7" fill="url(#steel)"/>
+<path d="M4 64 H2.8 V66 H4 M180 64 H181.2 V66 H180" fill="none" stroke-width="0.9"/>
+<path d="M8 67 Q9 71 6 74 M176 67 Q175 71 178 74" fill="none" stroke-width="1.1"/>
+<rect x="5" y="57.4" width="174" height="5.6" fill="url(#dark)"/>
+<path d="M6 58.2 H178" fill="none" stroke="#919a9d" stroke-width="0.4"/>
+<rect x="84.0" y="63.5" width="13" height="4.5" rx="2" fill="url(#steel)"/>
+<path d="M97.0 65.8 H110.0" stroke="#555f61" fill="none"/>
+<g fill="#b1b7b6" stroke="#30383b" stroke-width="0.2"><circle cx="12" cy="60.5" r="0.4"/><circle cx="28" cy="60.5" r="0.4"/><circle cx="44" cy="60.5" r="0.4"/><circle cx="60" cy="60.5" r="0.4"/><circle cx="76" cy="60.5" r="0.4"/><circle cx="92" cy="60.5" r="0.4"/><circle cx="108" cy="60.5" r="0.4"/><circle cx="124" cy="60.5" r="0.4"/><circle cx="140" cy="60.5" r="0.4"/><circle cx="156" cy="60.5" r="0.4"/><circle cx="172" cy="60.5" r="0.4"/></g><path d="M9 54 H175 V57.4 H9 Z" fill="url(#deck)"/>
+<path d="M10 55 H174 M17 56 H41 M64 56 H90 M119 56 H146" stroke="#c1a580" stroke-width="0.35"/>
+<path d="M13 57.4 H171 V61 H112 L103 64 H71 L62 61 H13 Z" fill="url(#deck)"/>
+<path d="M15 58.4 H61 M113 58.4 H169 M72 62.5 H101" stroke="#bda284" stroke-width="0.4"/>
+<path d="M22 58 V60 M45 58 V60 M139 58 V60 M162 58 V60" stroke="#d8b964" stroke-width="1.4"/>
+<path d="M13 54 V32 H16 V54 M168 54 V32 H171 V54" fill="url(#dark)"/>
+<path d="M14 33 V51 M169 33 V51" stroke="#b8c1bb" stroke-width="0.5"/>
+<!-- Podvozek traktoru za pneumatikami přepravovaného stroje. -->
+<path d="M53 43 H130 V47 H57 Z" fill="url(#dark)"/>
+<path d="M79 38 V10 L104 9 L115 35 V42 H78 Z" fill="url(#green)"/>
+<path d="M80 10 H103 L112 33 H103 V12 H84 V32 H80 Z" fill="url(#glass)"/>
+<path d="M84 12 H101 V33 H85 Z" fill="url(#glass)"/>
+<path d="M86 14 L96 14 L86 31 M104 13 L108 29" fill="none" stroke="#f0f7f1" stroke-opacity="0.6" stroke-width="0.6"/>
+<path d="M95 33 V27 Q95 24 98 24 H101 V33 M87 31 H95" fill="#394a43" stroke-width="0.6"/>
+<path d="M83 10 V34 M102 11 V34 M85 35 H102 V40" stroke="#354e3e" fill="none" stroke-width="0.8"/>
+<path d="M96 36 H101" stroke="url(#steel)" stroke-width="0.7"/>
+<path d="M77 10 Q76 6 80 5.5 L102 4.5 Q106 4.5 108 7 L109 10 Z" fill="url(#green)"/>
+<path d="M79 6.5 L103 5.5" stroke="#c3d5b3" stroke-width="0.5"/>
+<path d="M106 5 V3.5 H109 V5" fill="url(#dark)"/>
+<path d="M106.5 3.5 V2.4 Q107.5 0.6 108.5 2.4 V3.5 Z" fill="#dfa74b" stroke-width="0.3"/>
+<path d="M78 26 L52 30 Q49 31 48 33 L46 42 H80 Z" fill="url(#green)"/>
+<path d="M51 32 L78 27.5" stroke="#c2d5b2" stroke-width="0.5"/>
+<path d="M49 35 L58 34 V40 H47 Z" fill="#293b32"/>
+<path d="M50 36 L57 35.2 M49.5 37.5 L57 36.7 M49 39 L57 38.2" stroke="#7e9288" stroke-width="0.4"/>
+<path d="M63 32 L61 38 M66 31.5 L64 37.5 M69 31 L67 37" stroke="#354d3a" stroke-width="1"/>
+<path d="M70 28 V19 L72 17" stroke="#303a35" stroke-width="2.4" fill="none"/>
+<path d="M70 26 V20" stroke="#97a3a1" stroke-width="0.5"/>
+<rect x="46" y="34" width="3" height="3" rx="0.7" fill="#ecebd3" stroke-width="0.35"/>
+<path d="M48 42 H54 V45 H46" fill="url(#steel)"/>
+<path d="M52 38 Q58 34 65 37 L72 42 L70 43 Q61 38 52 40 Z" fill="url(#green)"/>
+<path d="M100 27 Q115 21 126 31 L130 36 L127 38 Q121 30 112 29 L102 31 Z" fill="url(#green)"/>
+<path d="M103 27 Q117 22.5 126 32" stroke="#b4c8a4" stroke-width="0.6" fill="none"/>
+<rect x="81" y="41" width="14" height="3" rx="0.5" fill="url(#dark)"/>
+<rect x="83" y="46" width="11" height="2" rx="0.5" fill="url(#steel)"/>
+<path d="M84 43 V47 M92 43 V47" fill="none" stroke="#4d5954" stroke-width="0.9"/>
+<circle cx="62" cy="44" r="10" fill="url(#tyre)" stroke="#1c2224" stroke-width="0.6"/>
+<path d="M71.20 44.00 L69.85 44.87" stroke="#596060" stroke-width="0.7"/>
+<path d="M70.40 47.74 L68.82 47.99" stroke="#596060" stroke-width="0.7"/>
+<path d="M68.16 50.84 L66.61 50.42" stroke="#596060" stroke-width="0.7"/>
+<path d="M64.84 52.75 L63.60 51.74" stroke="#596060" stroke-width="0.7"/>
+<path d="M61.04 53.15 L60.32 51.72" stroke="#596060" stroke-width="0.7"/>
+<path d="M57.40 51.97 L57.32 50.37" stroke="#596060" stroke-width="0.7"/>
+<path d="M54.56 49.41 L55.14 47.91" stroke="#596060" stroke-width="0.7"/>
+<path d="M53.00 45.91 L54.14 44.78" stroke="#596060" stroke-width="0.7"/>
+<path d="M53.00 42.09 L54.50 41.52" stroke="#596060" stroke-width="0.7"/>
+<path d="M54.56 38.59 L56.16 38.68" stroke="#596060" stroke-width="0.7"/>
+<path d="M57.40 36.03 L58.82 36.77" stroke="#596060" stroke-width="0.7"/>
+<path d="M61.04 34.85 L62.04 36.10" stroke="#596060" stroke-width="0.7"/>
+<path d="M64.84 35.25 L65.25 36.80" stroke="#596060" stroke-width="0.7"/>
+<path d="M68.16 37.16 L67.90 38.74" stroke="#596060" stroke-width="0.7"/>
+<path d="M70.40 40.26 L69.53 41.60" stroke="#596060" stroke-width="0.7"/>
+<circle cx="62" cy="44" r="6.1" fill="url(#steel)" stroke="#252c2f" stroke-width="0.5"/><circle cx="62" cy="44" r="4.5" fill="#77817e" stroke="#c1cac5" stroke-width="0.4"/><circle cx="62" cy="44" r="1.6" fill="url(#steel)" stroke-width="0.3"/>
+<circle cx="116" cy="38" r="16" fill="url(#tyre)" stroke="#1c2224" stroke-width="0.6"/>
+<path d="M131.20 38.00 L129.82 39.53" stroke="#596060" stroke-width="0.7"/>
+<path d="M129.89 44.18 L128.00 45.01" stroke="#596060" stroke-width="0.7"/>
+<path d="M126.17 49.30 L124.11 49.29" stroke="#596060" stroke-width="0.7"/>
+<path d="M120.70 52.46 L118.82 51.61" stroke="#596060" stroke-width="0.7"/>
+<path d="M114.41 53.12 L113.04 51.58" stroke="#596060" stroke-width="0.7"/>
+<path d="M108.40 51.16 L107.77 49.20" stroke="#596060" stroke-width="0.7"/>
+<path d="M103.70 46.93 L103.93 44.89" stroke="#596060" stroke-width="0.7"/>
+<path d="M101.13 41.16 L102.17 39.38" stroke="#596060" stroke-width="0.7"/>
+<path d="M101.13 34.84 L102.80 33.63" stroke="#596060" stroke-width="0.7"/>
+<path d="M103.70 29.07 L105.72 28.64" stroke="#596060" stroke-width="0.7"/>
+<path d="M108.40 24.84 L110.41 25.27" stroke="#596060" stroke-width="0.7"/>
+<path d="M114.41 22.88 L116.07 24.10" stroke="#596060" stroke-width="0.7"/>
+<path d="M120.70 23.54 L121.72 25.33" stroke="#596060" stroke-width="0.7"/>
+<path d="M126.17 26.70 L126.38 28.75" stroke="#596060" stroke-width="0.7"/>
+<path d="M129.89 31.82 L129.24 33.77" stroke="#596060" stroke-width="0.7"/>
+<circle cx="116" cy="38" r="9.76" fill="url(#steel)" stroke="#252c2f" stroke-width="0.5"/><circle cx="116" cy="38" r="7.2" fill="#77817e" stroke="#c1cac5" stroke-width="0.4"/><circle cx="116" cy="38" r="2.56" fill="url(#steel)" stroke-width="0.3"/>
+<path d="M48 54 L53 49.142 L57.858 54 Z M66.142 54 L71 49.142 L76 54 Z" fill="url(#chock)" stroke="#695333" stroke-width="0.45"/>
+<path d="M49 53.4 H56 M68 53.4 H75" fill="none" stroke="#f1ce78" stroke-width="0.4"/>
+<path d="M96 54 L103 47.627 L109.373 54 Z M122.627 54 L129 47.627 L136 54 Z" fill="url(#chock)" stroke="#695333" stroke-width="0.45"/>
+<path d="M97 53.4 H108 M124 53.4 H135" fill="none" stroke="#f1ce78" stroke-width="0.4"/>
+<!-- Řetězy drží podvozek na kotvicích okách plošiny. -->
+<path d="M49 41 L31 53 M128 35 L150 53" stroke="#39352c" stroke-width="1.8" fill="none"/>
+<path d="M49 41 L31 53 M128 35 L150 53" stroke="#be9e65" stroke-width="1.2" stroke-dasharray="1.6 1" fill="none"/>
+<path d="M48 41 L34 51 M128 35 L147 50" stroke="#edcf92" stroke-width="0.35" stroke-dasharray="1.6 1" fill="none"/>
+<path d="M40 46 L38 50 M139 43 L144 46" stroke="#d8d5ba" stroke-width="1.7"/>
+<circle cx="31" cy="53" r="1.2" fill="none" stroke="#c5bba4" stroke-width="0.6"/>
+<circle cx="150" cy="53" r="1.2" fill="none" stroke="#c5bba4" stroke-width="0.6"/>
+<g fill="#b6a48b" stroke="#30383b" stroke-width="0.2"><circle cx="18" cy="59" r="0.4"/><circle cx="31" cy="59" r="0.4"/><circle cx="44" cy="59" r="0.4"/><circle cx="57" cy="59" r="0.4"/><circle cx="70" cy="59" r="0.4"/><circle cx="83" cy="59" r="0.4"/><circle cx="96" cy="59" r="0.4"/><circle cx="109" cy="59" r="0.4"/><circle cx="122" cy="59" r="0.4"/><circle cx="135" cy="59" r="0.4"/><circle cx="148" cy="59" r="0.4"/><circle cx="161" cy="59" r="0.4"/></g>
+  </g>
+</svg>

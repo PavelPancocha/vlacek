@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="78" viewBox="0 0 164 78">
+  <defs><linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e5e6"/><stop offset="0.5" stop-color="#9aa7ad"/><stop offset="1" stop-color="#606e75"/></linearGradient><linearGradient id="dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a6269"/><stop offset="0.5" stop-color="#30373d"/><stop offset="1" stop-color="#171c20"/></linearGradient><linearGradient id="cream" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4ecd7"/><stop offset="0.5" stop-color="#e5d8b9"/><stop offset="1" stop-color="#bdab81"/></linearGradient><linearGradient id="ochre" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9b773"/><stop offset="0.5" stop-color="#ba9754"/><stop offset="1" stop-color="#8c6b31"/></linearGradient><linearGradient id="roof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6b3b9"/><stop offset="0.5" stop-color="#6b777e"/><stop offset="1" stop-color="#414f57"/></linearGradient><linearGradient id="parcel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9a17b"/><stop offset="1" stop-color="#8f7957"/></linearGradient><linearGradient id="frame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#60696d"/><stop offset="0.5" stop-color="#363d40"/><stop offset="1" stop-color="#1e2528"/></linearGradient></defs>
+  <g stroke="#20262a" stroke-width="0.6" stroke-linejoin="round">
+    <rect x="4" y="41" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+    <rect x="153" y="41" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+    <path d="M2.8 48 H9 M155 48 H161.2" stroke="url(#steel)" stroke-width="3.2"/>
+    <rect x="0.4" y="44.2" width="2" height="7.6" rx="0.7" fill="url(#steel)"/>
+    <rect x="161.6" y="44.2" width="2" height="7.6" rx="0.7" fill="url(#steel)"/>
+    <path d="M4 52 H2.8 V54.6 H4 M160 52 H161.2 V54.6 H160" fill="none" stroke-width="0.9"/>
+    <path d="M7 55 Q9 60 6 62 M157 55 Q155 60 158 62" fill="none" stroke="#232b2e" stroke-width="1.2"/>
+    <rect x="5" y="45.4" width="154" height="5.6" fill="url(#frame)"/>
+    <path d="M6 46.2 H158" stroke="#aeb9bd" stroke-width="0.45"/>
+    <g fill="#cbd3d4" stroke="#465154" stroke-width="0.18"><circle cx="14" cy="48.2" r="0.38"/><circle cx="29" cy="48.2" r="0.38"/><circle cx="44" cy="48.2" r="0.38"/><circle cx="59" cy="48.2" r="0.38"/><circle cx="74" cy="48.2" r="0.38"/><circle cx="89" cy="48.2" r="0.38"/><circle cx="104" cy="48.2" r="0.38"/><circle cx="119" cy="48.2" r="0.38"/><circle cx="134" cy="48.2" r="0.38"/><circle cx="149" cy="48.2" r="0.38"/></g>
+    <rect x="71" y="52" width="15" height="4" rx="1.8" fill="url(#steel)"/>
+    <path d="M86 54 H102" fill="none" stroke="#687277" stroke-width="0.8"/>
+    <!-- Poštovní skříň: plechové panely bez diagonálních výztuh, okno s balíky. -->
+    <rect x="10" y="13" width="144" height="32.4" rx="0.6" fill="url(#cream)"/>
+    <path d="M10 34 H154 V45.4 H10 Z" fill="url(#ochre)"/>
+    <path d="M11 16 H153 M11 23 H153 M11 30 H153 M11 37 H153 M11 43 H153" fill="none" stroke="#998359" stroke-width="0.35"/>
+    <path d="M12 17 H152 M12 24 H152 M12 31 H152 M12 38 H152" fill="none" stroke="#f5e9c7" stroke-width="0.3"/>
+    <path d="M14 13 V45 M55 13 V45 M109 13 V45 M151 13 V45" stroke="#aa9d7c" stroke-width="1.2"/>
+    <rect x="25" y="18" width="26" height="18" rx="2" fill="url(#steel)"/>
+    <rect x="26.5" y="19.5" width="23" height="15" rx="1" fill="#333b3b"/>
+    <path d="M27 25 H49 M27 31.5 H49" stroke="#778183" stroke-width="0.85"/>
+    <rect x="28" y="21" width="9" height="3.5" fill="url(#parcel)" stroke-width="0.3"/>
+    <path d="M32.5 21 V24.5 M28 22.5 H37" stroke="#d7c6a0" stroke-width="0.4"/>
+    <path d="M39 20.8 H47 V24.5 H39 Z M39 20.8 L43 23 L47 20.8" fill="#d5cbb5" stroke="#817764" stroke-width="0.3"/>
+    <rect x="28.5" y="27" width="12" height="4.3" fill="url(#parcel)" stroke-width="0.3"/>
+    <path d="M34.5 27 V31.3 M28.5 29 H40.5" stroke="#dbcaa5" stroke-width="0.45"/>
+    <rect x="43" y="28" width="5" height="3.3" fill="url(#parcel)" stroke-width="0.3"/>
+    <path d="M27.5 20.2 L34 20.2 L29 29 H27.5 Z" fill="#b6d7db" opacity="0.16" stroke="none"/>
+    <path d="M60 14.8 H105 M60 44.8 H105" stroke="url(#steel)" stroke-width="1.5"/>
+    <rect x="63" y="16" width="38" height="27.4" fill="url(#ochre)"/>
+    <path d="M68 17 V42 M74 17 V42 M80 17 V42 M86 17 V42 M92 17 V42 M98 17 V42" stroke="#8a6b33" stroke-width="0.4"/>
+    <path d="M64.5 17 H99.5" stroke="#e4c686" stroke-width="0.65"/>
+    <path d="M64 15 V17 M99 15 V17" stroke="#454e51" stroke-width="2"/>
+    <rect x="95.5" y="29" width="2" height="5" rx="0.7" fill="url(#steel)" stroke-width="0.3"/>
+    <rect x="120" y="23" width="20" height="12" rx="0.4" fill="#b58d3f" stroke="none"/>
+    <path d="M120.8 23.7 L130 30.5 L139.2 23.7 M120.8 34.2 L127 28.8 M139.2 34.2 L133 28.8" fill="none" stroke="#f0e3c3" stroke-width="0.8"/>
+    <path d="M8.2 14 Q9 7.5 23 7.5 H141 Q155 7.5 155.8 14 Z" fill="url(#roof)"/>
+    <path d="M10 13 H154 M23 8.8 H141" fill="none" stroke="#afbabe" stroke-width="0.4"/>
+    <path d="M34 8 V13 M62 8 V13 M90 8 V13 M118 8 V13 M144 9 V13" fill="none" stroke="#48565e" stroke-width="0.4"/>
+    <path d="M48 8 V6 Q50.5 2.8 53 6 V8 Z M123 8 V6 Q125.5 2.8 128 6 V8 Z" fill="url(#roof)"/>
+    <path d="M7 45 V27 Q7 25 9 25 M155 45 V27 Q155 25 157 25 V45" fill="none" stroke="url(#steel)" stroke-width="1.1"/>
+    <g fill="#efe1bd" stroke="#465154" stroke-width="0.18"><circle cx="14" cy="16" r="0.38"/><circle cx="14" cy="28" r="0.38"/><circle cx="14" cy="42" r="0.38"/><circle cx="55" cy="16" r="0.38"/><circle cx="55" cy="28" r="0.38"/><circle cx="55" cy="42" r="0.38"/><circle cx="109" cy="16" r="0.38"/><circle cx="109" cy="28" r="0.38"/><circle cx="109" cy="42" r="0.38"/><circle cx="151" cy="16" r="0.38"/><circle cx="151" cy="28" r="0.38"/><circle cx="151" cy="42" r="0.38"/></g>
+  </g>
+</svg>

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="80" viewBox="0 0 164 80">
+  <defs><linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e4e5"/><stop offset="0.5" stop-color="#9aa0a8"/><stop offset="1" stop-color="#535c61"/></linearGradient><linearGradient id="dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d6569"/><stop offset="0.5" stop-color="#30383c"/><stop offset="1" stop-color="#171b1e"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e0f0f2"/><stop offset="0.5" stop-color="#9ec3cc"/><stop offset="1" stop-color="#526d77"/></linearGradient><linearGradient id="orange" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d29b63"/><stop offset="0.5" stop-color="#b7783c"/><stop offset="1" stop-color="#865126"/></linearGradient><linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c99251"/><stop offset="0.5" stop-color="#a76d37"/><stop offset="1" stop-color="#875324"/></linearGradient><linearGradient id="green" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#89988b"/><stop offset="0.5" stop-color="#64736b"/><stop offset="1" stop-color="#45554d"/></linearGradient><linearGradient id="roof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9b0b1"/><stop offset="0.5" stop-color="#70777a"/><stop offset="1" stop-color="#434c50"/></linearGradient><linearGradient id="board" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bb915a"/><stop offset="1" stop-color="#775a38"/></linearGradient></defs>
+  <g stroke="#20262a" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round">
+<rect x="4" y="43" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+<rect x="153" y="43" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+<path d="M2 50 H6 M158 50 H162" stroke="url(#steel)" stroke-width="3.2"/>
+<rect x="0.4" y="46.2" width="1.9" height="7.6" rx="0.7" fill="url(#steel)"/>
+<rect x="161.7" y="46.2" width="1.9" height="7.6" rx="0.7" fill="url(#steel)"/>
+<path d="M4 54 H2.8 V56 H4 M160 54 H161.2 V56 H160" fill="none" stroke-width="0.9"/>
+<path d="M8 57 Q9 61 6 64 M156 57 Q155 61 158 64" fill="none" stroke-width="1.1"/>
+<rect x="5" y="47.4" width="154" height="5.6" fill="url(#dark)"/>
+<path d="M6 48.2 H158" fill="none" stroke="#919a9d" stroke-width="0.4"/>
+<rect x="74.0" y="53.5" width="13" height="4.5" rx="2" fill="url(#steel)"/>
+<path d="M87.0 55.8 H100.0" stroke="#555f61" fill="none"/>
+<g fill="#b1b7b6" stroke="#30383b" stroke-width="0.2"><circle cx="12" cy="50.5" r="0.4"/><circle cx="28" cy="50.5" r="0.4"/><circle cx="44" cy="50.5" r="0.4"/><circle cx="60" cy="50.5" r="0.4"/><circle cx="76" cy="50.5" r="0.4"/><circle cx="92" cy="50.5" r="0.4"/><circle cx="108" cy="50.5" r="0.4"/><circle cx="124" cy="50.5" r="0.4"/><circle cx="140" cy="50.5" r="0.4"/></g><path d="M10 47 V14 H154 V47 Z" fill="url(#orange)"/>
+<path d="M11 15 H153 M11 44 H153" fill="none" stroke="#e2ad76" stroke-width="0.5"/>
+<path d="M16 16 V45 M66 16 V45 M126 16 V45 M149 16 V45" stroke="#64482f" fill="none" stroke-width="0.4"/>
+<rect x="22" y="17" width="37" height="28" rx="0.5" fill="url(#wood)"/>
+<path d="M23 19 H58 M28 18 V43 M34 18 V43 M40 18 V43 M46 18 V43 M52 18 V43" stroke="#79522e" fill="none" stroke-width="0.4"/>
+<path d="M24 42 L55 20 H58 L27 45 Z" fill="url(#orange)"/>
+<path d="M22 16 H61 M22 46 H61" stroke="url(#steel)" stroke-width="1.2"/>
+<rect x="20" y="21" width="5" height="2.6" rx="0.5" fill="url(#dark)"/>
+<rect x="20" y="39" width="5" height="2.6" rx="0.5" fill="url(#dark)"/>
+<path d="M56 30 V35" stroke="#dae0d9" stroke-width="1.2"/>
+<rect x="76" y="17" width="46" height="19" rx="2" fill="url(#dark)"/>
+<rect x="78" y="19" width="42" height="15" rx="1" fill="url(#board)"/>
+<path d="M79 20 H119 M80 22 H118 M80 26 H118 M80 30 H118" stroke="#694e34" stroke-width="0.3" stroke-dasharray="0.3 2" fill="none"/>
+<!-- Nářadí je zavěšené v pevných příchytkách za sklem. -->
+<path d="M83 22 V31 M86 22 V31" stroke="#4c5554" stroke-width="1.2"/>
+<path d="M81.8 22 H84.2 M84.8 22 H87.2" stroke="url(#steel)" stroke-width="0.9"/>
+<path d="M92 22 Q91 24 92.5 25 L92.5 30.5 Q93.5 32 94.5 30.5 V25 Q96 24 95 22 L94 23 H93 Z" fill="url(#steel)" stroke-width="0.35"/>
+<path d="M99 22 Q98 24 99.5 25 V31 H101 V25 Q102.5 24 101.5 22 L100.5 23.2 Z" fill="url(#steel)" stroke-width="0.35"/>
+<path d="M107 23 V31" stroke="#a68b5e" stroke-width="1.6"/>
+<path d="M104 21.7 H110 V24 H104 Z" fill="url(#steel)" stroke-width="0.4"/>
+<path d="M113 22 L115 25 L112 31 M117 22 L115 25 L118 31" stroke="#6f7880" stroke-width="0.9" fill="none"/>
+<path d="M82 26 H87 M92 27 H95 M99 27 H101 M105 27 H108 M113 27 H117" stroke="#dfc7a0" stroke-width="0.8" fill="none"/>
+<path d="M79 19.5 L91 19.5 L81 34 H79 Z M108 19.5 H113 L103 34 H98 Z" fill="#e3f6f5" fill-opacity="0.13" stroke="none"/>
+<rect x="77.5" y="18.5" width="43" height="16" rx="1.2" fill="none" stroke="#b8c1ba" stroke-width="0.5"/>
+<rect x="77" y="38" width="22" height="9" rx="0.5" fill="url(#green)"/>
+<rect x="101" y="38" width="22" height="9" rx="0.5" fill="url(#green)"/>
+<path d="M79 39 H97 M103 39 H121 M94 41 H97 M118 41 H121" stroke="#a9b6aa" stroke-width="0.5"/>
+<rect x="80" y="41" width="3.5" height="2.6" rx="0.5" fill="url(#dark)"/>
+<rect x="104" y="41" width="3.5" height="2.6" rx="0.5" fill="url(#dark)"/>
+<path d="M89 42 H97 M89 44 H97 M113 42 H121 M113 44 H121" stroke="#38483f" fill="none" stroke-width="0.4"/>
+<rect x="133" y="19" width="13" height="13" rx="0.4" fill="url(#wood)"/>
+<path d="M135 20 V31 M139 20 V31 M143 20 V31" stroke="#79522e" stroke-width="0.35"/>
+<path d="M145 21 V23 M145 28 V30 M132 27 H135" stroke="url(#steel)" stroke-width="1.3"/>
+<!-- Jednoduchý servisní klíč, bez textu a značek. -->
+<path d="M143 35 Q139 34 139 38 L132 44 Q131 46 133 46 L141 40 Q145 40 146 36 L143 38 L141 37 Z" fill="#e8dcc1" stroke="none"/>
+<path d="M8 14 Q9 7 23 6.5 H141 Q154 7 156 14 Z" fill="url(#roof)"/>
+<path d="M10 12.5 H154 M23 7.5 H140" stroke="#c0c7c8" stroke-width="0.45" fill="none"/>
+<path d="M30 7 V13 M67 7 V13 M104 7 V13 M140 7 V13" stroke="#484f51" stroke-width="0.5" fill="none"/>
+<rect x="106" y="4.7" width="9" height="2" rx="0.7" fill="url(#dark)"/>
+<path d="M15 46 V52 H23 M145 46 V52 H151" stroke="url(#steel)" stroke-width="0.8" fill="none"/>
+<g fill="#b1b7b6" stroke="#30383b" stroke-width="0.2"><circle cx="17" cy="17" r="0.4"/><circle cx="17" cy="26" r="0.4"/><circle cx="17" cy="35" r="0.4"/><circle cx="17" cy="44" r="0.4"/><circle cx="67" cy="17" r="0.4"/><circle cx="67" cy="26" r="0.4"/><circle cx="67" cy="35" r="0.4"/><circle cx="67" cy="44" r="0.4"/><circle cx="126" cy="17" r="0.4"/><circle cx="126" cy="26" r="0.4"/><circle cx="126" cy="35" r="0.4"/><circle cx="126" cy="44" r="0.4"/><circle cx="150" cy="17" r="0.4"/><circle cx="150" cy="26" r="0.4"/><circle cx="150" cy="35" r="0.4"/><circle cx="150" cy="44" r="0.4"/></g><g fill="#b1b7b6" stroke="#30383b" stroke-width="0.2"><circle cx="78" cy="18" r="0.4"/><circle cx="78" cy="35" r="0.4"/><circle cx="120" cy="18" r="0.4"/><circle cx="120" cy="35" r="0.4"/></g>
+  </g>
+</svg>

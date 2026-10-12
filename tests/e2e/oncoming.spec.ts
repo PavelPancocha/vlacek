@@ -115,7 +115,9 @@ test.describe('the oncoming train (doc 05 §6, SCN-09, D-017)', () => {
     test.setTimeout(120_000);
     await page.route(/steam_local\.body-[^/]*\.svg$/, (route) => route.abort());
     await continueBeforeSecondTrack(page);
-    expect((await snapshot(page)).artAtlas).toBeUndefined();
+    const state = await snapshot(page);
+    expect(state.vehicleAtlas).toBeUndefined();
+    expect(state.artAtlas).toBeDefined();
     await page.mouse.move(700, 300);
     await page.mouse.down();
     await expect

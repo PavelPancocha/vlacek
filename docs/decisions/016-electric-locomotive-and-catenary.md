@@ -62,5 +62,5 @@ Katalog dosud elektrickou lokomotivu neměl; test to výslovně hlídal, dokud v
 
 - **Portálové podpěry ve stanici** (dokument 03 §9) zatím nejsou; ve stanici stojí běžné stožáry. Přijdou s vícekolejnými nádražími. Tunelový závěs a stožáry vedle opěr mostu doplnil [D-018](018-bridges-and-tunnels.md).
 - **Souběžná kolej** ([D-017](017-second-track-and-oncoming-train.md)) vedení zatím nemá; protijedoucí vlak je parní nebo naftový. Doplní se s další elektrickou lokomotivou katalogu.
-- **Zvuk elektrické lokomotivy** je dočasný syntetizovaný tón jako u ostatních.
+- **Zvuk elektrické lokomotivy** je dočasný syntetizovaný tón jako u ostatních. H1 mu dává vlastní identitu `audio.horn.electric_retro` (triangle, 330 a 415 Hz, 0,65 s, hlasitost 0,14) místo původního sdíleného naftového zvuku; hráč i náhled používají tentýž tón ([D-006](006-runtime-architecture.md)). Nahraný zvuk jej nahradí při dokončení zvukových assetů.
 - **Fyzická zařízení:** NEOVĚŘENO.

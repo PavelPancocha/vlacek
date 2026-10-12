@@ -12,6 +12,7 @@ import {
   type ArtValidationInput,
 } from '../../../src/content/artValidation.ts';
 import { locomotives, wagons } from '../../../src/content/vehicles.ts';
+import { vehicleArtLayers } from '../../../src/content/artLayers.ts';
 
 const ASSETS = resolve(import.meta.dirname, '../../../assets/vehicles');
 const files = new Map(
@@ -36,6 +37,69 @@ function withSteam(art: VehicleArt): ArtValidationInput {
 }
 
 describe('vehicle art manifest (doc 06 §8, doc 07 §4, CNT-02)', () => {
+  it('keeps the express connecting rod on the crosshead through a complete revolution', () => {
+    const art = vehicleArt['steam_express'];
+    expect(art).toBeDefined();
+    if (!art) throw new Error('steam_express: missing art');
+    expect(art.wheels.map((wheel) => wheel.xU)).toEqual([
+      24, 66, 108, 150, 194,
+    ]);
+    for (let angle = 0; angle < 2 * Math.PI; angle += Math.PI / 32) {
+      const layers = vehicleArtLayers(art, 216, angle * 19);
+      const rod = layers.find(
+        (part) => part.part === 'steam_express.connecting-rod',
+      );
+      const crosshead = layers.find(
+        (part) => part.part === 'steam_express.crosshead',
+      );
+      if (!rod || !crosshead) throw new Error('steam_express: missing motion');
+      expect(rod.x + 56 * Math.cos(rod.rotation)).toBeCloseTo(crosshead.x, 9);
+      expect(rod.y + 56 * Math.sin(rod.rotation)).toBeCloseTo(crosshead.y, 9);
+      expect(crosshead.y).toBe(82 - 108);
+      expect(crosshead.x + 108 - 4).toBeGreaterThanOrEqual(149.954);
+      expect(crosshead.x + 108 + 26).toBeLessThanOrEqual(198);
+    }
+  });
+  it.each([
+    ['passenger_double', 192, 100, 60, 'wheel.wagon-disc', [23, 49, 143, 169]],
+    [
+      'passenger_sleeper',
+      184,
+      82,
+      57,
+      'wheel.wagon-spoked',
+      [22, 48, 136, 162],
+    ],
+    ['passenger_dining', 184, 82, 57, 'wheel.wagon-spoked', [22, 48, 136, 162]],
+    ['passenger_panorama', 192, 92, 60, 'wheel.wagon-disc', [23, 49, 143, 169]],
+  ] as const)(
+    'gives %s art with the frozen H2 geometry',
+    (id, lengthU, heightU, bogieOffsetU, part, axles) => {
+      const vehicle = wagons.find((wagon) => wagon.id === id);
+      expect(vehicle).toMatchObject({
+        lengthU,
+        bogieOffsetU,
+        wheelRadiusU: 12,
+      });
+      expect(vehicle).not.toHaveProperty('placeholder');
+      const art = vehicleArt[id];
+      expect(art).toEqual({
+        heightU,
+        body: `${id}.body`,
+        overlay: `${id}.overlay`,
+        wheels: axles.map((xU) => ({ part, xU })),
+      });
+      if (!art?.overlay) throw new Error(`${id}: body and overlay required`);
+      for (const key of [art.body, art.overlay]) {
+        expect(artParts[key]).toMatchObject({
+          widthU: lengthU,
+          heightU,
+          pivotU: { x: lengthU / 2, y: heightU },
+        });
+      }
+    },
+  );
+
   it('validates as shipped', () => {
     expect(validateVehicleArt(shipped)).toEqual([]);
   });
@@ -162,11 +226,7 @@ describe('vehicle art manifest (doc 06 §8, doc 07 §4, CNT-02)', () => {
         ...shipped,
         art: { ...vehicleArt, electric_retro: withoutPantograph },
       }),
-    ).toEqual([
-      'electric_retro: needs catenary but has no pantograph',
-      'electric_retro.pantograph: not used by any vehicle',
-      'electric_retro.pantograph-head: not used by any vehicle',
-    ]);
+    ).toEqual(['electric_retro: needs catenary but has no pantograph']);
     expect(validateVehicleArt(withSteam({ ...steam, pantograph }))).toEqual([
       'steam_local: pantograph without catenary',
     ]);

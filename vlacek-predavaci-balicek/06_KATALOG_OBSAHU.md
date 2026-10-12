@@ -156,3 +156,42 @@ Každá lokomotiva a vagón má minimálně náhled, karoserii a informaci o poj
 ```
 
 Konkrétní schéma v dokumentu 08 dovolí doplnit další vrstvy. Produkční build nesmí potichu nahradit chybějící typ šedým obdélníkem. Dočasné generované tvary jsou vhodné pro M0/M1, ne důkaz dokončení vizuálního katalogu.
+
+## 9. Poznámky k implementaci
+
+- **Katalog V1.** `src/content/vehicles.ts` obsahuje všech 10 lokomotiv a 32 druhů vagonků v pořadí a se skupinami tohoto dokumentu. Test katalogu (CNT-01, `tests/unit/content/catalog.test.ts`) hlídá ID, české názvy, pohon, skupiny, délky a `requiresCatenary` právě u elektrických lokomotiv.
+- **Grafika celého katalogu.** Všech 10 lokomotiv a 32 druhů vagonků má vlastní grafiku. Dočasné zúžení testů na nakreslenou část katalogu je odstraněné: release kontrola zahrnuje všech 42 vozidel, každá lokomotiva s efektem má emitor a každá elektrická sběrač. Příznak `placeholder?: true` i jeho kontrola zůstávají; release validátor placeholder dál odmítá ([D-011](../docs/decisions/011-vector-vehicle-art-and-atlas.md)).
+- **Uložené hry.** ID se jen přidávají, takže save z katalogu 0.1 se načte beze změny a verze obsahu dokumentu 08 se nemění (fixture `v1-catalog-0.1.json`).
+- **Dosažitelnost katalogu.** Všech 10 lokomotiv a 32 druhů vagonků ve čtyřech skupinách je dosažitelných na telefonu, tabletu i desktopu: řádek karet se posouvá vodorovně tahem, kolečkem i klávesou Tab. Aktualizace depa zachová pozici katalogu a fokus; posun katalogu a soupravy je nezávislý ([dokument 02 §7](02_OVLADANI_A_STAVY.md)).
+- **Houkání lokomotiv (H1).** Každý z 10 typů má vlastní syntetizovaný placeholder tón podle `hornAudio` (`src/content/soundTones.ts`). Hráčova píšťala, náhled při výběru i odpověď protijedoucího vlaku používají identitu příslušné lokomotivy; velká parní zní přesně o oktávu níž než malá ([D-006](../docs/decisions/006-runtime-architecture.md)).
+- **Moderní elektrická (`electric_modern`).** Vlastní stříbrno-tyrkysová kresba se zaoblenými šikmými čely, širokým prosklením kabiny a hladkými bočními panely; rám 204 × 90 u, dva podvozky se sdílenými naftovými koly, sdílený pantograf s patou v (62, 14), bez emitorů.
+- **Horská elektrická (`electric_mountain`).** Vlastní zeleno-krémová kresba s vysokou středovou kabinou, nízkými stupňovitými kapotami, výraznými mřížkami a robustními podvozky; rám 160 × 96 u, sdílený pantograf s patou v (46, 14), bez emitorů.
+- **Velká parní lokomotiva (`steam_express`).** Vlastní SVG kresba s dlouhým odkrytým kotlem a uhlím v zadní části bez samostatného tendru; tři spřažená kola o poloměru 19 u, pohyblivá spojnice, 56u ojnice a křižák, emitor kouře a páry na `(186, 8)` v rámu 216 × 108 u; ID, save a pohybový kontrakt beze změny.
+- **Naftový posunovač (`diesel_shunter`).** Vlastní SVG kresba se zvýšenou zadní kabinou, odstupňovanou kapotou, ochozem a zábradlím; dvě nápravy se sdílenými naftovými koly o poloměru 13 u, emitor výfuku na `(96, 25)` v rámu 148 × 82 u; ID, save a pohybový kontrakt beze změny.
+- **Patrový vagón (`passenger_double`).** Vlastní vektorová kresba má dvě oddělené řady oken, zřetelné podlaží a snížené vestibuly; rám 192 × 100 u, dva podvozky, samostatná kotoučová kola.
+- **Lůžkový vagón (`passenger_sleeper`).** Vlastní vektorová kresba má malé oddílové okenní otvory, různě zatažené závěsy a tlumené teplé lampy; rám 184 × 82 u, dva podvozky, samostatná paprsková kola.
+- **Jídelní vagón (`passenger_dining`).** Vlastní vektorová kresba má široká okna se stolky, bílými ubrusy a šálky, menší kuchyňská okna, střešní odsávání a jednoduchou překříženou vidličku se lžící; rám 184 × 82 u.
+- **Vyhlídkový vagón (`passenger_panorama`).** Vlastní vektorová kresba má zvýšenou prosklenou kupoli s tenkými žebry, viditelná sedadla a nižší vestibuly; rám 192 × 92 u, dva podvozky, samostatná kotoučová kola.
+- **Bublinková mašinka (`magic_bubbles`).** Vlastní tyrkysovo-perleťová vektorová kresba se dvěma nápravami vypouští z bodu `(127,12)` bubliny s životností 3–5 s; dotyk odstraní právě zasaženou bublinu, ukáže malé prasknutí a při zapnutých efektech přehraje krátký zvuk, přičemž tentýž držený dotyk zůstává plynem a priorita brzdy se nemění.
+- **Duhová mašinka (`magic_rainbow`).** Vlastní barevná vektorová kresba se dvěma podvozky vypouští z bodu `(138,10)` pět barev měkkých obláčků s životností 3–4 s.
+- **Dílenský vagón (`service_tools`).** Vlastní vektorová dílenská skříň má asymetrické dveře, nářadí uchycené za sklem, pevné servisní skříňky a jednoduchý symbol klíče.
+- **Vagón s pluhem (`service_snowplow`).** Vlastní vektorový vůz má kompaktní kabinu a zvednutou zakřivenou radlici s čepy, podpěrami a transportními zámky; radlice nepřesahuje obrys vozu.
+- **Klády (`cargo_logs`).** Nízká plošina na dvou dvounápravových podvozcích; podélné klády s kůrou a řeznými čely zajišťují klanice a dva napnuté pásy.
+- **Písek (`cargo_sand`).** Nízká výklopná korba se šikmými boky a výklopnými podpěrami; mělký hladký světlý násyp vystupuje nad lem a zůstává uvnitř půdorysu korby.
+- **Kamení (`cargo_gravel`).** Dvě samostatné lichoběžníkové násypky na společném dvounápravovém rámu, s viditelnou mezerou, výsypnými žlaby a velkými hranatými šedými a hnědými kameny nad lemy.
+- **Sláma (`cargo_hay`).** Nízkostěnná plošina veze dvě odstupňované vrstvy hranatých balíků s jednotlivými provázky; náklad zajišťují koncové klanice a dva široké upínací pásy.
+- **Jablka (`cargo_apples`).** Nízký zelený vůz veze čtyři otevřené laťované bedny s červenými a zelenými jablky; každou bednu zajišťuje pás a dřevěné dorazové příložky.
+- **Cisterna (`cargo_tank`).** Dlouhá vodní cisterna se dvěma podvozky, kapkou, průlezem a žebříkem; nádrž drží dvě sedla a pásy, kola jsou samostatné otočné díly.
+- **Mléčný vagón (`cargo_milk`).** Menší světlá izolovaná cisterna na dvou nápravách, s nízkým horním krytem a prostou siluetou konve; nádrž drží sedla a pásy.
+- **Obilný vagón (`cargo_grain`).** Uzavřený vysoký násypník na dvou podvozcích, se čtyřmi střešními poklopy, šikmými výsypnými komorami a jednoduchými klasy.
+- **Poštovní vagón (`cargo_mail`).** Krémovo-okrová panelová skříň s širokými posuvnými dveřmi, policemi a balíky za malým oknem; obecná obálka bez skutečného dopravce.
+- **Chladírenský vagón (`cargo_refrigerated`).** Světlá izolační skříň se silnými těsněnými dveřmi, jednoduchou vločkou a vystupující chladicí jednotkou s mřížkou.
+- **Přepravník aut (`cargo_cars`).** Vlastní vektorový dvoupatrový přepravník veze dvě auta dole a jedno nahoře; každé viditelné kolo má klíny a popruh, auta nemají značky ani registrační tabulky.
+- **Vagón s traktorem (`cargo_tractor`).** Vlastní vektorová plošina veze traktor s prosklenou kabinou a rozdílnými průměry pneumatik; kola jsou zaklínovaná a podvozek připevněný řetězy.
+- **Vagón s bagrem (`cargo_excavator`).** Vlastní vektorová plošina veze pásový bagr; pásy mají klíny a řetězové úvazy, složené rameno i lžíce spočívají v transportních podpěrách.
+- **Hvězdičkový vagónek (`fun_stars`).** Tři pevné zlaté hvězdy se zapuštěnými světelnými čočkami na přišroubovaných sloupcích nízkého modrého vozu; statická kresba bez dotykového rozsvěcení.
+- **Zahrádkový vagónek (`fun_garden`).** Tři truhlíky zajištěné kovovými držáky, různobarevné květiny a nízká mříž pevně připojená k rámu; bez dotykového motýla.
+- **Akvarijní vagónek (`fun_aquarium`).** Uzavřená pohádková průhledná nádrž s viditelnou hladinou, rostlinami a čtyřmi stylizovanými rybkami; kolébka a pásy jsou přišroubované k podvozkovému vozu.
+- **Větrníkový vagónek (`fun_windmill`).** Dva barevné papírové větrníky s viditelnými středy na vyztužených přišroubovaných sloupcích; v této změně se neotáčejí.
+- **Světýlkový vagónek (`fun_lights`).** Čtyři pevné lucerny různé výšky, chráněná kabeláž a přišroubované patky; stálé teplé světlo bez blikání a dotykového zesilování.
+- **Vagónek s kostkami (`fun_toyblocks`).** Dřevěné kvádry, oblouky a válec s kresbou vláken, nízká zábradlí, zajišťovací kolíky, klíny a široké popruhy připevněné k plošině; bez dotykového houpání nákladu.

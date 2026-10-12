@@ -64,9 +64,9 @@ export function artSourceTextureCount(scene: Phaser.Scene): number {
 }
 
 /**
- * Art parts in one canvas texture (doc 07 §4/§10): one texture keeps every
- * vehicle, track and prop quad in one batch (D-010); backdrops have their
- * own, coarser atlas (D-013). The decoded SVG sources stay in
+ * Art parts in one canvas texture (doc 07 §4/§10). Vehicles and world
+ * parts have separate atlases (D-019); backdrops have their own, coarser
+ * atlas (D-013). The decoded SVG sources stay in
  * memory, so the atlas is re-rasterised at the camera's scale step after a
  * resize (D-011); the old texture is removed only after the scene has moved
  * its images to the new one.
@@ -76,6 +76,7 @@ export class ArtAtlas {
   readonly #options: ArtAtlasOptions;
   readonly #parts: Readonly<Record<string, ArtSource>>;
   readonly #sources = new Map<string, SourceImage>();
+  #selectedParts: Readonly<Record<string, ArtSource>>;
   #version = 0;
   #textureKey: string | undefined;
   #info: ArtAtlasInfo | undefined;
@@ -98,6 +99,7 @@ export class ArtAtlas {
     this.#parts = Object.fromEntries(
       sources.map((source) => [source.key, source]),
     );
+    this.#selectedParts = this.#parts;
     try {
       for (const { key } of sources) {
         const source = `${SOURCE_PREFIX}${key}`;
@@ -117,6 +119,22 @@ export class ArtAtlas {
         if (scene.textures.exists(source)) scene.textures.remove(source);
       }
     }
+  }
+
+  /** Selects journey parts after the caller has destroyed images from the old journey. */
+  selectParts(keys: readonly string[]): void {
+    const selected = Object.fromEntries(
+      keys.map((key) => {
+        const part = this.#parts[key];
+        if (!part) throw new RangeError(`unknown art part ${key}`);
+        return [key, part];
+      }),
+    );
+    if (this.#textureKey) this.release(this.#textureKey);
+    this.#textureKey = undefined;
+    this.#info = undefined;
+    this.#failedPxPerU = undefined;
+    this.#selectedParts = selected;
   }
 
   /** Texture holding the current atlas; frames are the part keys. */
@@ -147,7 +165,7 @@ export class ArtAtlas {
   }
 
   #rasterise(pxPerU: number): string | undefined {
-    const items = artAtlasItems(this.#parts, pxPerU);
+    const items = artAtlasItems(this.#selectedParts, pxPerU);
     const plan = packAtlas(items, {
       maxSize: MAX_ATLAS_EDGE_PX,
       paddingPx: ATLAS_PADDING_PX,
