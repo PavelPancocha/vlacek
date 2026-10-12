@@ -8,6 +8,7 @@ import { AudioManager, type SoundId } from '../platform/AudioManager.ts';
 import { isPortrait } from '../platform/browserEnvironment.ts';
 import type { RendererPreference } from '../platform/CapabilityProbe.ts';
 import { DomInputAdapter } from '../platform/DomInputAdapter.ts';
+import { FullscreenController } from '../platform/FullscreenController.ts';
 import { FrameStats } from '../platform/FrameStats.ts';
 import type { CssRect } from '../platform/InputRouter.ts';
 import { createGameHost, type GameHost } from '../render/GameHost.ts';
@@ -52,6 +53,7 @@ export class AppController {
   readonly #scene: RideScene;
   readonly #host: GameHost;
   readonly #input: DomInputAdapter;
+  readonly #fullscreen: FullscreenController;
   #renderer = 'pending';
   #diagnostics: HTMLElement | undefined;
   #lastDiagnosticsMs = 0;
@@ -113,6 +115,7 @@ export class AppController {
         const strip = this.#uiRoot.querySelector('.strip');
         strip?.scrollTo({ left: strip.scrollWidth });
       }
+      if (action === 'fullscreen') void this.#fullscreen.toggle();
       if (action === 'retry') window.location.reload();
     });
     this.#input = new DomInputAdapter({
@@ -137,6 +140,11 @@ export class AppController {
         this.#measureBrake();
         this.#refreshUi();
       },
+    });
+    this.#fullscreen = new FullscreenController(document, () => {
+      // System exits can leave the viewport unchanged; still clear and pause.
+      session.interrupt();
+      this.#refreshUi();
     });
     this.#refreshUi();
   }
@@ -230,6 +238,11 @@ export class AppController {
       hasJourney: session.ride !== undefined,
       seed: session.journeySeed,
       portrait: this.#portrait,
+      fullscreen: {
+        supported: this.#fullscreen.supported,
+        active: this.#fullscreen.active,
+        failed: this.#fullscreen.failed,
+      },
       buildId: this.#options.buildId,
       locomotives,
       wagons,
@@ -380,6 +393,7 @@ export class AppController {
 
   dispose(): void {
     this.#input.dispose();
+    this.#fullscreen.dispose();
     this.#host.destroy();
     this.#audio.dispose();
     this.#ui.dispose();

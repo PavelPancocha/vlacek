@@ -129,20 +129,20 @@ V každém ticku dopravního testu assertovat, že vlak a silniční aktér sou�
 
 ## 8. Web, PWA a aktualizace — PWA
 
-| ID     | Situace                                                 | Očekávaný výsledek                                                                     |
-| ------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| PWA-01 | První návštěva online.                                  | Hra není blokována nehotovou offline cache.                                            |
-| PWA-02 | Úplný balík → offline → zavřít a znovu otevřít.         | Hratelné menu, všechny vozy a všech šest biomů bez síťového stahování.                 |
-| PWA-03 | Přerušit internet v polovině offline přípravy.          | Žádné nepravdivé „offline připraveno“, stará kompletní verze funguje.                  |
-| PWA-04 | Nový build během rozehrané jízdy.                       | Žádný nucený reload, ztráta scény ani mix JS/asset verzí.                              |
-| PWA-05 | Nový worker, dvě staré otevřené karty.                  | Staré karty zůstávají konzistentní; čekající aktualizace je nepřepne násilím.          |
-| PWA-06 | Zavřít všechny instance a znovu otevřít.                | Připravená nová verze se aktivuje a save zůstane použitelný.                           |
-| PWA-07 | Chybí service worker, localStorage nebo Fullscreen API. | Online hra funguje s odpovídajícím omezením.                                           |
-| PWA-08 | Zamítnuté audio / fullscreen.                           | Žádný crash ani opakované rušivé žádosti.                                              |
-| PWA-09 | Nasazení na root i do `/vlacek/`.                       | Správné cesty, scope, ikony a načítání všech assetů.                                   |
-| PWA-10 | Chybějící obrázek nebo zvuk.                            | Nevrací se HTML app shell jako falešný asset; řízená chyba/fallback.                   |
-| PWA-11 | Několik aktualizací a cleanup cache.                    | Nepřibývají všechny historické balíky; aktuální ani záložní úplná verze se nepokazí.   |
-| PWA-12 | Browser vymaže offline data.                            | Stav se znovu zjistí; aplikace neslibuje offline funkčnost jen podle starého příznaku. |
+| ID     | Situace                                                 | Očekávaný výsledek                                                                                   |
+| ------ | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| PWA-01 | První návštěva online.                                  | Hra není blokována nehotovou offline cache.                                                          |
+| PWA-02 | Úplný balík → offline → zavřít a znovu otevřít.         | Hratelné menu, všechny vozy a všech šest biomů bez síťového stahování.                               |
+| PWA-03 | Přerušit internet v polovině offline přípravy.          | Žádné nepravdivé „offline připraveno“, stará kompletní verze funguje.                                |
+| PWA-04 | Nový build během rozehrané jízdy.                       | Žádný nucený reload, ztráta scény ani mix JS/asset verzí.                                            |
+| PWA-05 | Nový worker, dvě staré otevřené karty.                  | Staré karty zůstávají konzistentní; čekající aktualizace je nepřepne násilím.                        |
+| PWA-06 | Zavřít všechny instance a znovu otevřít.                | Připravená nová verze se aktivuje a save zůstane použitelný.                                         |
+| PWA-07 | Chybí service worker, localStorage nebo Fullscreen API. | Online hra funguje s odpovídajícím omezením; bez Fullscreen API není tlačítko celé obrazovky.        |
+| PWA-08 | Zamítnuté audio / fullscreen.                           | Žádný crash ani opakované rušivé žádosti; zamítnutý fullscreen zneaktivní tlačítko pro dané načtení. |
+| PWA-09 | Nasazení na root i do `/vlacek/`.                       | Správné cesty, scope, ikony a načítání všech assetů.                                                 |
+| PWA-10 | Chybějící obrázek nebo zvuk.                            | Nevrací se HTML app shell jako falešný asset; řízená chyba/fallback.                                 |
+| PWA-11 | Několik aktualizací a cleanup cache.                    | Nepřibývají všechny historické balíky; aktuální ani záložní úplná verze se nepokazí.                 |
+| PWA-12 | Browser vymaže offline data.                            | Stav se znovu zjistí; aplikace neslibuje offline funkčnost jen podle starého příznaku.               |
 
 Offline testovat nad produkčním preview/HTTPS buildem, ne pouze přes Vite dev server. Emulace offline síťového stacku je jeden test; alespoň na cílovém Androidu ověřit i skutečné odpojení sítě a studený start.
 

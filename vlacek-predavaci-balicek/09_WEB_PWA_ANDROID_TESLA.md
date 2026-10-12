@@ -80,7 +80,11 @@ Barvy jsou výchozí designový návrh. Při jiném base path musí build souča
 
 Manifestový `fullscreen` a Fullscreen API jsou odlišné mechanismy a nejsou univerzálně podporované. Prohlížeč může zvolit náhradní zobrazovací režim; aplikace musí fungovat v `standalone` i běžné kartě. Viz S05/S06 v dokumentu 12.
 
-Tlačítko pro celou obrazovku zobrazit jen při dostupném API. Volat `requestFullscreen()` přímo z uživatelského gesta, vyřešit promise rejection a pokračovat v okně. Neopakovat žádost agresivně. Opustí-li uživatel fullscreen nebo změní rozměr okna, hra se přepočítá a pozastaví podle dokumentu 02.
+Průběžná hra má volitelné tlačítko pro celou obrazovku na úvodu, při výběru mašinky a v pauze (dokument 02 §2). Zobrazí se jen při `document.fullscreenEnabled === true` a dostupných standardních metodách `requestFullscreen()` / `exitFullscreen()`. Žádost na `document.documentElement` vzniká přímo z uživatelského gesta; druhá aktivace režim opustí. Stav se čte z `document.fullscreenElement` a aktualizuje událostí `fullscreenchange`.
+
+Zamítnutí vstupu nebo výstupu se zachytí bez pádu; tlačítko zůstane do obnovení stránky neaktivní, bez opakované žádosti, s krátkou zprávou. Opuštění pomocí systému zůstává možné. Nepodporované API tlačítko skryje, základní online hra pokračuje v běžné kartě. Změna režimu uklidí vstupy; resize přepočítá zobrazení a pauza zůstává pauzou. Opuštění režimu během jízdy vyvolá pauzu i bez změny rozměrů. Nikdy se automaticky nežádá ani neobnovuje fullscreen.
+
+Standardní API je ověřeno automaticky v headless Chromium (viz [protokol](../docs/validation/2026-10-12-cela-obrazovka.md)); nejde o důkaz podpory Android tabletu, iOS ani Tesly. Jejich skutečné chování včetně systémového gesta a firmwaru zůstává **NEOVĚŘENO** v [matici zařízení](../docs/device-tests/v0.1.md). PWA manifest ani instalace se touto změnou nezavádí.
 
 Instalační nabídku ukazovat pouze rodiči a jen tam, kde ji prohlížeč skutečně nabízí. Nelze slibovat stejné instalační chování každého Android browseru nebo Tesly. PWA v praxi stále podléhá pravidlům hostitelského prohlížeče.
 
