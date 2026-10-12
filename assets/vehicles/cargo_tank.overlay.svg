@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="176" height="82" viewBox="0 0 176 82">
+  <defs><linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e5e6"/><stop offset="0.5" stop-color="#9aa7ad"/><stop offset="1" stop-color="#606e75"/></linearGradient><linearGradient id="dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a6269"/><stop offset="0.5" stop-color="#30373d"/><stop offset="1" stop-color="#171c20"/></linearGradient><linearGradient id="box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#73818a"/><stop offset="0.5" stop-color="#3e4951"/><stop offset="1" stop-color="#232c32"/></linearGradient></defs>
+  <g stroke="#20262a" stroke-width="0.6" stroke-linejoin="round">
+    <g fill="none" stroke-linecap="round">
+      <path d="M9.4 66.9 A11 11 0 0 1 22.5 59.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M30.6 73.1 A11 11 0 0 1 17.5 80.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+      <path d="M35.4 66.9 A11 11 0 0 1 48.5 59.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M56.6 73.1 A11 11 0 0 1 43.5 80.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+      <path d="M119.4 66.9 A11 11 0 0 1 132.5 59.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M140.6 73.1 A11 11 0 0 1 127.5 80.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+      <path d="M145.4 66.9 A11 11 0 0 1 158.5 59.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M166.6 73.1 A11 11 0 0 1 153.5 80.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+    </g>
+    <!-- Nosné příčníky spojují rám s oběma podvozky. -->
+    <path d="M25 54 H41 V56 H38 V61 H28 V56 H25 Z M135 54 H151 V56 H148 V61 H138 V56 H135 Z" fill="url(#dark)"/>
+    <path d="M26 54.7 H40 M136 54.7 H150 M28.7 56 V60 M138.7 56 V60" fill="none" stroke="#9aa7ad" stroke-width="0.4"/>
+    <path d="M14 65 L21 59 H45 L52 65 V69 H47 L40 72 H26 L19 69 H14 Z" fill="url(#dark)"/>
+    <path d="M16 64.3 L22 60.3 H44 L50 64.3" fill="none" stroke="#a3b0b4" stroke-width="0.4"/>
+    <path d="M30 61 H36 V67 H30 Z" fill="url(#steel)"/>
+    <path d="M30 62.5 H36 M30 64 H36 M30 65.5 H36" stroke="#2d383e" stroke-width="0.55"/>
+    <circle cx="33" cy="70" r="1.5" fill="#1c252b" stroke-width="0.3"/>
+    <path d="M124 65 L131 59 H155 L162 65 V69 H157 L150 72 H136 L129 69 H124 Z" fill="url(#dark)"/>
+    <path d="M126 64.3 L132 60.3 H154 L160 64.3" fill="none" stroke="#a3b0b4" stroke-width="0.4"/>
+    <path d="M140 61 H146 V67 H140 Z" fill="url(#steel)"/>
+    <path d="M140 62.5 H146 M140 64 H146 M140 65.5 H146" stroke="#2d383e" stroke-width="0.55"/>
+    <circle cx="143" cy="70" r="1.5" fill="#1c252b" stroke-width="0.3"/>
+    <rect x="16.4" y="66.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M17.2 67.1 H22.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="20" cy="70" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="17.7" cy="72.5" r="0.38"/><circle cx="22.3" cy="72.5" r="0.38"/></g>
+    <rect x="42.4" y="66.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M43.2 67.1 H48.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="46" cy="70" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="43.7" cy="72.5" r="0.38"/><circle cx="48.3" cy="72.5" r="0.38"/></g>
+    <rect x="126.4" y="66.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M127.2 67.1 H132.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="130" cy="70" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="127.7" cy="72.5" r="0.38"/><circle cx="132.3" cy="72.5" r="0.38"/></g>
+    <rect x="152.4" y="66.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M153.2 67.1 H158.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="156" cy="70" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="153.7" cy="72.5" r="0.38"/><circle cx="158.3" cy="72.5" r="0.38"/></g>
+    <!-- Žebřík stojí před nádrží a končí na pevném rámu. -->
+    <path d="M102 59 V15 Q102 11 105 11 M112 59 V15 Q112 11 109 11" fill="none" stroke="#3d525c" stroke-width="1.7"/>
+    <path d="M101.7 59 V15 Q101.7 11 104.7 11 M111.7 59 V15 Q111.7 11 108.7 11" fill="none" stroke="url(#steel)" stroke-width="1.1"/>
+    <path d="M102 18 H112 M102 24 H112 M102 30 H112 M102 36 H112 M102 42 H112 M102 48 H112 M102 54 H112 M101 59 H113" stroke="url(#steel)" stroke-width="1.1"/>
+    <path d="M99 50 H104 M110 50 H115" stroke="#3e5b67" stroke-width="1.4"/>
+
+  </g>
+</svg>

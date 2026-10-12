@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="204" height="96" viewBox="0 0 204 96">
+  <defs><linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e4e5"/><stop offset="0.5" stop-color="#9aa0a8"/><stop offset="1" stop-color="#535c61"/></linearGradient><linearGradient id="dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d6569"/><stop offset="0.5" stop-color="#30383c"/><stop offset="1" stop-color="#171b1e"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e0f0f2"/><stop offset="0.5" stop-color="#9ec3cc"/><stop offset="1" stop-color="#526d77"/></linearGradient></defs>
+  <g stroke="#20262a" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round">
+<path d="M15.7 80 A11.1 11.1 0 0 1 29 73.3" fill="none" stroke="#edf3f4" stroke-opacity="0.4" stroke-width="0.8"/>
+<path d="M36.5 87 A11 11 0 0 1 22 94.2" fill="none" stroke="#080b0c" stroke-opacity="0.4" stroke-width="1"/>
+<path d="M41.7 80 A11.1 11.1 0 0 1 55 73.3" fill="none" stroke="#edf3f4" stroke-opacity="0.4" stroke-width="0.8"/>
+<path d="M62.5 87 A11 11 0 0 1 48 94.2" fill="none" stroke="#080b0c" stroke-opacity="0.4" stroke-width="1"/>
+<path d="M141.7 80 A11.1 11.1 0 0 1 155 73.3" fill="none" stroke="#edf3f4" stroke-opacity="0.4" stroke-width="0.8"/>
+<path d="M162.5 87 A11 11 0 0 1 148 94.2" fill="none" stroke="#080b0c" stroke-opacity="0.4" stroke-width="1"/>
+<path d="M167.7 80 A11.1 11.1 0 0 1 181 73.3" fill="none" stroke="#edf3f4" stroke-opacity="0.4" stroke-width="0.8"/>
+<path d="M188.5 87 A11 11 0 0 1 174 94.2" fill="none" stroke="#080b0c" stroke-opacity="0.4" stroke-width="1"/>
+<path d="M35 69 V75 M43 69 V75" fill="none" stroke="url(#steel)" stroke-width="2.6"/>
+<path d="M17 77 L24 74 H54 L61 77 V81 H56 L48 86 H30 L22 81 H17 Z" fill="url(#dark)"/>
+<path d="M19 77.3 L25 75.2 H53 L59 77.3" fill="none" stroke="#929b9c" stroke-width="0.4"/>
+<circle cx="39" cy="81" r="2.2" fill="#1b2023"/>
+<path d="M34 72 H36 M42 72 H44 M34 74 H36 M42 74 H44" stroke="#242a2c" stroke-width="0.5"/>
+<path d="M161 69 V75 M169 69 V75" fill="none" stroke="url(#steel)" stroke-width="2.6"/>
+<path d="M143 77 L150 74 H180 L187 77 V81 H182 L174 86 H156 L148 81 H143 Z" fill="url(#dark)"/>
+<path d="M145 77.3 L151 75.2 H179 L185 77.3" fill="none" stroke="#929b9c" stroke-width="0.4"/>
+<circle cx="165" cy="81" r="2.2" fill="#1b2023"/>
+<path d="M160 72 H162 M168 72 H170 M160 74 H162 M168 74 H170" stroke="#242a2c" stroke-width="0.5"/>
+<rect x="22.4" y="79.6" width="7.2" height="8.8" rx="1" fill="url(#dark)"/>
+<path d="M23.2 81 H28.8" stroke="#9fa9aa" stroke-width="0.4"/>
+<circle cx="26" cy="85" r="1.4" fill="#616c70" stroke-width="0.35"/>
+<rect x="48.4" y="79.6" width="7.2" height="8.8" rx="1" fill="url(#dark)"/>
+<path d="M49.2 81 H54.8" stroke="#9fa9aa" stroke-width="0.4"/>
+<circle cx="52" cy="85" r="1.4" fill="#616c70" stroke-width="0.35"/>
+<rect x="148.4" y="79.6" width="7.2" height="8.8" rx="1" fill="url(#dark)"/>
+<path d="M149.2 81 H154.8" stroke="#9fa9aa" stroke-width="0.4"/>
+<circle cx="152" cy="85" r="1.4" fill="#616c70" stroke-width="0.35"/>
+<rect x="174.4" y="79.6" width="7.2" height="8.8" rx="1" fill="url(#dark)"/>
+<path d="M175.2 81 H180.8" stroke="#9fa9aa" stroke-width="0.4"/>
+<circle cx="178" cy="85" r="1.4" fill="#616c70" stroke-width="0.35"/>
+
+  </g>
+</svg>

@@ -418,6 +418,162 @@ export const artParts = {
     heightU: 80,
     pivotU: { x: 78, y: 80 },
   },
+  'cargo_logs.body': {
+    file: 'cargo_logs.body.svg',
+    widthU: 176,
+    heightU: 76,
+    pivotU: { x: 88, y: 76 },
+  },
+  'cargo_logs.overlay': {
+    file: 'cargo_logs.overlay.svg',
+    widthU: 176,
+    heightU: 76,
+    pivotU: { x: 88, y: 76 },
+  },
+  'cargo_sand.body': {
+    file: 'cargo_sand.body.svg',
+    widthU: 152,
+    heightU: 66,
+    pivotU: { x: 76, y: 66 },
+  },
+  'cargo_sand.overlay': {
+    file: 'cargo_sand.overlay.svg',
+    widthU: 152,
+    heightU: 66,
+    pivotU: { x: 76, y: 66 },
+  },
+  'cargo_gravel.body': {
+    file: 'cargo_gravel.body.svg',
+    widthU: 152,
+    heightU: 68,
+    pivotU: { x: 76, y: 68 },
+  },
+  'cargo_gravel.overlay': {
+    file: 'cargo_gravel.overlay.svg',
+    widthU: 152,
+    heightU: 68,
+    pivotU: { x: 76, y: 68 },
+  },
+  'cargo_hay.body': {
+    file: 'cargo_hay.body.svg',
+    widthU: 164,
+    heightU: 82,
+    pivotU: { x: 82, y: 82 },
+  },
+  'cargo_hay.overlay': {
+    file: 'cargo_hay.overlay.svg',
+    widthU: 164,
+    heightU: 82,
+    pivotU: { x: 82, y: 82 },
+  },
+  'cargo_apples.body': {
+    file: 'cargo_apples.body.svg',
+    widthU: 156,
+    heightU: 72,
+    pivotU: { x: 78, y: 72 },
+  },
+  'cargo_apples.overlay': {
+    file: 'cargo_apples.overlay.svg',
+    widthU: 156,
+    heightU: 72,
+    pivotU: { x: 78, y: 72 },
+  },
+  'cargo_tank.body': {
+    file: 'cargo_tank.body.svg',
+    widthU: 176,
+    heightU: 82,
+    pivotU: { x: 88, y: 82 },
+  },
+  'cargo_tank.overlay': {
+    file: 'cargo_tank.overlay.svg',
+    widthU: 176,
+    heightU: 82,
+    pivotU: { x: 88, y: 82 },
+  },
+  'cargo_milk.body': {
+    file: 'cargo_milk.body.svg',
+    widthU: 168,
+    heightU: 76,
+    pivotU: { x: 84, y: 76 },
+  },
+  'cargo_milk.overlay': {
+    file: 'cargo_milk.overlay.svg',
+    widthU: 168,
+    heightU: 76,
+    pivotU: { x: 84, y: 76 },
+  },
+  'cargo_grain.body': {
+    file: 'cargo_grain.body.svg',
+    widthU: 172,
+    heightU: 84,
+    pivotU: { x: 86, y: 84 },
+  },
+  'cargo_grain.overlay': {
+    file: 'cargo_grain.overlay.svg',
+    widthU: 172,
+    heightU: 84,
+    pivotU: { x: 86, y: 84 },
+  },
+  'cargo_mail.body': {
+    file: 'cargo_mail.body.svg',
+    widthU: 164,
+    heightU: 78,
+    pivotU: { x: 82, y: 78 },
+  },
+  'cargo_mail.overlay': {
+    file: 'cargo_mail.overlay.svg',
+    widthU: 164,
+    heightU: 78,
+    pivotU: { x: 82, y: 78 },
+  },
+  'cargo_refrigerated.body': {
+    file: 'cargo_refrigerated.body.svg',
+    widthU: 176,
+    heightU: 80,
+    pivotU: { x: 88, y: 80 },
+  },
+  'cargo_refrigerated.overlay': {
+    file: 'cargo_refrigerated.overlay.svg',
+    widthU: 176,
+    heightU: 80,
+    pivotU: { x: 88, y: 80 },
+  },
+  'cargo_cars.body': {
+    file: 'cargo_cars.body.svg',
+    widthU: 204,
+    heightU: 96,
+    pivotU: { x: 102, y: 96 },
+  },
+  'cargo_cars.overlay': {
+    file: 'cargo_cars.overlay.svg',
+    widthU: 204,
+    heightU: 96,
+    pivotU: { x: 102, y: 96 },
+  },
+  'cargo_tractor.body': {
+    file: 'cargo_tractor.body.svg',
+    widthU: 184,
+    heightU: 90,
+    pivotU: { x: 92, y: 90 },
+  },
+  'cargo_tractor.overlay': {
+    file: 'cargo_tractor.overlay.svg',
+    widthU: 184,
+    heightU: 90,
+    pivotU: { x: 92, y: 90 },
+  },
+  'cargo_excavator.body': {
+    file: 'cargo_excavator.body.svg',
+    widthU: 192,
+    heightU: 96,
+    pivotU: { x: 96, y: 96 },
+  },
+  'cargo_excavator.overlay': {
+    file: 'cargo_excavator.overlay.svg',
+    widthU: 192,
+    heightU: 96,
+    pivotU: { x: 96, y: 96 },
+  },
 } satisfies Record<string, ArtPart>;
 
 export type ArtPartKey = keyof typeof artParts;
@@ -778,6 +934,135 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
     wheels: [
       { part: 'wheel.wagon-disc', xU: 30 },
       { part: 'wheel.wagon-disc', xU: 126 },
+    ],
+  },
+  cargo_logs: {
+    heightU: 76,
+    body: 'cargo_logs.body',
+    overlay: 'cargo_logs.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 20 },
+      { part: 'wheel.wagon-disc', xU: 46 },
+      { part: 'wheel.wagon-disc', xU: 130 },
+      { part: 'wheel.wagon-disc', xU: 156 },
+    ],
+  },
+  cargo_sand: {
+    heightU: 66,
+    body: 'cargo_sand.body',
+    overlay: 'cargo_sand.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 29 },
+      { part: 'wheel.wagon-disc', xU: 123 },
+    ],
+  },
+  cargo_gravel: {
+    heightU: 68,
+    body: 'cargo_gravel.body',
+    overlay: 'cargo_gravel.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 29 },
+      { part: 'wheel.wagon-disc', xU: 123 },
+    ],
+  },
+  cargo_hay: {
+    heightU: 82,
+    body: 'cargo_hay.body',
+    overlay: 'cargo_hay.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 31 },
+      { part: 'wheel.wagon-disc', xU: 133 },
+    ],
+  },
+  cargo_apples: {
+    heightU: 72,
+    body: 'cargo_apples.body',
+    overlay: 'cargo_apples.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 30 },
+      { part: 'wheel.wagon-disc', xU: 126 },
+    ],
+  },
+  cargo_tank: {
+    heightU: 82,
+    body: 'cargo_tank.body',
+    overlay: 'cargo_tank.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 20 },
+      { part: 'wheel.wagon-disc', xU: 46 },
+      { part: 'wheel.wagon-disc', xU: 130 },
+      { part: 'wheel.wagon-disc', xU: 156 },
+    ],
+  },
+  cargo_milk: {
+    heightU: 76,
+    body: 'cargo_milk.body',
+    overlay: 'cargo_milk.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 32 },
+      { part: 'wheel.wagon-disc', xU: 136 },
+    ],
+  },
+  cargo_grain: {
+    heightU: 84,
+    body: 'cargo_grain.body',
+    overlay: 'cargo_grain.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 20 },
+      { part: 'wheel.wagon-disc', xU: 46 },
+      { part: 'wheel.wagon-disc', xU: 126 },
+      { part: 'wheel.wagon-disc', xU: 152 },
+    ],
+  },
+  cargo_mail: {
+    heightU: 78,
+    body: 'cargo_mail.body',
+    overlay: 'cargo_mail.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 31 },
+      { part: 'wheel.wagon-disc', xU: 133 },
+    ],
+  },
+  cargo_refrigerated: {
+    heightU: 80,
+    body: 'cargo_refrigerated.body',
+    overlay: 'cargo_refrigerated.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 33 },
+      { part: 'wheel.wagon-disc', xU: 143 },
+    ],
+  },
+  cargo_cars: {
+    heightU: 96,
+    body: 'cargo_cars.body',
+    overlay: 'cargo_cars.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 26 },
+      { part: 'wheel.wagon-disc', xU: 52 },
+      { part: 'wheel.wagon-disc', xU: 152 },
+      { part: 'wheel.wagon-disc', xU: 178 },
+    ],
+  },
+  cargo_tractor: {
+    heightU: 90,
+    body: 'cargo_tractor.body',
+    overlay: 'cargo_tractor.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 22 },
+      { part: 'wheel.wagon-disc', xU: 48 },
+      { part: 'wheel.wagon-disc', xU: 136 },
+      { part: 'wheel.wagon-disc', xU: 162 },
+    ],
+  },
+  cargo_excavator: {
+    heightU: 96,
+    body: 'cargo_excavator.body',
+    overlay: 'cargo_excavator.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 23 },
+      { part: 'wheel.wagon-disc', xU: 49 },
+      { part: 'wheel.wagon-disc', xU: 143 },
+      { part: 'wheel.wagon-disc', xU: 169 },
     ],
   },
 };

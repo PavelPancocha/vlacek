@@ -621,3 +621,16 @@ E2E zpočátku občas selhal na závodu testu: bublina se posunula mezi čtením
 | `validate:assets` přijme katalog s novou kresbou                                                                                                                         | FAIL: souhrn seedu                                    | PASS  |
 
 Lane po H0: `npm run check` a `art.spec.ts` PASS; jízda se služební dvojicí kreslí obě vozidla z atlasu vozidel. Recenze lane: nálezy jen v nákladní části lane, služební commit beze změny.
+
+## H2, dávka 3 — nákladní vozy
+
+Třináct nákladních druhů má vlastní ruční SVG kresbu podle zmrazené smlouvy vozidel: klády, písek, kamení, sláma, jablka (otevřené vozy), cisterna, mléčný, obilný, poštovní a chladírenský vůz (uzavřené) a přepravník aut, vagón s traktorem a vagón s bagrem (plošiny). Náklad je pevně ukotvený (klanice a popruhy, vázací pásy, lišty, sedla a pásy nádrží, klíny a řetězy). Písek tvoří hladkou hromadu viditelně nad okrajem korby; kamení vezou dvě oddělené lichoběžníkové násypky s výsypkami, aby nešlo o přebarvený uhlák. Piktogramy jen podle dokumentu 06: kapka, konev, klasy, obálka bez skutečného dopravce, vločka; žádný text ani čísla, auta a stroje bez značek a SPZ.
+
+| Test                                                                                                                                                                            | Red                                             | Green  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------ |
+| Geometrie, pojezd a vlastní kresba každého vozu (`artManifest.test.ts`, `serviceFlatArt.test.ts`): rozměry, pivoty, kola, žádný placeholder, žádný rastr, text ani skript v SVG | FAIL u každé dávky lane: `placeholder: true`    | PASS   |
+| `validate:assets` přijme katalog s novou kresbou                                                                                                                                | FAIL: souhrn seedu                              | PASS   |
+| Nosné spojení rámu s podvozky u uzavřených vozů (`cargo-supports.spec.ts`, nález recenze: rám cisterny a obilného vozu „visel“ nad podvozky)                                    | 2 FAIL: průsvitná mezera cisterny v y 55,5–58,5 | 2 PASS |
+| Ukotvení traktoru a bagru (nález recenze: klíny nedosedaly na pneumatiku, rameno bagru neleželo na podpěře, řetěz končil ve vzduchu)                                            | 3 regresní testy FAIL                           | PASS   |
+
+Lanes po H0: `npm run check` PASS kromě opakovaného timeoutu `GEN-10` na zatíženém stroji (stejný čas jako na `master`, viz záznam integrace); `art.spec.ts` 18–20 PASS na obou projektech; jízdy kreslí všechny vozy z atlasu vozidel. Recenze lanes: otevřené vozy LAND, uzavřené a plošiny po opravě nálezů připravené.

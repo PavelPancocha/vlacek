@@ -176,3 +176,16 @@ Konkrétní schéma v dokumentu 08 dovolí doplnit další vrstvy. Produkční b
 - **Duhová mašinka (`magic_rainbow`).** Vlastní barevná vektorová kresba se dvěma podvozky vypouští z bodu `(138,10)` pět barev měkkých obláčků s životností 3–4 s.
 - **Dílenský vagón (`service_tools`).** Vlastní vektorová dílenská skříň má asymetrické dveře, nářadí uchycené za sklem, pevné servisní skříňky a jednoduchý symbol klíče.
 - **Vagón s pluhem (`service_snowplow`).** Vlastní vektorový vůz má kompaktní kabinu a zvednutou zakřivenou radlici s čepy, podpěrami a transportními zámky; radlice nepřesahuje obrys vozu.
+- **Klády (`cargo_logs`).** Nízká plošina na dvou dvounápravových podvozcích; podélné klády s kůrou a řeznými čely zajišťují klanice a dva napnuté pásy.
+- **Písek (`cargo_sand`).** Nízká výklopná korba se šikmými boky a výklopnými podpěrami; mělký hladký světlý násyp vystupuje nad lem a zůstává uvnitř půdorysu korby.
+- **Kamení (`cargo_gravel`).** Dvě samostatné lichoběžníkové násypky na společném dvounápravovém rámu, s viditelnou mezerou, výsypnými žlaby a velkými hranatými šedými a hnědými kameny nad lemy.
+- **Sláma (`cargo_hay`).** Nízkostěnná plošina veze dvě odstupňované vrstvy hranatých balíků s jednotlivými provázky; náklad zajišťují koncové klanice a dva široké upínací pásy.
+- **Jablka (`cargo_apples`).** Nízký zelený vůz veze čtyři otevřené laťované bedny s červenými a zelenými jablky; každou bednu zajišťuje pás a dřevěné dorazové příložky.
+- **Cisterna (`cargo_tank`).** Dlouhá vodní cisterna se dvěma podvozky, kapkou, průlezem a žebříkem; nádrž drží dvě sedla a pásy, kola jsou samostatné otočné díly.
+- **Mléčný vagón (`cargo_milk`).** Menší světlá izolovaná cisterna na dvou nápravách, s nízkým horním krytem a prostou siluetou konve; nádrž drží sedla a pásy.
+- **Obilný vagón (`cargo_grain`).** Uzavřený vysoký násypník na dvou podvozcích, se čtyřmi střešními poklopy, šikmými výsypnými komorami a jednoduchými klasy.
+- **Poštovní vagón (`cargo_mail`).** Krémovo-okrová panelová skříň s širokými posuvnými dveřmi, policemi a balíky za malým oknem; obecná obálka bez skutečného dopravce.
+- **Chladírenský vagón (`cargo_refrigerated`).** Světlá izolační skříň se silnými těsněnými dveřmi, jednoduchou vločkou a vystupující chladicí jednotkou s mřížkou.
+- **Přepravník aut (`cargo_cars`).** Vlastní vektorový dvoupatrový přepravník veze dvě auta dole a jedno nahoře; každé viditelné kolo má klíny a popruh, auta nemají značky ani registrační tabulky.
+- **Vagón s traktorem (`cargo_tractor`).** Vlastní vektorová plošina veze traktor s prosklenou kabinou a rozdílnými průměry pneumatik; kola jsou zaklínovaná a podvozek připevněný řetězy.
+- **Vagón s bagrem (`cargo_excavator`).** Vlastní vektorová plošina veze pásový bagr; pásy mají klíny a řetězové úvazy, složené rameno i lžíce spočívají v transportních podpěrách.

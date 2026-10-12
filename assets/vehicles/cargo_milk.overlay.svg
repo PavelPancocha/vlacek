@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="168" height="76" viewBox="0 0 168 76">
+  <defs><linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e5e6"/><stop offset="0.5" stop-color="#9aa7ad"/><stop offset="1" stop-color="#606e75"/></linearGradient><linearGradient id="dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a6269"/><stop offset="0.5" stop-color="#30373d"/><stop offset="1" stop-color="#171c20"/></linearGradient><linearGradient id="box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#73818a"/><stop offset="0.5" stop-color="#3e4951"/><stop offset="1" stop-color="#232c32"/></linearGradient></defs>
+  <g stroke="#20262a" stroke-width="0.6" stroke-linejoin="round">
+    <g fill="none" stroke-linecap="round">
+      <path d="M21.4 60.9 A11 11 0 0 1 34.5 53.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M42.6 67.1 A11 11 0 0 1 29.5 74.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+      <path d="M125.4 60.9 A11 11 0 0 1 138.5 53.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M146.6 67.1 A11 11 0 0 1 133.5 74.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+    </g>
+    <path d="M19 50 Q32 58 45 50 L43 53 Q32 61 21 53 Z" fill="url(#dark)" stroke-width="0.45"/>
+    <path d="M21 52 Q32 59 43 52 M22 54 Q32 60 42 54" fill="none" stroke="#93a1a6" stroke-width="0.4"/>
+    <path d="M24 48 L26 66 H38 L40 48" fill="none" stroke="#465158" stroke-width="1.6"/>
+    <path d="M29 55 H35 V62 H29 Z" fill="url(#steel)"/>
+    <path d="M123 50 Q136 58 149 50 L147 53 Q136 61 125 53 Z" fill="url(#dark)" stroke-width="0.45"/>
+    <path d="M125 52 Q136 59 147 52 M126 54 Q136 60 146 54" fill="none" stroke="#93a1a6" stroke-width="0.4"/>
+    <path d="M128 48 L130 66 H142 L144 48" fill="none" stroke="#465158" stroke-width="1.6"/>
+    <path d="M133 55 H139 V62 H133 Z" fill="url(#steel)"/>
+    <rect x="28.4" y="60.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M29.2 61.1 H34.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="32" cy="64" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="29.7" cy="66.5" r="0.38"/><circle cx="34.3" cy="66.5" r="0.38"/></g>
+    <rect x="132.4" y="60.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M133.2 61.1 H138.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="136" cy="64" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="133.7" cy="66.5" r="0.38"/><circle cx="138.3" cy="66.5" r="0.38"/></g>
+
+  </g>
+</svg>
