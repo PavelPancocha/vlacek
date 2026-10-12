@@ -78,8 +78,12 @@ export function transition(screen: Screen, event: AppEvent): Screen {
 }
 
 /** Whether an opaque UI layer covers the ride canvas (D-006). */
-export function worldHidden(screen: Screen, portrait: boolean): boolean {
-  if (portrait) return true;
+export function worldHidden(
+  screen: Screen,
+  portrait: boolean,
+  developerMenuOpen: boolean,
+): boolean {
+  if (portrait || developerMenuOpen) return true;
   switch (screen.name) {
     case 'HOME':
     case 'SELECT_LOCO':

@@ -114,9 +114,106 @@ function expectReady(
   }
 }
 
+async function openDeveloperPanel(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const button = document.querySelector<HTMLButtonElement>(
+      '[data-action="dev-build"]',
+    );
+    if (!button) throw new Error('build line missing');
+    // Native activation uses the same DOM adapter as the reveal observer;
+    // one browser task keeps the five taps within the real gate window.
+    for (let i = 0; i < 5; i++) button.click();
+  });
+  await expect(page.locator('.dev-menu')).toBeVisible();
+}
+
+async function expectPanelHidden(page: Page): Promise<void> {
+  const observed = await observeReveal(page);
+  expect(observed.before).toBeGreaterThan(0);
+  expect(observed.samples).toHaveLength(30);
+  for (const sample of observed.samples) {
+    expect(sample.screen).toBe('PAUSED');
+    expect(sample.covered).toBe(true);
+    expect(sample.drawn, 'the developer panel must suppress ride drawing').toBe(
+      observed.before,
+    );
+  }
+}
+
 for (const quality of ['standard', 'low'] as const) {
   test.describe(`opaque reveal (${quality})`, () => {
     test.beforeEach(async ({ page }) => savedProfile(page, quality));
+
+    test('developer panel hides the ride and close draws before uncovering pause', async ({
+      page,
+    }) => {
+      await startRide(page, []);
+      await tapAction(page, 'pause');
+      expectReady(await observeReveal(page), 'PAUSED');
+      await openDeveloperPanel(page);
+      await expectPanelHidden(page);
+      expectReady(await observeReveal(page, 'dev-close'), 'PAUSED');
+    });
+
+    for (const closeInPortrait of [false, true]) {
+      test(`developer panel stays hidden through rotation, close in ${closeInPortrait ? 'portrait' : 'landscape'}`, async ({
+        page,
+      }) => {
+        await startRide(page, []);
+        await tapAction(page, 'pause');
+        expectReady(await observeReveal(page), 'PAUSED');
+        await openDeveloperPanel(page);
+        const landscape = page.viewportSize();
+        if (!landscape) throw new Error('viewport missing');
+        await page.setViewportSize({ width: 600, height: 900 });
+        await expect(page.locator('.dev-menu')).toBeVisible();
+        await expectPanelHidden(page);
+        if (closeInPortrait) {
+          const closed = await observeReveal(page, 'dev-close');
+          expect(closed.samples.every((sample) => sample.covered)).toBe(true);
+          expect(
+            closed.samples.every((sample) => sample.drawn === closed.before),
+          ).toBe(true);
+          await expect(page.locator('.overlay.rotate')).toBeVisible();
+          const observed = observeReveal(page, undefined, true);
+          await page.evaluate(async () => {
+            while (
+              document.documentElement.dataset['rideRevealObserving'] !== 'true'
+            )
+              await new Promise(requestAnimationFrame);
+          });
+          await page.setViewportSize(landscape);
+          expectReady(await observed, 'PAUSED');
+        } else {
+          await page.setViewportSize(landscape);
+          await expectPanelHidden(page);
+          expectReady(await observeReveal(page, 'dev-close'), 'PAUSED');
+        }
+      });
+    }
+
+    test('developer panel stays hidden after failed apply and close reveals a fresh pause frame', async ({
+      page,
+    }) => {
+      await startRide(page, []);
+      await tapAction(page, 'pause');
+      expectReady(await observeReveal(page), 'PAUSED');
+      await openDeveloperPanel(page);
+      await page.evaluate(() => {
+        Object.defineProperty(Storage.prototype, 'setItem', {
+          value() {
+            throw new DOMException('Storage full', 'QuotaExceededError');
+          },
+        });
+      });
+      await tapAction(page, 'dev-apply');
+      await expect(page.locator('[data-dev-error]')).toContainText(
+        'hra nyní nemůže uložit cestu a nastavení',
+      );
+      await expect(page.locator('.dev-menu')).toBeVisible();
+      await expectPanelHidden(page);
+      expectReady(await observeReveal(page, 'dev-close'), 'PAUSED');
+    });
 
     test('Vyjet never exposes a cleared canvas between menu and drawn ride', async ({
       page,

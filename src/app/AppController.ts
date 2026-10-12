@@ -97,11 +97,20 @@ export class AppController {
     this.#scene = new RideScene({
       frame: (deltaSec, nowMs) => this.#frame(deltaSec, nowMs),
       ride: () => this.#session.ride,
-      worldHidden: () => worldHidden(this.#session.screen, this.#portrait),
+      worldHidden: () =>
+        worldHidden(
+          this.#session.screen,
+          this.#portrait,
+          this.#ui.developerMenuOpen,
+        ),
       worldDrawn: () => {
         if (
           !this.#curtain.hidden &&
-          !worldHidden(this.#session.screen, this.#portrait)
+          !worldHidden(
+            this.#session.screen,
+            this.#portrait,
+            this.#ui.developerMenuOpen,
+          )
         )
           this.#curtain.hidden = true;
       },
@@ -299,7 +308,10 @@ export class AppController {
 
   #refreshUi(): void {
     const session = this.#session;
-    if (worldHidden(session.screen, this.#portrait) && this.#curtain.hidden)
+    if (
+      worldHidden(session.screen, this.#portrait, this.#ui.developerMenuOpen) &&
+      this.#curtain.hidden
+    )
       this.#curtain.hidden = false;
     const before = this.#uiRoot.dataset['screen'];
     this.#ui.update({

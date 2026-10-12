@@ -16,6 +16,21 @@ const screens: Screen[] = [
 ];
 
 describe('ride visibility behind UI layers (D-006)', () => {
+  for (const reason of ['user', 'external', 'restore'] as const) {
+    for (const portrait of [false, true]) {
+      for (const developerMenuOpen of [false, true]) {
+        it(`PAUSED ${reason}: portrait=${portrait}, developerMenuOpen=${developerMenuOpen}`, () => {
+          expect(
+            worldHidden(
+              { name: 'PAUSED', reason },
+              portrait,
+              developerMenuOpen,
+            ),
+          ).toBe(portrait || developerMenuOpen);
+        });
+      }
+    }
+  }
   for (const screen of screens) {
     const context =
       'origin' in screen
@@ -24,14 +39,14 @@ describe('ride visibility behind UI layers (D-006)', () => {
           ? screen.reason
           : '';
     it(`${screen.name} ${context}: landscape follows the screen opacity`, () => {
-      expect(worldHidden(screen, false)).toBe(
+      expect(worldHidden(screen, false, false)).toBe(
         screen.name !== 'LOADING' &&
           screen.name !== 'RIDING' &&
           screen.name !== 'PAUSED',
       );
     });
     it(`${screen.name} ${context}: portrait always hides the world`, () => {
-      expect(worldHidden(screen, true)).toBe(true);
+      expect(worldHidden(screen, true, false)).toBe(true);
     });
   }
 });
