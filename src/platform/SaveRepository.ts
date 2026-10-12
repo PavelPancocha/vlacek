@@ -111,11 +111,13 @@ export class SaveRepository {
     const storage = this.#storage;
     try {
       const current = storage.getItem(PRIMARY_KEY);
-      if (
-        current !== null &&
-        parseSave(current, this.#rules).status === 'valid'
-      ) {
-        storage.setItem(BACKUP_KEY, current);
+      if (current !== null) {
+        const result = parseSave(current, this.#rules);
+        if (result.status === 'newer') {
+          this.#status = 'memory-only';
+          return 'memory-only';
+        }
+        if (result.status === 'valid') storage.setItem(BACKUP_KEY, current);
       }
     } catch {
       // A failed backup write still leaves the previous primary in place.

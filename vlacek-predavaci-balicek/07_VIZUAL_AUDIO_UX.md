@@ -58,7 +58,7 @@ Doporučené části: karoserie, kola či podvozky, volitelné táhlo, světla, 
 
 Manifest definuje pivot a offsety, ne ručně vložené „magické posuny“ ve vykreslovací funkci. Pro každou sadu existuje kontrolní scéna: rovina, kopec, vrchol, tunel a noc. Nad jedním vagónkem nesmí být stín nebo kouř patřící jinému typu kvůli chybně sdílenému stavu.
 
-Implementace ([D-011](../docs/decisions/011-vector-vehicle-art-and-atlas.md)): zdrojem jsou SVG díly v `assets/vehicles/` v jednotkách u. Každé vozidlo má karoserii za koly, překryv před koly a táhly, sdílená kola a u parních lokomotiv spojnici, ojnici a křižák. Světlo dopadá zleva shora a lesk obručí nese neotáčivý překryv. Manifest `src/content/artManifest.ts` určuje rozměry, pivoty, polohy kol a parní rozvod; jízda i depo skládají díly stejnou funkcí `vehicleArtLayers`. Hra díly za běhu rasterizuje do jednoho atlasu v měřítku podle zoomu kamery a po změně velikosti okna atlas překreslí. `npm run validate:assets` kontroluje soubory, rozměry, délkový invariant, kola a táhla.
+Implementace ([D-011](../docs/decisions/011-vector-vehicle-art-and-atlas.md)): zdrojem jsou SVG díly v `assets/vehicles/` v jednotkách u. Každé vozidlo má karoserii za koly, překryv před koly a táhly, sdílená kola a u parních lokomotiv spojnici, ojnici a křižák. Světlo dopadá zleva shora a lesk obručí nese neotáčivý překryv. Manifest `src/content/artManifest.ts` určuje rozměry, pivoty, polohy kol a parní rozvod; jízda i depo skládají díly stejnou funkcí `vehicleArtLayers`. Hra díly vozidel aktuální jízdy a NPC sady rasterizuje do samostatného atlasu podle zoomu kamery ([D-019](../docs/decisions/019-journey-atlas-and-npc-fleet.md)); svět a pozadí mají vlastní atlasy. Po změně velikosti okna se každý atlas podle potřeby překreslí, po změně jízdy se přestaví pouze atlas vozidel. `npm run validate:assets` kontroluje soubory, rozměry, délkový invariant, kola a táhla.
 
 ## 5. Barevnost, den a noc
 
@@ -130,9 +130,10 @@ Výchozí cíle, které se měří na skutečném buildu:
 - Odhad dekódovaných textur: do 96 MiB v úsporném profilu, do 192 MiB ve standardním. To není totéž jako velikost PNG na disku.
 - Běžné atlasy nejvýše 2048 × 2048, skutečný limit respektuje zjištěná kapacita rendereru. Není nutné mít všech šest biomů současně na GPU.
 
-Stav ([D-013](../docs/decisions/013-landscape-localities-and-backdrops.md)): hra má dva atlasy, oba do 2048 × 2048:
+Stav ([D-013](../docs/decisions/013-landscape-localities-and-backdrops.md), [D-019](../docs/decisions/019-journey-atlas-and-npc-fleet.md)): hra má tři atlasy, každý do 2048 × 2048:
 
-- hlavní atlas pro vozidla, kolej, rekvizity a zvířata, do 2 px/u;
+- atlas vozidel aktuální jízdy a její NPC sady, do 2 px/u;
+- atlas koleje, rekvizit, zvířat a částic světa, do 2 px/u;
 - atlas pozadí a mraků všech šesti biomů, do 1 px/u.
 
 Dekódované textury se odhadují asi na 60 MiB:

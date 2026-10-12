@@ -29,6 +29,7 @@ export interface UiModel {
   /** World seed of the current journey, shown small on the pause screen. */
   seed: number | undefined;
   portrait: boolean;
+  fullscreen: { supported: boolean; active: boolean; failed: boolean };
   buildId: string;
   locomotives: readonly CatalogLocomotive[];
   wagons: readonly CatalogWagon[];
@@ -83,11 +84,14 @@ function label(text: string): HTMLElement {
 
 /**
  * Renders the DOM screens for the current model. Re-renders only when the
- * visible state changes; listeners of a render are released with it.
+ * visible state changes. Picker cards and visible strip items survive draft
+ * edits; screen changes release their nodes, cache and scoped listeners.
  */
 export class UiLayer {
   readonly #root: HTMLElement;
   #signature = '';
+  #viewSignature = '';
+  #updateView: ((model: UiModel) => void) | undefined;
   #renderScope: AbortController | undefined;
   readonly #draftRevisions = new WeakMap<ConsistDraft, number>();
   #nextRevision = 1;
@@ -117,20 +121,61 @@ export class UiLayer {
       model.hasJourney,
       model.seed,
       model.portrait,
+      model.fullscreen,
     ]);
     if (signature === this.#signature) return;
     this.#signature = signature;
+    const fullscreenFocused =
+      this.#root.querySelector('[data-action="fullscreen"]') ===
+      document.activeElement;
+    const viewSignature = JSON.stringify([
+      model.screen,
+      model.portrait,
+      model.fullscreen,
+    ]);
+    if (viewSignature === this.#viewSignature && this.#updateView) {
+      this.#updateView(model);
+      return;
+    }
+    this.#viewSignature = viewSignature;
+    this.#updateView = undefined;
     const strip = this.#root.querySelector('.strip');
     if (strip) this.#stripScrollLeft = strip.scrollLeft;
+    const scrollPositions = ['.cards', '.catalog'].map((selector) => ({
+      selector,
+      left: this.#root.querySelector(selector)?.scrollLeft,
+    }));
+    const focused = document.activeElement;
+    const focusedAction =
+      focused instanceof HTMLElement && this.#root.contains(focused)
+        ? focused.dataset['action']
+        : undefined;
     this.#renderScope?.abort();
     this.#renderScope = new AbortController();
-    this.#root.replaceChildren(
-      ...this.#render(model, this.#renderScope.signal),
-    );
+    const signal = this.#renderScope.signal;
+    this.#root.replaceChildren(...this.#render(model, signal));
+    for (const { selector, left } of scrollPositions) {
+      const row = this.#root.querySelector(selector);
+      if (row && left !== undefined) row.scrollLeft = left;
+    }
+    if (focusedAction !== undefined) {
+      // The strip creates its visible buttons in a microtask too.
+      queueMicrotask(() => {
+        if (signal.aborted) return;
+        [...this.#root.querySelectorAll<HTMLElement>('[data-action]')]
+          .find((node) => node.dataset['action'] === focusedAction)
+          ?.focus({ preventScroll: true });
+      });
+    }
     this.#root.dataset['screen'] = model.screen.name;
+    if (fullscreenFocused)
+      this.#root
+        .querySelector<HTMLButtonElement>('[data-action="fullscreen"]')
+        ?.focus({ preventScroll: true });
   }
 
   dispose(): void {
+    this.#updateView = undefined;
     this.#renderScope?.abort();
     this.#root.replaceChildren();
   }
@@ -181,6 +226,33 @@ export class UiLayer {
     return views;
   }
 
+  #fullscreenNotice(model: UiModel): HTMLElement | undefined {
+    if (!model.fullscreen.failed) return undefined;
+    return el(
+      'p',
+      { class: 'hint', role: 'status' },
+      model.fullscreen.active
+        ? 'Režim celé obrazovky teď nelze změnit.'
+        : 'Celá obrazovka teď není dostupná. Hra pokračuje v okně.',
+    );
+  }
+
+  #fullscreen(model: UiModel): HTMLElement | undefined {
+    const state = model.fullscreen;
+    if (!state.supported) return undefined;
+    const text = state.active ? 'Ukončit celou obrazovku' : 'Celá obrazovka';
+    return actionButton(
+      'fullscreen',
+      text,
+      [icon(state.active ? 'fullscreenExit' : 'fullscreen', 40), label(text)],
+      {
+        className: 'button fullscreen',
+        pressed: state.active,
+        disabled: state.failed,
+      },
+    );
+  }
+
   #home(model: UiModel): HTMLElement {
     return el(
       'section',
@@ -205,6 +277,8 @@ export class UiLayer {
           },
         ),
       ),
+      this.#fullscreen(model),
+      this.#fullscreenNotice(model),
       notices(model),
     );
   }
@@ -213,7 +287,7 @@ export class UiLayer {
     const selected = model.draft.consist.locomotiveId;
     const origin =
       model.screen.name === 'SELECT_LOCO' ? model.screen.origin : 'new';
-    return el(
+    const section = el(
       'section',
       { class: 'screen select' },
       el('h1', {}, 'Vyber mašinku'),
@@ -238,6 +312,7 @@ export class UiLayer {
       el(
         'div',
         { class: 'row bottom' },
+        this.#fullscreen(model),
         origin === 'pause'
           ? actionButton('back', 'Zpět', [icon('back', 48), label('Zpět')], {
               className: 'button big',
@@ -252,79 +327,88 @@ export class UiLayer {
           },
         ),
       ),
+      this.#fullscreenNotice(model),
       notices(model),
     );
+    this.#updateView = (next) => {
+      for (const card of section.querySelectorAll<HTMLElement>('.card')) {
+        const selected =
+          card.dataset['action'] === `loco:${next.draft.consist.locomotiveId}`;
+        card.setAttribute('aria-pressed', String(selected));
+        const mark = card.querySelector('.selected-mark');
+        if (selected && !mark)
+          card.append(
+            el('span', { class: 'selected-mark' }, icon('check', 32)),
+          );
+        else if (!selected) mark?.remove();
+      }
+      this.#updateNotices(section, next);
+    };
+    return section;
   }
 
-  #builder(model: UiModel, signal: AbortSignal): HTMLElement {
-    const draft = model.draft;
-    const rules = model.lengthRules;
-    const full = isFull(
-      draft,
-      model.wagons.map((wagon) => wagon.id),
-      rules,
-    );
-    const tooLong = isOverLimit(draft, rules);
-    const usedPercent = Math.round(
-      (100 * consistLengthU(draft.consist, rules)) / rules.maxLengthU,
-    );
-    const loco = model.locomotives.find(
-      (candidate) => candidate.id === draft.consist.locomotiveId,
-    );
+  #consistStrip(model: UiModel, signal: AbortSignal) {
     const strip = el('div', { class: 'strip', 'aria-label': 'Souprava' });
     const track = el('div', { class: 'strip-track' });
     strip.append(track);
-
-    // Window the strip: only previews near the visible area exist in the DOM.
-    const items = [
-      ...(loco
-        ? [
-            {
-              key: 'loco',
-              vehicle: loco,
-              instanceId: undefined as string | undefined,
-            },
-          ]
-        : []),
-      ...draft.consist.wagons.flatMap((instance) => {
-        const vehicle = model.wagons.find(
-          (wagon) => wagon.id === instance.definitionId,
-        );
-        return vehicle
+    const nodesByKey = new Map<string, HTMLElement>();
+    const renderVisible = () => {
+      const focused = document.activeElement;
+      const draft = model.draft;
+      const rules = model.lengthRules;
+      const loco = model.locomotives.find(
+        (candidate) => candidate.id === draft.consist.locomotiveId,
+      );
+      // Window the strip: only previews near the visible area exist in the DOM.
+      const items = [
+        ...(loco
           ? [
               {
-                key: instance.instanceId,
-                vehicle,
-                instanceId: instance.instanceId,
+                key: `loco:${loco.id}`,
+                vehicle: loco,
+                instanceId: undefined as string | undefined,
               },
             ]
-          : [];
-      }),
-    ];
-    // One consist layout for depot and ride (doc 14 §1): the locomotive is
-    // the front on the right, wagons follow to the left in consist order.
-    const layout = layoutConsist(
-      items.map((item) => item.vehicle),
-      rules.couplerGapU,
-    );
-    const positions = items.map((item, index) =>
-      Math.round(
-        STRIP_PAD_PX +
-          (layout.tailOffsetU -
-            (layout.centerOffsetsU[index] ?? 0) -
-            item.vehicle.lengthU / 2) *
-            STRIP_PX_PER_U,
-      ),
-    );
-    const width = Math.round(
-      2 * STRIP_PAD_PX +
-        (layout.frontOffsetU + layout.tailOffsetU) * STRIP_PX_PER_U,
-    );
-    track.style.width = `${width}px`;
-    const renderVisible = () => {
+          : []),
+        ...draft.consist.wagons.flatMap((instance) => {
+          const vehicle = model.wagons.find(
+            (wagon) => wagon.id === instance.definitionId,
+          );
+          return vehicle
+            ? [
+                {
+                  key: instance.instanceId,
+                  vehicle,
+                  instanceId: instance.instanceId,
+                },
+              ]
+            : [];
+        }),
+      ];
+      // One consist layout for depot and ride (doc 14 §1): the locomotive is
+      // the front on the right, wagons follow to the left in consist order.
+      const layout = layoutConsist(
+        items.map((item) => item.vehicle),
+        rules.couplerGapU,
+      );
+      const positions = items.map((item, index) =>
+        Math.round(
+          STRIP_PAD_PX +
+            (layout.tailOffsetU -
+              (layout.centerOffsetsU[index] ?? 0) -
+              item.vehicle.lengthU / 2) *
+              STRIP_PX_PER_U,
+        ),
+      );
+      const width = Math.round(
+        2 * STRIP_PAD_PX +
+          (layout.frontOffsetU + layout.tailOffsetU) * STRIP_PX_PER_U,
+      );
+      track.style.width = `${width}px`;
       const from = strip.scrollLeft - 300;
       const to = strip.scrollLeft + strip.clientWidth + 300;
-      const nodes: HTMLElement[] = [];
+      const visibleKeys = new Set<string>();
+      let visibleIndex = 0;
       items.forEach((item, index) => {
         const left = positions[index] ?? 0;
         const itemWidth = Math.round(item.vehicle.lengthU * STRIP_PX_PER_U);
@@ -332,42 +416,83 @@ export class UiLayer {
         const selected =
           item.instanceId !== undefined &&
           item.instanceId === draft.selectedInstanceId;
-        const content = [vehiclePreview(item.vehicle, STRIP_PX_PER_U)];
-        const node =
-          item.instanceId === undefined
-            ? el('div', { class: 'strip-item loco' }, ...content)
-            : actionButton(
-                `wagon:${item.instanceId}`,
-                item.vehicle.labelCs,
-                content,
-                {
-                  className: selected ? 'strip-item selected' : 'strip-item',
-                  pressed: selected,
-                },
-              );
+        visibleKeys.add(item.key);
+        let node = nodesByKey.get(item.key);
+        if (!node) {
+          const content = [vehiclePreview(item.vehicle, STRIP_PX_PER_U)];
+          node =
+            item.instanceId === undefined
+              ? el('div', { class: 'strip-item loco' }, ...content)
+              : actionButton(
+                  `wagon:${item.instanceId}`,
+                  item.vehicle.labelCs,
+                  content,
+                  {
+                    className: selected ? 'strip-item selected' : 'strip-item',
+                    pressed: selected,
+                  },
+                );
+          nodesByKey.set(item.key, node);
+          track.append(node);
+        }
+        if (item.instanceId !== undefined) {
+          node.classList.toggle('selected', selected);
+          node.setAttribute('aria-pressed', String(selected));
+        }
         node.style.left = `${left}px`;
         node.style.width = `${itemWidth}px`;
-        nodes.push(node);
+        // DOM order follows the consist too, for keyboard navigation.
+        if (track.children[visibleIndex] !== node)
+          track.insertBefore(node, track.children[visibleIndex] ?? null);
+        visibleIndex += 1;
       });
-      track.replaceChildren(...nodes);
+      for (const [key, node] of nodesByKey) {
+        if (visibleKeys.has(key)) continue;
+        node.remove();
+        nodesByKey.delete(key);
+      }
+      if (
+        focused instanceof HTMLElement &&
+        track.contains(focused) &&
+        document.activeElement !== focused
+      )
+        focused.focus({ preventScroll: true });
     };
     strip.addEventListener('scroll', renderVisible, { signal, passive: true });
-    queueMicrotask(() => {
-      if (signal.aborted) return;
-      // A new wagon joins the tail at the left end: show it.
-      const grew = draft.consist.wagons.length > this.#lastWagonCount;
-      this.#lastWagonCount = draft.consist.wagons.length;
-      strip.scrollLeft = grew ? 0 : this.#stripScrollLeft;
-      renderVisible();
-    });
+    let initialized = false;
+    const update = (next: UiModel) => {
+      model = next;
+      queueMicrotask(() => {
+        if (signal.aborted) return;
+        const count = model.draft.consist.wagons.length;
+        const grew = count > this.#lastWagonCount;
+        this.#lastWagonCount = count;
+        const left = grew
+          ? 0
+          : initialized
+            ? strip.scrollLeft
+            : this.#stripScrollLeft;
+        renderVisible();
+        if (strip.scrollLeft !== left) {
+          strip.scrollLeft = left;
+          renderVisible();
+        }
+        initialized = true;
+      });
+    };
+    update(model);
+    return { strip, update };
+  }
 
-    const selection = draft.selectedInstanceId !== undefined;
+  #builder(model: UiModel, signal: AbortSignal): HTMLElement {
+    const draft = model.draft;
+    const { strip, update } = this.#consistStrip(model, signal);
     const origin =
       model.screen.name === 'BUILD_TRAIN' ? model.screen.origin : 'new';
-    return el(
+    const section = el(
       'section',
       {
-        class: `screen builder${full ? ' full' : ''}`,
+        class: 'screen builder',
         'data-full-signals': String(model.fullSignals),
       },
       el(
@@ -397,23 +522,19 @@ export class UiLayer {
         el(
           'div',
           {
-            class: tooLong ? 'length-meter over' : 'length-meter',
+            class: 'length-meter',
             role: 'meter',
             'aria-label': 'Délka vláčku',
             'aria-valuemin': '0',
             'aria-valuemax': '100',
-            'aria-valuenow': String(usedPercent),
+            'aria-valuenow': '0',
           },
           el('div', {
             class: 'length-fill',
-            style: `width: ${Math.min(100, usedPercent)}%`,
+            style: 'width: 0%',
           }),
         ),
-        tooLong
-          ? el('span', { class: 'full-text' }, 'Vláček je moc dlouhý')
-          : full
-            ? el('span', { class: 'full-text' }, 'Vláček je plný')
-            : undefined,
+        el('span', { class: 'full-text', hidden: true }),
       ),
       strip,
       el(
@@ -421,7 +542,7 @@ export class UiLayer {
         { class: 'row actions' },
         actionButton('move-back', 'Posunout dozadu', [icon('towardTail', 40)], {
           className: 'button',
-          disabled: !canMoveSelected(draft, 'back'),
+          disabled: true,
         }),
         actionButton(
           'move-forward',
@@ -429,16 +550,16 @@ export class UiLayer {
           [icon('towardLocomotive', 40)],
           {
             className: 'button',
-            disabled: !canMoveSelected(draft, 'towardLocomotive'),
+            disabled: true,
           },
         ),
         actionButton('remove', 'Odebrat vagónek', [icon('remove', 40)], {
           className: 'button danger',
-          disabled: !selection,
+          disabled: true,
         }),
         actionButton('undo', 'Vrátit poslední změnu', [icon('undo', 40)], {
           className: 'button',
-          disabled: !canUndo(draft),
+          disabled: true,
         }),
       ),
       el(
@@ -457,7 +578,7 @@ export class UiLayer {
                   [vehiclePreview(wagon, 0.55)],
                   {
                     className: 'card small',
-                    disabled: !canAddWagon(draft, wagon.id, rules),
+                    disabled: false,
                   },
                 ),
               ),
@@ -469,7 +590,7 @@ export class UiLayer {
         { class: 'row bottom' },
         actionButton('depart', 'Vyjet', [icon('depart', 56), label('Vyjet')], {
           className: 'button big primary',
-          disabled: tooLong,
+          disabled: false,
         }),
       ),
       origin === 'pause'
@@ -481,6 +602,64 @@ export class UiLayer {
         : undefined,
       notices(model),
     );
+    this.#updateView = (next) => {
+      this.#updateBuilder(section, next);
+      update(next);
+    };
+    this.#updateBuilder(section, model);
+    return section;
+  }
+
+  #updateNotices(section: HTMLElement, model: UiModel): void {
+    section.querySelector('.notices')?.remove();
+    const notice = notices(model);
+    if (notice) section.append(notice);
+  }
+
+  #updateBuilder(section: HTMLElement, model: UiModel): void {
+    const draft = model.draft;
+    const rules = model.lengthRules;
+    const full = isFull(
+      draft,
+      model.wagons.map((wagon) => wagon.id),
+      rules,
+    );
+    const tooLong = isOverLimit(draft, rules);
+    const usedPercent = Math.round(
+      (100 * consistLengthU(draft.consist, rules)) / rules.maxLengthU,
+    );
+    section.classList.toggle('full', full);
+    section.dataset['fullSignals'] = String(model.fullSignals);
+    const count = section.querySelector('.count');
+    if (count) count.textContent = String(draft.consist.wagons.length);
+    const meter = section.querySelector('.length-meter');
+    meter?.classList.toggle('over', tooLong);
+    meter?.setAttribute('aria-valuenow', String(usedPercent));
+    const fill = section.querySelector<HTMLElement>('.length-fill');
+    if (fill) fill.style.width = `${Math.min(100, usedPercent)}%`;
+    const text = section.querySelector<HTMLElement>('.full-text');
+    if (text) {
+      text.hidden = !full && !tooLong;
+      text.textContent = tooLong ? 'Vláček je moc dlouhý' : 'Vláček je plný';
+    }
+    const disabled = new Map([
+      ['move-back', !canMoveSelected(draft, 'back')],
+      ['move-forward', !canMoveSelected(draft, 'towardLocomotive')],
+      ['remove', draft.selectedInstanceId === undefined],
+      ['undo', !canUndo(draft)],
+      ['depart', tooLong],
+      ...model.wagons.map((wagon): [string, boolean] => [
+        `add:${wagon.id}`,
+        !canAddWagon(draft, wagon.id, rules),
+      ]),
+    ]);
+    for (const button of section.querySelectorAll<HTMLButtonElement>(
+      'button[data-action]',
+    )) {
+      const value = disabled.get(button.dataset['action'] ?? '');
+      if (value !== undefined) button.disabled = value;
+    }
+    this.#updateNotices(section, model);
   }
 
   #hud(model: UiModel): HTMLElement {
@@ -533,7 +712,9 @@ export class UiLayer {
             className: 'button big',
           },
         ),
+        this.#fullscreen(model),
       ),
+      this.#fullscreenNotice(model),
       notices(model),
       model.seed === undefined
         ? undefined

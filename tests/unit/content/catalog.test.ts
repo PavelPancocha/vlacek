@@ -9,37 +9,91 @@ import type {
 
 const limits = { maxVehicleLengthU: gameConfig.train.maxVehicleLengthU };
 
-describe('temporary vehicle catalog (0.1)', () => {
+describe('V1 vehicle catalog (doc 06 §2–3, CNT-01)', () => {
   it('validates as shipped', () => {
     expect(validateCatalog(locomotives, wagons, limits)).toEqual([]);
   });
 
-  it('uses stable doc 06 IDs and lengths', () => {
-    expect(locomotives.map((l) => [l.id, l.lengthU])).toEqual([
-      ['steam_local', 156],
-      ['diesel_mainline', 196],
-      ['electric_retro', 188],
-      ['magic_stars', 164],
-    ]);
-    expect(wagons.map((w) => [w.id, w.group, w.lengthU])).toEqual([
-      ['passenger_classic', 'passenger', 176],
-      ['passenger_open', 'passenger', 144],
-      ['cargo_box', 'cargo', 164],
-      ['cargo_coal', 'cargo', 152],
-      ['cargo_container', 'cargo', 188],
-      ['service_crane', 'service', 188],
-      ['fun_balloons', 'fun', 164],
+  it('has exactly the ten locomotives of doc 06 §2', () => {
+    expect(
+      locomotives.map((l) => [
+        l.id,
+        l.labelCs,
+        l.power,
+        l.lengthU,
+        l.requiresCatenary,
+      ]),
+    ).toEqual([
+      ['steam_local', 'Malá parní mašinka', 'steam', 156, false],
+      ['steam_express', 'Velká parní lokomotiva', 'steam', 216, false],
+      ['diesel_shunter', 'Naftový posunovač', 'diesel', 148, false],
+      ['diesel_mainline', 'Velká naftová lokomotiva', 'diesel', 196, false],
+      ['electric_retro', 'Hranatá elektrická', 'electric', 188, true],
+      ['electric_modern', 'Moderní elektrická', 'electric', 204, true],
+      ['electric_mountain', 'Horská elektrická', 'electric', 160, true],
+      ['magic_stars', 'Hvězdičková mašinka', 'fantasy', 164, false],
+      ['magic_bubbles', 'Bublinková mašinka', 'fantasy', 164, false],
+      ['magic_rainbow', 'Duhová mašinka', 'fantasy', 176, false],
     ]);
   });
 
-  it('offers the boxy electric locomotive, which brings its catenary (doc 06, doc 03 §9)', () => {
-    const electric = locomotives.filter((l) => l.power === 'electric');
-    expect(electric.map((l) => l.id)).toEqual(['electric_retro']);
-    for (const locomotive of electric) {
-      expect(locomotive.requiresCatenary).toBe(true);
-      // No smoke: at most a spark at the pantograph (doc 14 §4).
-      expect(locomotive.effect).toBe('none');
+  it('has exactly the 32 wagon types of doc 06 §3 in its four groups', () => {
+    expect(wagons.map((w) => [w.id, w.labelCs, w.group, w.lengthU])).toEqual([
+      ['passenger_classic', 'Osobní vagón', 'passenger', 176],
+      ['passenger_double', 'Patrový vagón', 'passenger', 192],
+      ['passenger_sleeper', 'Lůžkový vagón', 'passenger', 184],
+      ['passenger_dining', 'Jídelní vagón', 'passenger', 184],
+      ['passenger_panorama', 'Vyhlídkový vagón', 'passenger', 192],
+      ['passenger_open', 'Otevřený výletní vagónek', 'passenger', 144],
+      ['cargo_box', 'Krytý nákladní', 'cargo', 164],
+      ['cargo_logs', 'Klády', 'cargo', 176],
+      ['cargo_coal', 'Uhlák', 'cargo', 152],
+      ['cargo_sand', 'Písek', 'cargo', 152],
+      ['cargo_gravel', 'Kamení', 'cargo', 152],
+      ['cargo_container', 'Kontejnerový', 'cargo', 188],
+      ['cargo_tank', 'Cisterna', 'cargo', 176],
+      ['cargo_milk', 'Mléčný vagón', 'cargo', 168],
+      ['cargo_grain', 'Obilný vagón', 'cargo', 172],
+      ['cargo_hay', 'Sláma', 'cargo', 164],
+      ['cargo_apples', 'Jablka', 'cargo', 156],
+      ['cargo_cars', 'Přepravník aut', 'cargo', 204],
+      ['cargo_tractor', 'Vagón s traktorem', 'cargo', 184],
+      ['cargo_excavator', 'Vagón s bagrem', 'cargo', 192],
+      ['cargo_mail', 'Poštovní vagón', 'cargo', 164],
+      ['cargo_refrigerated', 'Chladírenský vagón', 'cargo', 176],
+      ['service_crane', 'Jeřábový vagón', 'service', 188],
+      ['service_tools', 'Dílenský vagón', 'service', 164],
+      ['service_snowplow', 'Vagón s pluhem', 'service', 156],
+      ['fun_balloons', 'Balónkový vagónek', 'fun', 164],
+      ['fun_stars', 'Hvězdičkový vagónek', 'fun', 164],
+      ['fun_garden', 'Zahrádkový vagónek', 'fun', 172],
+      ['fun_aquarium', 'Akvarijní vagónek', 'fun', 176],
+      ['fun_windmill', 'Větrníkový vagónek', 'fun', 160],
+      ['fun_lights', 'Světýlkový vagónek', 'fun', 168],
+      ['fun_toyblocks', 'Vagónek s kostkami', 'fun', 164],
+    ]);
+  });
+
+  it('has unique IDs and stable asset keys derived from them', () => {
+    const all = [...locomotives, ...wagons];
+    expect(new Set(all.map((v) => v.id)).size).toBe(42);
+    for (const vehicle of all) {
+      expect(vehicle.bodyAsset).toBe(`vehicle.${vehicle.id}.body`);
+      expect(vehicle.previewAsset).toBe(`vehicle.${vehicle.id}.preview`);
     }
+  });
+
+  it('brings catenary exactly with the three electric locomotives (doc 06 §2, doc 03 §9)', () => {
+    const electric = locomotives.filter((l) => l.power === 'electric');
+    expect(electric.map((l) => l.id)).toEqual([
+      'electric_retro',
+      'electric_modern',
+      'electric_mountain',
+    ]);
+    for (const locomotive of locomotives)
+      expect(locomotive.requiresCatenary).toBe(locomotive.power === 'electric');
+    // No smoke: at most a spark at the pantograph (doc 14 §4).
+    for (const locomotive of electric) expect(locomotive.effect).toBe('none');
   });
 });
 

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="176" height="100" viewBox="0 0 176 100">
+  <defs>
+    <linearGradient id="red" x2=".1" y2="1"><stop stop-color="#e9a289"/><stop offset=".25" stop-color="#d87965"/><stop offset=".6" stop-color="#c95b54"/><stop offset="1" stop-color="#733e40"/></linearGradient>
+    <linearGradient id="blue" x2=".1" y2="1"><stop stop-color="#a2c2d1"/><stop offset=".3" stop-color="#507fa2"/><stop offset="1" stop-color="#29475c"/></linearGradient>
+    <linearGradient id="green" x2="0" y2="1"><stop stop-color="#a6bd96"/><stop offset=".3" stop-color="#5f9270"/><stop offset="1" stop-color="#365d4c"/></linearGradient>
+    <linearGradient id="gold" x2=".15" y2="1"><stop stop-color="#fff0b5"/><stop offset=".4" stop-color="#d6ae4c"/><stop offset="1" stop-color="#8c682e"/></linearGradient>
+    <linearGradient id="plum" x2=".2" y2="1"><stop stop-color="#c0a5ca"/><stop offset=".3" stop-color="#80628f"/><stop offset="1" stop-color="#443950"/></linearGradient>
+    <linearGradient id="glass" x2=".85" y2="1"><stop stop-color="#b9d9df"/><stop offset=".3" stop-color="#4c758b"/><stop offset="1" stop-color="#243b4e"/></linearGradient>
+    <linearGradient id="steel" x2="0" y2="1"><stop stop-color="#9aa7ad"/><stop offset=".25" stop-color="#53616a"/><stop offset="1" stop-color="#232b33"/></linearGradient>
+    <pattern id="rivets" width="7" height="3" patternUnits="userSpaceOnUse"><circle cx="2" cy="1.5" r=".45" fill="#ecd398" stroke="#6f603f" stroke-width=".2"/></pattern>
+  </defs>
+  <g stroke="#33333b" stroke-width=".6" stroke-linejoin="round">
+    <!-- Pojezd dvou podvozků a modrý rám s odstupňovanou hranou. -->
+    <path d="M9 67 H168 V75 H9Z" fill="url(#blue)"/>
+    <path d="M14 73 H62 L58 83 H17Z M114 73 H163 L159 83 H118Z" fill="#262d34"/>
+    <rect x="72" y="75" width="29" height="12" rx="2" fill="url(#blue)"/>
+    <path d="M78 75 V87 M94 75 V87" stroke="#adc6d2" stroke-width=".45"/>
+    <rect x="6" y="65" width="6" height="15" rx=".8" fill="url(#blue)"/>
+    <rect x="164" y="65" width="6" height="15" rx=".8" fill="url(#blue)"/>
+    <path d="M3 68.4 H6 V71.6 H3Z M170 68.4 H173 V71.6 H170Z" fill="url(#gold)"/>
+    <rect x=".6" y="66.2" width="2.1" height="7.6" rx=".7" fill="url(#steel)"/>
+    <rect x="173.3" y="66.2" width="2.1" height="7.6" rx=".7" fill="url(#steel)"/>
+    <path d="M6 77 Q3 81 5 84 M170 77 Q173 81 171 84" fill="none" stroke-width=".9"/>
+    <!-- Dvojitě klenutá střecha; velká kabina bez postavy nebo nápisů. -->
+    <path d="M15 67 V24 Q25 18 35 24 Q45 18 57 24 V67Z" fill="url(#red)"/>
+    <path d="M11 25 V19 Q24 9 35 18 Q46 9 61 19 V25 Q48 18 35 25 Q24 18 11 25Z" fill="url(#blue)"/>
+    <path d="M11 25 Q24 18 35 25 Q48 18 61 25 M35 18 V25" fill="none" stroke="url(#gold)" stroke-width="1.3"/>
+    <path d="M13 19 Q24 12 34 19 M37 19 Q48 12 59 20" fill="none" stroke="#dbeced" stroke-opacity=".35" stroke-width=".6"/>
+    <path d="M19 44 V31 Q26 24 32 31 V44Z M39 44 V31 Q46 24 53 31 V44Z" fill="url(#gold)"/>
+    <path d="M20.5 42.5 V31.5 Q26 26.5 30.5 31.5 V42.5Z M40.5 42.5 V31.5 Q46 26.5 51.5 31.5 V42.5Z" fill="url(#glass)"/>
+    <path d="M21.5 39 L28 30 M41.5 39 L48 30" stroke="#fff" stroke-opacity=".35" stroke-width="1.2"/>
+    <rect x="19" y="50" width="14" height="14" rx="1.2" fill="url(#green)" stroke="url(#gold)" stroke-width="1"/>
+    <rect x="39" y="50" width="14" height="14" rx="1.2" fill="url(#green)" stroke="url(#gold)" stroke-width="1"/>
+    <path d="M16 47 H56 M36 25 V66 M16 66 H58" stroke="url(#gold)" stroke-width="1"/>
+    <circle cx="52" cy="47" r=".6" fill="url(#gold)"/>
+    <!-- Podlouhlý kotel s barevnými dómy, odlišný od hvězdičkové mašinky. -->
+    <path d="M57 33 H143 Q158 33 161 44 V66 H57Z" fill="url(#red)"/>
+    <path d="M61 36 H148" stroke="#ffe1ba" stroke-opacity=".4" stroke-width=".75"/>
+    <path d="M64 34 V52 M91 34 V57 M121 34 V61 M147 34 V62" stroke="url(#gold)" stroke-width="1.5"/>
+    <path d="M67 33 V26 Q67 23 72 23 Q77 23 77 26 V33Z" fill="url(#red)"/>
+    <path d="M67 25 Q72 20 77 25Z" fill="url(#gold)"/>
+    <path d="M95 33 V25 Q95 23 99 23 Q103 23 103 25 V33Z" fill="url(#blue)"/>
+    <path d="M95 24 Q99 21 103 24Z" fill="url(#gold)"/>
+    <path d="M115 33 V25 Q115 22 121 22 Q126 22 126 25 V33Z" fill="url(#green)"/>
+    <path d="M115 24 Q120 19 126 24Z" fill="url(#gold)"/>
+    <!-- Široce rozevřené ústí obláčků, hrana na bodu (138,10). -->
+    <path d="M132 34 Q133 24 127 11 H149 Q143 24 144 34Z" fill="url(#plum)"/>
+    <path d="M130 13 Q134 23 134 30" fill="none" stroke="#dac8df" stroke-opacity=".5" stroke-width=".8"/>
+    <rect x="126" y="9.3" width="24" height="1.4" rx=".6" fill="url(#gold)"/>
+    <path d="M128 11 H148" stroke="#4a3a44" stroke-width=".5"/>
+    <rect x="130" y="32" width="16" height="2" rx=".6" fill="url(#gold)"/>
+    <!-- Křivka stupňovitých zelených a červených bočních panelů. -->
+    <path d="M57 39 Q65 39 70 45 Q83 57 107 57 H123 Q137 56 146 62 H162 V68 H57Z" fill="url(#gold)"/>
+    <path d="M58.5 42 Q64 42 68 46 Q81 60 107 60 H121 V66 H58.5Z" fill="url(#green)"/>
+    <path d="M124 60 Q135 59 145 64 H160 V67 H124Z" fill="url(#red)"/>
+    <path d="M58 69 H120 Q123 69 124 73 H164" fill="none" stroke="url(#gold)" stroke-width="1.1"/>
+    <path d="M62 64 H116 M129 65 H156" stroke="#d2d1a6" stroke-opacity=".5" stroke-width=".35"/>
+    <path d="M78 41 H122 Q130 41 130 34" fill="none" stroke="#684d31" stroke-width="1.7"/>
+    <path d="M78 40.6 H122 Q129.5 40.6 129.5 34" fill="none" stroke="url(#gold)" stroke-width="1"/>
+    <circle cx="79" cy="41" r=".9" fill="url(#gold)"/><circle cx="113" cy="41" r=".9" fill="url(#gold)"/>
+    <path d="M16 68 H162" stroke="url(#rivets)" stroke-width="1.5"/>
+    <rect x="159" y="54" width="5" height="7" rx="1.2" fill="url(#gold)"/>
+    <rect x="161" y="55" width="1.5" height="4.5" rx=".5" fill="#fff1c4"/>
+  </g>
+  <g fill="#ead8a6" stroke="#746247" stroke-width=".2">
+    <circle cx="64" cy="37" r=".5"/><circle cx="91" cy="37" r=".5"/><circle cx="121" cy="37" r=".5"/><circle cx="147" cy="37" r=".5"/>
+    <circle cx="62" cy="61" r=".5"/><circle cx="115" cy="61" r=".5"/><circle cx="128" cy="63" r=".5"/><circle cx="156" cy="65" r=".5"/>
+  </g>
+</svg>

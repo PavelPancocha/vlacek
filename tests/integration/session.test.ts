@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../src/config/gameConfig.ts';
 import { consistLengthU } from '../../src/domain/consist/ConsistEditor.ts';
+import { locomotives, wagons } from '../../src/content/vehicles.ts';
 import { PRIMARY_KEY } from '../../src/platform/SaveRepository.ts';
 import {
   MemoryStorage,
@@ -191,6 +192,27 @@ describe('GameSession: depot, saving and restoring', () => {
     tap(session, 'add:cargo_box');
     expect(session.draft.consist.wagons).toHaveLength(count);
     expect(session.fullSignals).toBe(before + 1);
+  });
+
+  it('doc 05 §6: oncoming trains are made only of vehicles that have their art', () => {
+    const awaitingArt = new Set(
+      [...locomotives, ...wagons]
+        .filter((vehicle) => vehicle.placeholder)
+        .map((vehicle) => vehicle.id),
+    );
+    const session = createSession();
+    buildAndDepart(session);
+    const ride = session.ride;
+    if (!ride) throw new Error('no ride');
+    const seen = new Set<string>();
+    // Ten simulated minutes at full throttle pass several second tracks.
+    for (let tick = 0; tick < 60 * 600 && seen.size < 6; tick++) {
+      ride.step('THROTTLE');
+      for (const train of ride.oncomingTrains)
+        for (const vehicle of train.vehicles) seen.add(vehicle.id);
+    }
+    expect(seen.size).toBeGreaterThan(0);
+    expect([...seen].filter((id) => awaitingArt.has(id))).toEqual([]);
   });
 
   it('doc 03 §9: a journey behind the electric locomotive is electrified throughout, also after a reload', () => {
@@ -469,5 +491,64 @@ describe('GameSession: a journey from track generator v0 (version 0.1)', () => {
     tap(session, 'continue');
     tap(session, 'resume');
     expect(session.screen.name).toBe('RIDING');
+  });
+});
+
+describe('GameSession: bubble touch routing (H3, INP-05)', () => {
+  it('pops once through the world hit boundary, emits sound feedback once and leaves throttle/coast/brake priority intact', () => {
+    const session = createSession();
+    buildAndDepart(session, []);
+    session.drainEvents();
+    let live = true;
+    session.setWorldHitTest(
+      () => ({ bubbleId: 42 }),
+      (id) => {
+        if (id !== 42 || !live) return false;
+        live = false;
+        return true;
+      },
+    );
+    expect(session.router.intent()).toBe('COAST');
+    const first = touchWorld(session);
+    expect(live).toBe(false);
+    expect(session.router.intent()).toBe('THROTTLE');
+    expect(session.drainEvents()).toEqual([{ type: 'bubblePopped' }]);
+    const second = touchWorld(session);
+    expect(session.drainEvents()).toEqual([]);
+    session.router.pointerDown({
+      id: 9001,
+      clientX: 10,
+      clientY: 10,
+      timeMs: 0,
+      action: 'brake',
+    });
+    live = true;
+    const third = touchWorld(session);
+    expect(live).toBe(false);
+    expect(session.router.intent()).toBe('BRAKE');
+    expect(session.drainEvents()).toEqual([{ type: 'bubblePopped' }]);
+    release(session, first);
+    release(session, second);
+    release(session, third);
+    expect(session.router.intent()).toBe('BRAKE');
+    release(session, 9001);
+    expect(session.router.intent()).toBe('COAST');
+  });
+
+  it('a missed world touch emits no pop or sound feedback and still drives', () => {
+    const session = createSession();
+    buildAndDepart(session, []);
+    session.drainEvents();
+    session.setWorldHitTest(
+      () => undefined,
+      () => {
+        throw new Error('miss must not pop');
+      },
+    );
+    const finger = touchWorld(session);
+    expect(session.drainEvents()).toEqual([]);
+    expect(session.router.intent()).toBe('THROTTLE');
+    release(session, finger);
+    expect(session.router.intent()).toBe('COAST');
   });
 });

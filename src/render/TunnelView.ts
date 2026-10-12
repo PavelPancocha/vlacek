@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { gameConfig } from '../config/gameConfig.ts';
 import { tunnelParts, worldParts } from '../content/worldArt.ts';
+import { TUNNEL_MAST_CLEARANCE_U } from '../domain/world/Catenary.ts';
 import type { TunnelSite } from '../domain/world/Structures.ts';
 import { frameOrigin } from './atlasPacking.ts';
 import {
@@ -56,7 +57,8 @@ const CAP_BOTTOM_U = 214;
 const FOOT_SLOPE_U = 40;
 /** The cover starts behind each portal's arch (half its opening). */
 const COVER_INSET_U = 52;
-const INSIDE_OUTSET_U = 64;
+// Keep 4 u of masonry beyond the ceiling hangers at each portal.
+const INSIDE_OUTSET_U = TUNNEL_MAST_CLEARANCE_U + 4;
 const SHADE_FADE_U = 40;
 const SHADE_ALPHA = 0.42;
 /** Samples of baked outlines along x, u. */
@@ -251,7 +253,11 @@ export class TunnelView {
         // Hangers: a bracket from the ceiling, an insulator and the clamp
         // holding the wire at contact height (doc 03 §9).
         for (const x of hangerXs) {
-          if (x < inFrom + 4 || x > inTo - 4) continue;
+          if (
+            x <= fromX - TUNNEL_MAST_CLEARANCE_U ||
+            x >= toX + TUNNEL_MAST_CLEARANCE_U
+          )
+            continue;
           const wire = ground.railY(x) - catenaryContactHeightU;
           const roof = ceiling(x);
           g.fillStyle(0x4d535b, 1);

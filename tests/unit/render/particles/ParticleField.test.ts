@@ -4,6 +4,11 @@ import {
   type ParticleKind,
 } from '../../../../src/render/particles/ParticleField.ts';
 
+import {
+  PARTICLE_KINDS,
+  kindIndex,
+} from '../../../../src/render/particles/particleKinds.ts';
+
 /** Seeded generator for repeatable tests. */
 function lcg(seed: number): () => number {
   let state = seed >>> 0;
@@ -117,5 +122,50 @@ describe('ParticleField (doc 14 §4: bounded, reused, in world space)', () => {
     expect(field.emit(0, 0, 0, 1)).toBe(0);
     field.step(2.1);
     expect(field.emit(0, 0, 0, 6)).toBe(4);
+  });
+});
+
+describe('fantasy particles (doc 06 §2)', () => {
+  it.each(['bubble', 'rainbow-puff'])(
+    'lets %s rise and drift slowly for a few seconds with a fixed upper-left light',
+    (name) => {
+      const field = new ParticleField(PARTICLE_KINDS, 4, () => 0.5);
+      expect(field.emit(kindIndex(name), 100, 50, 1)).toBe(1);
+      const p = field.particles()[0];
+      if (!p) throw new Error('missing fantasy particle');
+      expect(p.life).toBeGreaterThanOrEqual(3);
+      expect(p.life).toBeLessThanOrEqual(5);
+      expect(p.rotation).toBe(0);
+      field.step(1);
+      expect(field.positionOf(p).y).toBeLessThan(50);
+      expect(Math.abs(field.positionOf(p).x - 100)).toBeLessThan(15);
+      expect(field.alphaOf(p)).toBeGreaterThan(0);
+      expect(field.alphaOf(p)).toBeLessThan(1);
+      const before = { ...p };
+      field.step(0);
+      expect(p).toEqual(before);
+      field.step(5);
+      expect(field.live).toBe(0);
+    },
+  );
+
+  it('keeps bubble identity and position stable across swap-removal, giving reused records a new identity', () => {
+    const field = new ParticleField([still], 3, () => 0.5);
+    field.emit(0, 10, 20, 1);
+    field.step(1);
+    field.emit(0, 30, 40, 1);
+    const [first, second] = field.particles();
+    if (!first || !second) throw new Error('missing particles');
+    const firstId = first.id;
+    const secondId = second.id;
+    expect(firstId).toEqual(expect.any(Number));
+    expect(secondId).not.toBe(firstId);
+    field.step(1.1);
+    expect(field.particles()[0]).toBe(second);
+    expect(second.id).toBe(secondId);
+    expect(field.positionOf(second)).toEqual({ x: 30, y: 40 });
+    field.emit(0, 50, 60, 1);
+    expect(field.particles()[1]?.id).not.toBe(firstId);
+    expect(field.particles()[1]?.id).not.toBe(secondId);
   });
 });

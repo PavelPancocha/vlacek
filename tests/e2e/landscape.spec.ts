@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { artParts } from '../../src/content/artManifest.ts';
 import { isBackdropPart, worldParts } from '../../src/content/worldArt.ts';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { gameConfig } from '../../src/config/gameConfig.ts';
@@ -13,9 +12,7 @@ import {
 } from './helpers.ts';
 
 const worldKeys = Object.keys(worldParts);
-const MAIN_FRAMES =
-  Object.keys(artParts).length +
-  worldKeys.filter((key) => !isBackdropPart(key)).length;
+const MAIN_FRAMES = worldKeys.filter((key) => !isBackdropPart(key)).length;
 const BACKDROP_FRAMES = worldKeys.filter(isBackdropPart).length;
 const CHUNK_WIDTH_U = gameConfig.world.chunkWidthU;
 

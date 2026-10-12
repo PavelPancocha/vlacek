@@ -38,12 +38,13 @@ Dokument 14 §5 chce druhou kolej s jiným vlakem, který nikdy nejede po hráč
    - Jízda si pamatuje jen místa souběhu aktuálního a příštího bloku a vlaky, které ještě jedou. Starší záznamy zahodí, takže historie na nekonečné jízdě neroste (dokument 10, brána M2; Codex review PR #2).
    - Při setkání v otevřeném úseku jednou zahouká, pokud mu to dovolí vlastní cooldown 8 s.
    - Na hráčovu píšťalu v dosahu 800 u odpoví nejvýš jednou za 8 s. Jeho houkání nic dalšího nespouští.
-   - Zvuk je klakson jeho lokomotivy (dočasný syntetizovaný tón).
+   - Zvuk je klakson jeho lokomotivy podle jejího katalogového `hornAudio`, ze stejné tabulky jako hráčova píšťala a náhled při výběru (H1, [D-006](006-runtime-architecture.md)); dočasný syntetizovaný tón nahradí nahraný zvuk při dokončení zvukových assetů.
 5. **Kresba.**
    - `SecondaryView` kreslí koleje druhé tratě ve viditelném úseku a na obou koncích tunelový portál, napravo zrcadlený. Portál má dvě vrstvy: tmavé ústí pod vlakem a kopec s kamennou zdí a obloukem nad ním, otvor oblouku je průhledný.
+   - Bez atlasu světa `ChunkView` kreslí jednoduchou zapečenou kolej ve stejném odsazení a na stejných koncích tmavá ústí pod vlakem a portálové kopce nad ním; protijedoucí vlak mizí v označeném portálu, nikoli na prázdné hranici (PWA-10, R7). Vozidla mají od H0 vlastní atlas ([D-019](019-journey-atlas-and-npc-fleet.md)): protijedoucí vlak se kreslí z kresby, dokud je k dispozici atlas vozidel, a náhradní siluetou se stává jen bez něj, nezávisle na atlasu světa.
    - Vlak se kreslí zrcadlený (jede doleva) v měřítku 0,9 mezi těmito vrstvami, za hlavní tratí a stožáry. Vozidlo hluboko v portálu se nekreslí.
    - Parní a naftový protijedoucí vlak kouří; mimo portály `emitterWorldPoint` zrcadlí emitor. Obláčky zdědí část rychlosti ve směru jízdy, tedy doleva (`travelDirection`). Každý vlak má vlastní stav emisí (`TrainEffectsByTrain`): dva souběžně jedoucí vlaky si takty výfuku nepředávají a stav skončeného vlaku zanikne s ním (Codex review PR #2).
-6. **Diagnostika.** Snímek `?debug=1` hlásí `oncoming`: soupravy s intervalem x, úsek mezi portály a počet vozidel vykreslených v otevřené krajině.
+6. **Diagnostika.** Snímek `?debug=1` hlásí `oncoming`: soupravy s intervalem x, úsek mezi portály a počet vozidel vykreslených v otevřené krajině. `scenery.secondaryTrackViews` počítá skutečně vykreslené chunky druhé koleje a `scenery.secondaryPortalViews` jejich portálové kopce, s atlasem i bez něj.
 
 ## Důsledky
 
@@ -55,6 +56,7 @@ Dokument 14 §5 chce druhou kolej s jiným vlakem, který nikdy nejede po hráč
   - odpovědi s cooldownem (SCN-10);
   - volné místo ve scenérii.
 - E2E ověřuje, že vlak vyjede, ukáže se v krajině a vozidla mizí po jednom; zruší se až po skrytí posledního.
+- E2E PWA-10 blokuje SVG vozidla ve světě 123, ověřuje kreslenou souběžnou kolej a portály a sleduje postupné skrytí celého protijedoucího vlaku.
 - U přejezdů v blocích se souběhem ubyla místa napravo od 640 u. Krajina u stejného seedu se mění (neukládá se).
 
 ## Kompatibilita

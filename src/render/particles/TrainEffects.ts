@@ -5,7 +5,7 @@ import { kindIndex, type ParticleKindName } from './particleKinds.ts';
 
 /** Locomotive emitter in render coordinates, tilted with the vehicle. */
 export interface PlacedEmitter {
-  kind: 'steam' | 'diesel' | 'stars';
+  kind: 'steam' | 'diesel' | 'stars' | 'bubbles' | 'rainbow';
   x: number;
   y: number;
   tiltDeg: number;
@@ -156,7 +156,7 @@ export class TrainEffects {
           clock(`diesel${i}`).tick(rate * scale, dt),
           { ...puff, sizeScale: pulling ? 1.4 : 1 },
         );
-      } else {
+      } else if (emitter.kind === 'stars') {
         emit(
           'star',
           emitter.x,
@@ -166,6 +166,18 @@ export class TrainEffects {
             dt,
           ),
           puff,
+        );
+      } else if (emitter.kind === 'bubbles' || emitter.kind === 'rainbow') {
+        const bubble = emitter.kind === 'bubbles';
+        emit(
+          bubble ? 'bubble' : 'rainbow-puff',
+          emitter.x,
+          emitter.y,
+          clock(`${emitter.kind}${i}`).tick(
+            (bubble ? 3 : 4) * (1 + share) * scale,
+            dt,
+          ),
+          { ...puff, vxU: input.travelDirection * speed * 0.05 },
         );
       }
     }

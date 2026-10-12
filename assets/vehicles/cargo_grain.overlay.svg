@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="172" height="84" viewBox="0 0 172 84">
+  <defs><linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e5e6"/><stop offset="0.5" stop-color="#9aa7ad"/><stop offset="1" stop-color="#606e75"/></linearGradient><linearGradient id="dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a6269"/><stop offset="0.5" stop-color="#30373d"/><stop offset="1" stop-color="#171c20"/></linearGradient><linearGradient id="box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#73818a"/><stop offset="0.5" stop-color="#3e4951"/><stop offset="1" stop-color="#232c32"/></linearGradient></defs>
+  <g stroke="#20262a" stroke-width="0.6" stroke-linejoin="round">
+    <g fill="none" stroke-linecap="round">
+      <path d="M9.4 68.9 A11 11 0 0 1 22.5 61.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M30.6 75.1 A11 11 0 0 1 17.5 82.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+      <path d="M35.4 68.9 A11 11 0 0 1 48.5 61.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M56.6 75.1 A11 11 0 0 1 43.5 82.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+      <path d="M115.4 68.9 A11 11 0 0 1 128.5 61.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M136.6 75.1 A11 11 0 0 1 123.5 82.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+      <path d="M141.4 68.9 A11 11 0 0 1 154.5 61.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M162.6 75.1 A11 11 0 0 1 149.5 82.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+    </g>
+    <!-- Nosné příčníky spojují rám s oběma podvozky. -->
+    <path d="M25 56 H41 V58 H38 V63 H28 V58 H25 Z M131 56 H147 V58 H144 V63 H134 V58 H131 Z" fill="url(#dark)"/>
+    <path d="M26 56.7 H40 M132 56.7 H146 M28.7 58 V62 M134.7 58 V62" fill="none" stroke="#9aa7ad" stroke-width="0.4"/>
+    <path d="M14 67 L21 61 H45 L52 67 V71 H47 L40 74 H26 L19 71 H14 Z" fill="url(#dark)"/>
+    <path d="M16 66.3 L22 62.3 H44 L50 66.3" fill="none" stroke="#a3b0b4" stroke-width="0.4"/>
+    <path d="M30 63 H36 V69 H30 Z" fill="url(#steel)"/>
+    <path d="M30 64.5 H36 M30 66 H36 M30 67.5 H36" stroke="#2d383e" stroke-width="0.55"/>
+    <circle cx="33" cy="72" r="1.5" fill="#1c252b" stroke-width="0.3"/>
+    <path d="M120 67 L127 61 H151 L158 67 V71 H153 L146 74 H132 L125 71 H120 Z" fill="url(#dark)"/>
+    <path d="M122 66.3 L128 62.3 H150 L156 66.3" fill="none" stroke="#a3b0b4" stroke-width="0.4"/>
+    <path d="M136 63 H142 V69 H136 Z" fill="url(#steel)"/>
+    <path d="M136 64.5 H142 M136 66 H142 M136 67.5 H142" stroke="#2d383e" stroke-width="0.55"/>
+    <circle cx="139" cy="72" r="1.5" fill="#1c252b" stroke-width="0.3"/>
+    <rect x="16.4" y="68.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M17.2 69.1 H22.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="20" cy="72" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="17.7" cy="74.5" r="0.38"/><circle cx="22.3" cy="74.5" r="0.38"/></g>
+    <rect x="42.4" y="68.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M43.2 69.1 H48.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="46" cy="72" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="43.7" cy="74.5" r="0.38"/><circle cx="48.3" cy="74.5" r="0.38"/></g>
+    <rect x="122.4" y="68.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M123.2 69.1 H128.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="126" cy="72" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="123.7" cy="74.5" r="0.38"/><circle cx="128.3" cy="74.5" r="0.38"/></g>
+    <rect x="148.4" y="68.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M149.2 69.1 H154.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="152" cy="72" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="149.7" cy="74.5" r="0.38"/><circle cx="154.3" cy="74.5" r="0.38"/></g>
+    <path d="M8 56 V43 M164 56 V43 M8 49 H16 M156 49 H164 M8 55 H15 M157 55 H164" fill="none" stroke="url(#steel)" stroke-width="0.9"/>
+
+  </g>
+</svg>

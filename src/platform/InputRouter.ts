@@ -16,10 +16,13 @@ export interface CssRect {
   height: number;
 }
 
+/** A world object id or a renderer-owned bubble emission identity. */
+export type WorldHit = string | { bubbleId: number };
+
 export interface RouterHooks {
-  /** World hit-test in CSS px; returns at most one interactive object id. */
-  hitObject(clientX: number, clientY: number): string | undefined;
-  onObjectTouched(id: string): void;
+  /** World hit-test in CSS px; returns at most one interactive world target. */
+  hitObject(clientX: number, clientY: number): WorldHit | undefined;
+  onObjectTouched(hit: WorldHit): void;
   onAction(action: string): void;
 }
 

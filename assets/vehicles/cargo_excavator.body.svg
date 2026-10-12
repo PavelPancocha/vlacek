@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="96" viewBox="0 0 192 96">
+  <defs><linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e4e5"/><stop offset="0.5" stop-color="#9aa0a8"/><stop offset="1" stop-color="#535c61"/></linearGradient><linearGradient id="dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d6569"/><stop offset="0.5" stop-color="#30383c"/><stop offset="1" stop-color="#171b1e"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e0f0f2"/><stop offset="0.5" stop-color="#9ec3cc"/><stop offset="1" stop-color="#526d77"/></linearGradient><linearGradient id="deck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a0b0b5"/><stop offset="0.5" stop-color="#69747a"/><stop offset="1" stop-color="#45535c"/></linearGradient><linearGradient id="track" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a8581"/><stop offset="0.5" stop-color="#3a3c3c"/><stop offset="1" stop-color="#20282a"/></linearGradient><linearGradient id="yellow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2c66d"/><stop offset="0.5" stop-color="#c6a044"/><stop offset="1" stop-color="#91722f"/></linearGradient><linearGradient id="boom" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#849398"/><stop offset="0.5" stop-color="#525f67"/><stop offset="1" stop-color="#323e44"/></linearGradient><linearGradient id="chock" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3bd68"/><stop offset="1" stop-color="#bb9047"/></linearGradient></defs>
+  <g stroke="#20262a" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round">
+<rect x="4" y="59" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+<rect x="181" y="59" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+<path d="M2 66 H6 M186 66 H190" stroke="url(#steel)" stroke-width="3.2"/>
+<rect x="0.4" y="62.2" width="1.9" height="7.6" rx="0.7" fill="url(#steel)"/>
+<rect x="189.7" y="62.2" width="1.9" height="7.6" rx="0.7" fill="url(#steel)"/>
+<path d="M4 70 H2.8 V72 H4 M188 70 H189.2 V72 H188" fill="none" stroke-width="0.9"/>
+<path d="M8 73 Q9 77 6 80 M184 73 Q183 77 186 80" fill="none" stroke-width="1.1"/>
+<rect x="5" y="63.4" width="182" height="5.6" fill="url(#dark)"/>
+<path d="M6 64.2 H186" fill="none" stroke="#919a9d" stroke-width="0.4"/>
+<rect x="88.0" y="69.5" width="13" height="4.5" rx="2" fill="url(#steel)"/>
+<path d="M101.0 71.8 H114.0" stroke="#555f61" fill="none"/>
+<g fill="#b1b7b6" stroke="#30383b" stroke-width="0.2"><circle cx="12" cy="66.5" r="0.4"/><circle cx="28" cy="66.5" r="0.4"/><circle cx="44" cy="66.5" r="0.4"/><circle cx="60" cy="66.5" r="0.4"/><circle cx="76" cy="66.5" r="0.4"/><circle cx="92" cy="66.5" r="0.4"/><circle cx="108" cy="66.5" r="0.4"/><circle cx="124" cy="66.5" r="0.4"/><circle cx="140" cy="66.5" r="0.4"/><circle cx="156" cy="66.5" r="0.4"/><circle cx="172" cy="66.5" r="0.4"/></g><path d="M10 59.5 H182 V63.4 H10 Z" fill="url(#deck)"/>
+<path d="M11 60.4 H181 M17 61.3 H38 M73 61.3 H91 M143 61.3 H164" stroke="#cad1cc" stroke-width="0.4"/>
+<path d="M12 64 H180 V66 H139 L124 68 H68 L53 66 H12 Z" fill="url(#deck)"/>
+<path d="M17 64.5 H52 M69 67 H123 M140 64.5 H174" stroke="#a3b1b4" stroke-width="0.4"/>
+<path d="M14 59.5 V37 H17 V59.5 M176 59.5 V37 H179 V59.5" fill="url(#dark)"/>
+<path d="M15 38 V58 M177 38 V58" stroke="#c0cacc" stroke-width="0.5"/>
+<!-- Transportní lože podpírá rameno a drží lžíci. -->
+<path d="M32 59.5 V36.5 L39 41.75 V59.5 Z M47 59.5 V54 H70 V59.5 Z" fill="url(#deck)"/>
+<path d="M33 38.25 L38 42 M48 55 H69" stroke="#d4d9d3" stroke-width="0.6"/>
+<path d="M30 59 L34 39 M41 59 L37 41.25" stroke="#525f64" stroke-width="1.2" fill="none"/>
+<!-- Pevné pásy a věnec otoče. -->
+<rect x="100" y="44" width="49" height="3.5" rx="1" fill="url(#dark)"/>
+<path d="M96 47 H150 Q158 47 158 53.5 Q158 60 150 60 H96 Q88 60 88 53.5 Q88 47 96 47 Z" fill="url(#track)"/>
+<path d="M97 49.5 H149 Q155 49.5 155 53.5 Q155 57.5 149 57.5 H97 Q91 57.5 91 53.5 Q91 49.5 97 49.5 Z" fill="#242c2d"/>
+<circle cx="96" cy="53.5" r="3.3" fill="url(#dark)" stroke="#77817e" stroke-width="0.35"/><circle cx="96" cy="53.5" r="1.2" fill="#6a7473" stroke-width="0.25"/><circle cx="106" cy="53.5" r="3.3" fill="url(#dark)" stroke="#77817e" stroke-width="0.35"/><circle cx="106" cy="53.5" r="1.2" fill="#6a7473" stroke-width="0.25"/><circle cx="116" cy="53.5" r="3.3" fill="url(#dark)" stroke="#77817e" stroke-width="0.35"/><circle cx="116" cy="53.5" r="1.2" fill="#6a7473" stroke-width="0.25"/><circle cx="126" cy="53.5" r="3.3" fill="url(#dark)" stroke="#77817e" stroke-width="0.35"/><circle cx="126" cy="53.5" r="1.2" fill="#6a7473" stroke-width="0.25"/><circle cx="136" cy="53.5" r="3.3" fill="url(#dark)" stroke="#77817e" stroke-width="0.35"/><circle cx="136" cy="53.5" r="1.2" fill="#6a7473" stroke-width="0.25"/><circle cx="149" cy="53.5" r="3.3" fill="url(#dark)" stroke="#77817e" stroke-width="0.35"/><circle cx="149" cy="53.5" r="1.2" fill="#6a7473" stroke-width="0.25"/><path d="M97 47.4 V49.4 M97 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M101 47.4 V49.4 M101 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M105 47.4 V49.4 M105 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M109 47.4 V49.4 M109 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M113 47.4 V49.4 M113 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M117 47.4 V49.4 M117 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M121 47.4 V49.4 M121 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M125 47.4 V49.4 M125 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M129 47.4 V49.4 M129 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M133 47.4 V49.4 M133 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M137 47.4 V49.4 M137 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M141 47.4 V49.4 M141 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M145 47.4 V49.4 M145 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M149 47.4 V49.4 M149 57.7 V59.5" stroke="#87908b" stroke-width="0.6"/><path d="M92 48.5 L94 50 M89.5 51 L92 51.8 M89 54 H91.5 M90 57 L92.5 55.6 M92 59 L94 57 M153 48.5 L151 50 M156 51 L153.5 51.8 M157 54 H154.5 M156 57 L153.5 55.6 M153 59 L151 57" stroke="#87908b" stroke-width="0.6"/>
+<path d="M96 50.5 H149 V55.5 H96 Z" fill="url(#deck)"/>
+<path d="M98 51.4 H147" stroke="#aab4b0" stroke-width="0.4"/>
+<path d="M118 46 V50 H127 V46" fill="url(#dark)"/>
+<!-- Samostatný kryt motoru, mřížky a servisní panely. -->
+<path d="M124 30 H157 Q166 30 167 35 V43 H122 Z" fill="url(#yellow)"/>
+<path d="M128 31 H158 Q163 31 165 34" fill="none" stroke="#e8cf85" stroke-width="0.5"/>
+<path d="M130 33 H158 V39 H130 Z" fill="#45463a"/>
+<path d="M131 34 H157 M131 35.5 H157 M131 37 H157 M131 38.5 H157" stroke="#c2ab61" stroke-width="0.4"/>
+<path d="M125 41 H163 M159 32 V42" stroke="#8a6a30" stroke-width="0.5" fill="none"/>
+<path d="M134 30 V26 H155 V30" fill="url(#dark)"/>
+<path d="M137 27 V29 M140 27 V29 M143 27 V29 M146 27 V29 M149 27 V29 M152 27 V29" stroke="#7d8580" stroke-width="0.6"/>
+<rect x="126" y="26" width="3" height="4" fill="url(#steel)"/>
+<path d="M96 42 V18 Q96 13 102 13 H120 Q125 13 126 17 V42 Z" fill="url(#yellow)"/>
+<path d="M99 39 V19 Q99 16 102 16 H121 V35 L117 39 Z" fill="url(#dark)"/>
+<path d="M101 36 V19 H108 V36 Z M111 18 H120 V33 L116 36 H111 Z" fill="url(#glass)"/>
+<path d="M102 20 L106 20 L102 31 M112 20 L118 20 L112 32" fill="none" stroke="#e4f4f0" stroke-opacity="0.55" stroke-width="0.6"/>
+<path d="M113 36 V29 Q113 27 116 27 H118 V34 M103 33 H107" fill="#34453f" stroke-width="0.4"/>
+<path d="M109 16 V38 M119 38 V41 M102 40 H116" stroke="#41554f" stroke-width="0.6" fill="none"/>
+<path d="M114 37 H117" stroke="url(#steel)" stroke-width="0.8"/>
+<path d="M95 16 Q95 12 101 12 H121 Q125 12 127 16 Z" fill="url(#dark)"/>
+<path d="M100 13 H121" stroke="#abb8b4" stroke-width="0.5"/>
+<!-- Složené kloubové rameno v přepravní poloze. -->
+<path d="M97 33 L72 23 Q65 19 60 22 L29 35 L25 31 L59 15 Q66 12 73 16 L102 29 Z" fill="url(#boom)"/>
+<path d="M27 31 L60 16 Q66 13.5 73 17 L98 30" stroke="#aab5b5" stroke-width="0.6" fill="none"/>
+<path d="M30 35 L50 50 L55 47 L33 30 Z" fill="url(#boom)"/>
+<path d="M32 33 L52 48" stroke="#8e9da1" stroke-width="0.5"/>
+<path d="M42 43 L48 45 L53 43 L58 48 L54 51 H48 Z" fill="url(#yellow)"/>
+<!-- Hydraulické válce a hadice uchycené k ramenu. -->
+<path d="M87 32 L68 21" stroke="#4e4431" stroke-width="4"/>
+<path d="M87 32 L73 24" stroke="url(#yellow)" stroke-width="2.9"/>
+<path d="M73 24 L66 20" stroke="url(#steel)" stroke-width="1.4"/>
+<path d="M34 34 L48 44" stroke="url(#yellow)" stroke-width="2.2"/>
+<path d="M34 34 L41 39" stroke="url(#steel)" stroke-width="1"/>
+<path d="M97 27 Q82 13 66 14 Q60 14 49 20 L29 28 Q24 31 29 35 L40 43" stroke="#1d292c" stroke-width="1" fill="none"/>
+<path d="M97 25 Q82 11 66 12 Q59 12 49 18" stroke="#46545a" stroke-width="0.7" fill="none"/>
+<path d="M76 17 L77 20 M63 14 V18 M44 23 L46 25" stroke="url(#steel)" stroke-width="0.8"/>
+<!-- Lžíce spočívá v loži, zuby míří dovnitř vozu. -->
+<path d="M54 43 Q64 43 68 51 V54 H50 L49 50 Q52 47 54 43 Z" fill="url(#boom)"/>
+<path d="M55 44 Q63 45 65 51 V53 H53" stroke="#909c9d" stroke-width="0.5" fill="none"/>
+<path d="M51 51 L48 49 M54 52 L51 49" stroke="#c0c7c2" stroke-width="1.4"/>
+<path d="M50 54 H68" stroke="#c0b490" stroke-width="1.3"/>
+<circle cx="99" cy="31" r="2.7" fill="url(#steel)"/><circle cx="99" cy="31" r="1.08" fill="#576569" stroke-width="0.3"/><circle cx="29" cy="33" r="2.8" fill="url(#steel)"/><circle cx="29" cy="33" r="1.12" fill="#576569" stroke-width="0.3"/><circle cx="52" cy="47" r="2" fill="url(#steel)"/><circle cx="52" cy="47" r="0.8" fill="#576569" stroke-width="0.3"/><circle cx="65" cy="19" r="1.8" fill="url(#steel)"/><circle cx="65" cy="19" r="0.72" fill="#576569" stroke-width="0.3"/><!-- Klíny na obou koncích pásů a řetězy do kotevních ok. -->
+<path d="M80 59.5 L87 54 L91 59.5 Z M155 59.5 L159 54 L166 59.5 Z" fill="url(#chock)" stroke="#775b28"/>
+<path d="M82 58.7 H90 M157 58.7 H164" stroke="#f1d38c" stroke-width="0.5"/>
+<rect x="96.2" y="50.6" width="3.6" height="3.6" rx="0.5" fill="url(#steel)" stroke-width="0.4"/>
+<circle cx="98" cy="52" r="1.2" fill="#273337" stroke="#c7d0c4" stroke-width="0.5"/>
+<path d="M98 52 L75 59 M156 44 L174 59 M36 38 L30 58 M58 48 L65 58" fill="none" stroke="#38362d" stroke-width="1.7"/>
+<path d="M98 52 L75 59 M156 44 L174 59 M36 38 L30 58 M58 48 L65 58" fill="none" stroke="#c0a159" stroke-width="1.1" stroke-dasharray="1.4 0.9"/>
+<path d="M88 54.7 L84 56 M166 50 L169 54" stroke="#e1d5b2" stroke-width="1.6"/>
+<circle cx="75" cy="59" r="1" fill="none" stroke="#b7bdae"/>
+<circle cx="174" cy="59" r="1" fill="none" stroke="#b7bdae"/>
+<g fill="#b1b7b6" stroke="#30383b" stroke-width="0.2"><circle cx="18" cy="65" r="0.4"/><circle cx="32" cy="65" r="0.4"/><circle cx="46" cy="65" r="0.4"/><circle cx="60" cy="65" r="0.4"/><circle cx="74" cy="65" r="0.4"/><circle cx="88" cy="65" r="0.4"/><circle cx="102" cy="65" r="0.4"/><circle cx="116" cy="65" r="0.4"/><circle cx="130" cy="65" r="0.4"/><circle cx="144" cy="65" r="0.4"/><circle cx="158" cy="65" r="0.4"/><circle cx="172" cy="65" r="0.4"/></g><g fill="#b1b7b6" stroke="#30383b" stroke-width="0.2"><circle cx="49" cy="56" r="0.4"/><circle cx="68" cy="56" r="0.4"/><circle cx="34" cy="57" r="0.4"/><circle cx="38" cy="57" r="0.4"/><circle cx="133" cy="41" r="0.4"/><circle cx="163" cy="41" r="0.4"/></g>
+  </g>
+</svg>

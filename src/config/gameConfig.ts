@@ -357,6 +357,7 @@ export function validateGameConfig(config: GameConfig): string[] {
     [
       'interaction.npcTrainSpeedUPerSec',
       positive(interaction.npcTrainMinSpeedUPerSec) &&
+        positive(interaction.npcTrainMaxSpeedUPerSec) &&
         interaction.npcTrainMinSpeedUPerSec <=
           interaction.npcTrainMaxSpeedUPerSec,
     ],
@@ -384,7 +385,7 @@ export function validateGameConfig(config: GameConfig): string[] {
       positive(train.slowModeSpeedFactor) && train.slowModeSpeedFactor <= 1,
     ],
     ['world.chunkWidthU', positive(world.chunkWidthU)],
-    ['world.chunksPerBiomeBlock', positiveInteger(world.chunksPerBiomeBlock)],
+    ['world.chunksPerBiomeBlock', world.chunksPerBiomeBlock === 8],
     [
       'world.blocksPerRouteCycle',
       // One block per biome of the itinerary (doc 04 §5).
@@ -447,7 +448,11 @@ export function validateGameConfig(config: GameConfig): string[] {
       'world.arcSampleSpacingU',
       positive(world.arcSampleSpacingU) && world.arcSampleSpacingU <= 8,
     ],
-    ['world.geometryLookAheadU', world.geometryLookAheadU >= 2048],
+    [
+      'world.geometryLookAheadU',
+      Number.isFinite(world.geometryLookAheadU) &&
+        world.geometryLookAheadU >= 2048,
+    ],
     ['world.geometryTailMarginU', positive(world.geometryTailMarginU)],
     ['world.spawnChunkIndex', Number.isSafeInteger(world.spawnChunkIndex)],
     [

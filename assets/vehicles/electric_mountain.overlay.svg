@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="96" viewBox="0 0 160 96">
+  <!-- Robustní nýtované podvozky s pružnicemi a schůdky u středové kabiny. -->
+  <defs>
+    <linearGradient id="cast" x2="0" y2="1"><stop stop-color="#788078"/><stop offset=".4" stop-color="#414944"/><stop offset="1" stop-color="#202622"/></linearGradient>
+    <linearGradient id="steel" x2="0" y2="1"><stop stop-color="#d3dad5"/><stop offset=".5" stop-color="#9AA0A8"/><stop offset="1" stop-color="#4b5650"/></linearGradient>
+    <linearGradient id="coil" x2="1" y2="0"><stop stop-color="#1e241e"/><stop offset=".5" stop-color="#969c87"/><stop offset="1" stop-color="#1e241e"/></linearGradient>
+    <g id="bogie">
+      <g stroke-linecap="round" fill="none">
+        <path d="M-26.4 -4 A12 12 0 0 1 -12 -11.6 M3.6 -4 A12 12 0 0 1 18 -11.6" stroke="#e6e8dc" stroke-opacity=".45" stroke-width=".9"/>
+        <path d="M-4 5 A12 12 0 0 1 -18 11.6 M26 5 A12 12 0 0 1 12 11.6" stroke="#171e18" stroke-opacity=".5" stroke-width="1.1"/>
+      </g>
+      <g stroke="#1b231e" stroke-width=".6" stroke-linejoin="round">
+        <path d="M-6 -17 V-12 M6 -17 V-12" stroke="url(#coil)" stroke-width="4"/>
+        <path d="M-8 -16 H-4 M4 -16 H8 M-8 -14.5 H-4 M4 -14.5 H8 M-8 -13 H-4 M4 -13 H8" stroke="#293329" stroke-width=".45"/>
+        <path d="M-26 -12 L-21 -15 H21 L26 -12 V-8 H19 L10 -3 H-10 L-19 -8 H-26 Z" fill="url(#cast)"/>
+        <path d="M-23 -12 H-10 L-6 -7 H6 L10 -12 H23" fill="none" stroke="#9aa394" stroke-width=".6"/>
+        <path d="M-8 -11 H8 L4 -7 H-4 Z" fill="#1c2920" stroke-width=".4"/>
+        <path d="M-20 -11 H-12 M12 -11 H20" stroke="#1b251e" stroke-width="2"/>
+        <path d="M-15 -8 V-4 M15 -8 V-4" stroke="url(#coil)" stroke-width="4.5"/>
+        <path d="M-17 -7 H-13 M13 -7 H17 M-17 -5.5 H-13 M13 -5.5 H17" stroke="#263328" stroke-width=".45"/>
+        <rect x="-19" y="-4" width="8" height="8" rx=".6" fill="url(#cast)"/><rect x="11" y="-4" width="8" height="8" rx=".6" fill="url(#cast)"/>
+        <rect x="-17.5" y="-2.5" width="5" height="5" rx=".7" fill="url(#steel)" stroke-width=".4"/><rect x="12.5" y="-2.5" width="5" height="5" rx=".7" fill="url(#steel)" stroke-width=".4"/>
+        <circle cx="-15" r="1.3" fill="#647069"/><circle cx="15" r="1.3" fill="#647069"/>
+        <path d="M-24 0 Q-26 4 -24 7 M24 0 Q26 4 24 7" stroke="#3c4339" stroke-width="1.7" fill="none"/>
+        <path d="M-25 -7 L-26 9 M25 -7 L26 9" stroke="#686f60" stroke-width=".7" fill="none"/>
+        <path d="M-23 -10 H-22 M-10 -5 H-9 M9 -5 H10 M22 -10 H23 M-18 -2 H-17 M17 -2 H18" stroke="#bbc0aa" stroke-width=".65"/>
+      </g>
+    </g>
+  </defs>
+  <use href="#bogie" x="32" y="83"/><use href="#bogie" x="128" y="83"/>
+  <g stroke="#292c24" stroke-width=".5" stroke-linejoin="round">
+    <path d="M69 60 V79 H92 V60" fill="none" stroke="url(#steel)" stroke-width="1.2"/>
+    <rect x="69.3" y="64" width="22.4" height="2.3" rx=".3" fill="url(#cast)"/><rect x="69.3" y="71" width="22.4" height="2.3" rx=".3" fill="url(#cast)"/><rect x="69.3" y="77" width="22.4" height="2.3" rx=".3" fill="url(#cast)"/>
+    <path d="M70 64.4 H91 M70 71.4 H91 M70 77.4 H91" stroke="#c3c6b8" stroke-width=".4"/>
+    <path d="M71 65 H89 M71 72 H89 M71 78 H89" stroke="#19221b" stroke-width=".4" stroke-dasharray="1 1"/>
+  </g>
+</svg>

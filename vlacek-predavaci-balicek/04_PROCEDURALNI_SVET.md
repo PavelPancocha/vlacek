@@ -175,4 +175,6 @@ Roční období se v první verzi globálně nesimuluje. Sníh v horách je vlas
 
 Vývojový overlay ukáže seed, generatorVersion, chunkIndex, počet zachovaných chunků, počet renderovaných entit, délku vlaku, režim vstupu, v, simulační tick a profil kvality. Barevné švy a rezervace lze zapnout pouze v debug režimu.
 
+Diagnostické API `window.__vlacek.snapshot()` při `?debug=1` uvádí u každého protijedoucího vlaku také `oncoming.trains[].locomotiveId`: katalogové ID skutečně nasazené lokomotivy. E2E píšťaly porovnává odpověď s přesným tónem této identity, nikoli s pevně předpokládaným typem; seedovaná NPC sada podle D-019 se rozšiřuje s dostupnou kresbou. Tento diagnostický údaj se neukládá a nemění svět ani výběr vozidel.
+
 Musí existovat deterministické testovací seedy a profil, který postupně předvede stanici, přejezd, most, tunel a druhou kolej. Debug zkratky nejsou součást dětského menu. Chyby layoutu se mají dát reprodukovat seedem a indexem chunku. Pauza ukazuje drobně číslo světa (seed) pro dospělého a parametr adresy `?seed=N` založí každou novou cestu s tímto seedem; uloženou cestu nemění (rozhodnutí [D-007](../docs/decisions/007-world-seed-in-url.md)).

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="78" viewBox="0 0 164 78">
+  <defs><linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e5e6"/><stop offset="0.5" stop-color="#9aa7ad"/><stop offset="1" stop-color="#606e75"/></linearGradient><linearGradient id="dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a6269"/><stop offset="0.5" stop-color="#30373d"/><stop offset="1" stop-color="#171c20"/></linearGradient><linearGradient id="box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#73818a"/><stop offset="0.5" stop-color="#3e4951"/><stop offset="1" stop-color="#232c32"/></linearGradient></defs>
+  <g stroke="#20262a" stroke-width="0.6" stroke-linejoin="round">
+    <g fill="none" stroke-linecap="round">
+      <path d="M20.4 62.9 A11 11 0 0 1 33.5 55.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M41.6 69.1 A11 11 0 0 1 28.5 76.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+      <path d="M122.4 62.9 A11 11 0 0 1 135.5 55.3" stroke="#edf3f3" stroke-width="0.8" opacity="0.38"/>
+      <path d="M143.6 69.1 A11 11 0 0 1 130.5 76.7" stroke="#0c1518" stroke-width="1" opacity="0.4"/>
+    </g>
+    <path d="M18 52 Q31 60 44 52 L42 55 Q31 63 20 55 Z" fill="url(#dark)" stroke-width="0.45"/>
+    <path d="M20 54 Q31 61 42 54 M21 56 Q31 62 41 56" fill="none" stroke="#93a1a6" stroke-width="0.4"/>
+    <path d="M23 50 L25 68 H37 L39 50" fill="none" stroke="#465158" stroke-width="1.6"/>
+    <path d="M28 57 H34 V64 H28 Z" fill="url(#steel)"/>
+    <path d="M120 52 Q133 60 146 52 L144 55 Q133 63 122 55 Z" fill="url(#dark)" stroke-width="0.45"/>
+    <path d="M122 54 Q133 61 144 54 M123 56 Q133 62 143 56" fill="none" stroke="#93a1a6" stroke-width="0.4"/>
+    <path d="M125 50 L127 68 H139 L141 50" fill="none" stroke="#465158" stroke-width="1.6"/>
+    <path d="M130 57 H136 V64 H130 Z" fill="url(#steel)"/>
+    <rect x="27.4" y="62.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M28.2 63.1 H33.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="31" cy="66" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="28.7" cy="68.5" r="0.38"/><circle cx="33.3" cy="68.5" r="0.38"/></g>
+    <rect x="129.4" y="62.2" width="7.2" height="7.6" rx="1.1" fill="url(#box)"/>
+    <path d="M130.2 63.1 H135.8" stroke="#b4c1c5" stroke-width="0.4"/>
+    <circle cx="133" cy="66" r="1.5" fill="#596a73" stroke-width="0.35"/>
+    <g fill="#89979b" stroke="#465154" stroke-width="0.18"><circle cx="130.7" cy="68.5" r="0.38"/><circle cx="135.3" cy="68.5" r="0.38"/></g>
+    <path d="M17 51 V56 H23 M141 51 V56 H147" fill="none" stroke="#35434a" stroke-width="0.9"/>
+    <path d="M16 56 H24 M140 56 H148" stroke="url(#steel)" stroke-width="1.3"/>
+
+  </g>
+</svg>

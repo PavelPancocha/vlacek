@@ -12,16 +12,20 @@ Výchozí parametry jsou v [13_VYCHOZI_KONFIGURACE.md](13_VYCHOZI_KONFIGURACE.md
 
 ## 2. Rozdělení vstupních ploch
 
-| Plocha                    | Chování                                                                            |
-| ------------------------- | ---------------------------------------------------------------------------------- |
-| Herní svět                | Dotyk vytvoří požadavek na plyn. Případný zasažený objekt zároveň reaguje.         |
-| Brzda vlevo dole          | Po dobu držení aktivní brzda. Nikdy současně plyn ani zásah objektu pod tlačítkem. |
-| Píšťala                   | Jedno zahoukání při stisku, s omezením opakování. Tlačítko samo nepohání vlak.     |
-| Pauza, zvuk, menu         | Spotřebují událost; dotyk nepropadne do světa.                                     |
-| Obrazovka depa a výběru   | Neexistuje vstup do jízdy. Posouvání a klepání slouží pouze rozhraní.              |
-| Modální vrstva / načítání | Všechny dotyky světa jsou blokované.                                               |
+| Plocha                        | Chování                                                                            |
+| ----------------------------- | ---------------------------------------------------------------------------------- |
+| Herní svět                    | Dotyk vytvoří požadavek na plyn. Případný zasažený objekt zároveň reaguje.         |
+| Brzda vlevo dole              | Po dobu držení aktivní brzda. Nikdy současně plyn ani zásah objektu pod tlačítkem. |
+| Píšťala                       | Jedno zahoukání při stisku, s omezením opakování. Tlačítko samo nepohání vlak.     |
+| Pauza, zvuk, menu, fullscreen | Spotřebují událost; dotyk nepropadne do světa.                                     |
+| Obrazovka depa a výběru       | Neexistuje vstup do jízdy. Posouvání a klepání slouží pouze rozhraní.              |
+| Modální vrstva / načítání     | Všechny dotyky světa jsou blokované.                                               |
 
 Běžná jízda nezobrazuje páku rychlosti ani tlačítko automatického rozjezdu. Stav jízdy lze jemně ukázat animací kol a páry. Numerický rychloměr není potřebný.
+
+Volitelné tlačítko **Celá obrazovka** (ikona čtyř rohů + český popisek, nejméně 64 CSS px) je na úvodní obrazovce, v řádku akcí výběru mašinky a mezi akcemi pauzy. Při jízdě není zobrazené: jde o nastavení zobrazení mimo dotykové řízení a mimo brzdu či píšťalu. Stejné tlačítko v celém režimu nabízí **Ukončit celou obrazovku** a ikonu rohů směrem dovnitř. Stav odpovídá prohlížeči, včetně opuštění klávesou Esc nebo systémovým gestem.
+
+Žádost vzniká výhradně klepnutím nebo klávesovou aktivací tohoto tlačítka, nikdy automaticky. Bez dostupného Fullscreen API tlačítko chybí a hra funguje v běžné kartě. Po zamítnutí vstupu je pro toto načtení neaktivní a zobrazí se klidná zpráva „Celá obrazovka teď není dostupná. Hra pokračuje v okně.“; žádost se neopakuje. Při zamítnutí výstupu zůstává skutečný režim zachován, tlačítko je také neaktivní a zpráva zní „Režim celé obrazovky teď nelze změnit.“; systémový výstup je dál možný. Změna režimu vymaže vstupy a přepočítá zobrazení stávající cestou resize; pauza zůstává pauzou. Opuštění režimu během jízdy ji pozastaví i při nezměněných rozměrech. Pokračování vyžaduje vlastní potvrzení a nový dotyk pro jízdu. Uložená data se nemění.
 
 ## 3. Jednotná cesta zpracování vstupů
 
@@ -127,6 +131,12 @@ Deset velkých obrázkových karet, posouvatelných po stránkách nebo v mří�
 ### Sestavování
 
 Horní část: souprava v bočním pohledu. Spodní část: katalog vagonků s obrázkovými skupinami osobní / nákladní / zvláštní. Klepnutí na katalog přidá **jeden** vagónek za poslední. Typy lze opakovat. Žádné automatické přidávání při dlouhém stisku.
+
+Celý katalog 32 vagonků ve čtyřech skupinách podle dokumentu 06 tvoří jeden vodorovně posuvný řádek na telefonu, tabletu i desktopu. Skupiny ani karty se nezmenšují podle počtu druhů; posouvá se pouze katalog, ne celá obrazovka. Všechny karty včetně poslední zůstávají dosažitelné a tlačítko Vyjet je mimo katalog. E2E `tests/e2e/picker.spec.ts` ověřuje klepnutí na všech 10 lokomotiv a 32 druhů vagonků, velikosti dotykových cílů, nepřekrytí ovládání a nehybnost obrazovky na výřezech 844 × 390, 667 × 375, 568 × 320 a v projektech desktop / tablet-touch. ID katalogu, délkový limit ani formát uložených dat se touto úpravou nemění.
+
+Po výběru lokomotivy nebo přidání vagonku zůstává posuvný řádek na stejné pozici; opakované klepnutí na stejné místo přidá stejný druh. Posun katalogu a pásu soupravy je nezávislý. Tab postupně odkryje celé karty s viditelným modrým fokusem; CSS `scroll-padding-inline: 50%` řádku nechá prohlížeč při fokusování posunout kartu ke středu, na krajích rozsahu ji ponechá celou u okraje. Enter a mezerník aktivují vybranou kartu a fokus na ní zůstane i po aktualizaci rozhraní. Geometrická regrese čte obdélníky ovládání hromadně při zachování všech kontrol rozměrů, dosažitelnosti a nepřekrytí i původního časového limitu; po ověření celé karty klepá na její souřadnice. Testy vedle ní ověřují skutečná dotyková gesta začínající na kartách, klepnutí na souřadnice již viditelné karty, vodorovné kolečko myši a průchod klávesnicí. Na telefonech ověřují také samostatné posouvání delší soupravy. Tažení katalogu nesmí samo vybrat lokomotivu ani přidat vagonek. Na větším displeji, kde je všech deset lokomotiv vidět najednou, není jejich posouvání potřeba.
+
+Aktualizace návrhu zachovává DOM karet i jejich SVG vrstvy `<image>` po celou dobu pobytu na příslušné obrazovce. Mění jen označení lokomotivy, počet a ukazatel délky, dostupnost akcí a polohy či označení existujících vozidel v pásu. Náhled v pásu patří konkrétní instanci vagonku; odebrání nebo odchod mimo virtualizovaný výřez jej uvolní. Odchod z obrazovky uvolní také její cache a scroll listener. Regresní testy v `picker.spec.ts` kontrolují zachování identity karet, obrázků a viditelných položek při editaci; nejde o časový limit závislý na výkonu testovacího stroje. Katalogové ID, geometrie i uložená data zůstávají stejné.
 
 Klepnutí na připojený vagónek jej vybere; samo ho neodebere. Vedle výběru se zobrazí velké akce „odebrat“, „posunout blíž k mašince“ a „posunout dozadu“. U krajních pozic je neplatná akce neaktivní. Lokomotiva se nepřesouvá mezi vagonky. Odebrání a změny pořadí mají jednou dostupné „vrátit poslední změnu“.
 

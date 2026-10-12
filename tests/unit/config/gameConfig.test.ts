@@ -95,6 +95,19 @@ describe('gameConfig', () => {
     ]);
   });
 
+  it('R2: rejects an infinite maximum speed for oncoming trains', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      interaction: {
+        ...gameConfig.interaction,
+        npcTrainMaxSpeedUPerSec: Infinity,
+      },
+    };
+    expect(validateGameConfig(broken)).toEqual([
+      'interaction.npcTrainSpeedUPerSec',
+    ]);
+  });
+
   it('carries the doc 13 quality profiles with their particle budgets', () => {
     expect(gameConfig.quality).toEqual({
       low: { maxDpr: 1, targetFps: 30, maxDecorativeParticles: 96 },
@@ -201,5 +214,21 @@ describe('gameConfig', () => {
       'world.terrain.latticeU',
       'world.terrain.maxEmbankmentU',
     ]);
+  });
+
+  it('R8: rejects a biome block with four chunks instead of eight', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      world: { ...gameConfig.world, chunksPerBiomeBlock: 4 },
+    };
+    expect(validateGameConfig(broken)).toEqual(['world.chunksPerBiomeBlock']);
+  });
+
+  it('R9: rejects an infinite geometry look-ahead', () => {
+    const broken: GameConfig = {
+      ...gameConfig,
+      world: { ...gameConfig.world, geometryLookAheadU: Infinity },
+    };
+    expect(validateGameConfig(broken)).toEqual(['world.geometryLookAheadU']);
   });
 });

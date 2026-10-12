@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 import { snapshot, tapAction } from './helpers.ts';
 
@@ -62,7 +63,10 @@ test.describe('the oncoming train (doc 05 §6, SCN-09, D-017)', () => {
       })
       .toBe(1);
     await page.mouse.up();
-    const start = (await snapshot(page)).oncoming;
+    const state = await snapshot(page);
+    expect(state.scenery.secondaryTrackViews).toBeGreaterThan(0);
+    expect(state.scenery.secondaryPortalViews).toBeGreaterThan(0);
+    const start = state.oncoming;
     const first = start.trains[0];
     if (!first) throw new Error('no oncoming train');
     // It has just come out of the right portal (it started whole inside,
@@ -105,13 +109,15 @@ test.describe('the oncoming train (doc 05 §6, SCN-09, D-017)', () => {
     expect((await snapshot(page)).oncoming.trains).toEqual([]);
   });
 
-  test('PWA-10: without its art the oncoming train is drawn as placeholders', async ({
+  test('PWA-10: without art the parallel track and portals frame the oncoming train', async ({
     page,
   }) => {
     test.setTimeout(120_000);
     await page.route(/steam_local\.body-[^/]*\.svg$/, (route) => route.abort());
     await continueBeforeSecondTrack(page);
-    expect((await snapshot(page)).artAtlas).toBeUndefined();
+    const state = await snapshot(page);
+    expect(state.vehicleAtlas).toBeUndefined();
+    expect(state.artAtlas).toBeDefined();
     await page.mouse.move(700, 300);
     await page.mouse.down();
     await expect
@@ -121,6 +127,9 @@ test.describe('the oncoming train (doc 05 §6, SCN-09, D-017)', () => {
       })
       .toBe(1);
     await page.mouse.up();
+    const scenery = (await snapshot(page)).scenery;
+    expect(scenery.secondaryTrackViews).toBeGreaterThan(0);
+    expect(scenery.secondaryPortalViews).toBeGreaterThan(0);
     // Stop and wait for it in the open: it must not pass invisibly.
     const brake = (await snapshot(page)).brakeRect;
     if (!brake) throw new Error('no brake');
@@ -134,6 +143,34 @@ test.describe('the oncoming train (doc 05 §6, SCN-09, D-017)', () => {
         timeout: 30_000,
       })
       .toBeGreaterThanOrEqual(2);
+    await page.screenshot({
+      path: test.info().outputPath('fallback-parallel-track.png'),
+    });
+    const ending = await page.evaluate(async () => {
+      const api = (
+        window as unknown as { __vlacek: { snapshot(): DebugSnapshot } }
+      ).__vlacek;
+      let previous = api.snapshot().oncoming.drawnInOpen;
+      let last: DebugSnapshot['oncoming'] | undefined;
+      let disappearedOneByOne = true;
+      for (let frame = 0; frame < 3600; frame++) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        const state = api.snapshot().oncoming;
+        disappearedOneByOne &&= Math.abs(state.drawnInOpen - previous) <= 1;
+        previous = state.drawnInOpen;
+        if (state.trains.length === 0)
+          return { last, disappearedOneByOne, finished: true };
+        last = state;
+      }
+      return { last, disappearedOneByOne, finished: false };
+    });
     await page.mouse.up();
+    expect(ending.finished).toBe(true);
+    expect(ending.disappearedOneByOne).toBe(true);
+    expect(ending.last?.drawnInOpen).toBe(0);
+    const lastTrain = ending.last?.trains[0];
+    if (!lastTrain) throw new Error('no final oncoming train sample');
+    expect(lastTrain.maxX).toBeLessThanOrEqual(lastTrain.fromX + 40);
+    expect((await snapshot(page)).oncoming.trains).toEqual([]);
   });
 });

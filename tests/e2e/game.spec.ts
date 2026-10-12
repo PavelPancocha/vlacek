@@ -516,6 +516,8 @@ test.describe('user path', () => {
       const canvasTop = await page
         .locator('#game-root canvas')
         .evaluate((canvas) => canvas.getBoundingClientRect().top);
+      const skyBottom = Math.floor(box.top - canvasTop - 20);
+      expect(skyBottom).toBeGreaterThan(11);
       const lines = await page.evaluate(
         async ({ base64, skyBottom }) => {
           const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -555,18 +557,20 @@ test.describe('user path', () => {
           const found = linesIn(image);
           // The detector itself must see a line drawn into the sky.
           const probe = context.getImageData(0, 0, bitmap.width, bitmap.height);
-          const y = Math.floor(skyBottom / 2);
+          // The middle of this region can already be hills. Use a row in
+          // the smooth upper sky and a colour distinct from sky and hills.
+          const y = 10;
           for (let x = 0; x < probe.width; x++)
-            probe.data.set([170, 210, 160, 255], 4 * (y * probe.width + x));
+            probe.data.set([255, 0, 255, 255], 4 * (y * probe.width + x));
           return { found, probe: linesIn(probe) };
         },
         {
           base64: png.toString('base64'),
           // Sky and backdrop: everything well above the train.
-          skyBottom: Math.floor(box.top - canvasTop - 20),
+          skyBottom,
         },
       );
-      expect(lines.probe.length).toBeGreaterThan(0);
+      expect(lines.probe).toEqual(['row 10: 844/844 columns']);
       expect(lines.found).toEqual([]);
     });
   }

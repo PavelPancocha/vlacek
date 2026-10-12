@@ -1,3 +1,5 @@
+import type { NpcFleet } from '../domain/interaction/OncomingTrain.ts';
+import { npcFleetFor } from '../domain/interaction/npcFleet.ts';
 import type { GameConfig } from '../config/gameConfig.ts';
 import type { CatalogLocomotive, CatalogWagon } from '../content/vehicles.ts';
 import {
@@ -25,7 +27,7 @@ import {
 import type { VehicleGeometry } from '../domain/train/TrainGeometry.ts';
 import type { Consist } from '../domain/types.ts';
 import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
-import { InputRouter } from '../platform/InputRouter.ts';
+import { InputRouter, type WorldHit } from '../platform/InputRouter.ts';
 import type { SaveNotice, SaveRepository } from '../platform/SaveRepository.ts';
 import {
   defaultSettings,
@@ -60,7 +62,10 @@ export type SessionNotice =
 
 /** Session-level events for audio/visual feedback, alongside ride events. */
 export type SessionEvent =
-  RideEvent | { type: 'locomotivePreview'; id: string } | { type: 'trainFull' };
+  | RideEvent
+  | { type: 'locomotivePreview'; id: string }
+  | { type: 'trainFull' }
+  | { type: 'bubblePopped' };
 
 interface Journey {
   seed: number;
@@ -85,8 +90,9 @@ export class GameSession {
   #draft: ConsistDraft;
   #journey: Journey | undefined;
   #fixedStep: FixedStepState = initialFixedStep();
-  #hitObject: (clientX: number, clientY: number) => string | undefined = () =>
+  #hitObject: (clientX: number, clientY: number) => WorldHit | undefined = () =>
     undefined;
+  #popBubble: (id: number) => boolean = () => false;
   #unhandledAction: (action: string) => void = () => undefined;
   #events: SessionEvent[] = [];
   #notices = new Set<SessionNotice>();
@@ -121,7 +127,11 @@ export class GameSession {
     };
     this.router = new InputRouter(deps.config.input, {
       hitObject: (x, y) => this.#hitObject(x, y),
-      onObjectTouched: (id) => this.#journey?.ride.activateObject(id),
+      onObjectTouched: (hit) => {
+        if (typeof hit === 'string') this.#journey?.ride.activateObject(hit);
+        else if (this.#popBubble(hit.bubbleId))
+          this.#emit({ type: 'bubblePopped' });
+      },
       onAction: (action) => this.#onAction(action),
     });
   }
@@ -149,6 +159,13 @@ export class GameSession {
     return this.#journey?.seed;
   }
 
+  /** Reconstructed from seed and catalog; no additional save field (D-019). */
+  get journeyNpcFleet(): NpcFleet | undefined {
+    return this.#journey
+      ? npcFleetFor(this.#journey.seed, this.#deps.catalog)
+      : undefined;
+  }
+
   get journeyConsist(): Consist | undefined {
     return this.#journey?.consist;
   }
@@ -162,11 +179,13 @@ export class GameSession {
     return this.#fullSignals;
   }
 
-  /** Render layer: CSS px → interactive object id under the finger. */
+  /** Render layer: CSS px → world target; the renderer owns bubble lifetime and removal. */
   setWorldHitTest(
-    hitTest: (clientX: number, clientY: number) => string | undefined,
+    hitTest: (clientX: number, clientY: number) => WorldHit | undefined,
+    popBubble: (id: number) => boolean = () => false,
   ): void {
     this.#hitObject = hitTest;
+    this.#popBubble = popBubble;
   }
 
   /** Shell-only actions (e.g. scrolling the depot strip) go here. */
@@ -261,14 +280,9 @@ export class GameSession {
       vehicles: this.#vehicles(consist),
       // Changing the locomotive starts a new journey (doc 03 §9).
       electrified: locomotive?.requiresCatenary === true,
-      // Oncoming trains: steam or diesel locomotives (doc 03 §9).
-      npcFleet: {
-        locomotives: this.#deps.catalog.locomotives.filter(
-          (candidate) =>
-            candidate.power === 'steam' || candidate.power === 'diesel',
-        ),
-        wagons: this.#deps.catalog.wagons,
-      },
+      // Oncoming trains: the journey's seeded fleet of steam or diesel
+      // locomotives and wagons that have their art (D-019).
+      npcFleet: npcFleetFor(seed, this.#deps.catalog),
       speedFactor: this.#settings.maxSpeedFactor,
       config: this.#deps.config,
       ...(restore

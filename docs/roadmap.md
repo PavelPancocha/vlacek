@@ -4,13 +4,13 @@ Stav k 2026-10-11. Rozsah a brány milníků vlastní [implementační plán](..
 
 ## Hotovo
 
-| Milník (dokument 10)            | Stav     | Co funguje                                                                                                                                                                                                                                                                                                                                                          |
-| ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M0 a M1                         | hotovo   | Verze 0.1: dotykové řízení, dojezd, brzda, depo, pauza, ukládání a obnova ([D-006](decisions/006-runtime-architecture.md)).                                                                                                                                                                                                                                         |
-| M2 — nekonečná trať a prostředí | většinou | Generátor v1 ([D-009](decisions/009-track-generator-v1.md)), šest biomů s přechody ([D-013](decisions/013-landscape-localities-and-backdrops.md)), most a tunel s průjezdem po vozidlech ([D-018](decisions/018-bridges-and-tunnels.md)), elektrifikace celé trasy ([D-016](decisions/016-electric-locomotive-and-catenary.md)). Chybí den, noc a počasí.           |
-| M3 — živý svět a interakce      | částečně | Přejezdy s automatem a provozem ([D-015](decisions/015-level-crossings.md)), nádraží bez povinného zastavení, druhá kolej s protijedoucím vlakem ([D-017](decisions/017-second-track-and-oncoming-train.md)), zvířata s reakcí na dotyk. Chybí scénky dokumentu 05 a reakce aut a kol na dotyk.                                                                     |
-| M4 — obsah a výtvarný základ    | částečně | Detailní vektorová grafika všech současných vozidel ([D-011](decisions/011-vector-vehicle-art-and-atlas.md)), kolej a terén ([D-012](decisions/012-track-tiles-and-terrain.md)), krajina z 18 lokalit, částice a drobné animace ([D-014](decisions/014-particles-and-small-animations.md)). Katalog má 4 z 10 lokomotiv a 7 z 32 druhů vagonků, zvuky jsou dočasné. |
-| M5 — PWA a vydání V1            | nezačato | Hra běží jako online web na GitHub Pages ([D-002](decisions/002-github-pages.md)).                                                                                                                                                                                                                                                                                  |
+| Milník (dokument 10)            | Stav     | Co funguje                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M0 a M1                         | hotovo   | Verze 0.1: dotykové řízení, dojezd, brzda, depo, pauza, ukládání a obnova ([D-006](decisions/006-runtime-architecture.md)).                                                                                                                                                                                                                                                                             |
+| M2 — nekonečná trať a prostředí | většinou | Generátor v1 ([D-009](decisions/009-track-generator-v1.md)), šest biomů s přechody ([D-013](decisions/013-landscape-localities-and-backdrops.md)), most a tunel s průjezdem po vozidlech ([D-018](decisions/018-bridges-and-tunnels.md)), elektrifikace celé trasy ([D-016](decisions/016-electric-locomotive-and-catenary.md)). Chybí den, noc a počasí.                                               |
+| M3 — živý svět a interakce      | částečně | Přejezdy s automatem a provozem ([D-015](decisions/015-level-crossings.md)), nádraží bez povinného zastavení, druhá kolej s protijedoucím vlakem ([D-017](decisions/017-second-track-and-oncoming-train.md)), zvířata s reakcí na dotyk. Chybí scénky dokumentu 05 a reakce aut a kol na dotyk.                                                                                                         |
+| M4 — obsah a výtvarný základ    | částečně | Detailní vektorová grafika všech současných vozidel ([D-011](decisions/011-vector-vehicle-art-and-atlas.md)), kolej a terén ([D-012](decisions/012-track-tiles-and-terrain.md)), krajina z 18 lokalit, částice a drobné animace ([D-014](decisions/014-particles-and-small-animations.md)). Katalog je kompletní: všech 10 lokomotiv a 32 druhů vagonků má vlastní grafiku (H0–H3). Zvuky jsou dočasné. |
+| M5 — PWA a vydání V1            | částečně | Hra běží jako online web na GitHub Pages ([D-002](decisions/002-github-pages.md)). Volitelné tlačítko celé obrazovky a jeho fallback jsou ověřené v headless Chromium ([protokol](validation/2026-10-12-cela-obrazovka.md)); PWA instalace, offline a ověření skutečných zařízení zbývají.                                                                                                              |
 
 Dokument 14 je splněný v §1–7: pořadí soupravy, celý vlak v obraze s délkovým limitem ([D-008](decisions/008-whole-train-in-view.md)), detailní grafika, částice, bohatší krajina s přejezdy, druhou kolejí, mosty a tunely, svižnější jízda a snímky ze skutečné aplikace.
 
@@ -22,23 +22,17 @@ Rozhodnuto 2026-10-11: PR #2 už nedostane další kód. Nálezy recenze, které
 
 ## Další kroky v pořadí
 
-Cíl je celý katalog dokumentu 06 §2–3: 10 lokomotiv a 32 druhů vagonků. Dnes jsou 4 lokomotivy a 7 druhů vagonků. Všechna vozidla dostanou detailní vektorovou grafiku ve stylu současných vozidel. Světlo svítí zleva shora, vozidla nemají obličeje ani loga a nejsou převzatá z dětských pořadů. Katalog pojede v novém PR z `master` po sloučení PR #2, který už další kód nedostane. Každý krok jde přes red → green a má dokumentaci ve stejném commitu.
+Cíl je celý katalog dokumentu 06 §2–3: 10 lokomotiv a 32 druhů vagonků. Všech 42 vozidel má vlastní kresbu (H1–H2). Všechna vozidla dostanou detailní vektorovou grafiku ve stylu současných vozidel. Světlo svítí zleva shora, vozidla nemají obličeje ani loga a nejsou převzatá z dětských pořadů. Katalog pojede v novém PR z `master` po sloučení PR #2, který už další kód nedostane. Každý krok jde přes red → green a má dokumentaci ve stejném commitu.
 
 ### H0 — atlas pro jednu jízdu a sada protijedoucích vlaků (D-019)
 
-Podmínka z [D-011](decisions/011-vector-vehicle-art-and-atlas.md): celý katalog se do jednoho atlasu při 2,5 px/u nevejde. Dnes navíc protijedoucí vlak bere vagonky z celého katalogu (`GameSession` → `npcFleet.wagons = catalog.wagons`).
+**Stav: hotovo** ([D-019](decisions/019-journey-atlas-and-npc-fleet.md)). Podmínka z [D-011](decisions/011-vector-vehicle-art-and-atlas.md) je splněna: společný atlas nejhorší jízdy a světa se do 2048 × 2048 nevejde ani při autoritativních 2 px/u (údaj 2,5 px/u byl zastaralý). Selhala i povolená souprava s jednou lokomotivou.
 
-- **Doména:** čistá funkce `npcFleetFor(seed, catalog)` u `src/domain/interaction/OncomingTrain.ts`.
-  - Seedem (klíč `npc-fleet`) vybere sadu jízdy: 2 parní nebo naftové lokomotivy a 6 druhů vagonků.
-  - `GameSession.#createRide` ji předá místo celého katalogu. `OncomingTrain` dál volí pro každé místo z této sady.
-  - Unit testy (nejdřív red): stabilita pro stejný seed, jen parní a naftový pohon, velikost sady, žádná elektrická.
-- **Vykreslování:** `journeyArtKeys(vehicles, fleet)` v `src/render/atlasPacking.ts` vrátí díly vozidel jízdy a sady protijedoucích vlaků.
-  - `RideScene` z nich a z dílů světa sestaví `ArtAtlas`. Při změně jízdy (výjezd z depa, obnova) ho přestaví.
-  - Zdroje SVG se dál načtou jednou při startu, zhruba 1 MB. Ověří to `report:budgets`.
-- **Test rozpočtu:** `atlasPacking` místo „všech vozidel“ zabalí nejhorší jízdu při `ART_MAX_PX_PER_U`, tedy 8 největších různých vozidel a největší sadu protijedoucích vlaků.
-- **Depo** zůstává u SVG vrstev (`<image>`), beze změny.
-- **E2E:** jízda s vozidly z různých skupin má `artVehicles === vehicles`. Po změně v depu a novém výjezdu má atlas nová vozidla.
-- **Dokumentace:** D-019 (rozhodnutí, důsledky; kompatibilita: nic se neukládá). V D-011 se podmínka označí jako splněná.
+- `npcFleetFor(seed, catalog)` (`src/domain/interaction/npcFleet.ts`) klíčem `npc-fleet` vybere dva parní nebo naftové typy lokomotiv a šest typů vagonků bez `placeholder: true`; při menším počtu vrátí všechny způsobilé. Doména neimportuje manifest.
+- `journeyArtKeys(vehicles, fleet)` sbírá všechny unikátní díly vozidel jízdy. `RideScene` má samostatný atlas vozidel jízdy s NPC sadou a trvalý atlas světa; atlas pozadí zůstává zvlášť. Výjezd z depa a obnova přestaví jen atlas vozidel. SVG zdroje se načtou jednou při startu, depo používá SVG `<image>`.
+- Test rozpočtu při `ART_MAX_PX_PER_U = 2` odvozuje všechny rámy z manifestu: atlas světa 2042 × 1344 px, osm největších různých vozidel s NPC sadou 1950 × 1356 px a povolená souprava s jednou lokomotivou 1932 × 1328 px; vše se vejde do 2048².
+- E2E kontroluje `artVehicles === vehicles` pro smíšené skupiny, nový atlas po výjezdu z depa a po obnově, zachování atlasu světa a fallback jednotlivých atlasů. Diagnostika vystavuje `vehicleAtlas` včetně ID a klíče textury; `artAtlas` je atlas světa.
+- D-010 (`maxTextures: 1`) zůstává; vrstvy jsou zem a kolej → vlak → popředí, rekvizity a zvířata → částice. Částice zůstávají nad popředím podle dokumentu 07 §3; pořadí hlídá test `RideSceneDepth`. V běžné parní jízdě bez NPC byly naměřeny dva přechody svět ↔ vozidla na snímek. D-011 §6 platí pro každý atlas samostatně.
 
 ### H1 — šest chybějících lokomotiv
 
@@ -59,6 +53,11 @@ Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
 | `magic_bubbles` 164 u     | Zaoblená karoserie; nový druh částic `bubble`                                                                                    |
 | `magic_rainbow` 176 u     | Vlastní silueta, barevné díly; nový druh částic `rainbow-puff`                                                                   |
 
+- **Stav fantazijních:** hotovo. `magic_bubbles` pouští bubliny a `magic_rainbow` barevné obláčky (nové druhy částic `bubble` a `rainbow-puff`).
+- **Stav velké parní a posunovače:** hotovo. `steam_express` (nová velká hnací kola, parní rozvod, uhlí v zadní části, kouř) a `diesel_shunter` (kapota, kabina, ochoz, výfuk) mají vlastní kresbu; `measure:perf` umí `PERF_WAGON`.
+- **Stav elektrických:** hotovo. `electric_modern` a `electric_mountain` mají vlastní kresbu a sdílený pantograf; TRN-08 prošel se všemi třemi elektrickými lokomotivami.
+- **Stav píšťal:** hotovo. Všech 10 lokomotiv má vlastní tón (velká parní o oktávu níž než malá, hranatá elektrická už nezní jako naftová); hráčova píšťala, náhled při výběru i odpověď protijedoucího vlaku používají identitu lokomotivy (E2E `horns.spec.ts`).
+- **Stav výběru a depa:** hotovo. Všech 10 lokomotiv a 32 druhů vagonků je dosažitelných tahem, kolečkem i klávesou na telefonech 844 × 390, 667 × 375, 568 × 320, na tabletu i desktopu (E2E `picker.spec.ts`).
 - **Výběr lokomotivy:** všech 10 se musí vejít a jít ťuknout. E2E telefonů 844 × 390, 667 × 375 a 568 × 320 se rozšíří i na výběr: poslední karta klikatelná, nic se nepřekrývá.
 - **Testy:**
   - `validateVehicleArt` hlídá geometrii a vlastní kresbu;
@@ -75,6 +74,11 @@ Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
    - Žádná skutečná loga ani dopravci.
 4. Hravé: `fun_stars`, `fun_garden`, `fun_aquarium`, `fun_windmill`, `fun_lights`, `fun_toyblocks`.
 
+- **Stav dávky 4 (hravé):** hotovo. Šest hravých vozů má vlastní statickou kresbu; katalog má grafiku u všech 42 vozidel.
+- **Kontroly celého katalogu:** test grafiky, emitorů a sběračů i `validate:assets --release` zahrnují všech 42 vozidel bez placeholderů; E2E `catalog-contact-sheet.spec.ts` vyfotí kontaktní list všech 42 vozidel ze skutečné aplikace.
+- **Stav dávky 3 (nákladní):** hotovo. Všech 13 nákladních druhů má vlastní kresbu s pevně ukotveným nákladem.
+- **Stav dávky 2 (služební):** hotovo. Dílenský vůz a vůz s pluhem (radlice v obrysu vozu) mají vlastní kresbu.
+- **Stav dávky 1 (osobní):** hotovo. Patrový, lůžkový, jídelní a vyhlídkový vůz mají vlastní kresbu.
 - **Data:** délky, skupiny a české názvy jsou z dokumentu 06 §3. Dvounápravový nebo podvozkový pojezd určuje manifest u každého vagonku.
 - **Depo:** katalog si nechá čtyři skupiny. E2E telefonů ověří, že je dosažitelná i poslední z 32 karet.
 - **Testy a kontroly:**
@@ -83,6 +87,8 @@ Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
   - E2E vyfotí kontaktní list všech 42 vozidel ze skutečné aplikace.
 
 ### H3 — bubliny a duha (dokument 06 §2)
+
+**Stav: hotovo.** Ťuknutí na bublinu ji přes `GameSession.setWorldHitTest` odstraní s malou částicí a krátkým zvukem (se ztišením i hlasovým limitem); tentýž dotyk současně pohání vlak a brzda má přednost. Duhová mašinka pouští měkké barevné obláčky. Unit, integrační i E2E testy na obou projektech; fyzická zařízení NEOVĚŘENO.
 
 - **Bubliny:** viditelné bubliny bublinkové mašinky jde prasknout dotykem.
   - Zásah hledá stávající `GameSession.setWorldHitTest`. Dotyk funguje souběžně s plynem, stejně jako reakce zvířat.
@@ -114,18 +120,22 @@ Codex je našel při recenzi PR #2 (`f5cde58` a dřív). Všechny jsou ověřen�
 
 Generátor v1 i veškerý obsah světa zatím existují jen v PR #2 (`master` má generátor 0). Po sloučení se v1 vydá, takže každá oprava, která mění svět v1 (R3), už potřebuje generátor v2 a migraci uložených cest.
 
+R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na nález; red a green jsou v [protokolu oprav recenze](validation/2026-10-11-opravy-recenze.md). R3 a R4 zůstávají otevřené.
+
 #### R1 — novější save se pozná dřív, než se ověří jeho obsah
 
 - **Problém:** `parseSave` (`src/platform/SaveValidation.ts`) porovná `journey.generatorVersion` s verzí buildu až po ověření `lastConsist`, `builderDraft` a cesty proti současnému katalogu. Save z novějšího buildu s novou lokomotivou nebo vagonkem tak skončí jako `invalid`, ne `newer`. `SaveRepository` pak může obnovit starší zálohu a příští uložení novější primární save přepíše (AGENTS.md: neznámou novější verzi nepřepisuj).
 - **Oprava:** před ověřením polí, která závisí na katalogu, se přečtou surové údaje. `newer` vrátí `schemaVersion` nad 1, `contentVersion` nad podporovanou (dokument 08: změna obsahu mapuje ID) i `journey.generatorVersion` nad verzí buildu.
 - **Test:** fixture se schématem 1, generátorem 2 a neznámou lokomotivou dá `newer`. `SaveRepository` nechá primární save beze změny i při platné záloze a oznámí `newer-save-kept`.
 - **Dokumentace:** poznámka v dokumentu 08 a v [D-009](decisions/009-track-generator-v1.md), řádek v README fixtures.
+- **Stav:** hotovo. Verze se kontrolují před katalogovými ID; při každém dalším ukládání se primární save znovu přečte. Novější save, který mezitím zapsala jiná karta, přepne relaci do `memory-only` dřív, než se cokoli zapíše; primár i platná záloha zůstanou beze změny.
 
 #### R2 — konečná nejvyšší rychlost protijedoucího vlaku
 
 - **Problém:** kontrola `interaction.npcTrainSpeedUPerSec` v `src/config/gameConfig.ts` ověří konečnost jen u minima. S maximem `Infinity` projde, protijedoucí vlak pak skočí na `headS = -Infinity` a `SecondaryLine.sample()` vyhodí výjimku v aktualizaci jízdy.
 - **Oprava:** minimum i maximum musí být konečná kladná čísla a minimum nejvýš maximum.
 - **Test:** unit test validace s `Infinity` (červený před opravou).
+- **Stav:** hotovo. Obě meze jsou konečná kladná čísla a minimum nejvýš maximum; maximum `Infinity` validace odmítne (dokument 13).
 
 #### R3 — generátor v2: dvě opravy světa v jedné změně kompatibility
 
@@ -162,36 +172,42 @@ Generátor v1 i veškerý obsah světa zatím existují jen v PR #2 (`master` m�
 - **Problém:** `#updateCrossings` (`src/domain/ride/RideSimulation.ts`) prochází chunky od `behindX`. Když vlak stojí kousek za přejezdem, ale `behindX` je pořád v jeho chunku, vytvoří se v každém ticku nový `LevelCrossing` a hned se smaže. Při 60 Hz je to zbytečná alokace a riziko zadrhávání GC na slabém zařízení.
 - **Oprava:** přeskočit místa, jejichž `crossingWorldX` je už za `behindX`, ještě před vytvořením automatu.
 - **Test:** unit test zastaví vlak za přejezdem a ověří, že se instance automatu mezi ticky nemění a nevzniká nová.
+- **Stav:** hotovo. Místa, jejichž `crossingWorldX` už je za `behindX`, se přeskočí dřív, než vznikne automat; stojící vlak za přejezdem už nové instance nealokuje.
 
 #### R6 — podpěra vedení u portálu tunelu
 
 - **Problém:** `catenarySupport` (`src/domain/world/Catenary.ts`) označí sloup do 72 u od portálu jako závěs ze stropu, takže stožár zmizí. `TunnelView` ale kreslí závěsy jen uvnitř zapečeného nitra (64 u za portálem, zkrácené o 4 u). Sloup 64–72 u za portálem nemá stožár ani závěs a drát se lomí ve vzduchu (například svět 25, chunk 6).
 - **Oprava:** jedna společná hranice pro obojí: buď závěs kreslit až do hranice klasifikace, nebo sloupu mimo nitro vrátit stožár.
 - **Test:** unit průchod tunely mnoha světů: každý sloup má buď stožár, nebo kreslený závěs; regresní svět 25.
+- **Stav:** hotovo. Klasifikace podpěry a kreslení závěsu sdílejí hranici 60 u od portálu; sloup na hranici a dál má stožár na původním místě. Svět ani verze generátoru se nemění (otisk 5280 chunků shodný).
 
 #### R7 — souběžná kolej i bez grafiky
 
 - **Problém:** bez atlasu `ChunkView` skončí v `#addPlainInfrastructure` dřív, než zavolá `chunkSecondaryTrack`. Protijedoucí vlak se kreslí jako silueta (oprava `d90534b`), ale jede bez kolejí a bez portálových kopců a mizí na neoznačené hranici.
 - **Oprava:** jednoduchá souběžná kolej a portálové kopce v náhradním kreslení, na stejných místech jako s grafikou.
 - **Test:** E2E PWA-10 s nenačteným SVG u druhé koleje světa 123: kolej je vidět (nová diagnostika) a vlak mizí v portálu.
+- **Stav:** hotovo. Bez grafiky se souběžná kolej a portálové kopce kreslí jednoduchými tvary na stejných místech jako s grafikou a protijedoucí vlak mizí po vozidlech v portálu (E2E PWA-10 ve světě 123).
 
 #### R8 — velikost bloku biomu je pevná
 
 - **Problém:** validace přijme jakékoli kladné `world.chunksPerBiomeBlock`, ale rozvržení slotů (přejezd ve slotu 3, most 4, tunel 6, druhá kolej 4–6, přechod 7) počítá s osmi chunky. Při hodnotě 4 by simulace pustila protijedoucí vlak tam, kde se koleje nekreslí.
 - **Oprava:** validace vyžaduje 8, stejně jako u `blocksPerRouteCycle`. Odvození slotů z konfigurace se odkládá, dokud pro něj nebude konkrétní důvod.
 - **Test:** unit test validace s hodnotou 4.
+- **Stav:** hotovo. Validace vyžaduje `world.chunksPerBiomeBlock === 8`; hodnotu 4 odmítne (dokument 13). Odvození slotů z konfigurace zůstává odložené.
 
 #### R9 — konečný předstih geometrie
 
 - **Problém:** validace `world.geometryLookAheadU` (`src/config/gameConfig.ts`) hlídá jen dolní mez 2048, takže `Infinity` projde. `RideSimulation.#streamTrack()` pak předá `TrackWindow.ensureRange()` nekonečnou mez a smyčka `while (endS < toS)` neskončí: start i obnova cesty zamrznou.
 - **Oprava:** hodnota musí být konečná a aspoň 2048.
 - **Test:** unit test validace s `Infinity`.
+- **Stav:** hotovo. `world.geometryLookAheadU` musí být konečné a nejméně 2048 u; `Infinity` validace odmítne dřív, než by zacyklila start cesty (dokument 13).
 
 #### R10 — pozadí se s novou cestou vrátí na začátek
 
 - **Problém:** `RideScene.#reset()` vyčistí chunky, částice i ticky, ale ne stav `Backdrop` (vrstvy, prolínání, biom). Když nová cesta začíná v jiném biomu, první snímek ukáže pozadí staré cesty a 1,2 s se prolíná.
 - **Oprava:** `Backdrop` dostane reset stavu jízdy, který zavolá `RideScene.#reset()`.
 - **Test:** E2E druhé cesty, jejíž první biom se liší: hned první snímek ukáže nový biom bez prolínání.
+- **Stav:** hotovo. `Backdrop` má reset stavu jízdy, který volá `RideScene.#reset()`; druhá cesta ukáže svůj biom hned v prvním snímku, bez staré vrstvy a bez prolínání.
 
 ### Potom (M3–M5)
 

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="168" height="76" viewBox="0 0 168 76">
+  <defs><linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e5e6"/><stop offset="0.5" stop-color="#9aa7ad"/><stop offset="1" stop-color="#606e75"/></linearGradient><linearGradient id="dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a6269"/><stop offset="0.5" stop-color="#30373d"/><stop offset="1" stop-color="#171c20"/></linearGradient><linearGradient id="enamel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffef4"/><stop offset="0.5" stop-color="#e7e6d9"/><stop offset="1" stop-color="#a5a99e"/></linearGradient><linearGradient id="blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b1ccd6"/><stop offset="0.5" stop-color="#7ba9ba"/><stop offset="1" stop-color="#608d9e"/></linearGradient><linearGradient id="frame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d838e"/><stop offset="0.5" stop-color="#3d505b"/><stop offset="1" stop-color="#27353e"/></linearGradient></defs>
+  <g stroke="#20262a" stroke-width="0.6" stroke-linejoin="round">
+    <rect x="4" y="39" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+    <rect x="157" y="39" width="7" height="14" rx="0.8" fill="url(#dark)"/>
+    <path d="M2.8 46 H9 M159 46 H165.2" stroke="url(#steel)" stroke-width="3.2"/>
+    <rect x="0.4" y="42.2" width="2" height="7.6" rx="0.7" fill="url(#steel)"/>
+    <rect x="165.6" y="42.2" width="2" height="7.6" rx="0.7" fill="url(#steel)"/>
+    <path d="M4 50 H2.8 V52.6 H4 M164 50 H165.2 V52.6 H164" fill="none" stroke-width="0.9"/>
+    <path d="M7 53 Q9 58 6 60 M161 53 Q159 58 162 60" fill="none" stroke="#232b2e" stroke-width="1.2"/>
+    <rect x="5" y="43.4" width="158" height="5.6" fill="url(#frame)"/>
+    <path d="M6 44.2 H162" stroke="#aeb9bd" stroke-width="0.45"/>
+    <g fill="#cbd3d4" stroke="#465154" stroke-width="0.18"><circle cx="14" cy="46.2" r="0.38"/><circle cx="29" cy="46.2" r="0.38"/><circle cx="44" cy="46.2" r="0.38"/><circle cx="59" cy="46.2" r="0.38"/><circle cx="74" cy="46.2" r="0.38"/><circle cx="89" cy="46.2" r="0.38"/><circle cx="104" cy="46.2" r="0.38"/><circle cx="119" cy="46.2" r="0.38"/><circle cx="134" cy="46.2" r="0.38"/><circle cx="149" cy="46.2" r="0.38"/></g>
+    <rect x="73" y="50" width="15" height="4" rx="1.8" fill="url(#steel)"/>
+    <path d="M88 52 H104" fill="none" stroke="#687277" stroke-width="0.8"/>
+    <!-- Mléko: nižší izolovaná nádrž na samostatných nápravách. -->
+    <path d="M41 43 L45 35 H52 L58 43 Z M110 43 L116 35 H123 L127 43 Z" fill="url(#frame)"/>
+    <path d="M39 17 H129 C139 17 146 22 146 29.5 S139 42 129 42 H39 C29 42 22 37 22 29.5 S29 17 39 17 Z" fill="url(#enamel)"/>
+    <path d="M23.2 25 H144.8 Q146 29.5 144.8 33 H23.2 Q22 29.5 23.2 25 Z" fill="url(#blue)" stroke="none"/>
+    <path d="M34 18.2 C30 24 30 35 34 40.8 M134 18.2 C138 24 138 35 134 40.8" fill="none" stroke="#b5b5a7" stroke-width="0.45"/>
+    <path d="M39 19 H126" stroke="#fffef5" stroke-width="0.7" opacity="0.8"/>
+    <path d="M46 17 H50 V41.5 H46 Z M118 17 H122 V41.5 H118 Z" fill="url(#steel)" stroke-width="0.45"/>
+    <rect x="45" y="38.4" width="6" height="4" rx="0.4" fill="url(#steel)"/>
+    <rect x="117" y="38.4" width="6" height="4" rx="0.4" fill="url(#steel)"/>
+    <path d="M71 17 V12 H98 V17" fill="url(#enamel)"/>
+    <path d="M69 12 Q70 7.8 84.5 7.8 Q99 7.8 100 12 Z" fill="url(#steel)"/>
+    <path d="M70 12 H99 V14 H70 Z" fill="url(#steel)"/>
+    <path d="M75 10 V8 M94 10 V8 M81 8 V6.5 H88 V8" fill="none" stroke="#637075" stroke-width="1.1"/>
+    <path d="M106 17 V12 H109 V17 M105.5 12 H109.5 V10 H105.5 Z" fill="url(#steel)"/>
+    <circle cx="84" cy="29.5" r="11.6" fill="#7ba9ba" stroke="#dce5df" stroke-width="0.7"/>
+    <path d="M80.5 22 H87.5 V24.6 L89 26 V36.4 Q84 38 79 36.4 V26 L80.5 24.6 Z M79.8 20.8 H88.2 V22.2 H79.8 Z" fill="#f3f0df" stroke="none"/>
+    <path d="M79.5 25 Q76 23.5 76.5 27 Q77 29 79 29 M88.5 25 Q92 23.5 91.5 27 Q91 29 89 29" fill="none" stroke="#f3f0df" stroke-width="1.1"/>
+    <path d="M17 44 V33 Q17 31 19 31 V44 M149 44 V33 Q149 31 151 31 V44" fill="none" stroke="url(#steel)" stroke-width="1.2"/>
+    <path d="M84 43 V49 H87 V47 H90" fill="none" stroke="url(#steel)" stroke-width="1.4"/>
+    <g fill="#cbd3d4" stroke="#465154" stroke-width="0.18"><circle cx="47.3" cy="20" r="0.38"/><circle cx="47.3" cy="28" r="0.38"/><circle cx="47.3" cy="35" r="0.38"/><circle cx="47.3" cy="40" r="0.38"/><circle cx="48.8" cy="20" r="0.38"/><circle cx="48.8" cy="28" r="0.38"/><circle cx="48.8" cy="35" r="0.38"/><circle cx="48.8" cy="40" r="0.38"/><circle cx="119.3" cy="20" r="0.38"/><circle cx="119.3" cy="28" r="0.38"/><circle cx="119.3" cy="35" r="0.38"/><circle cx="119.3" cy="40" r="0.38"/><circle cx="120.8" cy="20" r="0.38"/><circle cx="120.8" cy="28" r="0.38"/><circle cx="120.8" cy="35" r="0.38"/><circle cx="120.8" cy="40" r="0.38"/></g>
+  </g>
+</svg>

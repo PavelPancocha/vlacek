@@ -12,9 +12,26 @@ export interface DebugSnapshot {
   renderedVehicles: number;
   /** Rendered vehicles drawn from their art (doc 14 §3). */
   artVehicles: number;
-  /** The vehicle art atlas (D-011); undefined if the art failed to load. */
+  /** The world art atlas (D-019); undefined if this atlas failed. */
   artAtlas:
-    | { width: number; height: number; frames: number; pxPerU: number }
+    | {
+        width: number;
+        height: number;
+        frames: number;
+        pxPerU: number;
+        textureKey: string;
+      }
+    | undefined;
+  /** Journey vehicle atlas; IDs include the NPC fleet (D-019). */
+  vehicleAtlas:
+    | {
+        width: number;
+        height: number;
+        frames: number;
+        pxPerU: number;
+        textureKey: string;
+        vehicleIds: string[];
+      }
     | undefined;
   /** Decorative particles (doc 14 §4, D-014): counts and a position sum. */
   effects: {
@@ -23,6 +40,7 @@ export interface DebugSnapshot {
     kinds: Record<string, number>;
     /** Sum of particle positions; unchanged while the ride is paused. */
     checksum: number;
+    bubblePops: number;
   };
   /**
    * Loaded SVG sources still held as textures; 0 once the atlases are
@@ -35,7 +53,7 @@ export interface DebugSnapshot {
     | undefined;
   /** Landscape in view (doc 14 §5). */
   scenery: {
-    /** Biome of the backdrop, undefined outside a ride. */
+    /** Target biome of the backdrop, undefined outside a ride. */
     biome: string | undefined;
     /** Localities of the chunks in view, left to right. */
     localities: string[];
@@ -47,6 +65,9 @@ export interface DebugSnapshot {
     nearPropOverlaps: string[];
     /** Level crossings drawn in view, with art or its fallback. */
     crossingViews: number;
+    /** Second-track chunks and portal hills drawn with art or plain. */
+    secondaryTrackViews: number;
+    secondaryPortalViews: number;
   };
   /** Catenary of an electric journey (doc 03 §9, D-016). */
   catenary: {
@@ -65,12 +86,22 @@ export interface DebugSnapshot {
     alpha: number;
     train: 'outside' | 'partly' | 'inside';
   }[];
+  /** Actual backdrop layers and crossfade progress (0 … 1), if a journey exists. */
+  backdrop:
+    | {
+        currentBiome: string | undefined;
+        incomingBiome: string | undefined;
+        fade: number;
+      }
+    | undefined;
   /** Parallax: the first mid backdrop tile's x from the view's left, u. */
   backdropMidOffsetU: number;
   /** Oncoming trains on second tracks (doc 05 §6, D-017). */
   oncoming: {
     trains: {
       id: string;
+      /** Catalog identity of the actual NPC locomotive (horn checks). */
+      locomotiveId: string | undefined;
       /** World x interval of the whole train. */
       minX: number;
       maxX: number;
@@ -113,6 +144,8 @@ export interface DebugSnapshot {
   p95FrameMs: number;
   worstFrameMs: number;
   frameSamples: number;
+  /** Visible bubbles: stable ID and drawn center/radius in CSS px (H3). */
+  bubbles: { id: number; x: number; y: number; radiusCssPx: number }[];
   objects: { id: string; x: number; y: number }[];
   /** Screen x of the chunk boundaries in view, CSS px (seam checks). */
   chunkEdges: number[];

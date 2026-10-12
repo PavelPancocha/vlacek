@@ -40,7 +40,8 @@ Dokument 14 §5 chce v krajině potoky, mosty a tunely. Podle §2 dítě v tunel
    - **Ztmavení (TRN-06).** Ztmavení je pás v prostoru tunelu s měkkým přechodem 40 u u portálů. Každé vozidlo je tedy tmavé podle vlastní polohy. Celou soupravu nepřepíná žádná maska ani přepínač, Canvas fallback kreslí totéž.
 5. **Vedení.**
    - Stožár stojí 80 u od středu potoka, tedy vedle opěr mostu.
-   - V tunelu ani 72 u kolem něj nestojí stožár. Tam drát drží závěs ze stropu s izolátorem a svorkou (`catenarySupport` v doméně: `'mast'` nebo `'hanger'`).
+   - V tunelu a méně než 60 u od jeho portálů nestojí stožár. Tam drát drží závěs ze stropu s izolátorem a svorkou (`catenarySupport` v doméně: `'mast'` nebo `'hanger'`). Klasifikace i kreslení používají společnou doménovou hranici `TUNNEL_MAST_CLEARANCE_U`; na hranici a za ní stojí stožár. Zapečené nitro dál přesahuje portály o 64 u (4 u za hranici závěsů).
+   - **Oprava R6.** Dřívější klasifikace závěsu do 72 u nesouhlasila s kreslením jen do 60 u. Podpěra v mezeře proto nebyla vidět (svět 25, chunk 6, x = 6912 u). Mimo nitro nyní zůstává stožár na původním místě; podpěry se neposouvají a kresba kopce i nitra se nemění.
    - Drát vede rovně přes most i tunelem. V tunelu je za krytem a průsvitným krytem je vidět.
    - Stožáry stojí před boky kopce.
 6. **Diagnostika.** Snímek `?debug=1` hlásí `tunnels`: ID, průhlednost krytu a zda je vlak venku, částečně nebo celý uvnitř (`outside`, `partly`, `inside`).
@@ -62,6 +63,10 @@ Dokument 14 §5 chce v krajině potoky, mosty a tunely. Podle §2 dítě v tunel
 ## Kompatibilita
 
 Save, trať ani ID katalogu se nemění. Generátor trati zůstává v1: most i tunel jsou dekorace nad stejnou geometrií, takže rozehraná trasa se nezmění.
+
+Oprava R6 mění jen klasifikaci a kreslení podpěry u portálu. Geometrie, objekty, přejezdy, místa tunelů a polohy podpěr vedení zůstávají stejné; `TRACK_GENERATOR_VERSION` se nemění. Unit testy procházejí tunely 64 světů včetně záporných chunků a ověřují skutečně kreslené svorky závěsů i regresní svět 25, chunk 6.
+
+Test kreslení `src/render/TunnelView.test.ts` běží v Node s náhradou pouze Phaseru. Leží u rendereru, takže jeho typy kontroluje stávající rendererový TypeScript projekt s DOM; doménový ani kořenový projekt bez DOM se nerozšiřují. Vitest zahrnuje i `src/render/**/*.test.ts`, lokálně a v CI stejným příkazem `volta run npm test`. Samostatně: `VITEST_MAX_WORKERS=4 volta run npm test -- src/render/TunnelView.test.ts`.
 
 ## Dočasná omezení a podmínky odstranění
 

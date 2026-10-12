@@ -17,10 +17,18 @@ type IconName =
   | 'undo'
   | 'locomotive'
   | 'rotate'
-  | 'check';
+  | 'check'
+  | 'fullscreen'
+  | 'fullscreenExit';
 
 /** Own simple icons (24 × 24 paths), drawn as SVG elements, no files. */
 const PATHS: Record<IconName, string[]> = {
+  fullscreen: [
+    'M3 3h7v2H5v5H3zM14 3h7v7h-2V5h-5zM3 14h2v5h5v2H3zM19 14h2v7h-7v-2h5z',
+  ],
+  fullscreenExit: [
+    'M8 3h2v7H3V8h5zM14 3h2v5h5v2h-7zM3 14h7v7H8v-5H3zM14 14h7v2h-5v5h-2z',
+  ],
   brake: ['M8 2h8l6 6v8l-6 6H8l-6-6V8z', 'M7 11h10v2H7z'],
   horn: [
     'M3 10h4l7-5v14l-7-5H3z',
