@@ -164,7 +164,7 @@ for (const locomotive of locomotives) {
 }
 
 for (const muted of [false, true]) {
-  test(`H1: protijedoucí vlak ${muted ? 'při vypnutých zvucích mlčí' : 'odpoví vlastní parní píšťalou hráčově elektrické'}`, async ({
+  test(`H1: protijedoucí vlak ${muted ? 'při vypnutých zvucích mlčí' : 'odpoví přesným tónem vlastní lokomotivy hráčově elektrické'}`, async ({
     page,
   }) => {
     const consist = { locomotiveId: 'electric_retro', wagons: [] };
@@ -230,6 +230,15 @@ for (const muted of [false, true]) {
       })
       .toBe(true);
     expect(await voices(page)).toEqual([]);
+    const npc = (await snapshot(page)).oncoming.trains[0];
+    const locomotive = locomotives.find(
+      (loco) => loco.id === npc?.locomotiveId,
+    );
+    if (!npc || !locomotive)
+      throw new Error('Chybí lokomotiva protijedoucího vlaku');
+    expect(['steam', 'diesel']).toContain(locomotive.power);
+    const replyTone = soundTones[locomotive.hornAudio];
+    if (!replyTone) throw new Error('Chybí tón protijedoucí lokomotivy');
     if (muted) await gesture(page, 'sound');
     await gesture(page, 'horn');
     const afterHorn = await snapshot(page);
@@ -243,10 +252,11 @@ for (const muted of [false, true]) {
       return;
     }
     const scheduled = await voices(page);
-    expect(scheduled).toHaveLength(4);
+    expect(afterHorn.oncoming.trains[0]?.id).toBe(npc.id);
+    expect(afterHorn.oncoming.trains[0]?.locomotiveId).toBe(locomotive.id);
+    expect(scheduled).toHaveLength(2 + replyTone.frequencies.length);
     expectTone(scheduled.slice(0, 2), soundTones['audio.horn.electric_retro']);
-    // World 123 / g1:block:1 chooses steam_local from the real catalog fleet.
-    expectTone(scheduled.slice(2), soundTones['audio.horn.steam_local']);
+    expectTone(scheduled.slice(2), replyTone);
   });
 }
 

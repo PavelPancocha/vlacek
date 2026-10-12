@@ -1,6 +1,79 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { tapAction } from './helpers.ts';
 
+test('UI-05/07: locomotive selection retains cards and SVG images', async ({
+  page,
+}) => {
+  await page.goto('./');
+  const nodes = await page.evaluateHandle(() => [
+    ...document.querySelectorAll('.cards, .cards .card, .cards svg image'),
+  ]);
+  expect(await nodes.evaluate((retained) => retained.length)).toBeGreaterThan(
+    10,
+  );
+  await tapAction(page, 'loco:steam_express');
+  await expect(
+    page.locator('[data-action="loco:steam_express"]'),
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(
+    await nodes.evaluate((retained) =>
+      retained.every((node) => node.isConnected),
+    ),
+  ).toBe(true);
+  await nodes.dispose();
+});
+
+test('UI-02/05/07: depot draft changes retain catalog and existing train previews', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await tapAction(page, 'to-depot');
+  await tapAction(page, 'add:cargo_box');
+  const nodes = await page.evaluateHandle(() => [
+    ...document.querySelectorAll(
+      '.catalog, .catalog .card, .catalog svg image, .strip, .strip-item, .strip svg image',
+    ),
+  ]);
+  expect(await nodes.evaluate((retained) => retained.length)).toBeGreaterThan(
+    32,
+  );
+  await tapAction(page, 'add:passenger_classic');
+  await expect(page.locator('.count')).toHaveText('2');
+  expect(
+    await nodes.evaluate((retained) =>
+      retained.every((node) => node.isConnected),
+    ),
+  ).toBe(true);
+  await page.locator('.strip-item[data-action^="wagon:"]').last().click();
+  await tapAction(page, 'remove');
+  await expect(page.locator('.count')).toHaveText('1');
+  expect(
+    await nodes.evaluate((retained) =>
+      retained.every((node) => node.isConnected),
+    ),
+  ).toBe(true);
+  await tapAction(page, 'undo');
+  await expect(page.locator('.count')).toHaveText('2');
+  expect(
+    await nodes.evaluate((retained) =>
+      retained.every((node) => node.isConnected),
+    ),
+  ).toBe(true);
+  await tapAction(page, 'back');
+  expect(
+    await nodes.evaluate((retained) =>
+      retained.every((node) => !node.isConnected),
+    ),
+  ).toBe(true);
+  await tapAction(page, 'to-depot');
+  await expect(page.locator('.catalog .card')).toHaveCount(32);
+  await expect(page.locator('.strip-item[data-action^="wagon:"]')).toHaveCount(
+    2,
+  );
+  await expect(page.locator('.count')).toHaveText('2');
+  await nodes.dispose();
+});
+
 async function expectReachableCard(
   page: Page,
   card: Locator,

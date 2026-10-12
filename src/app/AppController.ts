@@ -302,6 +302,7 @@ export class AppController {
       oncoming: {
         trains: (ride?.oncomingTrains ?? []).map((train) => ({
           id: train.id,
+          locomotiveId: train.vehicles[0]?.id,
           ...train.xSpan(),
           fromX: train.site.fromX,
           toX: train.site.toX,

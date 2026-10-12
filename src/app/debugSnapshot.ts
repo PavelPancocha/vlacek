@@ -88,6 +88,8 @@ export interface DebugSnapshot {
   oncoming: {
     trains: {
       id: string;
+      /** Catalog identity of the actual NPC locomotive (horn checks). */
+      locomotiveId: string | undefined;
       /** World x interval of the whole train. */
       minX: number;
       maxX: number;
