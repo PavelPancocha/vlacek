@@ -706,3 +706,23 @@ Recenze celého PR upozornila, že mezilehlé commity neprošly vlastní branou:
 **Negativní kontrola.** Dočasné poškození pouze karty `cargo_box` shodilo právě blok 1–8 a klávesnicovou kontrolu vagonků; ostatní bloky prošly a injekce byla odstraněna.
 
 **Check.** `check` měl 538/539: jediné selhání byl známý zátěžový timeout GEN-10 (5723 / 6278 / 6006 ms), samostatně soubor prošel 19/19. Ostatní validátory i build prošly.
+
+## Brána sloučeného PR #6
+
+Sloučená větev `codex/v1`. Lokální brána na `0.1.0+d2d7c16` (stejný kód aplikace jako hlava PR; pozdější commity mění jen CI a dokumentaci) v čistém worktree. Stroj byl zatížen prací vlastníka, load 7–17.
+
+- `check`: 560/561 se známým zátěžovým timeoutem GEN-10 (5,7 s); samostatně 20/20.
+- `validate:assets --release`: 42 vozidel s kresbou, 0 placeholderů.
+- `test:e2e --workers=2`: 278 prošlo, 4 přeskočené a 2 zátěžové timeouty za 34,7 min. Oba timeouty (klávesnice vagonků 37,2 s, obnova po reloadu 34,8 s) samostatně prošly 10/10; na GitHubu trvaly 4,7–18,8 s a 18–21 s.
+- `report:budgets`: 3 433,2 KiB (gzip 853,0 KiB) z 10 240 KiB.
+
+GitHub Actions na `06db6db`: Quality checks a E2E 1/4–4/4 zelené (běhy 38263009004 pull_request a 38261898897 push), shardy 5,2–7,6 min.
+
+`PERF_SECONDS=30 PERF_LOCOMOTIVE=steam_express PERF_WAGON=cargo_cars npm run measure:perf` na nezatíženém stroji (vstupní load 1,4–9,6, bez dalších běhů), tři běhy. Vykresleno 7/7 vozidel, medián 59,9 FPS, 95. percentil 33,4 ms, nejhorší snímek 83,2 / 66,7 / 50 ms, bez chyb stránky. Výsledek odpovídá PR #4 samotnému a rozpočty dokumentu 11 jsou splněny. Fyzický tablet, telefon a Tesla: NEOVĚŘENO.
+
+## Recenze sloučeného PR #6
+
+Sloučená větev `codex/v1` spojuje PR #3, #4 a #5 sloučením, ne přepsáním historie. Nezávislý Codex GPT-6-Astra posoudil rozdíl integrace: řešení konfliktů, souhru částí, testové a CI commity a dokumentaci. Verdikt FIX se dvěma nálezy. Po odpovědi recenzent nález 1 stáhl a nález 2 uznal za opravený, výsledný verdikt LAND.
+
+1. **Starší karta přepíše save nového katalogu** (must-fix podle recenze): karta s buildem `2563ef4` otevřená přes nasazení přepíše při uložení save s novou lokomotivou, protože nové ID považuje za neplatné a R1 chrání jen novější verze. **Vyvráceno:** build `2563ef4` čte save jen při startu a ukládá bez jakékoli kontroly obsahu primáru. Přepíše proto i save stejné verze z jiné karty. Výsledek nezávisí na katalogu. Jde o známé omezení netransakčních zápisů mezi kartami, uvedené u R1. Nové ID mění jen to, že starší build takový primár nepřesune do zálohy. Navržené oddělené klíče úložiště s migrací mění formát dokumentu 08 a odporují zadání (D-019: bez zvýšení `contentVersion`, bez migrace). Omezení je zapsáno v [D-019](../decisions/019-journey-atlas-and-npc-fleet.md) a nabídnuto vlastníkovi jako samostatné rozhodnutí.
+2. **D-017 předpokládala společný atlas světa a vozidel** (drobnost): **opraveno.** Bez atlasu světa kreslí `ChunkView` jednoduchou kolej a portály, protijedoucí vlak se ale dál kreslí z kresby, dokud je k dispozici atlas vozidel (D-019). Siluetou se stává jen bez atlasu vozidel.
