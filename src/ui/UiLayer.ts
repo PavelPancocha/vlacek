@@ -29,6 +29,7 @@ export interface UiModel {
   /** World seed of the current journey, shown small on the pause screen. */
   seed: number | undefined;
   portrait: boolean;
+  fullscreen: { supported: boolean; active: boolean; failed: boolean };
   buildId: string;
   locomotives: readonly CatalogLocomotive[];
   wagons: readonly CatalogWagon[];
@@ -117,9 +118,13 @@ export class UiLayer {
       model.hasJourney,
       model.seed,
       model.portrait,
+      model.fullscreen,
     ]);
     if (signature === this.#signature) return;
     this.#signature = signature;
+    const fullscreenFocused =
+      this.#root.querySelector('[data-action="fullscreen"]') ===
+      document.activeElement;
     const strip = this.#root.querySelector('.strip');
     if (strip) this.#stripScrollLeft = strip.scrollLeft;
     this.#renderScope?.abort();
@@ -128,6 +133,10 @@ export class UiLayer {
       ...this.#render(model, this.#renderScope.signal),
     );
     this.#root.dataset['screen'] = model.screen.name;
+    if (fullscreenFocused)
+      this.#root
+        .querySelector<HTMLButtonElement>('[data-action="fullscreen"]')
+        ?.focus({ preventScroll: true });
   }
 
   dispose(): void {
@@ -181,6 +190,33 @@ export class UiLayer {
     return views;
   }
 
+  #fullscreenNotice(model: UiModel): HTMLElement | undefined {
+    if (!model.fullscreen.failed) return undefined;
+    return el(
+      'p',
+      { class: 'hint', role: 'status' },
+      model.fullscreen.active
+        ? 'Režim celé obrazovky teď nelze změnit.'
+        : 'Celá obrazovka teď není dostupná. Hra pokračuje v okně.',
+    );
+  }
+
+  #fullscreen(model: UiModel): HTMLElement | undefined {
+    const state = model.fullscreen;
+    if (!state.supported) return undefined;
+    const text = state.active ? 'Ukončit celou obrazovku' : 'Celá obrazovka';
+    return actionButton(
+      'fullscreen',
+      text,
+      [icon(state.active ? 'fullscreenExit' : 'fullscreen', 40), label(text)],
+      {
+        className: 'button fullscreen',
+        pressed: state.active,
+        disabled: state.failed,
+      },
+    );
+  }
+
   #home(model: UiModel): HTMLElement {
     return el(
       'section',
@@ -205,6 +241,8 @@ export class UiLayer {
           },
         ),
       ),
+      this.#fullscreen(model),
+      this.#fullscreenNotice(model),
       notices(model),
     );
   }
@@ -238,6 +276,7 @@ export class UiLayer {
       el(
         'div',
         { class: 'row bottom' },
+        this.#fullscreen(model),
         origin === 'pause'
           ? actionButton('back', 'Zpět', [icon('back', 48), label('Zpět')], {
               className: 'button big',
@@ -252,6 +291,7 @@ export class UiLayer {
           },
         ),
       ),
+      this.#fullscreenNotice(model),
       notices(model),
     );
   }
@@ -533,7 +573,9 @@ export class UiLayer {
             className: 'button big',
           },
         ),
+        this.#fullscreen(model),
       ),
+      this.#fullscreenNotice(model),
       notices(model),
       model.seed === undefined
         ? undefined

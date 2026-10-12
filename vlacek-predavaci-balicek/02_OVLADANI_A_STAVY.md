@@ -12,16 +12,20 @@ Výchozí parametry jsou v [13_VYCHOZI_KONFIGURACE.md](13_VYCHOZI_KONFIGURACE.md
 
 ## 2. Rozdělení vstupních ploch
 
-| Plocha                    | Chování                                                                            |
-| ------------------------- | ---------------------------------------------------------------------------------- |
-| Herní svět                | Dotyk vytvoří požadavek na plyn. Případný zasažený objekt zároveň reaguje.         |
-| Brzda vlevo dole          | Po dobu držení aktivní brzda. Nikdy současně plyn ani zásah objektu pod tlačítkem. |
-| Píšťala                   | Jedno zahoukání při stisku, s omezením opakování. Tlačítko samo nepohání vlak.     |
-| Pauza, zvuk, menu         | Spotřebují událost; dotyk nepropadne do světa.                                     |
-| Obrazovka depa a výběru   | Neexistuje vstup do jízdy. Posouvání a klepání slouží pouze rozhraní.              |
-| Modální vrstva / načítání | Všechny dotyky světa jsou blokované.                                               |
+| Plocha                        | Chování                                                                            |
+| ----------------------------- | ---------------------------------------------------------------------------------- |
+| Herní svět                    | Dotyk vytvoří požadavek na plyn. Případný zasažený objekt zároveň reaguje.         |
+| Brzda vlevo dole              | Po dobu držení aktivní brzda. Nikdy současně plyn ani zásah objektu pod tlačítkem. |
+| Píšťala                       | Jedno zahoukání při stisku, s omezením opakování. Tlačítko samo nepohání vlak.     |
+| Pauza, zvuk, menu, fullscreen | Spotřebují událost; dotyk nepropadne do světa.                                     |
+| Obrazovka depa a výběru       | Neexistuje vstup do jízdy. Posouvání a klepání slouží pouze rozhraní.              |
+| Modální vrstva / načítání     | Všechny dotyky světa jsou blokované.                                               |
 
 Běžná jízda nezobrazuje páku rychlosti ani tlačítko automatického rozjezdu. Stav jízdy lze jemně ukázat animací kol a páry. Numerický rychloměr není potřebný.
+
+Volitelné tlačítko **Celá obrazovka** (ikona čtyř rohů + český popisek, nejméně 64 CSS px) je na úvodní obrazovce, v řádku akcí výběru mašinky a mezi akcemi pauzy. Při jízdě není zobrazené: jde o nastavení zobrazení mimo dotykové řízení a mimo brzdu či píšťalu. Stejné tlačítko v celém režimu nabízí **Ukončit celou obrazovku** a ikonu rohů směrem dovnitř. Stav odpovídá prohlížeči, včetně opuštění klávesou Esc nebo systémovým gestem.
+
+Žádost vzniká výhradně klepnutím nebo klávesovou aktivací tohoto tlačítka, nikdy automaticky. Bez dostupného Fullscreen API tlačítko chybí a hra funguje v běžné kartě. Po zamítnutí vstupu je pro toto načtení neaktivní a zobrazí se klidná zpráva „Celá obrazovka teď není dostupná. Hra pokračuje v okně.“; žádost se neopakuje. Při zamítnutí výstupu zůstává skutečný režim zachován, tlačítko je také neaktivní a zpráva zní „Režim celé obrazovky teď nelze změnit.“; systémový výstup je dál možný. Změna režimu vymaže vstupy a přepočítá zobrazení stávající cestou resize; pauza zůstává pauzou. Opuštění režimu během jízdy ji pozastaví i při nezměněných rozměrech. Pokračování vyžaduje vlastní potvrzení a nový dotyk pro jízdu. Uložená data se nemění.
 
 ## 3. Jednotná cesta zpracování vstupů
 
