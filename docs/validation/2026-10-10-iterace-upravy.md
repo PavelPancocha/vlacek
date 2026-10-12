@@ -570,3 +570,15 @@ Obě lokomotivy mají vlastní ruční SVG kresbu podle zmrazené smlouvy vozide
 | TRN-08 pro všechny tři elektrické lokomotivy: drát celou trasou, most, tunel, švy chunků, sběrač na drátu (`electric.spec.ts`) | proti buildu seedu: 4 FAIL, `pantographGapU` `undefined` (placeholder nemá pantograf) | 10 PASS na obou projektech; jízda kreslí obě vozidla z atlasu vozidel (`artVehicles === vehicles`) |
 
 Příkazy: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/tooling/validate-assets.test.ts tests/unit/content/artManifest.test.ts`; `flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- electric.spec.ts --workers=2` (lane běžela s opravou depa, která přichází samostatně). `npm run check` lane: 60 souborů / 477 testů PASS. Snímky depa a jízdy po mostě, sběrač na drátu (`pantographGapU` 0); recenze lane: LAND.
+
+## H1 — velká parní lokomotiva a naftový posunovač, `PERF_WAGON`
+
+`steam_express` má nový sdílený díl `wheel-steam-driver-large` (poloměr 19 u) a vlastní parní rozvod (spojnice, 56u ojnice, křižák; hlavní kolo 2, klika 8 u, vodítko y 82 u). `diesel_shunter` sdílí naftová kola. Kouř a výfuk vycházejí z kotev smlouvy.
+
+| Test                                                                                                                                              | Red                                                                   | Green   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------- |
+| `emits $particle at the $id contract outlet` pro obě lokomotivy (`TrainEffects.test.ts`)                                                          | 2 FAIL / 18: chybějící kotvy (`expected undefined to deeply equal …`) | 18 PASS |
+| `keeps the express connecting rod on the crosshead through a complete revolution` (`artManifest.test.ts`)                                         | 1 FAIL / 12: `expected undefined to be defined`                       | PASS    |
+| `PERF_WAGON` vyplní délkový limit zvoleným typem, odmítne neznámé ID, ID lokomotivy a prázdné ID, výchozí mix beze změny (`perf-consist.test.ts`) | 4 FAIL / 5 (`expected false to be true`, funkce nevyhodila)           | 5 PASS  |
+
+Lane po H0: `npm run check` 61 souborů / 485 testů PASS napoprvé; E2E `effects.spec.ts` a `art.spec.ts` 26 PASS na obou projektech (s opravou depa, která přichází samostatně). Jízdy na snímcích kreslí obě vozidla z atlasu vozidel (`artVehicles === vehicles`), s kouřem a výfukem. Recenze lane: LAND.

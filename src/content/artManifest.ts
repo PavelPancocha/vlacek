@@ -273,6 +273,55 @@ export const artParts = {
     heightU: 96,
     pivotU: { x: 80, y: 96 },
   },
+  'steam_express.body': {
+    file: 'steam_express.body.svg',
+    widthU: 216,
+    heightU: 108,
+    pivotU: { x: 108, y: 108 },
+  },
+  'steam_express.overlay': {
+    file: 'steam_express.overlay.svg',
+    widthU: 216,
+    heightU: 108,
+    pivotU: { x: 108, y: 108 },
+  },
+  'wheel.steam-driver-large': {
+    file: 'wheel-steam-driver-large.svg',
+    widthU: 38,
+    heightU: 38,
+    pivotU: { x: 19, y: 19 },
+  },
+  'steam_express.coupling-rod': {
+    file: 'steam_express.coupling-rod.svg',
+    widthU: 90,
+    heightU: 7,
+    pivotU: { x: 45, y: 3.5 },
+  },
+  'steam_express.connecting-rod': {
+    file: 'steam_express.connecting-rod.svg',
+    widthU: 64,
+    heightU: 8,
+    pivotU: { x: 4, y: 4 },
+    endU: { x: 60, y: 4 },
+  },
+  'steam_express.crosshead': {
+    file: 'steam_express.crosshead.svg',
+    widthU: 30,
+    heightU: 8,
+    pivotU: { x: 4, y: 4 },
+  },
+  'diesel_shunter.body': {
+    file: 'diesel_shunter.body.svg',
+    widthU: 148,
+    heightU: 82,
+    pivotU: { x: 74, y: 82 },
+  },
+  'diesel_shunter.overlay': {
+    file: 'diesel_shunter.overlay.svg',
+    widthU: 148,
+    heightU: 82,
+    pivotU: { x: 74, y: 82 },
+  },
 } satisfies Record<string, ArtPart>;
 
 export type ArtPartKey = keyof typeof artParts;
@@ -519,5 +568,36 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       head: 'electric_retro.pantograph-head',
       headContactU: 7,
     },
+  },
+  steam_express: {
+    heightU: 108,
+    body: 'steam_express.body',
+    overlay: 'steam_express.overlay',
+    wheels: [
+      { part: 'wheel.steam-pony', xU: 24 },
+      { part: 'wheel.steam-driver-large', xU: 66 },
+      { part: 'wheel.steam-driver-large', xU: 108 },
+      { part: 'wheel.steam-driver-large', xU: 150 },
+      { part: 'wheel.steam-pony', xU: 194 },
+    ],
+    steamGear: {
+      mainWheel: 2,
+      crankU: 8,
+      guideYU: 82,
+      couplingRod: 'steam_express.coupling-rod',
+      connectingRod: 'steam_express.connecting-rod',
+      crosshead: 'steam_express.crosshead',
+    },
+    emitters: [{ xU: 186, yU: 8 }],
+  },
+  diesel_shunter: {
+    heightU: 82,
+    body: 'diesel_shunter.body',
+    overlay: 'diesel_shunter.overlay',
+    wheels: [
+      { part: 'wheel.diesel', xU: 30 },
+      { part: 'wheel.diesel', xU: 118 },
+    ],
+    emitters: [{ xU: 96, yU: 25 }],
   },
 };

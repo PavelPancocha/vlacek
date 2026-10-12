@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="216" height="108" viewBox="0 0 216 108">
+  <defs>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3e8e9"/><stop offset="0.45" stop-color="#9aa0a8"/><stop offset="1" stop-color="#4b535c"/></linearGradient>
+    <linearGradient id="case" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#616969"/><stop offset="0.25" stop-color="#353b3d"/><stop offset="1" stop-color="#161b1e"/></linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ebd294"/><stop offset="0.45" stop-color="#c99b43"/><stop offset="1" stop-color="#775526"/></linearGradient>
+  </defs>
+  <g fill="none" stroke="#e8e7da" stroke-width="0.6" stroke-linecap="round" stroke-opacity="0.65">
+    <path d="M49 84 A17.7 17.7 0 0 1 72 72 M91 84 A17.7 17.7 0 0 1 114 72 M133 84 A17.7 17.7 0 0 1 156 72"/>
+    <path d="M16 96 A8 8 0 0 1 27 91.5 M186 96 A8 8 0 0 1 197 91.5"/>
+  </g>
+  <g stroke="#14191a" stroke-width="0.5" stroke-linejoin="round">
+    <path d="M16 84 H32 L35 89 H13 Z M186 89 L189 85 H200 L203 89 Z" fill="url(#case)"/>
+    <path d="M19 87 V91 M29 87 V91 M189 87 V91 M199 87 V91" stroke="url(#steel)" stroke-width="1.2"/>
+    <path d="M17 89 H31 M187 89 H201 M17 90.5 H31 M187 90.5 H201" stroke="#747f82" stroke-width="0.7"/>
+    <rect x="20.8" y="94" width="6.4" height="7" rx="0.8" fill="url(#case)"/>
+    <rect x="190.8" y="94" width="6.4" height="7" rx="0.8" fill="url(#case)"/>
+    <circle cx="24" cy="98" r="1.3" fill="url(#steel)"/>
+    <circle cx="194" cy="98" r="1.3" fill="url(#steel)"/>
+    <path d="M150 77.4 H194 V79 H150 Z M150 85 H194 V86.6 H150 Z" fill="url(#steel)"/>
+    <path d="M153 77.8 H190 M153 85.4 H190" stroke="#f4f4e9" stroke-width="0.35"/>
+    <path d="M190 74 H204 Q207 74 207 78 V88 Q207 91 204 91 H190 Z" fill="url(#case)"/>
+    <rect x="181" y="80.6" width="10" height="2.8" rx="0.6" fill="url(#steel)"/>
+    <rect x="191" y="76" width="2" height="13" rx="0.5" fill="url(#steel)"/>
+    <rect x="202.8" y="76" width="2" height="13" rx="0.5" fill="url(#steel)"/>
+    <path d="M194 75 H202 M194 89 H202" stroke="#697377" stroke-width="0.6"/>
+    <rect x="195.5" y="69.5" width="5.5" height="3.5" rx="1" fill="url(#case)"/>
+    <path d="M198 73 V74 M198 91 V94" stroke="url(#brass)" stroke-width="1"/>
+    <g fill="url(#brass)" stroke-width="0.3"><circle cx="194" cy="78" r="0.55"/><circle cx="194" cy="87" r="0.55"/><circle cx="201" cy="78" r="0.55"/><circle cx="201" cy="87" r="0.55"/></g>
+    <path d="M38 69 V82 M43 69 V82" stroke="url(#steel)" stroke-width="0.9"/>
+    <rect x="37" y="74" width="7" height="1.5" rx="0.3" fill="url(#case)"/>
+    <rect x="37" y="81" width="7" height="1.5" rx="0.3" fill="url(#steel)"/>
+  </g>
+</svg>

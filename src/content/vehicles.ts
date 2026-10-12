@@ -49,7 +49,6 @@ export const locomotives: readonly CatalogLocomotive[] = [
     wheelRadiusU: 19,
     hornAudio: 'audio.horn.steam_express',
     effect: 'steam',
-    placeholder: true,
     ...assets('steam_express'),
   },
   {
@@ -63,7 +62,6 @@ export const locomotives: readonly CatalogLocomotive[] = [
     wheelRadiusU: 13,
     hornAudio: 'audio.horn.diesel_shunter',
     effect: 'diesel',
-    placeholder: true,
     ...assets('diesel_shunter'),
   },
   {

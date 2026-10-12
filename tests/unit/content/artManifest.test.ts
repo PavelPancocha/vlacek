@@ -12,6 +12,7 @@ import {
   type ArtValidationInput,
 } from '../../../src/content/artValidation.ts';
 import { locomotives, wagons } from '../../../src/content/vehicles.ts';
+import { vehicleArtLayers } from '../../../src/content/artLayers.ts';
 
 const ASSETS = resolve(import.meta.dirname, '../../../assets/vehicles');
 const files = new Map(
@@ -39,6 +40,30 @@ function withSteam(art: VehicleArt): ArtValidationInput {
 }
 
 describe('vehicle art manifest (doc 06 §8, doc 07 §4, CNT-02)', () => {
+  it('keeps the express connecting rod on the crosshead through a complete revolution', () => {
+    const art = vehicleArt['steam_express'];
+    expect(art).toBeDefined();
+    if (!art) throw new Error('steam_express: missing art');
+    expect(art.wheels.map((wheel) => wheel.xU)).toEqual([
+      24, 66, 108, 150, 194,
+    ]);
+    for (let angle = 0; angle < 2 * Math.PI; angle += Math.PI / 32) {
+      const layers = vehicleArtLayers(art, 216, angle * 19);
+      const rod = layers.find(
+        (part) => part.part === 'steam_express.connecting-rod',
+      );
+      const crosshead = layers.find(
+        (part) => part.part === 'steam_express.crosshead',
+      );
+      if (!rod || !crosshead) throw new Error('steam_express: missing motion');
+      expect(rod.x + 56 * Math.cos(rod.rotation)).toBeCloseTo(crosshead.x, 9);
+      expect(rod.y + 56 * Math.sin(rod.rotation)).toBeCloseTo(crosshead.y, 9);
+      expect(crosshead.y).toBe(82 - 108);
+      expect(crosshead.x + 108 - 4).toBeGreaterThanOrEqual(149.954);
+      expect(crosshead.x + 108 + 26).toBeLessThanOrEqual(198);
+    }
+  });
+
   it('validates as shipped', () => {
     expect(validateVehicleArt(shipped)).toEqual([]);
   });
