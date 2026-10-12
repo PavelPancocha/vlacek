@@ -305,6 +305,8 @@ Změna `contentVersion` má mapování přejmenovaných ID. Chybějící vagón 
 
 AppController vlastní přechody aplikace, pauzu a jediný simulační loop. Platformní adaptér hlídá viditelnost, resize a audio. RideScene nemá sama od sebe rozjíždět svět při každém `resume` od Phaseru.
 
+Neprůhledné obrazovky a výzva k otočení vynechávají aktualizaci kresby i render jízdy, ale aplikační snímek dál běží kvůli ukládání, událostem a UI. Průsvitná pauza dál zobrazuje zamrzlý svět. Neprůhledná clona pod UI zůstává až do renderu vracející se jízdy, i při přeskočeném browserovém snímku v 30 FPS profilu. První opět viditelný snímek přepočítá kameru, polohy pozadí a renderovací okno, ale zachová prolínání pozadí téže cesty; podrobnosti a diagnostické počítadlo `rideFramesDrawn` vlastní [D-006](../docs/decisions/006-runtime-architecture.md). Uložená data ani simulační čas tato optimalizace nemění.
+
 Při ztrátě WebGL kontextu zastavit simulaci, vymazat vstupy, uložit malý snapshot a zobrazit klidnou obnovovací vrstvu. Po úspěšné obnově znovu vytvořit render z doménového stavu a čekat na potvrzení. Při opakovaném selhání nabídnout úsporné/Canvas spuštění, pokud projde capability testem. Neukazovat dítěti stack trace.
 
 Neplatný jednotlivý dekorativní asset může mít řízený fallback. Neplatná kolej nebo chybějící lokomotiva je blokující chyba daného buildu: nabídnout návrat, ne pokračovat s náhodně rozbitým světem. Síťový výpadek nesmí změnit fyziku ani vyvolat přepnutí do reklamy či externí stránky.

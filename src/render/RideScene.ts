@@ -85,6 +85,10 @@ export interface RideSceneHost {
   /** Runs one application frame; returns the render interpolation alpha. */
   frame(deltaSec: number, nowMs: number): number;
   ride(): RideSimulation | undefined;
+  /** Opaque UI coverage; the application frame must still run underneath. */
+  worldHidden(): boolean;
+  /** A prepared ride frame has passed through Phaser's renderer. */
+  worldDrawn(): void;
   /** Vehicle definitions of the current journey, locomotive first. */
   journeyVehicles(): readonly ShapedVehicle[];
   journeyNpcFleet(): NpcFleet | undefined;
@@ -328,6 +332,7 @@ export class RideScene extends Phaser.Scene {
   /** Backdrop atlas texture the backdrop currently shows. */
   #backdropTexture: string | undefined;
   stats: RenderStats = NO_STATS;
+  rideFramesDrawn = 0;
 
   constructor(host: RideSceneHost) {
     super('ride');
@@ -386,6 +391,18 @@ export class RideScene extends Phaser.Scene {
   }
 
   create(): void {
+    let renderedFrames = this.rideFramesDrawn;
+    const presented = () => {
+      if (this.rideFramesDrawn === renderedFrames) return;
+      renderedFrames = this.rideFramesDrawn;
+      this.#host.worldDrawn();
+    };
+    const renderer = this.game.renderer;
+    renderer.on(Phaser.Renderer.Events.POST_RENDER, presented);
+    const stopPresenting = () => {
+      renderer.off(Phaser.Renderer.Events.POST_RENDER, presented);
+    };
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, stopPresenting);
     this.cameras.main.setBackgroundColor('#bfe3f2');
     // A failed download must not stop the ride (PWA-10): vehicles fall
     // back to their marked placeholder silhouettes, the backdrop to sky.
@@ -421,6 +438,7 @@ export class RideScene extends Phaser.Scene {
       mid: DEPTH.mid,
     });
     this.events.once('destroy', () => {
+      stopPresenting();
       this.#backdrop?.destroy();
       this.#effectsView?.destroy();
       this.#art?.destroy();
@@ -704,6 +722,16 @@ export class RideScene extends Phaser.Scene {
       this.#reset();
       this.#rideRef = ride;
     }
+    if (this.#host.worldHidden()) {
+      this.sys.setVisible(false);
+      return;
+    }
+    if (!this.sys.isVisible()) {
+      // Snap after hidden resize; the normal draw reconciles the chunk window.
+      this.#cameraTopY = undefined;
+      this.#horizonY = undefined;
+      this.sys.setVisible(true);
+    }
     if (!ride) {
       this.stats = NO_STATS;
       return;
@@ -863,6 +891,7 @@ export class RideScene extends Phaser.Scene {
       localities.push(this.#sceneryOf(ride.seed, k).locality);
     this.stats.biome = biome;
     this.stats.localities = localities;
+    this.rideFramesDrawn++;
   }
 
   #destroyChunks(): void {

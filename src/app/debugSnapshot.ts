@@ -148,6 +148,8 @@ export interface DebugSnapshot {
   p95FrameMs: number;
   worstFrameMs: number;
   frameSamples: number;
+  /** Cumulative frames that drew the ride, excluding opaque screens. */
+  rideFramesDrawn: number;
   /** Visible bubbles: stable ID and drawn center/radius in CSS px (H3). */
   bubbles: { id: number; x: number; y: number; radiusCssPx: number }[];
   objects: { id: string; x: number; y: number }[];

@@ -24,6 +24,7 @@ import { createGameHost, type GameHost } from '../render/GameHost.ts';
 import { RideScene } from '../render/RideScene.ts';
 import { BRAKE_HIT_MARGIN_PX, UiLayer } from '../ui/UiLayer.ts';
 import type { DebugSnapshot } from './debugSnapshot.ts';
+import { worldHidden } from './AppState.ts';
 import { PhaseLog } from './phaseLog.ts';
 import { renderProfile } from './renderProfile.ts';
 import type { GameSession, SessionEvent } from './GameSession.ts';
@@ -49,6 +50,7 @@ export class AppController {
   readonly #options: AppControllerOptions;
   readonly #gameRoot: HTMLElement;
   readonly #uiRoot: HTMLElement;
+  readonly #curtain: HTMLElement;
   readonly #ui: UiLayer;
   readonly #audio = new AudioManager();
   readonly #frames = new FrameStats(600);
@@ -77,6 +79,11 @@ export class AppController {
     this.#gameRoot = gameRoot;
     this.#uiRoot = document.createElement('div');
     this.#uiRoot.id = 'ui-layer';
+    this.#curtain = document.createElement('div');
+    this.#curtain.className = 'ride-curtain';
+    this.#curtain.setAttribute('aria-hidden', 'true');
+    this.#curtain.hidden = true;
+    app.append(this.#curtain);
     app.append(this.#uiRoot);
     this.#ui = new UiLayer(this.#uiRoot);
     if (options.debug) {
@@ -90,6 +97,14 @@ export class AppController {
     this.#scene = new RideScene({
       frame: (deltaSec, nowMs) => this.#frame(deltaSec, nowMs),
       ride: () => this.#session.ride,
+      worldHidden: () => worldHidden(this.#session.screen, this.#portrait),
+      worldDrawn: () => {
+        if (
+          !this.#curtain.hidden &&
+          !worldHidden(this.#session.screen, this.#portrait)
+        )
+          this.#curtain.hidden = true;
+      },
       journeyVehicles: () => this.#vehiclesOfJourney(),
       journeyNpcFleet: () => this.#session.journeyNpcFleet,
       catalogVehicles: () => [...locomotives, ...wagons],
@@ -284,6 +299,8 @@ export class AppController {
 
   #refreshUi(): void {
     const session = this.#session;
+    if (worldHidden(session.screen, this.#portrait) && this.#curtain.hidden)
+      this.#curtain.hidden = false;
     const before = this.#uiRoot.dataset['screen'];
     this.#ui.update({
       screen: session.screen,
@@ -423,6 +440,7 @@ export class AppController {
       p95FrameMs: frames.p95FrameMs,
       worstFrameMs: frames.worstFrameMs,
       frameSamples: frames.samples,
+      rideFramesDrawn: this.#scene.rideFramesDrawn,
       bubbles: canvas
         ? this.#scene.bubbleScreenPositions(canvas.getBoundingClientRect())
         : [],
@@ -476,6 +494,7 @@ export class AppController {
     this.#host.destroy();
     this.#audio.dispose();
     this.#ui.dispose();
+    this.#curtain.remove();
     this.#gameRoot.removeAttribute('data-renderer');
   }
 }

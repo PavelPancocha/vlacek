@@ -76,3 +76,19 @@ export function transition(screen: Screen, event: AppEvent): Screen {
       return event.type === 'retry' ? { name: 'LOADING' } : screen;
   }
 }
+
+/** Whether an opaque UI layer covers the ride canvas (D-006). */
+export function worldHidden(screen: Screen, portrait: boolean): boolean {
+  if (portrait) return true;
+  switch (screen.name) {
+    case 'HOME':
+    case 'SELECT_LOCO':
+    case 'BUILD_TRAIN':
+    case 'RECOVERABLE_ERROR':
+      return true;
+    case 'LOADING': // UiLayer draws no loading overlay.
+    case 'RIDING':
+    case 'PAUSED':
+      return false;
+  }
+}

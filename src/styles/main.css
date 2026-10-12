@@ -42,6 +42,14 @@ body {
   display: block;
 }
 
+/* Below the immediate UI, above the canvas until Phaser's postrender. */
+.ride-curtain {
+  position: absolute;
+  inset: 0;
+  background: #f5f1e8;
+  pointer-events: none;
+}
+
 #ui-layer {
   position: absolute;
   inset: 0;
