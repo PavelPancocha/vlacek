@@ -174,45 +174,54 @@ for (const viewport of [
     await expect(page.locator('.builder')).toBeVisible();
   });
 
-  test(`UI-02/05/06: all 32 wagon cards add without overlap (${size})`, async ({
-    page,
-  }) => {
-    if (viewport) await page.setViewportSize(viewport);
-    await page.goto('./');
-    await tapAction(page, 'to-depot');
-    const cards = page.locator('[data-action^="add:"]');
-    await expect(cards).toHaveCount(32);
-    await expect(page.locator('.catalog .group')).toHaveCount(4);
-    for (const card of await cards.all()) {
-      const point = await expectReachableCard(
-        page,
-        card,
-        '.screen.builder',
-        '.builder .row button, .strip-item.loco',
-        112,
-        64,
-      );
-      await page.mouse.click(point.x, point.y);
-      await expect(page.locator('.count')).toHaveText('1');
-      await expect(
-        page.locator('.strip-item[data-action^="wagon:"]'),
-      ).toHaveCount(1);
-      // Keep space for the next type; the train length limit remains in force.
-      const item = await centerOfVisible(
-        page,
-        page.locator('.strip-item[data-action^="wagon:"]'),
-      );
-      await page.mouse.click(item.x, item.y);
-      const remove = await centerOfVisible(
-        page,
-        page.locator('[data-action="remove"]'),
-      );
-      await page.mouse.click(remove.x, remove.y);
-      await expect(page.locator('.count')).toHaveText('0');
-    }
-    await tapAction(page, 'depart');
-    await expect(page.locator('.hud')).toBeVisible();
-  });
+  for (const [first, last] of [
+    [1, 8],
+    [9, 16],
+    [17, 24],
+    [25, 32],
+  ] as const) {
+    test(`UI-02/05/06: cards ${first}–${last} add without overlap (${size})`, async ({
+      page,
+    }) => {
+      if (viewport) await page.setViewportSize(viewport);
+      await page.goto('./');
+      await tapAction(page, 'to-depot');
+      const cards = page.locator('[data-action^="add:"]');
+      await expect(cards).toHaveCount(32);
+      await expect(page.locator('.catalog .group')).toHaveCount(4);
+      for (const card of (await cards.all()).slice(first - 1, last)) {
+        const point = await expectReachableCard(
+          page,
+          card,
+          '.screen.builder',
+          '.builder .row button, .strip-item.loco',
+          112,
+          64,
+        );
+        await page.mouse.click(point.x, point.y);
+        await expect(page.locator('.count')).toHaveText('1');
+        await expect(
+          page.locator('.strip-item[data-action^="wagon:"]'),
+        ).toHaveCount(1);
+        // Keep space for the next type; the train length limit remains in force.
+        const item = await centerOfVisible(
+          page,
+          page.locator('.strip-item[data-action^="wagon:"]'),
+        );
+        await page.mouse.click(item.x, item.y);
+        const remove = await centerOfVisible(
+          page,
+          page.locator('[data-action="remove"]'),
+        );
+        await page.mouse.click(remove.x, remove.y);
+        await expect(page.locator('.count')).toHaveText('0');
+      }
+      if (last === 32) {
+        await tapAction(page, 'depart');
+        await expect(page.locator('.hud')).toBeVisible();
+      }
+    });
+  }
 }
 
 async function centerOfVisible(page: Page, locator: Locator) {
@@ -517,7 +526,7 @@ for (const viewport of [
   const size = viewport
     ? `${viewport.width}×${viewport.height}`
     : 'project viewport';
-  test(`UI-05/06/07: Tab odkryje celé karty s fokusem; Enter a mezerník aktivují (${size})`, async ({
+  test(`UI-05/06/07: lokomotivy — Tab odkryje celé karty s fokusem; Enter a mezerník aktivují (${size})`, async ({
     page,
   }) => {
     if (viewport) await page.setViewportSize(viewport);
@@ -535,6 +544,17 @@ for (const viewport of [
     await page.keyboard.press('Tab');
     await expect(page.locator('[data-action="to-depot"]')).toBeFocused();
     await page.keyboard.press('Enter');
+    await expect(page.locator('.builder')).toBeVisible();
+  });
+
+  test(`UI-05/06/07: vagonky — Tab odkryje celé karty s fokusem; Enter a mezerník aktivují (${size})`, async ({
+    page,
+  }) => {
+    if (viewport) await page.setViewportSize(viewport);
+    await page.goto('./');
+    await tapAction(page, 'to-depot');
+    await expect(page.locator('.builder')).toBeVisible();
+    await expect(page.locator('body')).toBeFocused();
     let wagonIndex = 0;
     for (let i = 0; i < 40 && wagonIndex < 32; i++) {
       await page.keyboard.press('Tab');
