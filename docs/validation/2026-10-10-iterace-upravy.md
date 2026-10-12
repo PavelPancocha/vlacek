@@ -559,3 +559,14 @@ Každá lane byla na své větvi zelená, ale celá E2E sada na integrované rev
 | Pozitivní kontrola pixelového testu oblohy kreslila čáru do řádku, který po přidání 108 u vysoké `steam_express` (rámování jízdy podle nejvyššího vozidla katalogu) splýval s kopci | `expect(lines.probe.length).toBeGreaterThan(0)`, `Received: 0` (4×)                                                                                             | kontrolní čára v kontrastním řádku musí zachytit všech 844 sloupců; měřený rozsah, algoritmus a prahy beze změny, skutečný snímek dál bez čar |
 
 Celá E2E sada lane jedním během: **226 PASS / 0 FAIL / 4 skipped** (11,9 min); `npm run check` 63 souborů / 503 testů. Recenze lane: LAND. Dokumentace: [dokument 02 §7](../../vlacek-predavaci-balicek/02_OVLADANI_A_STAVY.md), [dokument 04](../../vlacek-predavaci-balicek/04_PROCEDURALNI_SVET.md) §11, [D-019](../decisions/019-journey-atlas-and-npc-fleet.md), [vývojový návod](../development.md).
+
+## H1 — moderní a horská elektrická lokomotiva
+
+Obě lokomotivy mají vlastní ruční SVG kresbu podle zmrazené smlouvy vozidel a sdílejí díly pantografu `electric_retro.pantograph` a `electric_retro.pantograph-head`.
+
+| Test                                                                                                                           | Red                                                                                   | Green                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `validate:assets` přijme katalog s novou kresbou (`validate-assets.test.ts`)                                                   | očekáváno `13 with art, 41 art parts … 29 placeholders`, seed dal `11 … 37 … 31`      | PASS                                                                                               |
+| TRN-08 pro všechny tři elektrické lokomotivy: drát celou trasou, most, tunel, švy chunků, sběrač na drátu (`electric.spec.ts`) | proti buildu seedu: 4 FAIL, `pantographGapU` `undefined` (placeholder nemá pantograf) | 10 PASS na obou projektech; jízda kreslí obě vozidla z atlasu vozidel (`artVehicles === vehicles`) |
+
+Příkazy: `VITEST_MAX_WORKERS=4 volta run npm test -- tests/tooling/validate-assets.test.ts tests/unit/content/artManifest.test.ts`; `flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- electric.spec.ts --workers=2` (lane běžela s opravou depa, která přichází samostatně). `npm run check` lane: 60 souborů / 477 testů PASS. Snímky depa a jízdy po mostě, sběrač na drátu (`pantographGapU` 0); recenze lane: LAND.

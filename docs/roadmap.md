@@ -53,6 +53,7 @@ Délky jsou z dokumentu 06 §2. Každá lokomotiva dostane:
 | `magic_bubbles` 164 u     | Zaoblená karoserie; nový druh částic `bubble`                                                                                    |
 | `magic_rainbow` 176 u     | Vlastní silueta, barevné díly; nový druh částic `rainbow-puff`                                                                   |
 
+- **Stav elektrických:** hotovo. `electric_modern` a `electric_mountain` mají vlastní kresbu a sdílený pantograf; TRN-08 prošel se všemi třemi elektrickými lokomotivami.
 - **Stav píšťal:** hotovo. Všech 10 lokomotiv má vlastní tón (velká parní o oktávu níž než malá, hranatá elektrická už nezní jako naftová); hráčova píšťala, náhled při výběru i odpověď protijedoucího vlaku používají identitu lokomotivy (E2E `horns.spec.ts`).
 - **Stav výběru a depa:** hotovo. Všech 10 lokomotiv a 32 druhů vagonků je dosažitelných tahem, kolečkem i klávesou na telefonech 844 × 390, 667 × 375, 568 × 320, na tabletu i desktopu (E2E `picker.spec.ts`).
 - **Výběr lokomotivy:** všech 10 se musí vejít a jít ťuknout. E2E telefonů 844 × 390, 667 × 375 a 568 × 320 se rozšíří i na výběr: poslední karta klikatelná, nic se nepřekrývá.

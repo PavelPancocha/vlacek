@@ -14,7 +14,7 @@ describe('validate:assets', () => {
     });
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toMatch(
-      /42 vehicles valid \(11 with art, 37 art parts\), 149 world parts, 31 placeholders/,
+      /42 vehicles valid \(13 with art, 41 art parts\), 149 world parts, 29 placeholders/,
     );
   });
 

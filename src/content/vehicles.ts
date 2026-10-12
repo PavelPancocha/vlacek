@@ -105,7 +105,6 @@ export const locomotives: readonly CatalogLocomotive[] = [
     wheelRadiusU: 13,
     hornAudio: 'audio.horn.electric_modern',
     effect: 'none',
-    placeholder: true,
     ...assets('electric_modern'),
   },
   {
@@ -120,7 +119,6 @@ export const locomotives: readonly CatalogLocomotive[] = [
     wheelRadiusU: 13,
     hornAudio: 'audio.horn.electric_mountain',
     effect: 'none',
-    placeholder: true,
     ...assets('electric_mountain'),
   },
   {

@@ -249,6 +249,30 @@ export const artParts = {
     heightU: 24,
     pivotU: { x: 12, y: 12 },
   },
+  'electric_modern.body': {
+    file: 'electric_modern.body.svg',
+    widthU: 204,
+    heightU: 90,
+    pivotU: { x: 102, y: 90 },
+  },
+  'electric_modern.overlay': {
+    file: 'electric_modern.overlay.svg',
+    widthU: 204,
+    heightU: 90,
+    pivotU: { x: 102, y: 90 },
+  },
+  'electric_mountain.body': {
+    file: 'electric_mountain.body.svg',
+    widthU: 160,
+    heightU: 96,
+    pivotU: { x: 80, y: 96 },
+  },
+  'electric_mountain.overlay': {
+    file: 'electric_mountain.overlay.svg',
+    widthU: 160,
+    heightU: 96,
+    pivotU: { x: 80, y: 96 },
+  },
 } satisfies Record<string, ArtPart>;
 
 export type ArtPartKey = keyof typeof artParts;
@@ -459,5 +483,41 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       { part: 'wheel.wagon-spoked', xU: 31 },
       { part: 'wheel.wagon-spoked', xU: 133 },
     ],
+  },
+  electric_modern: {
+    heightU: 90,
+    body: 'electric_modern.body',
+    overlay: 'electric_modern.overlay',
+    wheels: [
+      { part: 'wheel.diesel', xU: 21 },
+      { part: 'wheel.diesel', xU: 51 },
+      { part: 'wheel.diesel', xU: 153 },
+      { part: 'wheel.diesel', xU: 183 },
+    ],
+    pantograph: {
+      xU: 62,
+      yU: 14,
+      arms: 'electric_retro.pantograph',
+      head: 'electric_retro.pantograph-head',
+      headContactU: 7,
+    },
+  },
+  electric_mountain: {
+    heightU: 96,
+    body: 'electric_mountain.body',
+    overlay: 'electric_mountain.overlay',
+    wheels: [
+      { part: 'wheel.diesel', xU: 17 },
+      { part: 'wheel.diesel', xU: 47 },
+      { part: 'wheel.diesel', xU: 113 },
+      { part: 'wheel.diesel', xU: 143 },
+    ],
+    pantograph: {
+      xU: 46,
+      yU: 14,
+      arms: 'electric_retro.pantograph',
+      head: 'electric_retro.pantograph-head',
+      headContactU: 7,
+    },
   },
 };

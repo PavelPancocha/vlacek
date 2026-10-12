@@ -174,11 +174,7 @@ describe('vehicle art manifest (doc 06 §8, doc 07 §4, CNT-02)', () => {
         ...shipped,
         art: { ...vehicleArt, electric_retro: withoutPantograph },
       }),
-    ).toEqual([
-      'electric_retro: needs catenary but has no pantograph',
-      'electric_retro.pantograph: not used by any vehicle',
-      'electric_retro.pantograph-head: not used by any vehicle',
-    ]);
+    ).toEqual(['electric_retro: needs catenary but has no pantograph']);
     expect(validateVehicleArt(withSteam({ ...steam, pantograph }))).toEqual([
       'steam_local: pantograph without catenary',
     ]);

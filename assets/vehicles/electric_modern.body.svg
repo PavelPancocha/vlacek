@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="204" height="90" viewBox="0 0 204 90">
+  <!-- Oblá dvoukabinová skříň; kolejnice y=90, základ sběrače (62,14). -->
+  <defs>
+    <linearGradient id="silver" x2="0" y2="1"><stop stop-color="#f1f5f6"/><stop offset=".38" stop-color="#C8D0D4"/><stop offset="1" stop-color="#82969f"/></linearGradient>
+    <linearGradient id="teal" x2="0" y2="1"><stop stop-color="#51a5af"/><stop offset=".4" stop-color="#247D86"/><stop offset="1" stop-color="#164c56"/></linearGradient>
+    <linearGradient id="slate" x2="0" y2="1"><stop stop-color="#586f7b"/><stop offset=".45" stop-color="#344752"/><stop offset="1" stop-color="#1c2c35"/></linearGradient>
+    <linearGradient id="steel" x2="0" y2="1"><stop stop-color="#e0e6e9"/><stop offset=".45" stop-color="#9AA0A8"/><stop offset="1" stop-color="#505f68"/></linearGradient>
+    <linearGradient id="glass" x2="1" y2="1"><stop stop-color="#d9f1f7"/><stop offset=".38" stop-color="#8eb6c7"/><stop offset="1" stop-color="#263e4b"/></linearGradient>
+    <linearGradient id="grille" x2="0" y2="1"><stop stop-color="#738892"/><stop offset="1" stop-color="#273e49"/></linearGradient>
+    <radialGradient id="lamp" cx=".35" cy=".3"><stop stop-color="#fffdeb"/><stop offset=".65" stop-color="#ddd5ab"/><stop offset="1" stop-color="#778891"/></radialGradient>
+    <pattern id="slats" width="2" height="1.6" patternUnits="userSpaceOnUse"><path d="M0 .4 H2" stroke="#182d37" stroke-width=".45"/><path d="M0 .95 H2" stroke="#a3b3bb" stroke-width=".25"/></pattern>
+    <g id="insulator" stroke-width=".25"><rect x="-1" y="0" width="2" height="4" fill="#e4ddc9"/><path d="M-2 1 H2 M-2 2.3 H2 M-2 3.6 H2" stroke="#657c85" stroke-width=".7"/></g>
+  </defs>
+  <g stroke="#18232b" stroke-width=".6" stroke-linejoin="round">
+    <!-- Transformátor a skříně mezi podvozky. -->
+    <path d="M66 57 H137 V68 Q137 70 134 70 H69 Q66 70 66 68 Z" fill="url(#slate)"/>
+    <path d="M68 59 H135 M86 58 V69 M112 58 V69" fill="none" stroke="#84949c" stroke-width=".35"/>
+    <rect x="72" y="61" width="10" height="6" rx=".7" fill="url(#grille)"/>
+    <path d="M74 62.5 H80 M74 64 H80 M74 65.5 H80" stroke="#1c303a" stroke-width=".5"/>
+    <rect x="115" y="61" width="15" height="6" rx=".6" fill="url(#slate)"/>
+    <path d="M122.5 61 V67 M64 65 H60 M139 64 H145" fill="none" stroke="#1b262b" stroke-width=".8"/>
+    <!-- Čela, nárazníky ve výšce 30 u, hadice a spodní kryty. -->
+    <path d="M4 54 H13 V65 H4 Z M191 54 H200 V65 H191 Z" fill="url(#slate)"/>
+    <path d="M3 59 H8 M196 59 H201" stroke="url(#steel)" stroke-width="3"/>
+    <rect x=".5" y="56.2" width="2.2" height="7.6" rx=".7" fill="url(#steel)"/><rect x="201.3" y="56.2" width="2.2" height="7.6" rx=".7" fill="url(#steel)"/>
+    <path d="M4 64 H2.7 V66 H4 M200 64 H201.3 V66 H200" fill="none" stroke-width=".9"/>
+    <path d="M8 64 Q5 70 8 73 M196 64 Q199 70 196 73" stroke="#19242b" stroke-width="1.3" fill="none"/>
+    <path d="M8 64 H16 L12 75 H8 Z M196 64 H188 L192 75 H196 Z" fill="url(#slate)"/>
+    <!-- Samostatná silueta se šikmými oblými kabinami. -->
+    <path d="M7 55 Q5 47 12 36 L24 22 Q28 18 37 18 H167 Q176 18 180 22 L192 36 Q199 47 197 55 L194 59 H10 Z" fill="url(#silver)"/>
+    <path d="M8 50 Q19 46 33 40 L48 39 Q80 48 103 49 Q132 47 157 39 L170 37 Q185 44 197 50 L196 55 H8 Z" fill="url(#teal)" stroke="none"/>
+    <path d="M9 55 Q47 49 96 52 Q143 57 195 54 L194 59 H10 Z" fill="url(#slate)" stroke="none"/>
+    <path d="M11 54 Q46 48 95 51 Q146 56 194 53" stroke="#e7eff1" stroke-width=".8" fill="none"/>
+    <path d="M29 21 Q36 19.4 45 20 H162 Q169 20 175 22" stroke="#fbffff" stroke-opacity=".75" stroke-width=".65" fill="none"/>
+    <!-- Široké kabinové sklo, sloupky, stěrače a odlesky. -->
+    <path d="M13 38 L25 24 Q27 22.5 31 23 H34 V38 Q22 41 13 41 Z" fill="url(#glass)"/>
+    <path d="M170 23 H173 Q176 23 178 25 L191 39 L190 42 Q180 40 170 38 Z" fill="url(#glass)"/>
+    <path d="M15 38 L27 24 M173 24 L186 39" stroke="#e6f8ff" stroke-opacity=".7" stroke-width="1.4" fill="none"/>
+    <path d="M29 23.5 V39 M175 23.5 V39" stroke="#4c616b" stroke-width=".65"/>
+    <path d="M19 39 L27 33 M185 40 L178 34" stroke="#1c272e" stroke-width=".7" fill="none"/>
+    <!-- Dveře a madla. -->
+    <rect x="36" y="24" width="10" height="31" rx="1.4" fill="url(#silver)"/><rect x="158" y="24" width="10" height="31" rx="1.4" fill="url(#silver)"/>
+    <rect x="38" y="26" width="6" height="10" rx="1.1" fill="url(#glass)"/><rect x="160" y="26" width="6" height="10" rx="1.1" fill="url(#glass)"/>
+    <path d="M38.8 33 L42.5 27 M160.8 33 L164.5 27" stroke="#effbff" stroke-opacity=".6" stroke-width=".5"/>
+    <path d="M37.7 47 H40 M160 47 H162.3" stroke="url(#steel)" stroke-width="1.2"/>
+    <path d="M34 29 V51 M48 29 V51 M156 29 V51 M170 29 V51" stroke="#eef4f4" stroke-width=".8"/>
+    <!-- Hladké servisní panely a zapuštěné větrací mřížky. -->
+    <rect x="51" y="26" width="102" height="20" rx="1.1" fill="url(#silver)" stroke="#61747e" stroke-width=".35"/>
+    <path d="M86 27 V44 M118 27 V44 M52 28 H151" stroke="#edf2f3" stroke-width=".5" fill="none"/>
+    <rect x="53" y="27.5" width="26" height="7.5" rx=".5" fill="url(#grille)" stroke-width=".35"/><rect x="125" y="27.5" width="26" height="7.5" rx=".5" fill="url(#grille)" stroke-width=".35"/>
+    <rect x="54" y="28" width="24" height="6.5" fill="url(#slats)" stroke="none"/><rect x="126" y="28" width="24" height="6.5" fill="url(#slats)" stroke="none"/>
+    <path d="M53 47 H84 M120 47 H150 M88 45 H116" stroke="#f0f5f5" stroke-opacity=".7" stroke-width=".45"/>
+    <path d="M83 30 H84 M120 30 H121 M83 42 H84 M120 42 H121" stroke="#4d6874" stroke-width=".7"/>
+    <path d="M7.8 47 L11 45 V50 L8 52 Z M196.2 47 L193 45 V50 L196 52 Z" fill="url(#lamp)"/>
+    <!-- Integrované střešní zařízení; nic nad základnou sběrače y=14. -->
+    <path d="M33 18 Q34 16.8 37 16.8 H167 Q170 16.8 172 19 L169 21 H35 Z" fill="url(#slate)"/>
+    <path d="M37 18 H165" stroke="#9aafb6" stroke-width=".4"/>
+    <path d="M85 18 V15.8 H128 Q130 15.8 130 18 Z" fill="url(#steel)"/>
+    <rect x="92" y="16.1" width="30" height="2.3" fill="url(#grille)" stroke-width=".25"/>
+    <path d="M94 16.5 V18 M97 16.5 V18 M100 16.5 V18 M103 16.5 V18 M106 16.5 V18 M109 16.5 V18 M112 16.5 V18 M115 16.5 V18 M118 16.5 V18" stroke="#273d46" stroke-width=".4"/>
+    <use href="#insulator" x="49" y="14.5"/><use href="#insulator" x="75" y="14.5"/>
+    <rect x="44" y="14" width="36" height="1.5" rx=".5" fill="url(#slate)"/>
+    <use href="#insulator" x="138" y="14.6"/><use href="#insulator" x="146" y="14.6"/>
+    <path d="M80 15.6 H88 M131 15.6 H146" stroke="#aeb8b8" stroke-width=".8"/>
+    <path d="M179 23 L179.8 24.5 H177" stroke="#435b65" stroke-width=".7" fill="none"/>
+  </g>
+</svg>
