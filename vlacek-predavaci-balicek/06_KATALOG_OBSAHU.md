@@ -189,3 +189,9 @@ Konkrétní schéma v dokumentu 08 dovolí doplnit další vrstvy. Produkční b
 - **Přepravník aut (`cargo_cars`).** Vlastní vektorový dvoupatrový přepravník veze dvě auta dole a jedno nahoře; každé viditelné kolo má klíny a popruh, auta nemají značky ani registrační tabulky.
 - **Vagón s traktorem (`cargo_tractor`).** Vlastní vektorová plošina veze traktor s prosklenou kabinou a rozdílnými průměry pneumatik; kola jsou zaklínovaná a podvozek připevněný řetězy.
 - **Vagón s bagrem (`cargo_excavator`).** Vlastní vektorová plošina veze pásový bagr; pásy mají klíny a řetězové úvazy, složené rameno i lžíce spočívají v transportních podpěrách.
+- **Hvězdičkový vagónek (`fun_stars`).** Tři pevné zlaté hvězdy se zapuštěnými světelnými čočkami na přišroubovaných sloupcích nízkého modrého vozu; statická kresba bez dotykového rozsvěcení.
+- **Zahrádkový vagónek (`fun_garden`).** Tři truhlíky zajištěné kovovými držáky, různobarevné květiny a nízká mříž pevně připojená k rámu; bez dotykového motýla.
+- **Akvarijní vagónek (`fun_aquarium`).** Uzavřená pohádková průhledná nádrž s viditelnou hladinou, rostlinami a čtyřmi stylizovanými rybkami; kolébka a pásy jsou přišroubované k podvozkovému vozu.
+- **Větrníkový vagónek (`fun_windmill`).** Dva barevné papírové větrníky s viditelnými středy na vyztužených přišroubovaných sloupcích; v této změně se neotáčejí.
+- **Světýlkový vagónek (`fun_lights`).** Čtyři pevné lucerny různé výšky, chráněná kabeláž a přišroubované patky; stálé teplé světlo bez blikání a dotykového zesilování.
+- **Vagónek s kostkami (`fun_toyblocks`).** Dřevěné kvádry, oblouky a válec s kresbou vláken, nízká zábradlí, zajišťovací kolíky, klíny a široké popruhy připevněné k plošině; bez dotykového houpání nákladu.

@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="168" height="96" viewBox="0 0 168 96">
+  <!-- Four steady warm lanterns on rigid posts, with bolted bases and protected wiring. -->
+  <defs>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dce0dc"/>
+      <stop offset="0.5" stop-color="#9aa0a8"/>
+      <stop offset="1" stop-color="#51575e"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#565d63"/>
+      <stop offset="0.5" stop-color="#30363c"/>
+      <stop offset="1" stop-color="#171b20"/>
+    </linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0d786"/>
+      <stop offset="0.5" stop-color="#c99b43"/>
+      <stop offset="1" stop-color="#79602d"/>
+    </linearGradient>
+    <linearGradient id="slate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8491a5"/>
+      <stop offset="0.5" stop-color="#58647b"/>
+      <stop offset="1" stop-color="#3a465d"/>
+    </linearGradient>
+    <linearGradient id="post" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c3ab70"/>
+      <stop offset="0.5" stop-color="#91794d"/>
+      <stop offset="1" stop-color="#5b4d36"/>
+    </linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b5966e"/>
+      <stop offset="0.5" stop-color="#836242"/>
+      <stop offset="1" stop-color="#57432e"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="0.38" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#fff6bc"/>
+      <stop offset="0.5" stop-color="#e4b967"/>
+      <stop offset="1" stop-color="#b97e36"/>
+    </radialGradient>
+  </defs>
+  <g stroke="#25282c" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="5" y="63.4" width="158" height="5.6" rx="0" fill="url(#dark)"/>
+    <path d="M6 64.2 H162" fill="none" stroke="#818a93" stroke-width="0.4"/>
+    <rect x="4" y="59" width="6" height="14" rx="0.7" fill="url(#dark)"/>
+    <circle cx="7" cy="62" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M6.7 61.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="7" cy="71" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M6.7 70.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <rect x="158" y="59" width="6" height="14" rx="0.7" fill="url(#dark)"/>
+    <circle cx="161" cy="62" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M160.7 61.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="161" cy="71" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M160.7 70.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <rect x="1.1" y="62.2" width="1.7" height="7.6" rx="0.6" fill="url(#steel)"/>
+    <rect x="165.2" y="62.2" width="1.7" height="7.6" rx="0.6" fill="url(#steel)"/>
+    <rect x="2.8" y="64.6" width="1.2" height="2.8" rx="0" fill="url(#steel)"/>
+    <rect x="164" y="64.6" width="1.2" height="2.8" rx="0" fill="url(#steel)"/>
+    <path d="M4 70 H2.6 Q1.4 70 1.4 71.4 V72.6 H2.7 M164 70 h1.4 q1.2 0 1.2 1.4 v1.2 h-1.3" fill="none" stroke-width="0.9"/>
+    <path d="M8 73 q1 4-1.8 6 M160 73 q-1 4 1.8 6" fill="none" stroke="#171c23" stroke-width="1.2"/>
+    <path d="M43 69 L84 77 L125 69 M43 77 L125 69" fill="none" stroke="#343c44" stroke-width="1.3"/>
+    <rect x="18.3" y="25" width="3.4" height="32" rx="0.5" fill="url(#post)"/>
+    <rect x="16" y="54" width="8" height="7" rx="0.6" fill="url(#post)"/>
+    <circle cx="18" cy="57" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M17.7 56.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="22" cy="57" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M21.7 56.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <path d="M22.7 23 v33 Q22.7 58 27 59" fill="none" stroke="#282f39" stroke-width="1.2"/>
+    <rect x="15.5" y="12" width="9" height="12" rx="1" fill="url(#warm)" stroke="#806231"/>
+    <path d="M14 12 Q20 4 26 12 Z" fill="url(#post)"/>
+    <rect x="13.5" y="11.5" width="13" height="1.7" rx="0.7" fill="url(#brass)"/>
+    <circle cx="20" cy="6" r="1.1" fill="url(#brass)"/>
+    <path d="M15.5 13 l1 10 3.5 2 3.5-2 1-10 M20 13 v12 M16.5 23 h7" fill="none" stroke="#7f6336" stroke-width="0.65"/>
+    <path d="M17.2 14 v6" fill="none" stroke="#fff4c1" stroke-width="0.5"/>
+    <rect x="55.3" y="38" width="3.4" height="19" rx="0.5" fill="url(#post)"/>
+    <rect x="53" y="54" width="8" height="7" rx="0.6" fill="url(#post)"/>
+    <circle cx="55" cy="57" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M54.7 56.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="59" cy="57" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M58.7 56.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <path d="M59.7 36 v33 Q59.7 58 64 59" fill="none" stroke="#282f39" stroke-width="1.2"/>
+    <rect x="52.5" y="25" width="9" height="12" rx="1" fill="url(#warm)" stroke="#806231"/>
+    <path d="M51 25 Q57 17 63 25 Z" fill="url(#post)"/>
+    <rect x="50.5" y="24.5" width="13" height="1.7" rx="0.7" fill="url(#brass)"/>
+    <circle cx="57" cy="19" r="1.1" fill="url(#brass)"/>
+    <path d="M52.5 26 l1 10 3.5 2 3.5-2 1-10 M57 26 v12 M53.5 36 h7" fill="none" stroke="#7f6336" stroke-width="0.65"/>
+    <path d="M54.2 27 v6" fill="none" stroke="#fff4c1" stroke-width="0.5"/>
+    <rect x="111.3" y="41" width="3.4" height="16" rx="0.5" fill="url(#post)"/>
+    <rect x="109" y="54" width="8" height="7" rx="0.6" fill="url(#post)"/>
+    <circle cx="111" cy="57" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M110.7 56.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="115" cy="57" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M114.7 56.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <path d="M115.7 39 v33 Q115.7 58 120 59" fill="none" stroke="#282f39" stroke-width="1.2"/>
+    <rect x="108.5" y="28" width="9" height="12" rx="1" fill="url(#warm)" stroke="#806231"/>
+    <path d="M107 28 Q113 20 119 28 Z" fill="url(#post)"/>
+    <rect x="106.5" y="27.5" width="13" height="1.7" rx="0.7" fill="url(#brass)"/>
+    <circle cx="113" cy="22" r="1.1" fill="url(#brass)"/>
+    <path d="M108.5 29 l1 10 3.5 2 3.5-2 1-10 M113 29 v12 M109.5 39 h7" fill="none" stroke="#7f6336" stroke-width="0.65"/>
+    <path d="M110.2 30 v6" fill="none" stroke="#fff4c1" stroke-width="0.5"/>
+    <rect x="146.3" y="28" width="3.4" height="29" rx="0.5" fill="url(#post)"/>
+    <rect x="144" y="54" width="8" height="7" rx="0.6" fill="url(#post)"/>
+    <circle cx="146" cy="57" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M145.7 56.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="150" cy="57" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M149.7 56.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <path d="M150.7 26 v33 Q150.7 58 155 59" fill="none" stroke="#282f39" stroke-width="1.2"/>
+    <rect x="143.5" y="15" width="9" height="12" rx="1" fill="url(#warm)" stroke="#806231"/>
+    <path d="M142 15 Q148 7 154 15 Z" fill="url(#post)"/>
+    <rect x="141.5" y="14.5" width="13" height="1.7" rx="0.7" fill="url(#brass)"/>
+    <circle cx="148" cy="9" r="1.1" fill="url(#brass)"/>
+    <path d="M143.5 16 l1 10 3.5 2 3.5-2 1-10 M148 16 v12 M144.5 26 h7" fill="none" stroke="#7f6336" stroke-width="0.65"/>
+    <path d="M145.2 17 v6" fill="none" stroke="#fff4c1" stroke-width="0.5"/>
+    <rect x="33" y="44" width="18" height="10" rx="0.5" fill="url(#wood)"/>
+    <rect x="70" y="47" width="31" height="6" rx="0.5" fill="url(#wood)"/>
+    <path d="M34 46.2 q3.6 -1 7.2 0 t7.2 0" fill="none" stroke="#f4e4c1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M34 49.5 q3.6 -1 7.2 0 t7.2 0" fill="none" stroke="#f4e4c1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M34 52.3 q3.6 -1 7.2 0 t7.2 0" fill="none" stroke="#f4e4c1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M71 49.2 q6.2 -1 12.4 0 t12.4 0" fill="none" stroke="#f4e4c1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M71 52.5 q6.2 -1 12.4 0 t12.4 0" fill="none" stroke="#f4e4c1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <rect x="36" y="44" width="1.6" height="11" rx="0.2" fill="url(#dark)"/>
+    <rect x="48" y="44" width="1.6" height="11" rx="0.2" fill="url(#dark)"/>
+    <rect x="75" y="47" width="1.6" height="8" rx="0.2" fill="url(#dark)"/>
+    <rect x="96" y="47" width="1.6" height="8" rx="0.2" fill="url(#dark)"/>
+    <path d="M133 40 v13 M136 40 v13" fill="none" stroke="#3a424d" stroke-width="1.8"/>
+    <rect x="128" y="39" width="12" height="3" rx="0.8" fill="url(#wood)"/>
+    <rect x="10" y="52" width="148" height="11.4" rx="0.6" fill="url(#slate)"/>
+    <path d="M11 54.2 q29.6 -1 59.2 0 t59.2 0" fill="none" stroke="#b2bbce" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M11 57.5 q29.6 -1 59.2 0 t59.2 0" fill="none" stroke="#b2bbce" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M11 60.3 q29.6 -1 59.2 0 t59.2 0" fill="none" stroke="#b2bbce" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M11 57.6 H157" fill="none" stroke="#303b51" stroke-width="0.4"/>
+    <rect x="12" y="51" width="3" height="13" rx="0.4" fill="url(#post)"/>
+    <circle cx="13.5" cy="54" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M13.2 53.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="13.5" cy="61" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M13.2 60.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <rect x="62" y="51" width="3" height="13" rx="0.4" fill="url(#post)"/>
+    <circle cx="63.5" cy="54" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M63.2 53.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="63.5" cy="61" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M63.2 60.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <rect x="103" y="51" width="3" height="13" rx="0.4" fill="url(#post)"/>
+    <circle cx="104.5" cy="54" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M104.2 53.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="104.5" cy="61" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M104.2 60.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <rect x="152" y="51" width="3" height="13" rx="0.4" fill="url(#post)"/>
+    <circle cx="153.5" cy="54" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M153.2 53.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="153.5" cy="61" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M153.2 60.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <path d="M23 60 H145" fill="none" stroke="#242c39" stroke-width="1.3"/>
+  </g>
+</svg>

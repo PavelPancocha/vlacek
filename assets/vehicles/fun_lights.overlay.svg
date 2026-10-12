@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="168" height="96" viewBox="0 0 168 96">
+  <!-- Stationary suspension and rim lighting; wheel discs are separate rotating parts. -->
+  <defs>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#565d63"/>
+      <stop offset="0.5" stop-color="#30363c"/>
+      <stop offset="1" stop-color="#171b20"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dce0dc"/>
+      <stop offset="0.5" stop-color="#9aa0a8"/>
+      <stop offset="1" stop-color="#51575e"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#25282c" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M21.5 80.4 A11.1 11.1 0 0 1 34.9 73.3" fill="none" stroke="#eceeea" stroke-opacity="0.45" stroke-width="0.8"/>
+    <path d="M42.5 87.6 A11.1 11.1 0 0 1 27 93.9" fill="none" stroke="#090c10" stroke-opacity="0.45" stroke-width="1"/>
+    <path d="M24 69 l2 21 h12 l2-21 h-2 l-2 19 h-8 l-2-19 Z" fill="url(#dark)"/>
+    <path d="M18 70 Q32 76 46 70" fill="none" stroke="#20252b" stroke-width="2.4"/>
+    <path d="M19 69.4 Q32 74.6 45 69.4 M21 71.3 Q32 75.4 43 71.3" fill="none" stroke="#919a9b" stroke-width="0.4"/>
+    <rect x="28.5" y="79.4" width="7" height="8.6" rx="1" fill="url(#dark)"/>
+    <path d="M29.5 80.8 h4.8" fill="none" stroke="#9aa0a8" stroke-width="0.35"/>
+    <circle cx="32" cy="84" r="1.3" fill="#555f65" stroke-width="0.3"/>
+    <path d="M125.5 80.4 A11.1 11.1 0 0 1 138.9 73.3" fill="none" stroke="#eceeea" stroke-opacity="0.45" stroke-width="0.8"/>
+    <path d="M146.5 87.6 A11.1 11.1 0 0 1 131 93.9" fill="none" stroke="#090c10" stroke-opacity="0.45" stroke-width="1"/>
+    <path d="M128 69 l2 21 h12 l2-21 h-2 l-2 19 h-8 l-2-19 Z" fill="url(#dark)"/>
+    <path d="M122 70 Q136 76 150 70" fill="none" stroke="#20252b" stroke-width="2.4"/>
+    <path d="M123 69.4 Q136 74.6 149 69.4 M125 71.3 Q136 75.4 147 71.3" fill="none" stroke="#919a9b" stroke-width="0.4"/>
+    <rect x="132.5" y="79.4" width="7" height="8.6" rx="1" fill="url(#dark)"/>
+    <path d="M133.5 80.8 h4.8" fill="none" stroke="#9aa0a8" stroke-width="0.35"/>
+    <circle cx="136" cy="84" r="1.3" fill="#555f65" stroke-width="0.3"/>
+  </g>
+</svg>

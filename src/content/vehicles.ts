@@ -20,9 +20,8 @@ const assets = (id: string) => ({
 
 /**
  * The ten locomotives of doc 06 §2 in its order (stable IDs and lengths).
- * Running gear, effects and horns of the vehicles still marked
- * `placeholder` follow the frozen vehicle contract of the catalog V1 slice;
- * each loses the marker when its art lands (H1).
+ * Running gear, effects and horns of the locomotives added in the catalog
+ * V1 slice follow its vehicle contract, frozen before the art was drawn.
  */
 export const locomotives: readonly CatalogLocomotive[] = [
   {
@@ -178,15 +177,6 @@ function wagon(
   };
 }
 
-/**
- * A catalog vehicle whose art has not landed yet: drawn as the marked
- * silhouette, never in a release (doc 06 §8). Removed per vehicle by its
- * art (H2); none may remain at the end of the catalog V1 slice.
- */
-function withoutArt(definition: CatalogWagon): CatalogWagon {
-  return { ...definition, placeholder: true };
-}
-
 /** The 32 wagon types of doc 06 §3 in its order and four groups. */
 export const wagons: readonly CatalogWagon[] = [
   wagon('passenger_classic', 'Osobní vagón', 'passenger', 176),
@@ -215,10 +205,10 @@ export const wagons: readonly CatalogWagon[] = [
   wagon('service_tools', 'Dílenský vagón', 'service', 164),
   wagon('service_snowplow', 'Vagón s pluhem', 'service', 156),
   wagon('fun_balloons', 'Balónkový vagónek', 'fun', 164),
-  withoutArt(wagon('fun_stars', 'Hvězdičkový vagónek', 'fun', 164)),
-  withoutArt(wagon('fun_garden', 'Zahrádkový vagónek', 'fun', 172)),
-  withoutArt(wagon('fun_aquarium', 'Akvarijní vagónek', 'fun', 176)),
-  withoutArt(wagon('fun_windmill', 'Větrníkový vagónek', 'fun', 160)),
-  withoutArt(wagon('fun_lights', 'Světýlkový vagónek', 'fun', 168)),
-  withoutArt(wagon('fun_toyblocks', 'Vagónek s kostkami', 'fun', 164)),
+  wagon('fun_stars', 'Hvězdičkový vagónek', 'fun', 164),
+  wagon('fun_garden', 'Zahrádkový vagónek', 'fun', 172),
+  wagon('fun_aquarium', 'Akvarijní vagónek', 'fun', 176),
+  wagon('fun_windmill', 'Větrníkový vagónek', 'fun', 160),
+  wagon('fun_lights', 'Světýlkový vagónek', 'fun', 168),
+  wagon('fun_toyblocks', 'Vagónek s kostkami', 'fun', 164),
 ];

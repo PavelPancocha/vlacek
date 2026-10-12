@@ -574,6 +574,78 @@ export const artParts = {
     heightU: 96,
     pivotU: { x: 96, y: 96 },
   },
+  'fun_stars.body': {
+    file: 'fun_stars.body.svg',
+    widthU: 164,
+    heightU: 88,
+    pivotU: { x: 82, y: 88 },
+  },
+  'fun_stars.overlay': {
+    file: 'fun_stars.overlay.svg',
+    widthU: 164,
+    heightU: 88,
+    pivotU: { x: 82, y: 88 },
+  },
+  'fun_garden.body': {
+    file: 'fun_garden.body.svg',
+    widthU: 172,
+    heightU: 88,
+    pivotU: { x: 86, y: 88 },
+  },
+  'fun_garden.overlay': {
+    file: 'fun_garden.overlay.svg',
+    widthU: 172,
+    heightU: 88,
+    pivotU: { x: 86, y: 88 },
+  },
+  'fun_aquarium.body': {
+    file: 'fun_aquarium.body.svg',
+    widthU: 176,
+    heightU: 88,
+    pivotU: { x: 88, y: 88 },
+  },
+  'fun_aquarium.overlay': {
+    file: 'fun_aquarium.overlay.svg',
+    widthU: 176,
+    heightU: 88,
+    pivotU: { x: 88, y: 88 },
+  },
+  'fun_windmill.body': {
+    file: 'fun_windmill.body.svg',
+    widthU: 160,
+    heightU: 100,
+    pivotU: { x: 80, y: 100 },
+  },
+  'fun_windmill.overlay': {
+    file: 'fun_windmill.overlay.svg',
+    widthU: 160,
+    heightU: 100,
+    pivotU: { x: 80, y: 100 },
+  },
+  'fun_lights.body': {
+    file: 'fun_lights.body.svg',
+    widthU: 168,
+    heightU: 96,
+    pivotU: { x: 84, y: 96 },
+  },
+  'fun_lights.overlay': {
+    file: 'fun_lights.overlay.svg',
+    widthU: 168,
+    heightU: 96,
+    pivotU: { x: 84, y: 96 },
+  },
+  'fun_toyblocks.body': {
+    file: 'fun_toyblocks.body.svg',
+    widthU: 164,
+    heightU: 84,
+    pivotU: { x: 82, y: 84 },
+  },
+  'fun_toyblocks.overlay': {
+    file: 'fun_toyblocks.overlay.svg',
+    widthU: 164,
+    heightU: 84,
+    pivotU: { x: 82, y: 84 },
+  },
 } satisfies Record<string, ArtPart>;
 
 export type ArtPartKey = keyof typeof artParts;
@@ -1063,6 +1135,62 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       { part: 'wheel.wagon-disc', xU: 49 },
       { part: 'wheel.wagon-disc', xU: 143 },
       { part: 'wheel.wagon-disc', xU: 169 },
+    ],
+  },
+  fun_stars: {
+    heightU: 88,
+    body: 'fun_stars.body',
+    overlay: 'fun_stars.overlay',
+    wheels: [
+      { part: 'wheel.wagon-spoked', xU: 31 },
+      { part: 'wheel.wagon-spoked', xU: 133 },
+    ],
+  },
+  fun_garden: {
+    heightU: 88,
+    body: 'fun_garden.body',
+    overlay: 'fun_garden.overlay',
+    wheels: [
+      { part: 'wheel.wagon-spoked', xU: 33 },
+      { part: 'wheel.wagon-spoked', xU: 139 },
+    ],
+  },
+  fun_aquarium: {
+    heightU: 88,
+    body: 'fun_aquarium.body',
+    overlay: 'fun_aquarium.overlay',
+    wheels: [
+      { part: 'wheel.wagon-disc', xU: 20 },
+      { part: 'wheel.wagon-disc', xU: 46 },
+      { part: 'wheel.wagon-disc', xU: 130 },
+      { part: 'wheel.wagon-disc', xU: 156 },
+    ],
+  },
+  fun_windmill: {
+    heightU: 100,
+    body: 'fun_windmill.body',
+    overlay: 'fun_windmill.overlay',
+    wheels: [
+      { part: 'wheel.wagon-spoked', xU: 30 },
+      { part: 'wheel.wagon-spoked', xU: 130 },
+    ],
+  },
+  fun_lights: {
+    heightU: 96,
+    body: 'fun_lights.body',
+    overlay: 'fun_lights.overlay',
+    wheels: [
+      { part: 'wheel.wagon-spoked', xU: 32 },
+      { part: 'wheel.wagon-spoked', xU: 136 },
+    ],
+  },
+  fun_toyblocks: {
+    heightU: 84,
+    body: 'fun_toyblocks.body',
+    overlay: 'fun_toyblocks.overlay',
+    wheels: [
+      { part: 'wheel.wagon-spoked', xU: 31 },
+      { part: 'wheel.wagon-spoked', xU: 133 },
     ],
   },
 };

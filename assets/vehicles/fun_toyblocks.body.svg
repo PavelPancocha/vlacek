@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="84" viewBox="0 0 164 84">
+  <!-- Wooden cubes, arches and a chocked cylinder; retaining dowels and deck-fastened broad straps. -->
+  <defs>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dce0dc"/>
+      <stop offset="0.5" stop-color="#9aa0a8"/>
+      <stop offset="1" stop-color="#51575e"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#565d63"/>
+      <stop offset="0.5" stop-color="#30363c"/>
+      <stop offset="1" stop-color="#171b20"/>
+    </linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9b581"/>
+      <stop offset="0.5" stop-color="#b58d5c"/>
+      <stop offset="1" stop-color="#805c3b"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#db9a83"/>
+      <stop offset="0.5" stop-color="#bd655b"/>
+      <stop offset="1" stop-color="#8b443f"/>
+    </linearGradient>
+    <linearGradient id="yellow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ecd185"/>
+      <stop offset="0.5" stop-color="#c9a64b"/>
+      <stop offset="1" stop-color="#987632"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9ab8cb"/>
+      <stop offset="0.5" stop-color="#668dab"/>
+      <stop offset="1" stop-color="#415f7d"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a2ba8b"/>
+      <stop offset="0.5" stop-color="#749568"/>
+      <stop offset="1" stop-color="#4f6e46"/>
+    </linearGradient>
+    <linearGradient id="strap" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#676e72"/>
+      <stop offset="0.5" stop-color="#343b40"/>
+      <stop offset="1" stop-color="#20262b"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#25282c" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="5" y="51.4" width="154" height="5.6" rx="0" fill="url(#dark)"/>
+    <path d="M6 52.2 H158" fill="none" stroke="#818a93" stroke-width="0.4"/>
+    <rect x="4" y="47" width="6" height="14" rx="0.7" fill="url(#dark)"/>
+    <circle cx="7" cy="50" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M6.7 49.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="7" cy="59" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M6.7 58.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <rect x="154" y="47" width="6" height="14" rx="0.7" fill="url(#dark)"/>
+    <circle cx="157" cy="50" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M156.7 49.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <circle cx="157" cy="59" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M156.7 58.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <rect x="1.1" y="50.2" width="1.7" height="7.6" rx="0.6" fill="url(#steel)"/>
+    <rect x="161.2" y="50.2" width="1.7" height="7.6" rx="0.6" fill="url(#steel)"/>
+    <rect x="2.8" y="52.6" width="1.2" height="2.8" rx="0" fill="url(#steel)"/>
+    <rect x="160" y="52.6" width="1.2" height="2.8" rx="0" fill="url(#steel)"/>
+    <path d="M4 58 H2.6 Q1.4 58 1.4 59.4 V60.6 H2.7 M160 58 h1.4 q1.2 0 1.2 1.4 v1.2 h-1.3" fill="none" stroke-width="0.9"/>
+    <path d="M8 61 q1 4-1.8 6 M156 61 q-1 4 1.8 6" fill="none" stroke="#171c23" stroke-width="1.2"/>
+    <path d="M43 57 L82 65 L121 57 M43 65 L121 57" fill="none" stroke="#343c44" stroke-width="1.3"/>
+    <rect x="14" y="16" width="28" height="30" rx="1.2" fill="url(#wood)"/>
+    <path d="M15 18.2 q5.6 -1 11.2 0 t11.2 0" fill="none" stroke="#f4e4c1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M15 21.5 q5.6 -1 11.2 0 t11.2 0" fill="none" stroke="#f4e4c1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M15 24.3 q5.6 -1 11.2 0 t11.2 0" fill="none" stroke="#f4e4c1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M15 17 H41 M16 19 v25" fill="none" stroke="#f4deb3" stroke-width="0.5"/>
+    <path d="M46 45 V29 C46 10 76 10 76 29 V45 H66 V30 C66 23 56 23 56 30 V45 Z" fill="url(#yellow)"/>
+    <path d="M48 29 C48 13 74 13 74 29 M48 40 v-8 M68 33 v10" fill="none" stroke="#f3dfa4" stroke-width="0.5"/>
+    <rect x="79" y="28" width="31" height="18" rx="0.8" fill="url(#blue)"/>
+    <path d="M80 30.2 q6.2 -1 12.4 0 t12.4 0" fill="none" stroke="#ccdce6" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M80 33.5 q6.2 -1 12.4 0 t12.4 0" fill="none" stroke="#ccdce6" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M80 36.3 q6.2 -1 12.4 0 t12.4 0" fill="none" stroke="#ccdce6" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M83 12 H106 Q111 12 111 19 V22 Q111 27 106 27 H83 Q78 27 78 20 Q78 12 83 12 Z" fill="url(#red)"/>
+    <path d="M84 14 H104 M82 17 Q90 16 106 17 M84 22 H105" fill="none" stroke="#edb39a" stroke-opacity="0.55" stroke-width="0.4"/>
+    <path d="M108 46 V33 C108 17 132 17 132 33 V46 H124 V34 C124 28 116 28 116 34 V46 Z" fill="url(#green)"/>
+    <path d="M110 32 C110 20 130 20 130 33" fill="none" stroke="#bdcfaa" stroke-width="0.5"/>
+    <rect x="134" y="18" width="17" height="28" rx="0.8" fill="url(#red)"/>
+    <path d="M135 20.2 q3.4 -1 6.8 0 t6.8 0" fill="none" stroke="#edc2a1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M135 23.5 q3.4 -1 6.8 0 t6.8 0" fill="none" stroke="#edc2a1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <path d="M135 26.3 q3.4 -1 6.8 0 t6.8 0" fill="none" stroke="#edc2a1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <rect x="10" y="46" width="144" height="5.4" rx="0.5" fill="url(#wood)"/>
+    <path d="M11 48.2 q28.8 -1 57.6 0 t57.6 0" fill="none" stroke="#f4e4c1" stroke-opacity="0.35" stroke-width="0.3"/>
+    <rect x="12" y="39" width="140" height="3" rx="0.4" fill="url(#blue)"/>
+    <rect x="12" y="37" width="3.5" height="14" rx="0.4" fill="url(#wood)"/>
+    <circle cx="13.75" cy="40" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M13.45 39.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <rect x="43" y="37" width="3.5" height="14" rx="0.4" fill="url(#wood)"/>
+    <circle cx="44.75" cy="40" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M44.45 39.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <rect x="76" y="37" width="3.5" height="14" rx="0.4" fill="url(#wood)"/>
+    <circle cx="77.75" cy="40" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M77.45 39.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <rect x="111" y="37" width="3.5" height="14" rx="0.4" fill="url(#wood)"/>
+    <circle cx="112.75" cy="40" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M112.45 39.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <rect x="148" y="37" width="3.5" height="14" rx="0.4" fill="url(#wood)"/>
+    <circle cx="149.75" cy="40" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M149.45 39.75 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <path d="M26 16.3 Q28 15 30 16.3 V52 H26 Z" fill="url(#strap)"/>
+    <path d="M26.8 17 V49" fill="none" stroke="#90948c" stroke-width="0.4"/>
+    <rect x="25" y="47" width="6" height="5" rx="0.5" fill="url(#dark)"/>
+    <circle cx="28" cy="49.5" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M27.7 49.25 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <path d="M90 12.3 Q92 11 94 12.3 V52 H90 Z" fill="url(#strap)"/>
+    <path d="M90.8 13 V49" fill="none" stroke="#90948c" stroke-width="0.4"/>
+    <rect x="89" y="47" width="6" height="5" rx="0.5" fill="url(#dark)"/>
+    <circle cx="92" cy="49.5" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M91.7 49.25 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <path d="M139 18.3 Q141 17 143 18.3 V52 H139 Z" fill="url(#strap)"/>
+    <path d="M139.8 19 V49" fill="none" stroke="#90948c" stroke-width="0.4"/>
+    <rect x="138" y="47" width="6" height="5" rx="0.5" fill="url(#dark)"/>
+    <circle cx="141" cy="49.5" r="0.65" fill="#b8b6a2" stroke-width="0.25"/>
+    <path d="M140.7 49.25 h.5" fill="none" stroke="#f6eed5" stroke-width="0.2"/>
+    <path d="M80 28 l3-3 3 3 M103 28 l3-3 3 3" fill="#947047"/>
+  </g>
+</svg>

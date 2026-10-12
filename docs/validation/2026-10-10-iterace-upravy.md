@@ -634,3 +634,16 @@ Třináct nákladních druhů má vlastní ruční SVG kresbu podle zmrazené sm
 | Ukotvení traktoru a bagru (nález recenze: klíny nedosedaly na pneumatiku, rameno bagru neleželo na podpěře, řetěz končil ve vzduchu)                                            | 3 regresní testy FAIL                           | PASS   |
 
 Lanes po H0: `npm run check` PASS kromě opakovaného timeoutu `GEN-10` na zatíženém stroji (stejný čas jako na `master`, viz záznam integrace); `art.spec.ts` 18–20 PASS na obou projektech; jízdy kreslí všechny vozy z atlasu vozidel. Recenze lanes: otevřené vozy LAND, uzavřené a plošiny po opravě nálezů připravené.
+
+## H2, dávka 4 — hravé vozy; katalog kompletní
+
+`fun_stars`, `fun_garden`, `fun_aquarium`, `fun_windmill`, `fun_lights` a `fun_toyblocks` mají vlastní ruční SVG kresbu. Podle rozhodnutí smlouvy jde o statickou kresbu: volitelné místní reakce na dotyk (dokument 06 §3) zůstávají mimo tento krok. Vše je pevně uchycené (šrouby, držáky, kolíky, popruhy); rybky jsou stylizované bez výrazů tváře.
+
+| Test                                                                                                | Red                         | Green |
+| --------------------------------------------------------------------------------------------------- | --------------------------- | ----- |
+| `<id> has vector art with the frozen frame and running gear` pro všech šest (`artManifest.test.ts`) | 6 FAIL: `placeholder: true` | PASS  |
+| `validate:assets` přijme katalog s novou kresbou                                                    | FAIL: souhrn seedu          | PASS  |
+
+Lane po H0: `npm run check` 501/501, `art.spec.ts` 18/18 na obou projektech; jízda se všemi šesti vozy kreslí 7 vozidel z atlasu vozidel (1934 × 904 px při 2 px/u). Recenze lane: LAND.
+
+Tímto commitem má **všech 42 vozidel katalogu vlastní kresbu**: `validate:assets` hlásí 42 vozidel s grafikou, 103 díly a 0 placeholderů. Pomocná funkce `withoutArt` zmizela z katalogu.
