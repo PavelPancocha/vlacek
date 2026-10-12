@@ -1,7 +1,7 @@
 import type { RenderProfile } from './renderProfile.ts';
 import type { Settings } from '../platform/SaveValidation.ts';
 
-/** Read-only diagnostics exposed as `window.__vlacek` with `?debug=1`. */
+/** Read-only diagnostics via `?debug=1` or the hidden parent developer menu. */
 export interface DebugSnapshot {
   buildId: string;
   renderer: string;

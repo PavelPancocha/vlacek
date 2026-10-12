@@ -5,9 +5,17 @@ import type { Consist } from '../domain/types.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import { AudioManager } from '../platform/AudioManager.ts';
-import { isPortrait } from '../platform/browserEnvironment.ts';
+import { browserStorage, isPortrait } from '../platform/browserEnvironment.ts';
 import type { Settings } from '../platform/SaveValidation.ts';
-import type { RendererPreference } from '../platform/CapabilityProbe.ts';
+import {
+  devReloadUrl,
+  type RendererPreference,
+} from '../platform/CapabilityProbe.ts';
+import {
+  clearDevOptions,
+  defaultDevOptions,
+  writeDevOptions,
+} from '../platform/DevOptions.ts';
 import { DomInputAdapter } from '../platform/DomInputAdapter.ts';
 import { FullscreenController } from '../platform/FullscreenController.ts';
 import { FrameStats } from '../platform/FrameStats.ts';
@@ -24,6 +32,7 @@ export interface AppControllerOptions {
   renderer: RendererPreference;
   debug: boolean;
   qualityOverride?: Settings['quality'] | undefined;
+  seedOverride?: number | undefined;
   buildId: string;
 }
 
@@ -120,6 +129,46 @@ export class AppController {
         // The locomotive is the front of the train, at the strip's right end.
         const strip = this.#uiRoot.querySelector('.strip');
         strip?.scrollTo({ left: strip.scrollWidth });
+      }
+      if (action === 'dev-build' && session.screen.name === 'PAUSED')
+        this.#ui.activateDeveloperGate(performance.now(), {
+          debug: options.debug,
+          renderer: options.renderer,
+          seed: options.seedOverride,
+          quality: options.qualityOverride ?? session.settings.quality,
+          reducedEffects: session.settings.reducedEffects,
+        });
+      if (action === 'dev-close') this.#ui.closeDeveloperMenu();
+      if (action === 'dev-apply' || action === 'dev-defaults') {
+        const values =
+          action === 'dev-defaults'
+            ? {
+                ...defaultDevOptions,
+                quality: 'auto' as const,
+                reducedEffects: false,
+              }
+            : this.#ui.developerValues();
+        if (!values || !this.#ui.developerMenuOpen) return;
+        session.setRenderSettings(values);
+        if (session.interrupt() !== 'saved') {
+          this.#ui.developerSaveError('session');
+          return;
+        }
+        const storage = browserStorage();
+        const stored =
+          action === 'dev-defaults'
+            ? clearDevOptions(storage)
+            : writeDevOptions(storage, values);
+        if (!stored) {
+          this.#ui.developerSaveError('dev');
+          return;
+        }
+        window.history.replaceState(
+          null,
+          '',
+          devReloadUrl(window.location.href),
+        );
+        window.location.reload();
       }
       if (action === 'fullscreen') void this.#fullscreen.toggle();
       if (action === 'retry') window.location.reload();
@@ -251,6 +300,13 @@ export class AppController {
         failed: this.#fullscreen.failed,
       },
       buildId: this.#options.buildId,
+      devActive:
+        this.#options.debug ||
+        this.#options.renderer !== 'auto' ||
+        this.#options.seedOverride !== undefined ||
+        (this.#options.qualityOverride ?? session.settings.quality) !==
+          'auto' ||
+        session.settings.reducedEffects,
       locomotives,
       wagons,
       lengthRules: session.lengthRules,

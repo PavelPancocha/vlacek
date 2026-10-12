@@ -243,6 +243,8 @@ Při načtení nejsou platné žádné rezervace na neexistující entity. Zázn
 
 Výchozí úložiště V1 je **malý verzovaný JSON v localStorage**, ne backend a ne přenos textur do save. Pro tento rozsah stačí jedna rozehraná cesta a omezené aktivní stavy. Pokud implementace prokáže potřebu větších transakcí, lze SaveRepository nahradit IndexedDB bez změny domény; není to předem povinná komplikace.
 
+Samostatný platformní klíč `vlacek.dev.v1` uchovává vývojářskou diagnostiku, renderer a volitelný seed ([D-020](../docs/decisions/020-developer-menu.md)). Není součástí save ani jeho zálohy; při neplatném obsahu či nedostupném úložišti se použijí výchozí volby. Kvalita a omezené efekty nadále patří do existujících `settings.quality` a `settings.reducedEffects`, bez změny formátu.
+
 ```ts
 export interface Settings {
   sfxEnabled: boolean;

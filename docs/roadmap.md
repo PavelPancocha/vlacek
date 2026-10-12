@@ -157,7 +157,7 @@ R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na ná
 
 #### R4 — adaptivní kvalita `auto`
 
-- **Problém:** dokument 08 chce, aby `auto` začínala konzervativně a při dlouhodobém zpomalení omezila dekorativní částice, hustotu pozadí a rozlišení. Dnes `renderProfile` (`src/app/renderProfile.ts`) bere `auto` jako `standard` a nic ji za běhu nemění. Ruční volba `low` zatím nemá v UI ovládání.
+- **Problém:** dokument 08 chce, aby `auto` začínala konzervativně a při dlouhodobém zpomalení omezila dekorativní částice, hustotu pozadí a rozlišení. Dnes `renderProfile` (`src/app/renderProfile.ts`) bere `auto` jako `standard` a nic ji za běhu nemění. Ruční volbu `low` nabízí `?quality=low` a skryté vývojářské volby v pauze ([D-020](decisions/020-developer-menu.md)); profil se použije po novém načtení.
 - **Oprava:**
   - čistý řadič `AutoQuality` v `src/app/` krmený z `FrameStats`;
   - začne konzervativně, po dlouhodobě pomalých snímcích sníží úroveň a s hysterezí ji zase zvýší;
