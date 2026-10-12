@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   debugEnabled,
+  qualityOverride,
   rendererPreference,
   seedOverride,
 } from '../../../src/platform/CapabilityProbe.ts';
@@ -56,5 +57,16 @@ describe('seedOverride', () => {
         seedOverride(`?seed=${encodeURIComponent(value)}`),
       ).toBeUndefined();
     }
+  });
+});
+
+describe('qualityOverride', () => {
+  it('accepts low, standard and auto for this page load', () => {
+    for (const value of ['low', 'standard', 'auto'] as const)
+      expect(qualityOverride(`?quality=${value}`)).toBe(value);
+  });
+  it('ignores rubbish and missing values', () => {
+    for (const search of ['', '?debug=1', '?quality=', '?quality=HIGH'])
+      expect(qualityOverride(search)).toBeUndefined();
   });
 });

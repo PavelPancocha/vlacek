@@ -174,3 +174,5 @@ Počasí má při prvním okně nové cesty vždy jasno. Další okna se vybíra
 Cílové FPS je limit nebo preference renderu, nikoli fyzikální frekvence. Není povoleno měnit `fixedHz` při přechodu na úsporný režim. Omezení částic se vztahuje na dekoraci; funkční aktéři a závory se neztrácejí kvůli stejnému čítači.
 
 Výše uvedený JSON není hotový konfigurační soubor běžící aplikace. Implementátor jej převede do typed konfigurace, přidá validaci rozsahů a odvozené hodnoty nebude duplikovat ručně na více místech.
+
+Pro měření lze profil při načtení přepsat adresou `?quality=auto|standard|low`. Jiná hodnota se ignoruje. Volba platí jen pro toto načtení a nemění uložené `settings.quality`; bez parametru se použije uložená kvalita. Stejný efektivní profil řídí DPR, limit FPS i efekty. Diagnostika `window.__vlacek.snapshot().renderProfile` při `?debug=1` uvádí efektivní `quality`, `maxDpr`, `fpsLimit` (0 = bez limitu) a `effects`.

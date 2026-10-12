@@ -22,8 +22,9 @@ export interface RenderProfile {
 export function renderProfile(
   settings: Pick<Settings, 'quality' | 'reducedEffects'>,
   quality: QualityConfig,
+  qualityOverride?: Settings['quality'],
 ): RenderProfile {
-  const low = settings.quality === 'low';
+  const low = (qualityOverride ?? settings.quality) === 'low';
   const profile = low ? quality.low : quality.standard;
   return {
     maxDpr: profile.maxDpr,

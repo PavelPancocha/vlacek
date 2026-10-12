@@ -6,6 +6,7 @@ import { locomotives, wagons } from './content/vehicles.ts';
 import { browserStorage, randomSeed } from './platform/browserEnvironment.ts';
 import {
   debugEnabled,
+  qualityOverride,
   rendererPreference,
   seedOverride,
 } from './platform/CapabilityProbe.ts';
@@ -39,6 +40,7 @@ if (app && gameRoot) {
       renderer: rendererPreference(window.location.search),
       debug: debugEnabled(window.location.search),
       buildId: __APP_BUILD_ID__,
+      qualityOverride: qualityOverride(window.location.search),
     });
   } catch (error) {
     showErrorView(app, error);

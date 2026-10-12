@@ -1,3 +1,5 @@
+import type { Settings } from './SaveValidation.ts';
+
 /** Renderer requested by the page URL; `auto` = WebGL with Canvas fallback. */
 export type RendererPreference = 'auto' | 'canvas';
 
@@ -22,4 +24,14 @@ export function seedOverride(search: string): number | undefined {
   if (value === null || !/^\d{1,10}$/.test(value)) return undefined;
   const seed = Number(value);
   return seed <= 0xffffffff ? seed : undefined;
+}
+
+/** Page-load quality override; never writes the saved setting. */
+export function qualityOverride(
+  search: string,
+): Settings['quality'] | undefined {
+  const value = new URLSearchParams(search).get('quality');
+  return value === 'auto' || value === 'standard' || value === 'low'
+    ? value
+    : undefined;
 }

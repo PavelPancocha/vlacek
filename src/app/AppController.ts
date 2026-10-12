@@ -6,6 +6,7 @@ import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import { AudioManager } from '../platform/AudioManager.ts';
 import { isPortrait } from '../platform/browserEnvironment.ts';
+import type { Settings } from '../platform/SaveValidation.ts';
 import type { RendererPreference } from '../platform/CapabilityProbe.ts';
 import { DomInputAdapter } from '../platform/DomInputAdapter.ts';
 import { FullscreenController } from '../platform/FullscreenController.ts';
@@ -22,6 +23,7 @@ import type { GameSession, SessionEvent } from './GameSession.ts';
 export interface AppControllerOptions {
   renderer: RendererPreference;
   debug: boolean;
+  qualityOverride?: Settings['quality'] | undefined;
   buildId: string;
 }
 
@@ -84,9 +86,17 @@ export class AppController {
       catalogVehicles: () => [...locomotives, ...wagons],
       // Reduced effects or the low profile halve the particles (doc 07 §9).
       effectsQuality: () =>
-        renderProfile(this.#session.settings, gameConfig.quality).effects,
+        renderProfile(
+          this.#session.settings,
+          gameConfig.quality,
+          options.qualityOverride,
+        ).effects,
     });
-    const profile = renderProfile(session.settings, gameConfig.quality);
+    const profile = renderProfile(
+      session.settings,
+      gameConfig.quality,
+      options.qualityOverride,
+    );
     this.#host = createGameHost({
       parent: gameRoot,
       renderer: options.renderer,
@@ -289,6 +299,14 @@ export class AppController {
     return {
       buildId: this.#options.buildId,
       renderer: this.#renderer,
+      renderProfile: {
+        quality: this.#options.qualityOverride ?? session.settings.quality,
+        ...renderProfile(
+          session.settings,
+          gameConfig.quality,
+          this.#options.qualityOverride,
+        ),
+      },
       screen: session.screen.name,
       seed: session.journeySeed,
       generatorVersion: TRACK_GENERATOR_VERSION,

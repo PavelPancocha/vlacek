@@ -1,7 +1,11 @@
+import type { RenderProfile } from './renderProfile.ts';
+import type { Settings } from '../platform/SaveValidation.ts';
+
 /** Read-only diagnostics exposed as `window.__vlacek` with `?debug=1`. */
 export interface DebugSnapshot {
   buildId: string;
   renderer: string;
+  renderProfile: RenderProfile & { quality: Settings['quality'] };
   screen: string;
   seed: number | undefined;
   generatorVersion: number;
