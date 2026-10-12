@@ -60,6 +60,40 @@ test('fullscreen: a start tap enters and a second tap exits using the real Chrom
   expect((await snapshot(page)).screen).toBe('SELECT_LOCO');
 });
 
+test('fullscreen: výběr mašinky aktualizuje tlačítko po vstupu i obou výstupech a zachová volbu', async ({
+  page,
+}) => {
+  await page.goto('./?debug=1');
+  await tapAction(page, 'loco:steam_express');
+  const selected = page.locator('[data-action="loco:steam_express"]');
+  await expect(selected).toHaveAttribute('aria-pressed', 'true');
+  const button = page.locator('.select .row.bottom [data-action="fullscreen"]');
+  for (const exit of ['button', 'external']) {
+    if (test.info().project.name === 'tablet-touch') await button.tap();
+    else await button.click();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.fullscreenElement === document.documentElement,
+        ),
+      )
+      .toBe(true);
+    await expect(button).toHaveText('Ukončit celou obrazovku');
+    await expect(button).toHaveAttribute('aria-pressed', 'true');
+    if (exit === 'external')
+      await page.evaluate(() => document.exitFullscreen());
+    else if (test.info().project.name === 'tablet-touch') await button.tap();
+    else await button.click();
+    await expect
+      .poll(() => page.evaluate(() => document.fullscreenElement === null))
+      .toBe(true);
+    await expect(button).toHaveText('Celá obrazovka');
+    await expect(button).toHaveAttribute('aria-pressed', 'false');
+    await expect(selected).toHaveAttribute('aria-pressed', 'true');
+    expect((await snapshot(page)).screen).toBe('SELECT_LOCO');
+  }
+});
+
 test('fullscreen: pause stays paused, external exit updates the button, D-008 keeps the longest train in view', async ({
   page,
 }) => {
