@@ -541,6 +541,9 @@ for (const viewport of [
       await expect(card).toBeFocused();
       await expectScreenStill(page);
     }
+    // The optional fullscreen button leads the picker's bottom action row.
+    await page.keyboard.press('Tab');
+    await expect(page.locator('[data-action="fullscreen"]')).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.locator('[data-action="to-depot"]')).toBeFocused();
     await page.keyboard.press('Enter');
