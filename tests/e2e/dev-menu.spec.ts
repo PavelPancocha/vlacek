@@ -1,8 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { gameConfig } from '../../src/config/gameConfig.ts';
 import { locomotives, wagons } from '../../src/content/vehicles.ts';
+import {
+  buildArcLengthTable,
+  sampleArcLengthTable,
+} from '../../src/domain/world/ArcLengthTable.ts';
+import { generateTrackProfile } from '../../src/domain/world/TrackProfile.ts';
 import { parseSave, saveRules } from '../../src/platform/SaveValidation.ts';
-import { snapshot, tapAction } from './helpers.ts';
+import { driveUntilMoving, snapshot, startRide, tapAction } from './helpers.ts';
 
 test.beforeEach(async ({ page }) => {
   await page.clock.install();
@@ -127,7 +132,12 @@ async function reloadWith(page: Page, action: string) {
   await expect(page.locator('[data-action="continue"]')).toBeVisible();
 }
 
-for (const action of ['dev-apply', 'dev-defaults']) {
+for (const action of [
+  'dev-apply',
+  'dev-defaults',
+  'dev-restart',
+  'dev-random-world',
+]) {
   for (const failure of ['newer-save', 'primary-write']) {
     test(`${action} keeps the journey, edits and dev key when saving fails: ${failure}`, async ({
       page,
@@ -440,4 +450,329 @@ test('developer menu targets fit a small landscape phone and stay accessible aft
   await page.getByLabel('Číslo světa', { exact: true }).fill('123');
   await tapAction(page, 'dev-close');
   await expect(page.locator('.rotate')).toBeVisible();
+});
+
+for (const viewport of [
+  { width: 568, height: 320 },
+  { width: 844, height: 390 },
+  { width: 1140, height: 512 },
+  { width: 1280, height: 800 },
+]) {
+  test(`HUD: two lines clear of controls and hold drives at ${viewport.width} × ${viewport.height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await startRide(page, ['cargo_box'], '?debug=1&seed=4294967295');
+    const hud = page.locator('#diagnostics');
+    await expect(hud).toContainText('Svět 4294967295');
+    const text = await hud.innerText();
+    expect(text.split('\n')).toHaveLength(2);
+    expect(text).not.toContain('{');
+    const box = await hud.boundingBox();
+    if (!box) throw new Error('HUD missing');
+    const lineHeight = await hud.evaluate((element) =>
+      parseFloat(getComputedStyle(element).lineHeight),
+    );
+    expect(box.height).toBeLessThanOrEqual(lineHeight * 2 + 8);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    for (const button of await page.locator('.hud button').all()) {
+      const control = await button.boundingBox();
+      if (!control) throw new Error('control missing');
+      expect(
+        box.x + box.width <= control.x ||
+          box.x >= control.x + control.width ||
+          box.y + box.height <= control.y ||
+          box.y >= control.y + control.height,
+      ).toBe(true);
+    }
+    const at = { x: box.x + 10, y: box.y + 10 };
+    if (test.info().project.name === 'tablet-touch') {
+      const client = await page.context().newCDPSession(page);
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [at],
+      });
+      await expect
+        .poll(async () => (await snapshot(page)).speedUPerSec)
+        .toBeGreaterThan(20);
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: [],
+      });
+      await client.detach();
+    } else {
+      await driveUntilMoving(page, 20, at);
+      await page.mouse.up();
+    }
+  });
+}
+
+for (const clipboard of ['available', 'missing', 'denied']) {
+  test(`details: Czech groups and copy JSON with clipboard ${clipboard}`, async ({
+    page,
+  }) => {
+    await page.addInitScript((mode) => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value:
+          mode === 'missing'
+            ? undefined
+            : {
+                writeText: (value: string) => {
+                  if (mode === 'denied')
+                    return Promise.reject(new Error('denied'));
+                  sessionStorage.setItem('copied', value);
+                  return Promise.resolve();
+                },
+              },
+      });
+    }, clipboard);
+    await paused(page, '?debug=1');
+    await openMenu(page);
+    await tapAction(page, 'dev-details');
+    for (const title of ['Výkon', 'Svět', 'Vlak', 'Přejezdy', 'Atlasy', 'Zvuk'])
+      await expect(
+        page.getByRole('heading', { name: title, exact: true }),
+      ).toBeVisible();
+    await page
+      .getByRole('button', { name: 'Kopírovat JSON', exact: true })
+      .click();
+    let copied: string | null;
+    if (clipboard === 'available') {
+      await expect(page.locator('[data-copy-status]').last()).toHaveText(
+        'Zkopírováno.',
+      );
+      copied = await page.evaluate(() => sessionStorage.getItem('copied'));
+    } else {
+      const fallback = page.getByLabel('Text k ručnímu kopírování');
+      await expect(fallback).toBeVisible();
+      copied = await fallback.inputValue();
+      expect(
+        await fallback.evaluate((field: HTMLTextAreaElement) => {
+          const event = new MouseEvent('contextmenu', {
+            bubbles: true,
+            cancelable: true,
+          });
+          return {
+            start: field.selectionStart,
+            end: field.selectionEnd,
+            nativeMenu: field.dispatchEvent(event),
+            cancelled: event.defaultPrevented,
+          };
+        }),
+      ).toEqual({
+        start: 0,
+        end: copied.length,
+        nativeMenu: true,
+        cancelled: false,
+      });
+      expect(
+        await page.locator('#app').evaluate((root) =>
+          root.dispatchEvent(
+            new MouseEvent('contextmenu', {
+              bubbles: true,
+              cancelable: true,
+            }),
+          ),
+        ),
+      ).toBe(false);
+    }
+    if (!copied) throw new Error('copy empty');
+    expect(JSON.parse(copied)).toMatchObject({
+      buildId: (await snapshot(page)).buildId,
+      seed: (await snapshot(page)).seed,
+    });
+    await tapAction(page, 'dev-details-close');
+    await expect(page.locator('[data-action="dev-details"]')).toBeFocused();
+    await page
+      .getByRole('button', { name: 'Kopírovat číslo', exact: true })
+      .click();
+    if (clipboard === 'available')
+      expect(await page.evaluate(() => sessionStorage.getItem('copied'))).toBe(
+        String((await snapshot(page)).seed),
+      );
+    else
+      await expect(page.getByLabel('Text k ručnímu kopírování')).toHaveValue(
+        String((await snapshot(page)).seed),
+      );
+  });
+}
+
+for (const action of ['dev-restart', 'dev-random-world']) {
+  test(`restart: ${action} preserves the consist and saves a stopped new journey`, async ({
+    page,
+  }) => {
+    await startRide(
+      page,
+      ['cargo_box', 'cargo_coal'],
+      '?debug=1&seed=123&quality=low&renderer=canvas&keep=yes#here',
+    );
+    const start = await storedSave(page);
+    await driveUntilMoving(page, 20);
+    await page.mouse.up();
+    await tapAction(page, 'pause');
+    const before = await snapshot(page);
+    expect(before.headS).toBeGreaterThan(gameConfig.world.spawnLocalXU);
+    await openMenu(page);
+    await expect(page.locator('.dev-current-world')).toHaveText('Svět 123');
+    await activate(page, action);
+    await expect(page.locator('.dev-menu')).toHaveCount(0);
+    const after = await snapshot(page);
+    expect(after.screen).toBe('PAUSED');
+    expect(after.speedUPerSec).toBe(0);
+    expect(after.simulationTick).toBe(0);
+    expect(after.vehicles).toBe(before.vehicles);
+    if (action === 'dev-restart') expect(after.seed).toBe(before.seed);
+    else expect(after.seed).not.toBe(before.seed);
+    const save = await storedSave(page);
+    expect(save.journey?.consist).toEqual(start.journey?.consist);
+    const world = gameConfig.world;
+    const table = buildArcLengthTable(
+      generateTrackProfile(after.seed ?? 0, world.spawnChunkIndex),
+      world.spawnChunkIndex,
+      world.chunkWidthU,
+      world.arcSampleSpacingU,
+    );
+    expect(save.journey?.head.chunkIndex).toBe(world.spawnChunkIndex);
+    expect(
+      sampleArcLengthTable(table, save.journey?.head.arcOffsetU ?? -1).x,
+    ).toBeCloseTo(
+      world.spawnChunkIndex * world.chunkWidthU + world.spawnLocalXU,
+      8,
+    );
+    if (action === 'dev-restart')
+      expect(save.journey?.head).toEqual(start.journey?.head);
+    expect(save.journey?.simulationTick).toBe(0);
+    expect(save.journey?.seed).toBe(after.seed);
+    expect(new URL(page.url()).search).toBe('?keep=yes');
+    expect(new URL(page.url()).hash).toBe('#here');
+    await tapAction(page, 'resume');
+    await driveUntilMoving(page, 20);
+    await page.mouse.up();
+    await page.reload();
+    await tapAction(page, 'continue');
+    await expect(page.locator('#ui-layer')).toHaveAttribute(
+      'data-screen',
+      'PAUSED',
+    );
+    await expect(page.locator('.world-id')).toHaveText(`Svět ${after.seed}`);
+  });
+}
+
+interface RestartVoice {
+  stops: number[];
+  disconnected: boolean;
+}
+
+declare global {
+  interface Window {
+    __restartVoices: RestartVoice[];
+  }
+}
+
+for (const action of ['dev-restart', 'dev-random-world']) {
+  for (const fails of [false, true]) {
+    test(`restart audio: ${action}, save ${fails ? 'fails' : 'succeeds'}, with an unfinished horn`, async ({
+      page,
+    }) => {
+      await page.addInitScript(() => {
+        window.__restartVoices = [];
+        const NativeAudioContext = window.AudioContext;
+        window.AudioContext = class extends NativeAudioContext {
+          override createOscillator(): OscillatorNode {
+            const oscillator = super.createOscillator();
+            const voice: RestartVoice = { stops: [], disconnected: false };
+            window.__restartVoices.push(voice);
+            const stop = oscillator.stop.bind(oscillator);
+            oscillator.stop = (when = 0) => {
+              voice.stops.push(when);
+              // Keep the real source unfinished through the menu interaction.
+              stop(when === 0 ? 0 : this.currentTime + 1000);
+            };
+            const disconnect = oscillator.disconnect.bind(oscillator);
+            oscillator.disconnect = () => {
+              voice.disconnected = true;
+              disconnect();
+            };
+            return oscillator;
+          }
+        };
+      });
+      await paused(page, '?debug=1&seed=123');
+      await tapAction(page, 'resume');
+      await activate(page, 'horn');
+      await expect
+        .poll(() => page.evaluate(() => window.__restartVoices.length))
+        .toBeGreaterThan(0);
+      await tapAction(page, 'pause');
+      await expect
+        .poll(async () => (await snapshot(page)).audio)
+        .toBe('suspended');
+      const previous = await page.evaluate(() => window.__restartVoices);
+      if (fails)
+        await page.evaluate(() => {
+          // Keep the caller's Storage receiver with call(this, ...) below.
+          // eslint-disable-next-line @typescript-eslint/unbound-method
+          const write = Storage.prototype.setItem;
+          Storage.prototype.setItem = function (key, value) {
+            if (key === 'vlacek.save.v1')
+              throw new DOMException('Storage full', 'QuotaExceededError');
+            write.call(this, key, value);
+          };
+        });
+      await openMenu(page);
+      await activate(page, action);
+      expect((await snapshot(page)).audio).toBe('suspended');
+      if (fails) {
+        await expect(page.locator('[data-dev-error]')).toBeVisible();
+        expect(await page.evaluate(() => window.__restartVoices)).toEqual(
+          previous,
+        );
+        await tapAction(page, 'dev-close');
+      } else {
+        await expect(page.locator('.dev-menu')).toHaveCount(0);
+        expect(await page.evaluate(() => window.__restartVoices)).toEqual(
+          previous.map((voice) => ({
+            stops: [...voice.stops, 0],
+            disconnected: true,
+          })),
+        );
+      }
+      await tapAction(page, 'resume');
+      await expect
+        .poll(async () => (await snapshot(page)).audio)
+        .toBe('running');
+      if (fails)
+        expect(await page.evaluate(() => window.__restartVoices)).toEqual(
+          previous,
+        );
+      else {
+        await activate(page, 'horn');
+        await expect
+          .poll(() => page.evaluate(() => window.__restartVoices.length))
+          .toBeGreaterThan(previous.length);
+      }
+    });
+  }
+}
+
+test('restart effects: active ambient life starts again after the initial delay', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 568, height: 320 });
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
+  await paused(page, '?debug=1&seed=123&quality=low&renderer=canvas');
+  await tapAction(page, 'resume');
+  await page.clock.runFor(8000);
+  expect((await snapshot(page)).effects.kinds['bird'] ?? 0).toBeGreaterThan(0);
+  await tapAction(page, 'pause');
+  await openMenu(page);
+  await activate(page, 'dev-restart');
+  await expect.poll(async () => (await snapshot(page)).effects.live).toBe(0);
+  await tapAction(page, 'resume');
+  await page.clock.runFor(7600);
+  expect((await snapshot(page)).effects.kinds['bird'] ?? 0).toBeGreaterThan(0);
 });

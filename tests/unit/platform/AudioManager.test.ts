@@ -34,7 +34,7 @@ function audioContext() {
     connect: vi.fn(),
     disconnect: vi.fn(),
   };
-  return {
+  const context = {
     state: 'running',
     currentTime: 10,
     destination: {},
@@ -46,8 +46,17 @@ function audioContext() {
       oscillators.push(voice);
       return voice;
     }),
+    suspend: vi.fn(() => {
+      context.state = 'suspended';
+      return Promise.resolve();
+    }),
+    resume: vi.fn(() => {
+      context.state = 'running';
+      return Promise.resolve();
+    }),
     close: vi.fn(() => Promise.resolve()),
   };
+  return context;
 }
 
 describe('H1 / O5: AudioManager synthesis', () => {
@@ -133,6 +142,33 @@ describe('H1 / O5: AudioManager synthesis', () => {
     expect(context.createGain).not.toHaveBeenCalled();
     for (let i = 0; i < 5; i++) audio.play('reaction');
     expect(context.oscillators).toHaveLength(5);
+  });
+
+  it('stops unfinished chords, disconnects them and releases their budget without resuming', () => {
+    for (let i = 0; i < 5; i++) audio.play('audio.horn.diesel_mainline');
+    const previous = [...context.oscillators];
+    audio.suspend();
+    audio.stopAll();
+    audio.stopAll();
+    expect(audio.state).toBe('suspended');
+    expect(context.resume).not.toHaveBeenCalled();
+    for (const voice of previous) {
+      expect(voice.stop).toHaveBeenLastCalledWith();
+      expect(voice.disconnect).toHaveBeenCalledOnce();
+    }
+    expect(context.gain.disconnect).toHaveBeenCalledTimes(5);
+    audio.play('reaction');
+    expect(context.oscillators).toHaveLength(15);
+    audio.unlock();
+    for (let i = 0; i < 5; i++) audio.play('reaction');
+    expect(context.oscillators).toHaveLength(20);
+    // Late ended events from stopped sources must not release the new voices.
+    for (const voice of previous) voice.finish();
+    audio.play('reaction');
+    expect(context.oscillators).toHaveLength(20);
+    expect(context.gain.disconnect).toHaveBeenCalledTimes(5);
+    for (const voice of previous)
+      expect(voice.disconnect).toHaveBeenCalledOnce();
   });
 
   it('keeps reaction and train-full placeholder tones unchanged', () => {

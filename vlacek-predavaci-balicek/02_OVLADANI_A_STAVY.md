@@ -169,3 +169,9 @@ Otočení zařízení a resize vymaže dotyky, přepočítá souřadnice i hit o
 ## 10. Povinné testovací situace
 
 Součástí akceptace jsou současně držený plyn a brzda, puštění mimo plátno, `pointercancel`, ztráta fokusu uprostřed gesta, reakce zvířete při drženém plynu, přechod prstu na brzdu, dotyk „Pokračovat“ bez samovolného rozjezdu a nemožnost řídit přes otevřené menu. Konkrétní testy jsou v dokumentu 11.
+
+### Diagnostika a restart pro dospělého (D-020)
+
+Zapnutá diagnostika při jízdě je malé průsvitné pole vlevo nahoře s nejvýše dvěma řádky. Respektuje safe areas i ovládání a dotyk přes něj stále pohání vlak. V pauze se skryje; řádka „Svět N“ zůstává. Podrobnosti a restart jsou dostupné výhradně po rodičovské brance v dev menu: „Diagnostika – podrobnosti“ nabízí české skupiny a „Kopírovat JSON“, aktuální svět „Kopírovat číslo“. Nedostupná či zamítnutá schránka zobrazí plně označený text pro ruční kopii s nativním kontextovým menu a možností dlouhého dotyku → Kopírovat.
+
+„Znovu tento svět od začátku“ zachová seed a soupravu, „Nový náhodný svět“ zachová soupravu a vybere jiný seed. Nejprve se přeruší a uloží původní cesta, pak se vytvoří a uloží nová. Selhání nic nenahradí a panel vysvětlí příčinu. Úspěch odstraní dev parametry adresy a vrátí pauzu na startu s nulovou rychlostí a tickem 0; pokračování vyžaduje potvrzení a nový dotyk. Úspěch zastaví a odpojí staré zvukové hlasy a resetuje ambientní události, cooldowny i zlomkové emisní hodiny. Selhání zachová původní zvukový a efektový runtime. Restart nepoužije rozpracovaná pole menu a nemění uložené dev volby ani formát save. Podrobný kontrakt vlastní [D-020](../docs/decisions/020-developer-menu.md).

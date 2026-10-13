@@ -112,6 +112,8 @@ V každém ticku dopravního testu assertovat, že vlak a silniční aktér sou�
 | CNT-04 | Přehled biomů a infrastruktury.                     | Šest biomů, 18 scénických sestav, varianty mostů/stanic a požadované živé typy.                                                                                                                                                                                                           |
 | CNT-05 | Den, noc, tunel, sníh a déšť.                       | Vlak, kolej a brzda zůstávají čitelné ve standardním i úsporném režimu.                                                                                                                                                                                                                   |
 
+UI-08 (diagnostika): při zapnutí má HUD nejvýše dva krátké řádky bez surového JSON. Na 568 × 320, 844 × 390, 1140 × 512 a 1280 × 800 nekoliduje s ovládáním ani safe areas; držení přes HUD pohání vlak. V dev menu jsou čitelné skupiny Výkon, Svět, Vlak, Přejezdy, Atlasy a případně Zvuk. Kopírovat JSON dává platný plný snapshot; při chybějící nebo zamítnuté schránce je text viditelný, plně označený a jeho kontextové menu není potlačeno; nativní touch callout umožňuje ruční kopii dlouhým dotykem. Kopírovat číslo dává skutečný seed rozehrané cesty. Běžná dětská pauza nepřidává tlačítka detailů ani restartu.
+
 ## 7. Ukládání a odolnost — DATA
 
 | ID      | Situace                                                | Očekávaný výsledek                                                                           |
@@ -126,6 +128,8 @@ V každém ticku dopravního testu assertovat, že vlak a silniční aktér sou�
 | DATA-08 | Simulační hodiny po hodinové přestávce.                | Hodina nepřibude do jízdy; fáze pokračuje od uloženého ticku.                                |
 | DATA-09 | Ztráta WebGL kontextu a návrat.                        | Pauza, rekonstruovaný render, žádný starý plyn.                                              |
 | DATA-10 | Uložení při neúspěšném startu nové cesty.              | Předchozí validní cesta zůstává obnovitelná.                                                 |
+
+DATA-11 (restart v dev menu): oba restarty nejprve uloží přerušenou původní cestu. Stejný svět zachová seed, náhodný svět vybere jiný; souprava včetně pořadí a identity vagonků zůstává. Nová cesta se primárně uloží na počáteční poloze s tickem 0, session zůstane v pauze a bez starých vstupů. Nedokončené zvukové hlasy se zastaví a odpojí, jejich rozpočet se uvolní právě jednou a zvuk se obnoví pouze gestem pokračování. Reset odstraní aktivní ambientní události, časovače, cooldowny a zlomkové emisní hodiny; první ambientní událost čeká počátečních 5–10 s. Chyba prvního i následného zápisu nebo novější save zachová původní cestu včetně zvukového a efektového runtime a otevřený panel s vysvětlením; dev URL parametry se odstraní jen po úspěchu. Obnova nové cesty zachová její seed a soupravu bez změny formátu save.
 
 ## 8. Web, PWA a aktualizace — PWA
 

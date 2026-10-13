@@ -173,7 +173,7 @@ Roční období se v první verzi globálně nesimuluje. Sníh v horách je vlas
 
 ## 11. Diagnostika
 
-Vývojový overlay ukáže seed, generatorVersion, chunkIndex, počet zachovaných chunků, počet renderovaných entit, délku vlaku, režim vstupu, v, simulační tick a profil kvality. Barevné švy a rezervace lze zapnout pouze v debug režimu.
+Vývojový HUD při jízdě ukazuje nejvýše dva krátké řádky: medián FPS, p95 snímku, renderer, profil kvality; seed, chunkIndex, rychlost a počet vozidel. Český podrobný vzorek v dev menu doplní verzi generátoru, počty chunků, délku vlaku, režim vstupu, tick, přejezdy, atlasy a zvuk; celý snapshot lze kopírovat pro hlášení chyby ([D-020](../docs/decisions/020-developer-menu.md)). Barevné švy a rezervace lze zapnout pouze v debug režimu.
 
 Diagnostické API `window.__vlacek.snapshot()` při `?debug=1` uvádí u každého protijedoucího vlaku také `oncoming.trains[].locomotiveId`: katalogové ID skutečně nasazené lokomotivy. E2E píšťaly porovnává odpověď s přesným tónem této identity, nikoli s pevně předpokládaným typem; seedovaná NPC sada podle D-019 se rozšiřuje s dostupnou kresbou. Tento diagnostický údaj se neukládá a nemění svět ani výběr vozidel.
 

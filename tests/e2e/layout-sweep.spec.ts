@@ -373,6 +373,80 @@ for (const [width, height] of [
       await action('resume').tap();
       await screenIs('RIDING');
     });
+
+    test('UI-08: parent tools and diagnostic copy keep their action rows visible', async ({
+      page,
+    }) => {
+      await page.clock.install();
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'clipboard', { value: undefined });
+      });
+      await page.goto('./?debug=1&renderer=canvas&quality=low&seed=123');
+      const action = (name: string) => page.locator(`[data-action="${name}"]`);
+      await action('to-depot').tap();
+      await action('depart').tap();
+      await action('pause').tap();
+      await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000));
+      const build = await action('dev-build').boundingBox();
+      if (!build) throw new Error('build line missing');
+      for (let i = 0; i < 5; i++)
+        await page.touchscreen.tap(
+          build.x + build.width / 2,
+          build.y + build.height / 2,
+        );
+      await page.clock.resume();
+      for (const name of ['dev-copy-seed', 'dev-restart', 'dev-random-world']) {
+        await action(name).scrollIntoViewIfNeeded();
+        await insideViewport(action(name));
+        for (const fixed of ['dev-apply', 'dev-defaults', 'dev-close'])
+          await insideViewport(action(fixed), fixed === 'dev-apply' ? 80 : 64);
+      }
+      await action('dev-copy-seed').tap();
+      await expect(page.getByLabel('Text k ručnímu kopírování')).toHaveValue(
+        '123',
+      );
+      for (const name of ['dev-apply', 'dev-defaults', 'dev-close'])
+        await insideViewport(action(name), name === 'dev-apply' ? 80 : 64);
+      await action('dev-details').tap();
+      const content = page.locator('.diagnostics-detail .screen-content');
+      await expect(content).toBeVisible();
+      for (const title of [
+        'Výkon',
+        'Svět',
+        'Vlak',
+        'Přejezdy',
+        'Atlasy',
+        'Zvuk',
+      ]) {
+        const heading = content.getByRole('heading', {
+          name: title,
+          exact: true,
+        });
+        // Minimal native scrolling can leave a subpixel of a heading clipped.
+        await heading.evaluate((node) =>
+          node.scrollIntoView({ block: 'center' }),
+        );
+        await expect(heading).toBeInViewport({ ratio: 1 });
+        await insideViewport(action('dev-copy-json'));
+        await insideViewport(action('dev-details-close'));
+      }
+      await action('dev-copy-json').tap();
+      const fallback = content.getByLabel('Text k ručnímu kopírování');
+      await expect(fallback).toBeVisible();
+      expect(JSON.parse(await fallback.inputValue())).toMatchObject({
+        seed: 123,
+      });
+      await insideViewport(action('dev-copy-json'));
+      await insideViewport(action('dev-details-close'));
+      await content.evaluate((node) => {
+        node.scrollTop = 0;
+      });
+      await insideViewport(action('dev-copy-json'));
+      await insideViewport(action('dev-details-close'));
+      await action('dev-details-close').tap();
+      for (const name of ['dev-apply', 'dev-defaults', 'dev-close'])
+        await insideViewport(action(name), name === 'dev-apply' ? 80 : 64);
+    });
   });
 }
 

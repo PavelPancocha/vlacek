@@ -39,6 +39,21 @@ function run(over: Partial<AmbientInput>, seconds: number) {
 }
 
 describe('AmbientLife: now and then a bird or a butterfly (doc 14 §4)', () => {
+  it('resets an active event and its cooldown to the initial delay for a new journey', () => {
+    const field = new ParticleField(PARTICLE_KINDS, 100, () => 0.5);
+    const life = new AmbientLife(field, () => 0.5);
+    expect(life.step({ ...input, dtSec: 7.5 })).toBe('birds');
+    expect(life.activeEvents).toBe(1);
+    life.step({ ...input, dtSec: 1 });
+    field.clear();
+    life.reset();
+    expect(life.activeEvents).toBe(0);
+    expect(life.step({ ...input, dtSec: 7.4 })).toBeUndefined();
+    expect(field.live).toBe(0);
+    expect(life.step({ ...input, dtSec: 0.2 })).toBe('birds');
+    expect(life.activeEvents).toBe(1);
+  });
+
   it('starts occasional events, never two at once', () => {
     const { events, overlapping } = run({}, 300);
     expect(events.length).toBeGreaterThan(5);

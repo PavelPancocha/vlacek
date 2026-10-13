@@ -5,7 +5,11 @@ import type { Consist } from '../domain/types.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import { AudioManager } from '../platform/AudioManager.ts';
-import { browserStorage, isPortrait } from '../platform/browserEnvironment.ts';
+import {
+  browserStorage,
+  isPortrait,
+  randomSeed,
+} from '../platform/browserEnvironment.ts';
 import type { Settings } from '../platform/SaveValidation.ts';
 import {
   devReloadUrl,
@@ -23,6 +27,7 @@ import type { CssRect } from '../platform/InputRouter.ts';
 import { createGameHost, type GameHost } from '../render/GameHost.ts';
 import { RideScene } from '../render/RideScene.ts';
 import { BRAKE_HIT_MARGIN_PX, UiLayer } from '../ui/UiLayer.ts';
+import { hudLines } from '../ui/diagnosticsFormat.ts';
 import type { DebugSnapshot } from './debugSnapshot.ts';
 import { worldHidden } from './AppState.ts';
 import { PhaseLog } from './phaseLog.ts';
@@ -163,6 +168,41 @@ export class AppController {
           reducedEffects: session.settings.reducedEffects,
         });
       if (action === 'dev-close') this.#ui.closeDeveloperMenu();
+      if (this.#ui.developerMenuOpen) {
+        if (action === 'dev-details') this.#ui.openDiagnostics(this.snapshot());
+        if (action === 'dev-details-close') this.#ui.closeDiagnostics();
+        if (action === 'dev-copy-json' || action === 'dev-copy-seed')
+          this.#ui.copyDiagnostics(
+            session.journeySeed,
+            action === 'dev-copy-json',
+          );
+        if (action === 'dev-restart' || action === 'dev-random-world') {
+          const currentSeed = session.journeySeed;
+          if (currentSeed === undefined) return;
+          const drawnSeed =
+            action === 'dev-restart' ? currentSeed : randomSeed();
+          // Even a random draw equal to the old seed must produce a new world.
+          const seed =
+            action === 'dev-random-world' && drawnSeed === currentSeed
+              ? (drawnSeed + 1) >>> 0
+              : drawnSeed;
+          const outcome = session.restartJourney(seed);
+          if (outcome !== 'saved') {
+            if (outcome === 'save-failed')
+              this.#ui.developerSaveError('session');
+            else this.#ui.developerStartError();
+            return;
+          }
+          this.#audio.stopAll();
+          this.#crossingPhases.record([]);
+          window.history.replaceState(
+            null,
+            '',
+            devReloadUrl(window.location.href),
+          );
+          this.#ui.closeDeveloperMenu();
+        }
+      }
       if (action === 'dev-apply' || action === 'dev-defaults') {
         const values =
           action === 'dev-defaults'
@@ -253,16 +293,7 @@ export class AppController {
     this.#refreshUi();
     if (this.#diagnostics && nowMs - this.#lastDiagnosticsMs > 250) {
       this.#lastDiagnosticsMs = nowMs;
-      this.#diagnostics.textContent = JSON.stringify(
-        this.snapshot(),
-        (key, value: unknown) =>
-          key === 'objects'
-            ? undefined
-            : typeof value === 'number'
-              ? Math.round(value * 10) / 10
-              : value,
-        1,
-      );
+      this.#diagnostics.textContent = hudLines(this.snapshot()).join('\n');
     }
     return alpha;
   }
@@ -308,6 +339,9 @@ export class AppController {
 
   #refreshUi(): void {
     const session = this.#session;
+    if (this.#diagnostics)
+      this.#diagnostics.hidden =
+        session.screen.name !== 'RIDING' || this.#portrait;
     if (
       worldHidden(session.screen, this.#portrait, this.#ui.developerMenuOpen) &&
       this.#curtain.hidden
@@ -506,6 +540,7 @@ export class AppController {
     this.#host.destroy();
     this.#audio.dispose();
     this.#ui.dispose();
+    this.#diagnostics?.remove();
     this.#curtain.remove();
     this.#gameRoot.removeAttribute('data-renderer');
   }

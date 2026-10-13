@@ -1,4 +1,5 @@
 import type { Screen } from '../app/AppState.ts';
+import type { DebugSnapshot } from '../app/debugSnapshot.ts';
 import type { SessionNotice } from '../app/GameSession.ts';
 import type { CatalogLocomotive, CatalogWagon } from '../content/vehicles.ts';
 import {
@@ -16,6 +17,7 @@ import type { WagonGroup } from '../domain/types.ts';
 import type { Settings } from '../platform/SaveValidation.ts';
 import { developerMenu, parseDevMenu, type DevMenuValues } from './DevMenu.ts';
 import { devTap, type DevTapState } from './DevTapGate.ts';
+import { copyDiagnosticText, diagnosticsView } from './DiagnosticsView.ts';
 import { actionButton, el } from './dom.ts';
 import { icon } from './icons.ts';
 import { vehiclePreview } from './vehiclePreview.ts';
@@ -102,6 +104,7 @@ export class UiLayer {
   #stripScrollLeft = 0;
   #devValues: DevMenuValues | undefined;
   #devGate: DevTapState = { count: 0, startMs: 0 };
+  #detailSnapshot: DebugSnapshot | undefined;
 
   constructor(root: HTMLElement) {
     this.#root = root;
@@ -120,9 +123,50 @@ export class UiLayer {
 
   closeDeveloperMenu(): void {
     this.#devValues = undefined;
+    this.#detailSnapshot = undefined;
     queueMicrotask(() =>
       this.#root.querySelector<HTMLButtonElement>('.build-id')?.focus(),
     );
+  }
+
+  openDiagnostics(snapshot: DebugSnapshot): void {
+    const menu = this.#root.querySelector<HTMLElement>('.dev-menu');
+    if (!menu || this.#detailSnapshot) return;
+    this.#detailSnapshot = snapshot;
+    menu.hidden = true;
+    this.#root.append(diagnosticsView(snapshot));
+    this.#root.querySelector<HTMLElement>('#diagnostics-title')?.focus();
+  }
+
+  closeDiagnostics(): void {
+    this.#detailSnapshot = undefined;
+    this.#root.querySelector('.diagnostics-detail')?.remove();
+    const menu = this.#root.querySelector<HTMLElement>('.dev-menu');
+    if (menu) menu.hidden = false;
+    this.#root
+      .querySelector<HTMLElement>('[data-action="dev-details"]')
+      ?.focus();
+  }
+
+  copyDiagnostics(seed: number | undefined, json: boolean): void {
+    const panel = this.#root.querySelector(
+      json ? '.diagnostics-detail' : '.dev-menu',
+    );
+    const output = panel?.querySelector<HTMLElement>('[data-copy-output]');
+    const text =
+      json && this.#detailSnapshot
+        ? JSON.stringify(this.#detailSnapshot, null, 2)
+        : seed === undefined
+          ? undefined
+          : String(seed);
+    if (output && text !== undefined) void copyDiagnosticText(text, output);
+  }
+
+  developerStartError(): void {
+    const status = this.#root.querySelector('[data-dev-error]');
+    if (status)
+      status.textContent =
+        'Novou cestu se nepodařilo spustit. Původní cesta zůstává.';
   }
 
   developerValues(): DevMenuValues | undefined {
@@ -159,6 +203,7 @@ export class UiLayer {
   update(model: UiModel): void {
     if (model.screen.name !== 'PAUSED') {
       this.#devValues = undefined;
+      this.#detailSnapshot = undefined;
       this.#devGate = { count: 0, startMs: 0 };
     }
     const signature = JSON.stringify([
@@ -238,6 +283,7 @@ export class UiLayer {
 
   dispose(): void {
     this.#updateView = undefined;
+    this.#detailSnapshot = undefined;
     this.#renderScope?.abort();
     this.#root.replaceChildren();
   }
@@ -262,7 +308,7 @@ export class UiLayer {
       case 'PAUSED':
         views.push(
           this.#devValues
-            ? developerMenu(this.#devValues, signal)
+            ? developerMenu(this.#devValues, signal, model.seed)
             : this.#pause(model),
         );
         break;

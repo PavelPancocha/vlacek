@@ -94,7 +94,14 @@ export class DomInputAdapter {
       // capture first; only the root's own capture loss ends the pointer.
       if (event.target === root) router.pointerCancel({ id: event.pointerId });
     });
-    listen(root, 'contextmenu', (event) => event.preventDefault());
+    listen(root, 'contextmenu', (event) => {
+      if (
+        event.target instanceof Element &&
+        event.target.matches('[data-copy-output] textarea')
+      )
+        return;
+      event.preventDefault();
+    });
     listen(root, 'click', (event) => {
       // Pointer clicks were handled on pointerup; detail 0 = keyboard activation.
       if (event.detail !== 0) return;

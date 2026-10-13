@@ -40,6 +40,13 @@ export class AmbientLife {
     this.#wait = this.#between(FIRST_PAUSE_SEC);
   }
 
+  /** New journey: forget active events and start with the initial delay. */
+  reset(): void {
+    this.#active = [];
+    this.#time = 0;
+    this.#wait = this.#between(FIRST_PAUSE_SEC);
+  }
+
   /** Events whose particles may still be flying. */
   get activeEvents(): number {
     return this.#active.filter((end) => end > this.#time).length;
