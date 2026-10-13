@@ -1,0 +1,103 @@
+# Velká česká vesnice
+
+Vesnice je složená místní scéna v `countryside` nebo `foothills`, nikoli samostatný biom.
+Celek měří 3 072–6 144 u a má čitelný příjezd, hustší střed a odjezd.
+Místní obrazy VI-01 až VI-04 jsou její části; společná silnice a identita pokračují přes jejich hranice.
+
+## VI-01 — První domy a zahrady
+
+V dálce zůstávají pole a nízké kopce hostitelské krajiny.
+Za tratí se objeví první dva až čtyři domy podél místní silnice.
+Každý má krátkou přístupovou cestu a zahradu, která vysvětluje jeho odstup od souseda.
+U trati vede otevřený travnatý pás s nízkým plotem zahrady mimo kolej.
+Před vlakem jsou zeleninové záhony, keře a kočka u branky.
+Nad střechami pomalu plynou mraky a obyvatel občas zamává z vlastní zahrady.
+
+| Zóna           | Objekty                                                      | Počet                          | Vztahy a závislosti                | Zakázáno               |
+| -------------- | ------------------------------------------------------------ | ------------------------------ | ---------------------------------- | ---------------------- |
+| far            | Pozadí hostitele                                             | Souvislé                       | Pole přecházejí do střech          | Okamžitá městská stěna |
+| back 0,30–0,85 | `back.house-a/b/c`, `tree.apple`                             | 2–4 domy, 2–5 stromů           | Každý dům u cesty na suché parcele | Dům v oblouku silnice  |
+| bank           | Geometrie meze, `near.grass-b`                               | 1 pás                          | Volný železniční koridor           | Zahrada uvnitř koleje  |
+| near 0,30–0,80 | NEW: záhon 100 × 20 u; `near.bush`, `animal.cat`, úplný plot | 2–4 záhony, 1 kočka, 1–2 ploty | Branky navazují na pěšiny          | Izolované plotové díly |
+
+## VI-02 — Náves s lípou
+
+Za zadní řadou střech se zvedá věž malého kostela nebo kaple.
+Domy lemují nepravidelnou náves, kolem níž prochází místní silnice.
+Uprostřed je lípa, lavička a dost volného prostoru, aby se obraz neslil.
+Mezi návsi a kolejí leží cesta a travnatý odstup.
+V popředí pokračují zahrádky a nízký plot, nikoli další řada vysokých domů.
+Nad návsí proletí ptáci a dva lidé si občas vymění klidné gesto.
+
+| Zóna           | Objekty                                         | Počet                         | Vztahy a závislosti                  | Zakázáno                        |
+| -------------- | ----------------------------------------------- | ----------------------------- | ------------------------------------ | ------------------------------- |
+| far            | Seskupené střechy hostitele                     | 1 skupina                     | Tlumená zadní vrstva                 | Druhý kostel vedle prvního      |
+| back 0,30–0,85 | `back.house-a/b/c`, `tree.linden`, `back.bench` | 5–8 domů, 1 lípa, 1–2 lavičky | Kolem jedné návsi s přístupy         | Stejná fasáda třikrát za sebou  |
+| back 0,65–0,90 | `back.church` nebo NEW: kaple 70 × 100 u        | Nejvýše 1 v celé vsi          | Na vlastní parcele u návsi           | Náboženská stavba v každé části |
+| bank           | Geometrie meze                                  | Souvislá                      | Oddělení veřejného prostoru od trati | Lidé na kolejích                |
+| near 0,35–0,80 | `near.bush`, záhony VI-01, úplný plot           | 2–4 skupiny                   | Přední zahrady, volný pás vlaku      | Vysoké fasády před vlakem       |
+
+## VI-03 — Autobusová zastávka a malé hřiště
+
+V dálce pokračují střechy a koruny stromů stejné vesnice.
+Za tratí je autobusová zastávka u silnice a malé oplocené hřiště.
+Přístřešek stojí vedle jízdního pruhu, takže autobus nezakrývá nástupištní prostor.
+U koleje zůstává mez bez pěší zkratky přes pražce.
+V popředí sedí pes za plotem a nízké keře rámují volný výhled.
+Autobus občas přijede a odjede, zatímco houpačka se pod světlou oblohou jen mírně pohupuje.
+
+| Zóna           | Objekty                                          | Počet             | Vztahy a závislosti           | Zakázáno                         |
+| -------------- | ------------------------------------------------ | ----------------- | ----------------------------- | -------------------------------- |
+| far            | Střechy a hostitelské kopce                      | Souvislé          | Navazuje na náves             | Nový biom kvůli hřišti           |
+| back 0,30–0,75 | NEW: přístřešek 60 × 45 u, autobus 100 × 40 u    | 1 + 0–1           | Záliv a průjezdná silnice     | Autobus mimo cestu               |
+| back 0,55–0,85 | NEW: malé hřiště 140 × 70 u; `back.person-a/b/c` | 1 celek, 2–4 lidé | U pěšiny, oplocené od dopravy | Hra na vozovce                   |
+| bank           | `near.grass-a`                                   | 3–5/1 024 u       | Volný odstup                  | Přechod přes koleje bez přejezdu |
+| near 0,35–0,80 | `animal.dog`, `near.bush`, úplný plot            | 0–1 pes, 2–4 keře | Pes uvnitř zahrady            | Rozběh psa k lokomotivě          |
+
+## VI-04 — Poslední domy a obecní cesta
+
+Hustší střechy zůstávají vzadu a před vesnicí se znovu otevírá krajina.
+Za tratí stojí několik posledních domů a malý statek.
+Silnice se stáčí k polím nebo k řádně rezervovanému přejezdu.
+U koleje ubývá oplocení a přibývá trávy.
+Před vlakem jsou poslední záhony, nízké balíky a traktor na vlastním příjezdu.
+Z komína může stoupat jemný kouř a nad otevřenými poli se znovu ukazuje více oblohy.
+
+| Zóna           | Objekty                                    | Počet                 | Vztahy a závislosti              | Zakázáno                     |
+| -------------- | ------------------------------------------ | --------------------- | -------------------------------- | ---------------------------- |
+| far            | Pozadí hostitele, ubývající střechy        | Souvislé              | Viditelný návrat do krajiny      | Ostrá svislá hranice         |
+| back 0,30–0,80 | `back.house-a/b/c`, `back.farmhouse`       | 2–4 domy, 0–1 statek  | Napojené na pokračující silnici  | Cesta končící pod domem      |
+| bank           | Geometrie meze, případně vlastněný přejezd | 1 koridor             | Přejezd pouze v plánovaném slotu | Nové křížení kvůli dekoraci  |
+| near 0,35–0,80 | `back.tractor`, `back.haybale`, úplný plot | 0–1 stroj, 1–3 balíky | Traktor na suchém příjezdu       | Stroj v železniční rezervaci |
+
+## Činnosti a odezvy
+
+| Scéna | Samostatná činnost                                                  | Reakce na vlak; cooldown      |
+| ----- | ------------------------------------------------------------------- | ----------------------------- |
+| VI-01 | Člověk projde zahradou po 20–40 s, kočka se protáhne                | Jeden obyvatel zamává; 16 s   |
+| VI-02 | Dva lidé se pohnou v různých fázích, koruna lípy se lehce hýbe      | Jeden člověk nebo ptáci; 20 s |
+| VI-03 | Autobus stojí 6–12 s mimo konflikt, další návštěva nejdříve za 35 s | Pes zvedne hlavu; 16 s        |
+| VI-04 | Traktor projede příjezdem, za chladu kouří jeden komín              | Zemědělec zamává; 16 s        |
+
+Autobus je součást stávajícího silničního provozu; vlastní činnost nesmí obejít čekání u přejezdu.
+Lidé se pohybují po návsi, chodníku a zahradách; nepotřebují obecnou navigaci ani cestu přes kolej.
+
+## Profil a sezóny
+
+Vesnické jádro má cílový absolutní sklon 0–0,03, náves a případná stanice dostávají rovné místo.
+Výška se přebírá z hostitelské krajiny; vesnice na svahu může mít terasované parcely za tratí.
+Jaro: kvetoucí ovocné stromy, nové záhony, lidé na návsi.
+Léto: plné zahrady, klidné hřiště a otevřená vrata statku.
+Podzim: sklizené záhony, barevná lípa, listí pouze u listnáčů.
+Zima: sníh na skutečných střechách a plotech, prošlapané cesty a kouř z několika komínů.
+V zimě může traktor s radlicí čistit příjezd; hřiště má klidnou variantu bez letního ruchu.
+
+## Zvuky a nové kresby
+
+Použít luční ptáky, vítr, psa a kočku; u návsi tlumené lidské okolí bez srozumitelných dialogů.
+Nové audio: autobus na volnoběh a jemné obecní okolí; kostelní zvon není automatický opakovaný efekt.
+NEW: záhon 100 × 20 u; nízké zeleninové řádky se sezónními variantami.
+NEW: kaple 70 × 100 u; omítaná česká kaplička s jednoduchou střechou.
+NEW: přístřešek 60 × 45 u a autobus 100 × 40 u; civilní podoba bez značek a obličeje.
+NEW: hřiště 140 × 70 u; oddělený díl houpačky, bez vysokých atrakcí.
+Mávací pózy lidí a sněhové střechy jsou sdílené se stanicemi a společným katalogem.

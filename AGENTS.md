@@ -85,7 +85,7 @@ Lokální hook lze obejít; požadované CI kontroly před mergem jsou skutečn�
 
 Začni M0: spustitelný základ, dotykové řízení, jednoduchá souprava a měření. Potom postupuj podle [10_IMPLEMENTACNI_PLAN.md](vlacek-predavaci-balicek/10_IMPLEMENTACNI_PLAN.md). Každý dokončený řez musí fungovat, ne pouze rozšiřovat seznam prázdných souborů.
 
-Nejdřív stabilizuj jednotky, vzorkování tratě, soupravu a input kontrakt; pak vyráběj mnoho obsahu. U konkrétní chyby generátoru vytvoř regresní seedový test. Kosmetické nejasnosti řeš konzistentním výchozím návrhem a zapiš, místo dalšího dlouhého dotazníku.
+Nejdřív stabilizuj jednotky, vzorkování tratě, soupravu a input kontrakt; pak vyráběj mnoho obsahu. Každou novou scenérii nebo krajinu nejdřív popiš textem v [katalogu scén](docs/scenes/README.md) (vrstvy, objekty, vztahy, činnosti, sezóny, zvuky) a teprve z tohoto textu odvoď generátor a jeho testy. U konkrétní chyby generátoru vytvoř regresní seedový test. Kosmetické nejasnosti řeš konzistentním výchozím návrhem a zapiš, místo dalšího dlouhého dotazníku.
 
 Před dokončením změny spusť relevantní testy, typecheck, lint a build. U celého vydání také validaci katalogu/assetů, E2E, offline aktualizační testy a rozpočty. Neoznačuj neprovedený test jako úspěšný.
 
