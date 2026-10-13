@@ -31,18 +31,18 @@ Klávesnicové ekvivalenty ověřit zvlášť, zejména `keyup`, auto-repeat a f
 
 ## 3. Souprava a geometrie — TRN
 
-| ID     | Situace                                                   | Očekávaný výsledek                                                                                   |
-| ------ | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| TRN-01 | 0, 1 a nejdelší povolená souprava; starší delší soupravy. | Do 2 000 u jede celá; starý save 1 600–2 000 u se obnoví zastavený, nad 2 000 u zůstane celý v depu. |
-| TRN-02 | Opakovat jeden typ 100×.                                  | Platná souprava, unikátní instance, správná celková délka.                                           |
-| TRN-03 | Rozdílné délky přes kopec a údolí.                        | Každá karoserie a podvozky mají vlastní správnou polohu.                                             |
-| TRN-04 | Stejná délka simulace při renderu 30/60/120 FPS.          | Stejná dráha v toleranci integrace; žádná rychlost závislá na FPS.                                   |
-| TRN-05 | Kopec nahoru, dolů, dlouhé stání.                         | Nikdy negativní v; po puštění zpomaluje i z kopce.                                                   |
-| TRN-06 | Jedna část soupravy v tunelu, druhá venku.                | Překrytí a světlo po vozidlech, nikoli společný přepínač celého vlaku.                               |
-| TRN-07 | Nejdelší počáteční souprava (2 000 u).                    | Kolej existuje za všemi vozy od prvního snímku i přes švy; zadní rezerva 1 024 u, předstih 2 048 u.  |
-| TRN-08 | Elektrická mašinka přes most, tunel a šev chunku.         | Souvislé vedení, správný kontakt, žádné místo bez troleje.                                           |
-| TRN-09 | Opakovaný rebase přes 16 384 u.                           | Neviditelný posun originu, stejné hit oblasti a obraz, žádný skok vlaku.                             |
-| TRN-10 | Vzorkování LUT a spřáhla na extrémním validním profilu.   | Chyba polohy ≤ 0.5 u, žádný průnik vozidel; spřáhlo vizuálně navazuje.                               |
+| ID     | Situace                                                   | Očekávaný výsledek                                                                                                                                  |
+| ------ | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TRN-01 | 0, 1 a nejdelší povolená souprava; starší delší soupravy. | Do 2 000 u jede celá; starý save 1 600–2 000 u se obnoví zastavený, nad 2 000 u zůstane celý v depu.                                                |
+| TRN-02 | Opakovat jeden typ 100×.                                  | Platná souprava, unikátní instance, správná celková délka.                                                                                          |
+| TRN-03 | Rozdílné délky přes kopec a údolí.                        | Každá karoserie a podvozky mají vlastní správnou polohu.                                                                                            |
+| TRN-04 | Stejná délka simulace při renderu 30/60/120 FPS.          | Stejná dráha v toleranci integrace; žádná rychlost závislá na FPS.                                                                                  |
+| TRN-05 | Kopec nahoru, dolů, dlouhé stání.                         | Nikdy negativní v; po puštění zpomaluje i z kopce.                                                                                                  |
+| TRN-06 | Jedna část soupravy v tunelu, druhá venku.                | Neprůhledný kryt zakrývá vozidla jednotlivě, i zastavená v ústí. Hráč ani NPC neprosvítá koly, střechou či pantografem; paty sledují vlastní sklon. |
+| TRN-07 | Nejdelší počáteční souprava (2 000 u).                    | Kolej existuje za všemi vozy od prvního snímku i přes švy; zadní rezerva 1 024 u, předstih 2 048 u.                                                 |
+| TRN-08 | Elektrická mašinka přes most, tunel a šev chunku.         | Souvislé vedení, správný kontakt, žádné místo bez troleje.                                                                                          |
+| TRN-09 | Opakovaný rebase přes 16 384 u.                           | Neviditelný posun originu, stejné hit oblasti a obraz, žádný skok vlaku.                                                                            |
+| TRN-10 | Vzorkování LUT a spřáhla na extrémním validním profilu.   | Chyba polohy ≤ 0.5 u, žádný průnik vozidel; spřáhlo vizuálně navazuje.                                                                              |
 
 U nominálního zastavení připustit toleranci dvou simulačních ticků plus snap epsilon. Přesný dojezd při maximální rychlosti na rovině zkontrolovat i podle analytického vztahu `v²/(2a)`; standardní hodnoty dávají 540 u bez brzdy a 90 u s brzdou před zanedbatelnou diskretizační odchylkou.
 
@@ -76,41 +76,41 @@ Tyto kontrolní hodnoty se vztahují jen k dodanému hash algoritmu, nikoli k ji
 
 ## 5. Scénky a doprava — SCN
 
-| ID     | Situace                                                  | Očekávaný výsledek                                                                                                                   |
-| ------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| SCN-01 | Projet stanicí bez interakce.                            | Žádné automatické brzdění nebo blokování.                                                                                            |
-| SCN-02 | Zastavit, během scénky se hned rozjet.                   | Odjezd funguje okamžitě; lidé neriskují skok pod vlak.                                                                               |
-| SCN-03 | Soupravy osobní/nákladní/bez vagonků se stejným seedem.  | Stejné okolní scénky; žádný požadavek na konkrétní náklad.                                                                           |
-| SCN-04 | Vjezd k přejezdu ze stání s plným plynem.                | Předstih stačí, závory se zavřou dřív než dorazí čelo.                                                                               |
-| SCN-05 | Sto vagonků přes přejezd, pak zastavit.                  | Závory zůstanou dole až do odjezdu posledního vagonku.                                                                               |
-| SCN-06 | Auto začalo přejíždět těsně před triggerem.              | Stihne bezpečně opustit konflikt, další auta čekají.                                                                                 |
-| SCN-07 | Další vlak se přiblíží během otevírání.                  | Silnice zůstane blokovaná, závory znovu zavírají.                                                                                    |
-| SCN-08 | Vlak stojí přes přejezd při reloadu.                     | První viditelný snímek má zavřený přejezd a auta mimo něj.                                                                           |
-| SCN-09 | Druhý vlak projede celou sekundární trasu.               | Nikdy na hráčově koleji, žádný skokový vznik/zánik v záběru; portály odkrývají jednotlivá vozidla a poslední má po celou dobu dráhu. |
-| SCN-10 | Opakovaná píšťala a odpověď NPC.                         | Není zvuková zpětná vazba ani nekonečný dialog.                                                                                      |
-| SCN-11 | Prasklý balónek, pauza, reload.                          | Ve stále zachovaném chunku zůstane spotřebovaný.                                                                                     |
-| SCN-12 | Několik minut stání.                                     | Živé ale omezené okolí, žádný neomezený růst front aut, zvuků či událostí.                                                           |
-| SCN-13 | Přejezd opustí renderovací okno, nikoli rozsah soupravy. | Automat dál funguje, nezmizí logické uzavření.                                                                                       |
-| SCN-14 | Zvíře, traktor a cyklista v pohybu.                      | Cesty nevedou do hráčovy koleje mimo zabezpečený přejezd.                                                                            |
+| ID     | Situace                                                  | Očekávaný výsledek                                                                                                                                          |
+| ------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SCN-01 | Projet stanicí bez interakce.                            | Žádné automatické brzdění nebo blokování.                                                                                                                   |
+| SCN-02 | Zastavit, během scénky se hned rozjet.                   | Odjezd funguje okamžitě; lidé neriskují skok pod vlak.                                                                                                      |
+| SCN-03 | Soupravy osobní/nákladní/bez vagonků se stejným seedem.  | Stejné okolní scénky; žádný požadavek na konkrétní náklad.                                                                                                  |
+| SCN-04 | Vjezd k přejezdu ze stání s plným plynem.                | Předstih stačí, závory se zavřou dřív než dorazí čelo.                                                                                                      |
+| SCN-05 | Sto vagonků přes přejezd, pak zastavit.                  | Závory zůstanou dole až do odjezdu posledního vagonku.                                                                                                      |
+| SCN-06 | Auto začalo přejíždět těsně před triggerem.              | Stihne bezpečně opustit konflikt, další auta čekají.                                                                                                        |
+| SCN-07 | Další vlak se přiblíží během otevírání.                  | Silnice zůstane blokovaná, závory znovu zavírají.                                                                                                           |
+| SCN-08 | Vlak stojí přes přejezd při reloadu.                     | První viditelný snímek má zavřený přejezd a auta mimo něj.                                                                                                  |
+| SCN-09 | Druhý vlak projede celou sekundární trasu.               | Nikdy na hráčově koleji, žádný skokový vznik/zánik v záběru; oba portály postupně zakrývají/odkrývají jednotlivá vozidla a poslední má po celou dobu dráhu. |
+| SCN-10 | Opakovaná píšťala a odpověď NPC.                         | Není zvuková zpětná vazba ani nekonečný dialog.                                                                                                             |
+| SCN-11 | Prasklý balónek, pauza, reload.                          | Ve stále zachovaném chunku zůstane spotřebovaný.                                                                                                            |
+| SCN-12 | Několik minut stání.                                     | Živé ale omezené okolí, žádný neomezený růst front aut, zvuků či událostí.                                                                                  |
+| SCN-13 | Přejezd opustí renderovací okno, nikoli rozsah soupravy. | Automat dál funguje, nezmizí logické uzavření.                                                                                                              |
+| SCN-14 | Zvíře, traktor a cyklista v pohybu.                      | Cesty nevedou do hráčovy koleje mimo zabezpečený přejezd.                                                                                                   |
 
 V každém ticku dopravního testu assertovat, že vlak a silniční aktér současně neobsazují konflikt. Zahrnout různé délky vlaku, rychlostní nastavení a okamžiky start/stop. Kontrola musí vyhodnotit i pohybový interval mezi tick stavy, ne pouze jejich koncové obrázky.
 
 ## 6. Obsah a rozhraní — UI / CNT
 
-| ID     | Test                                                | Očekávaný výsledek                                                                                                      |
-| ------ | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| UI-01  | První spuštění bez save.                            | Dostupný výběr lokomotivy bez čtení a přihlášení.                                                                       |
-| UI-02  | Přidat, vybrat, přesunout, odebrat, vrátit editaci. | Jednoznačné operace, žádné smazání pouhým výběrem vozu.                                                                 |
-| UI-03  | Přidávat vagonky až po délkový limit.               | Do 2 000 u včetně spřáhel; přesná hranice přijata, další vůz blokován, metr a všech 32 karet dosažitelné i na telefonu. |
-| UI-04  | Otevřít kopii v depu a vrátit se.                   | Původní cesta zůstává; změna draftu ji nepřepsala.                                                                      |
-| UI-05  | Běžná karta bez fullscreen a bez instalace.         | Všechno podstatné dostupné a neodříznuté.                                                                               |
-| UI-06  | Na výšku, malý výřez a velmi široký výřez.          | Žádné překrytí důležitých tlačítek, bezpečná pauza při resize.                                                          |
-| UI-07  | Vypnutý zvuk, klávesnice, rodičovská branka.        | Ovládání srozumitelné bez zvuku, dostupná nastavení.                                                                    |
-| CNT-01 | Validace katalogu.                                  | Přesně 10 lokomotiv, nejméně všech 32 požadovaných vagonků a unikátní ID.                                               |
-| CNT-02 | Validace assetů a rozměrů.                          | Každý klíč existuje, žádný povinný placeholder, délky a pivoty jsou platné.                                             |
-| CNT-03 | Kontaktní listy a živé scény.                       | Rozlišitelné typy a konzistentní styl; ne 10 přebarvených lokomotiv.                                                    |
-| CNT-04 | Přehled biomů a infrastruktury.                     | Šest biomů, 18 scénických sestav, varianty mostů/stanic a požadované živé typy.                                         |
-| CNT-05 | Den, noc, tunel, sníh a déšť.                       | Vlak, kolej a brzda zůstávají čitelné ve standardním i úsporném režimu.                                                 |
+| ID     | Test                                                | Očekávaný výsledek                                                                                                                             |
+| ------ | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| UI-01  | První spuštění bez save.                            | Dostupný výběr lokomotivy bez čtení a přihlášení.                                                                                              |
+| UI-02  | Přidat, vybrat, přesunout, odebrat, vrátit editaci. | Jednoznačné operace, žádné smazání pouhým výběrem vozu.                                                                                        |
+| UI-03  | Přidávat vagonky až po délkový limit.               | Do 2 000 u včetně spřáhel; přesná hranice přijata, další vůz blokován, metr a všech 32 karet dosažitelné i na telefonu.                        |
+| UI-04  | Otevřít kopii v depu a vrátit se.                   | Původní cesta zůstává; změna draftu ji nepřepsala.                                                                                             |
+| UI-05  | Běžná karta bez fullscreen a bez instalace.         | Všechno podstatné dostupné a neodříznuté.                                                                                                      |
+| UI-06  | Na výšku, malý výřez a velmi široký výřez.          | Žádné překrytí důležitých tlačítek, bezpečná pauza při resize.                                                                                 |
+| UI-07  | Vypnutý zvuk, klávesnice, rodičovská branka.        | Ovládání srozumitelné bez zvuku, dostupná nastavení.                                                                                           |
+| CNT-01 | Validace katalogu.                                  | Přesně 10 lokomotiv, nejméně všech 32 požadovaných vagonků a unikátní ID.                                                                      |
+| CNT-02 | Validace assetů a rozměrů.                          | Každý klíč existuje, žádný povinný placeholder, délky a pivoty jsou platné.                                                                    |
+| CNT-03 | Kontaktní listy a živé scény.                       | Rozlišitelné typy a konzistentní styl; ne 10 přebarvených lokomotiv.                                                                           |
+| CNT-04 | Přehled biomů a infrastruktury.                     | Šest biomů, 18 scénických sestav, varianty mostů/stanic a požadované živé typy.                                                                |
+| CNT-05 | Den, noc, tunel, sníh a déšť.                       | Vlak, kolej a brzda zůstávají čitelné ve standardním i úsporném režimu; v neprůhledném tunelu pokračuje kamera a vjezd/výjezd je vidět v ústí. |
 
 ## 7. Ukládání a odolnost — DATA
 
@@ -207,3 +207,5 @@ Nesplněné neklíčové kosmetické přání lze viditelně odložit. Záměna 
 ### Delší souprava (D-028)
 
 Unit testy ověřují nezměněný zoom do 1 600 u, poměrný nad ním, zadní rezervu na 1280 × 800 a 844 × 390, konzervativní atlas všech možných různých vozidel s NPC při 2 px/u a obnovu starého nadlimitního save. `tests/unit/train/longestConsist.test.ts` ověřuje 2 000 u, pořadí, spřáhla, svahy, zachování koleje a setkání s NPC. `tests/e2e/train-length.spec.ts` sestaví přesně 2 000 u a při jízdě světem 123 ověří všech 13 kreslených vozidel, uzavřené závory až po poslední vůz na přejezdu chunku 3, průjezd tunelem chunku 6 a obnovení. Stávající testy celé soupravy a katalogu na 844 × 390, 667 × 375 a 568 × 320 zůstávají bránou.
+
+Regrese tunnel-1 (TRN-06, SCN-09): svět 123, hlavní tunel chunku 6 a oba NPC portály na sklonu −0,07885, polohy ±100, ±35 a 0 u včetně zastavení. Canvas i WebGL a fallback bez artu: žádné vozidlové pixely za krytem; žádná nová emise ze skály, žádný viditelný kouř vzniklý před vjezdem ani jiskry při brzdění uvnitř. Okolní život zůstává nezávislý. Regrese tunnel-3 navíc zastaví hráčovu lokomotivu s vagónem u obou hlavních ústí (art/fallback) a porovná zakryté i odkryté výřezy; pozitivní kontrola existuje u obou NPC portálů. Zakrytá již vypuštěná bublina nemá hit, pop ani záznam mezi viditelnými bublinami; odkrytý dotyk stále pohání vlak. Paty a zadní poloviny ústí nemění pixely při vzniku či zániku NPC a uvolní se teprve s vlastníkem scenérie.

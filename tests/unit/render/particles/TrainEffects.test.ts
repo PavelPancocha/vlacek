@@ -380,3 +380,32 @@ describe('particle sprites', () => {
     );
   });
 });
+
+// The source is behind rock; clocks still advance without a release burst.
+it('tunnel-1: suppresses every vehicle source behind rock and preserves its track depth', () => {
+  const field = new ParticleField(PARTICLE_KINDS, 240, () => 0.5);
+  const effects = new TrainEffects(field, () => 0.5);
+  const input = {
+    ...base,
+    dtSec: 1,
+    speedUPerSec: MAX,
+    intent: 'BRAKE' as const,
+    emitters: (['steam', 'diesel', 'stars', 'bubbles', 'rainbow'] as const).map(
+      (kind) => ({ kind, x: 100, y: -94, tiltDeg: 0 }),
+    ),
+    wheels: [{ x: 100, y: 0 }],
+    pantograph: { x: 100, y: -160 },
+    front: { x: 100, y: 0, ground: 'snow' as const },
+    canEmit: () => false,
+    depth: 7.55,
+  };
+  effects.step(input);
+  expect(field.live).toBe(0);
+  effects.step({ ...input, dtSec: 1 / 60, canEmit: () => true });
+  expect(field.live).toBeLessThan(5);
+  effects.step({ ...input, canEmit: () => true });
+  expect(field.live).toBeGreaterThan(0);
+  expect(field.particles().every((p) => 'depth' in p && p.depth === 7.55)).toBe(
+    true,
+  );
+});

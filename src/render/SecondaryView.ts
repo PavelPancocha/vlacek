@@ -8,6 +8,8 @@ import {
 } from '../content/worldArt.ts';
 import {
   heightAtX,
+  arcAtX,
+  sampleArcLengthTable,
   type ArcLengthTable,
 } from '../domain/world/ArcLengthTable.ts';
 import {
@@ -15,6 +17,7 @@ import {
   secondarySiteOfChunk,
 } from '../domain/world/SecondaryTrack.ts';
 import { frameOrigin } from './atlasPacking.ts';
+import { portalFootPoints } from './tunnelCover.ts';
 import { trackTilePlacements } from './trackTiles.ts';
 
 const { chunkWidthU, secondaryTrackOffsetU } = gameConfig.world;
@@ -89,6 +92,11 @@ export function chunkSecondaryTrack(
         image
           .setOrigin(origin.x, origin.y)
           .setFlipX(mirrored)
+          .setRotation(
+            -Math.atan(
+              sampleArcLengthTable(table, arcAtX(table, worldX)).grade,
+            ),
+          )
           .setScale(1 / art.pxPerU),
       );
     }
@@ -97,4 +105,55 @@ export function chunkSecondaryTrack(
     portal(site.fromX, false);
   if (site.toX > x0 && site.toX <= x0 + chunkWidthU) portal(site.toX, true);
   return [track, mouths, hills];
+}
+
+/**
+ * Close the hill's bottom against the NPC's own track, also without art.
+ * The ride owns each graphic with its rendered portal chunk, independently of NPCs.
+ */
+export function secondaryPortalFeet(
+  scene: Phaser.Scene,
+  site: { fromX: number; toX: number },
+  railY: (worldX: number) => number,
+  depth: number,
+  chunkIndex: number,
+): Phaser.GameObjects.Graphics[] {
+  return (
+    [
+      [site.fromX, false],
+      [site.toX, true],
+    ] as const
+  )
+    .filter(
+      ([x, mirrored]) =>
+        (mirrored
+          ? Math.ceil(x / chunkWidthU) - 1
+          : Math.floor(x / chunkWidthU)) === chunkIndex,
+    )
+    .map(([x, mirrored]) => {
+      const graphics = scene.add.graphics().setDepth(depth - 0.005);
+      // The domain removes the last tail at the portal centre; hide it before then.
+      const angle = Math.atan((railY(x + 1) - railY(x - 1)) / 2);
+      const cos = Math.cos(angle),
+        sin = Math.sin(angle);
+      const point = (dx: number, dy: number) =>
+        new Phaser.Math.Vector2(
+          x + dx * cos - dy * sin,
+          railY(x) + dx * sin + dy * cos,
+        );
+      const rearX = mirrored ? 36 : -36;
+      graphics.fillStyle(0x24211e, 1);
+      graphics.fillPoints(
+        [point(0, -110), point(rearX, -110), point(rearX, 12), point(0, 12)],
+        true,
+      );
+      graphics.fillStyle(0x6eae43, 1);
+      graphics.fillPoints(
+        portalFootPoints(x, mirrored, railY).map(
+          (point) => new Phaser.Math.Vector2(point.x, point.y),
+        ),
+        true,
+      );
+      return graphics;
+    });
 }

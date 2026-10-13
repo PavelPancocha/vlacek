@@ -31,6 +31,10 @@ export interface TrainEffectsInput {
   front: { x: number; y: number; ground: 'snow' | 'leaves' | undefined };
   /** 1 standard, 0.5 for the low quality profile (doc 13). */
   rateScale: number;
+  /** False for a source point behind this train's rock cover. */
+  canEmit?: (point: { x: number; y: number }) => boolean;
+  /** Drawing layer of this train, retained by particles after entry. */
+  depth?: number;
 }
 
 /** Four exhaust beats per revolution of the driving wheels. */
@@ -91,8 +95,11 @@ export class TrainEffects {
       count: number,
       options: Parameters<ParticleField['emit']>[4] = {},
     ) => {
-      if (count <= 0) return;
-      const n = this.#field.emit(kindIndex(kind), x, y, count, options);
+      if (count <= 0 || input.canEmit?.({ x, y }) === false) return;
+      const n = this.#field.emit(kindIndex(kind), x, y, count, {
+        ...options,
+        ...(input.depth === undefined ? {} : { depth: input.depth }),
+      });
       emitted.set(kind, (emitted.get(kind) ?? 0) + n);
     };
     const clock = (key: string) => {

@@ -17,6 +17,7 @@ Dokument 14 je splněný v §1–7: pořadí soupravy, celý vlak v obraze s dé
 Iterace světa v2 podle zadání vlastníka z 2026-10-13 (rozpracováno, jeden PR):
 
 - **Nahrané zvuky:** Nahrané zvuky doplněny ([D-022](decisions/022-recorded-sounds.md)): 32 MP3 / 1,84 MiB, kola, pára, diesel, electric hum, deset horn ID, přejezd, ambient, reakce a tlumení v tunelu. Seznam Zvuky ve skrytých vývojářských volbách umožňuje poslech všech nahrávek; kredity CC BY jsou v buildu.
+- **Tunely bez prosvítání:** neprůhledný kryt, postupný vjezd a výjezd po vozidlech, pata portálu druhé koleje podle sklonu vlastní koleje a částice pod příslušným krytem; zakryté bubliny nejsou interaktivní ani ve snapshotu a kryty portálů žijí se scenérií, ne s protijedoucím vlakem. Canvas, WebGL i fallback bez artu mají stejné zakrytí ([D-018](decisions/018-bridges-and-tunnels.md)). Dlouhé tunely přijdou s krajinou v2; uložená trať se nemění.
 - **Přejezdy na dohled:** přejezdy řídí nejčasnější příjezd celé soupravy: nejprve čekají auta a blikají světla, potom se sklápějí závory. Krátká souprava vidí sklápění při plném plynu i kolem 240 u/s; souprava 1 600 u vidí při vstupu přejezdu do záběru závory v pohybu nebo dole. Souvislá vozovka přes násep, dráhy aut i paty výstražníků používají společnou výšku a sklon koleje, v art i fallback cestě. Fronta v E2E skutečně dokončí průjezd po posledním vagónu ([D-021](decisions/021-crossing-closes-in-view.md)).
 
 ## Rozhodnutí, která čekají na vlastníka

@@ -1,11 +1,19 @@
 import type { Particle, ParticleField } from './ParticleField.ts';
 import { kindIndex } from './particleKinds.ts';
 
-/** Only bubbles whose fade has made them visible can be touched. */
-export function visibleBubbles(field: ParticleField): readonly Particle[] {
+/** Only faded-in bubbles exposed by the cover geometry can be touched. */
+export function visibleBubbles(
+  field: ParticleField,
+  canSee?: (point: { x: number; y: number }) => boolean,
+): readonly Particle[] {
   return field
     .particles()
-    .filter((p) => p.kind === kindIndex('bubble') && field.alphaOf(p) >= 0.1);
+    .filter(
+      (p) =>
+        p.kind === kindIndex('bubble') &&
+        field.alphaOf(p) >= 0.1 &&
+        canSee?.(field.positionOf(p)) !== false,
+    );
 }
 
 /** Radius of the drawn circle in fx.bubble.svg (10.5 of its 24 u frame). */
@@ -18,8 +26,10 @@ export function bubbleAt(
   field: ParticleField,
   xU: number,
   yU: number,
+  canSee?: (point: { x: number; y: number }) => boolean,
 ): number | undefined {
-  const bubbles = visibleBubbles(field);
+  if (canSee?.({ x: xU, y: yU }) === false) return undefined;
+  const bubbles = visibleBubbles(field, canSee);
   for (let i = bubbles.length - 1; i >= 0; i--) {
     const bubble = bubbles[i];
     if (!bubble) continue;
@@ -35,13 +45,18 @@ export function popBubble(
   field: ParticleField,
   id: number,
   rateScale: number,
+  canSee?: (point: { x: number; y: number }) => boolean,
 ): boolean {
   const bubble = field
     .particles()
     .find((p) => p.id === id && p.kind === kindIndex('bubble'));
   if (!bubble) return false;
   const at = field.positionOf(bubble);
+  if (canSee?.(at) === false) return false;
   field.remove(id);
-  field.emit(kindIndex('bubble-pop'), at.x, at.y, 1, { sizeScale: rateScale });
+  field.emit(kindIndex('bubble-pop'), at.x, at.y, 1, {
+    sizeScale: rateScale,
+    ...(bubble.depth === undefined ? {} : { depth: bubble.depth }),
+  });
   return true;
 }

@@ -12,5 +12,9 @@ export const DEPTH = {
   wires: 7.5,
   nearProps: 8,
   objects: 9,
+  /** Vehicle particles above wires/train, below the main rock (7.6). */
+  trainEffects: 7.55,
+  /** NPC particles above their train (4.3), below their rock (4.35). */
+  npcEffects: 4.32,
   effects: 10,
 } as const;

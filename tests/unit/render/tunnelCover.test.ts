@@ -1,62 +1,85 @@
 import { describe, expect, it } from 'vitest';
 import {
-  TUNNEL_SEE_THROUGH_ALPHA,
-  easeAlpha,
-  nextCoverAlpha,
+  vehicleInCover,
+  portalMasonryPoint,
+  secondaryPortalCoversPoint,
+  portalFootPoints,
   trainInTunnel,
-  tunnelCoverTarget,
 } from '../../../src/render/tunnelCover.ts';
 
 const tunnel = { fromX: 1000, toX: 1448 };
 
-describe('tunnel cover (doc 14 §2, doc 03 §8)', () => {
-  it('turns see-through while any part of the train is in or at the tunnel, opaque otherwise', () => {
-    expect(tunnelCoverTarget({ minX: 0, maxX: 600 }, tunnel)).toBe(1);
-    expect(tunnelCoverTarget({ minX: 1800, maxX: 2400 }, tunnel)).toBe(1);
-    // The front reaches the portal: the child sees the train go in.
-    expect(tunnelCoverTarget({ minX: 400, maxX: 950 }, tunnel)).toBe(
-      TUNNEL_SEE_THROUGH_ALPHA,
-    );
-    // Only the last wagon still inside.
-    expect(tunnelCoverTarget({ minX: 1400, maxX: 2000 }, tunnel)).toBe(
-      TUNNEL_SEE_THROUGH_ALPHA,
-    );
-    expect(TUNNEL_SEE_THROUGH_ALPHA).toBeLessThan(0.5);
-    expect(TUNNEL_SEE_THROUGH_ALPHA).toBeGreaterThan(0);
-  });
+it('tells whether the train is outside, partly or wholly inside (TRN-06)', () => {
+  expect(trainInTunnel({ minX: 0, maxX: 1000 }, tunnel)).toBe('outside');
+  expect(trainInTunnel({ minX: 1448, maxX: 1900 }, tunnel)).toBe('outside');
+  expect(trainInTunnel({ minX: 700, maxX: 1100 }, tunnel)).toBe('partly');
+  expect(trainInTunnel({ minX: 1400, maxX: 1800 }, tunnel)).toBe('partly');
+  expect(trainInTunnel({ minX: 1000, maxX: 1448 }, tunnel)).toBe('inside');
+});
 
-  it('fades smoothly, in simulation time, and holds still at zero time', () => {
-    expect(easeAlpha(1, 0.3, 0)).toBe(1);
-    let alpha = 1;
-    const steps: number[] = [];
-    for (let i = 0; i < 60; i++) {
-      alpha = easeAlpha(alpha, 0.3, 1 / 60);
-      steps.push(alpha);
-    }
-    // Half a second gets most of the way; no single frame jumps.
-    expect(steps[29] ?? 1).toBeLessThan(0.45);
-    for (let i = 1; i < steps.length; i++)
-      expect((steps[i - 1] ?? 1) - (steps[i] ?? 1)).toBeLessThan(0.08);
-    expect(steps.at(-1) ?? 1).toBeGreaterThanOrEqual(0.3);
-  });
+// The same coverage rule applies to the two tracks' closed intervals.
+describe('tunnel-1: individual vehicles and the sloped secondary portal', () => {
+  const positions = [100, 35, 0, -35, -100];
+  it.each(['player', 'npc'] as const)(
+    '%s vehicles at both portals',
+    (track) => {
+      const covers =
+        track === 'player'
+          ? [{ fromX: 1052, toX: 1396 }]
+          : [
+              { fromX: -Infinity, toX: 964 },
+              { fromX: 1484, toX: Infinity },
+            ];
+      const expectedLeft =
+        track === 'player'
+          ? ['inside', 'partly', 'outside', 'outside', 'outside']
+          : ['outside', 'outside', 'outside', 'partly', 'inside'];
+      const expectedRight = [...expectedLeft].reverse();
+      for (const [portal, expected] of [
+        [1000, expectedLeft],
+        [1448, expectedRight],
+      ] as const)
+        expect(
+          positions.map((delta) =>
+            vehicleInCover(
+              {
+                minX: portal + delta - 35,
+                maxX: portal + delta + 35,
+              },
+              covers,
+            ),
+          ),
+        ).toEqual(expected);
+    },
+  );
 
-  it('tells whether the train is outside, partly or wholly inside (TRN-06)', () => {
-    expect(trainInTunnel({ minX: 0, maxX: 1000 }, tunnel)).toBe('outside');
-    expect(trainInTunnel({ minX: 1448, maxX: 1900 }, tunnel)).toBe('outside');
-    expect(trainInTunnel({ minX: 700, maxX: 1100 }, tunnel)).toBe('partly');
-    expect(trainInTunnel({ minX: 1400, maxX: 1800 }, tunnel)).toBe('partly');
-    expect(trainInTunnel({ minX: 1000, maxX: 1448 }, tunnel)).toBe('inside');
-    expect(trainInTunnel({ minX: 1100, maxX: 1300 }, tunnel)).toBe('inside');
-  });
+  it.each([false, true])(
+    'fits the bottom to grade −0.07885, mirrored=%s',
+    (mirrored) => {
+      const railY = (x: number) => 0.07885 * x;
+      const points = portalFootPoints(0, mirrored, railY);
+      expect(points.length).toBeGreaterThan(10);
+      // Lower edge is at least 12 u below this track, including its low side.
+      for (const point of points.slice(points.length / 2))
+        expect(point.y).toBeGreaterThanOrEqual(railY(point.x) + 12);
+      expect(points.some((p) => Math.abs(p.x) >= 100)).toBe(true);
+    },
+  );
+});
 
-  it('starts at its target, so a restored train inside is never hidden', () => {
-    // First frame of a restored, paused journey: no time passes.
-    expect(nextCoverAlpha(undefined, TUNNEL_SEE_THROUGH_ALPHA, 0)).toBe(
-      TUNNEL_SEE_THROUGH_ALPHA,
-    );
-    expect(nextCoverAlpha(undefined, 1, 0)).toBe(1);
-    // Later frames ease as before.
-    expect(nextCoverAlpha(1, TUNNEL_SEE_THROUGH_ALPHA, 0)).toBe(1);
-    expect(nextCoverAlpha(1, TUNNEL_SEE_THROUGH_ALPHA, 1 / 60)).toBeLessThan(1);
-  });
+it('tunnel-1: points in portal masonry cannot emit, the arch remains open', () => {
+  expect(portalMasonryPoint(70, -50, 74, 222, 58, 128)).toBe(true);
+  expect(portalMasonryPoint(0, -200, 74, 222, 58, 128)).toBe(true);
+  expect(portalMasonryPoint(0, -70, 74, 222, 58, 128)).toBe(false);
+  expect(portalMasonryPoint(55, -170, 74, 222, 58, 128)).toBe(true);
+  expect(portalMasonryPoint(80, -50, 74, 222, 58, 128)).toBe(false);
+});
+
+it('tunnel-1: NPC sources behind the sloped rear plane cannot escape through the arch', () => {
+  const left = { x: 1000, y: 0, grade: -0.07885, mirrored: false };
+  expect(secondaryPortalCoversPoint({ x: 1005, y: -94 }, left)).toBe(true);
+  expect(secondaryPortalCoversPoint({ x: 1025, y: -70 }, left)).toBe(false);
+  const right = { ...left, x: 2000, mirrored: true };
+  expect(secondaryPortalCoversPoint({ x: 2005, y: -40 }, right)).toBe(true);
+  expect(secondaryPortalCoversPoint({ x: 1975, y: -70 }, right)).toBe(false);
 });

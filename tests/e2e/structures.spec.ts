@@ -55,7 +55,7 @@ async function continueBeforeBridge(
 }
 
 test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () => {
-  test('TRN-06 and TRN-08: over the bridge and through the tunnel the train stays visible under the wire', async ({
+  test('TRN-06 and TRN-08: over the bridge and through the tunnel vehicles enter an opaque tunnel under the wire', async ({
     page,
   }) => {
     test.setTimeout(90_000);
@@ -64,7 +64,7 @@ test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () =>
     await page.mouse.move(700, 300);
     await page.mouse.down();
     const chunks = new Set<number>();
-    let partlySeeThrough = false;
+    let partlyCovered = false;
     let wasIn = false;
     let shot = false;
     for (let i = 0; i < 300; i++) {
@@ -76,9 +76,9 @@ test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () =>
       const tunnel = state.tunnels.find((t) => t.id === tunnelId);
       if (tunnel && tunnel.train !== 'outside') {
         wasIn = true;
-        // The hill never hides the train going in or coming out.
-        if (tunnel.train === 'partly' && tunnel.alpha < 0.5) {
-          partlySeeThrough = true;
+        // World-v2 supersedes doc 14: the mouth shows entry, rock stays opaque.
+        if (tunnel.train === 'partly' && tunnel.alpha === 1) {
+          partlyCovered = true;
           if (!shot) {
             shot = true;
             await page.screenshot({
@@ -92,8 +92,8 @@ test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () =>
     }
     await page.mouse.up();
     expect([...chunks]).toEqual(expect.arrayContaining([4, 5, 6]));
-    expect(partlySeeThrough).toBe(true);
-    // Out of the tunnel, the hill turns opaque again.
+    expect(partlyCovered).toBe(true);
+    // The hill remains opaque after leaving.
     await expect
       .poll(
         async () =>
@@ -104,7 +104,7 @@ test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () =>
       .toBeGreaterThan(0.95);
   });
 
-  test('a journey restored inside the tunnel shows the train at once, even while paused', async ({
+  test('a journey restored inside the tunnel keeps the rock opaque, even while paused', async ({
     page,
   }) => {
     // The front deep in the chunk 6 tunnel (world 6272 to 6720).
@@ -116,8 +116,8 @@ test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () =>
         const tunnel = (await snapshot(page)).tunnels.find(
           (t) => t.id === tunnelId,
         );
-        return tunnel && tunnel.train !== 'outside' ? tunnel.alpha : 1;
+        return tunnel && tunnel.train !== 'outside' ? tunnel.alpha : undefined;
       })
-      .toBeLessThan(0.5);
+      .toBe(1);
   });
 });

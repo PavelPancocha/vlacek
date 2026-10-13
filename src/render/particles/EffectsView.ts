@@ -48,6 +48,9 @@ export class EffectsView {
         const at = field.positionOf(particle);
         const size = field.sizeOf(particle);
         const kind = field.kindOf(particle);
+        const depth = particle.depth ?? this.#depth;
+        // Phaser queues a scene-wide sort even when the depth has not changed.
+        if (image.depth !== depth) image.setDepth(depth);
         image
           .setVisible(true)
           .setPosition(at.x - originX, at.y)

@@ -85,3 +85,38 @@ describe('bubble touch (doc 06 §2, INP-05)', () => {
     expect(low.field.live).toBe(0);
   });
 });
+
+it('tunnel-1: a bubble pop keeps its source layer under rock', () => {
+  const { field, bubble, id } = setup();
+  bubble.depth = 7.55;
+  expect(popBubble(field, id, 1)).toBe(true);
+  expect(field.particles()[0]?.depth).toBe(7.55);
+});
+
+it('tunnel-3: already-emitted bubbles behind rock have no hit, visible entry or pop', () => {
+  const { field, bubble, id } = setup();
+  const canSee = (point: { x: number; y: number }) => point.x < 50;
+  const hidden = field.positionOf(bubble);
+  expect(visibleBubbles(field, canSee)).toEqual([]);
+  expect(bubbleAt(field, hidden.x, hidden.y, canSee)).toBeUndefined();
+  expect(popBubble(field, id, 1, canSee)).toBe(false);
+  expect(
+    field.particles().filter((p) => p.kind === kindIndex('bubble-pop')),
+  ).toHaveLength(0);
+  expect(field.live).toBe(1);
+  bubble.x = 10;
+  const exposed = field.positionOf(bubble);
+  expect(visibleBubbles(field, canSee).map((p) => p.id)).toEqual([id]);
+  expect(bubbleAt(field, exposed.x, exposed.y, canSee)).toBe(id);
+  expect(popBubble(field, id, 1, canSee)).toBe(true);
+});
+
+it('tunnel-3: an exposed bubble cannot be hit through the covered part of its circle', () => {
+  const { field, bubble, id } = setup();
+  bubble.x = 14;
+  const at = field.positionOf(bubble);
+  const canSee = (point: { x: number; y: number }) => point.x < 15;
+  expect(visibleBubbles(field, canSee).map((p) => p.id)).toEqual([id]);
+  expect(bubbleAt(field, 16, at.y, canSee)).toBeUndefined();
+  expect(bubbleAt(field, 13, at.y, canSee)).toBe(id);
+});

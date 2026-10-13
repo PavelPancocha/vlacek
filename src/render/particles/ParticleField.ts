@@ -33,6 +33,8 @@ export interface Particle {
   /** Unique emission identity, stable until death even when the pool is reused. */
   id: number;
   kind: number;
+  /** Optional source-track layer; ambient particles use the view default. */
+  depth: number | undefined;
   /** World x and render y (down) of the particle, u. */
   x: number;
   y: number;
@@ -50,6 +52,8 @@ export interface Particle {
 }
 
 export interface EmitOptions {
+  /** Keep train particles under the opaque cover of their own track. */
+  depth?: number;
   /** Velocity added to every particle (inherited from the emitter), u/s. */
   vxU?: number;
   vyU?: number;
@@ -68,6 +72,7 @@ function blankParticle(): Particle {
   return {
     id: 0,
     kind: 0,
+    depth: undefined,
     x: 0,
     y: 0,
     vx: 0,
@@ -147,6 +152,7 @@ export class ParticleField {
       const particle = this.#spare.pop() ?? blankParticle();
       particle.id = this.#nextId++;
       particle.kind = kindIndex;
+      particle.depth = options.depth;
       particle.x = x + (r() * 2 - 1) * jitter;
       particle.y = y + (r() * 2 - 1) * jitter;
       particle.vx = Math.cos(direction) * speed + (options.vxU ?? 0);

@@ -16,7 +16,7 @@ Výchozí volba: žádné lidské oči a ústa na lokomotivách. Výraz je v sil
 
 Hlavním vizuálním objektem zůstává vlak. Pozadí má nižší kontrast; interaktivní zvíře se přirozeně odlišuje od houští. Interaktivitu naznačuje občasné vykouknutí či otočení hlavy, nikoli permanentní blikající obrys.
 
-Nepoužívat dlouhé neprůhledné překážky, které zakryjí celý vlak. Přední strom může na okamžik překrýt jeden vagónek, nikoli lokomotivu a celou cestu po mnoho sekund. Při více možných cílech má být zřejmé, který reagoval.
+Dekorace nesmějí dlouhodobě zakrýt celý vlak. Výjimkou je skutečný neprůhledný tunel podle D-018: vjezd a výjezd jsou vidět v ústí, kamera pokračuje a ovládání zůstává dostupné. Přední strom může na okamžik překrýt jeden vagónek, nikoli lokomotivu a celou cestu po mnoho sekund. Při více možných cílech má být zřejmé, který reagoval.
 
 Ve V1 není potřeba generovat grafiku za běhu. Obrázky, zvuky i fonty jsou součást buildu. Pokud vzniknou pomocí generativních nástrojů během vývoje, musí projít kontrolou konzistence a použitelnosti, stejně jako ručně vytvořený asset. Nezavádět runtime volání AI ani připojení kvůli jednotlivým krajinám.
 
@@ -33,7 +33,7 @@ Výchozí pořadí z dálky dopředu:
 7. Hráčův vlak; kola, karoserie, světla a pantograf.
 8. Přední zábradlí, portálové pilíře a vybraná vegetace.
 9. Blízká zvířata a interaktivní objekty, pokud mají správnou prostorovou polohu.
-10. Částice a lokální světelné akcenty, které nezakryjí ovládání.
+10. Okolní částice a lokální světelné akcenty, které nezakryjí ovládání. Částice vozidel jsou nad vlastním vlakem, ale pod jeho tunelovým krytem.
 11. HUD a modální UI.
 
 Z-order není univerzální pravidlo „všechna zvířata před vlakem“: konkrétní entita má scénickou vrstvu. Hit-test používá skutečnou viditelnost a tutéž vrstvu. Troleje lze rozdělit na zadní nosné konstrukce a přední drát podle konkrétní perspektivy.
@@ -95,7 +95,7 @@ Režim omezených efektů sníží dekorativní pohyb, částice a houpání UI.
 
 Implementace částic a drobných animací ([D-014](../docs/decisions/014-particles-and-small-animations.md)):
 
-- **Pole částic.** Vrstva 10 kreslí částice z omezeného, znovupoužívaného pole ve světových souřadnicích. Pole se posouvá simulačním časem, takže v pauze stojí.
+- **Pole částic.** Omezené, znovupoužívané pole drží částice ve světových souřadnicích. Okolní život kreslí vrstva 10; částice hráčova vlaku vrstva 7,55 a NPC 4,32 pod příslušnou skálou. Zdroje uvnitř skály nevypouštějí nové částice a kryt zakryje i dříve vzniklé částice. Pole se posouvá simulačním časem, takže v pauze stojí.
 - **Zdroje částic.** Kouř, pára, výfuk a hvězdičky vycházejí z emitorů v manifestu vozidla, se sklonem modelu.
   - Kouř jde v taktech hnacích kol.
   - Jiskry přicházejí jen při prudkém brzdění.

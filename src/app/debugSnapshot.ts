@@ -89,6 +89,8 @@ export interface DebugSnapshot {
     id: string;
     alpha: number;
     train: 'outside' | 'partly' | 'inside';
+    /** Each player's vehicle relative to the opaque core (in consist order). */
+    vehicles: ('outside' | 'partly' | 'inside')[];
   }[];
   /** Actual backdrop layers and crossfade progress (0 … 1), if a journey exists. */
   backdrop:

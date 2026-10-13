@@ -23,7 +23,12 @@ import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import type { Biome } from '../domain/world/Biomes.ts';
 import { heightAtX } from '../domain/world/ArcLengthTable.ts';
 import { contactWireHeightU } from '../domain/world/Catenary.ts';
-import { SECONDARY_SCALE } from '../domain/world/SecondaryTrack.ts';
+import {
+  PORTAL_HILL_U,
+  SECONDARY_SCALE,
+  SecondaryLine,
+  secondarySiteOfChunk,
+} from '../domain/world/SecondaryTrack.ts';
 import { chunkOfEntityId } from '../domain/world/ChunkObjects.ts';
 import { hash32 } from '../domain/world/Hash.ts';
 import {
@@ -72,7 +77,12 @@ import { ChunkView, SECONDARY_DEPTH } from './ChunkView.ts';
 import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
 import { motionScale } from './ambientMotion.ts';
 import { pantographReachU } from './pantograph.ts';
-import type { TrainInTunnel } from './tunnelCover.ts';
+import {
+  secondaryPortalCoversPoint,
+  vehicleInCover,
+  type TrainInTunnel,
+} from './tunnelCover.ts';
+import { secondaryPortalFeet } from './SecondaryView.ts';
 import {
   frameLeftX,
   frameTopY,
@@ -125,7 +135,12 @@ export interface RenderStats {
   /** Vehicles of oncoming trains drawn out in the open (doc 05 §6). */
   oncomingVehicles: number;
   /** Tunnels in the rendered chunks, their hills' opacity and the train. */
-  tunnels: { id: string; alpha: number; train: TrainInTunnel }[];
+  tunnels: {
+    id: string;
+    alpha: number;
+    train: TrainInTunnel;
+    vehicles: TrainInTunnel[];
+  }[];
 }
 
 const NO_STATS: RenderStats = {
@@ -286,6 +301,7 @@ export class RideScene extends Phaser.Scene {
   readonly #slots: VehicleSlot[] = [];
   /** Vehicles of oncoming trains, behind the main track (doc 05 §6). */
   readonly #npcSlots: VehicleSlot[] = [];
+  readonly #portalFeet = new Map<number, Phaser.GameObjects.Graphics[]>();
   /** Scenery of the chunks around the view; pure, so cached per chunk. */
   readonly #scenery = new Map<number, ChunkScenery>();
   /** World y (up) of the top screen edge; eased between frames. */
@@ -439,6 +455,9 @@ export class RideScene extends Phaser.Scene {
     });
     this.events.once('destroy', () => {
       stopPresenting();
+      for (const feet of this.#portalFeet.values())
+        for (const foot of feet) foot.destroy();
+      this.#portalFeet.clear();
       this.#backdrop?.destroy();
       this.#effectsView?.destroy();
       this.#art?.destroy();
@@ -501,6 +520,13 @@ export class RideScene extends Phaser.Scene {
     };
   }
 
+  /** World render point exposed by the same geometry that covers train particles. */
+  readonly #outsideTunnel = (point: { x: number; y: number }): boolean => {
+    for (const chunk of this.#chunks.values())
+      if (chunk.tunnel?.coversPoint(point)) return false;
+    return true;
+  };
+
   /** CSS px → interactive object id under the finger (doc 02 §3). */
   hitObject(
     cssX: number,
@@ -513,6 +539,7 @@ export class RideScene extends Phaser.Scene {
         this.#particles,
         world.x + this.#originX,
         world.y,
+        this.#outsideTunnel,
       );
       if (bubbleId !== undefined) return { bubbleId };
     }
@@ -534,6 +561,7 @@ export class RideScene extends Phaser.Scene {
         this.#particles,
         id,
         this.#host.effectsQuality() === 'low' ? 0.5 : 1,
+        this.#outsideTunnel,
       )
     )
       return false;
@@ -548,7 +576,7 @@ export class RideScene extends Phaser.Scene {
     if (this.#effectsTexture === undefined) return [];
     const scale =
       (this.#view.zoom * Math.max(1, canvasRect.width)) / this.scale.width;
-    return visibleBubbles(this.#particles)
+    return visibleBubbles(this.#particles, this.#outsideTunnel)
       .map((bubble) => {
         const at = this.#particles.positionOf(bubble);
         return {
@@ -825,7 +853,7 @@ export class RideScene extends Phaser.Scene {
 
     const leftX = leftWorldX - 64;
     const rightX = leftWorldX + viewW + 64;
-    this.#drawTrack(ride, leftX, rightX, timeSec, simDtSec);
+    this.#drawTrack(ride, leftX, rightX, timeSec);
     // Animals stay above the controls in the bottom corners (doc 02).
     this.#freeBottomY =
       this.#view.top +
@@ -893,6 +921,9 @@ export class RideScene extends Phaser.Scene {
   #destroyChunks(): void {
     for (const chunk of this.#chunks.values()) chunk.destroy();
     this.#chunks.clear();
+    for (const feet of this.#portalFeet.values())
+      for (const foot of feet) foot.destroy();
+    this.#portalFeet.clear();
   }
 
   #drawTrack(
@@ -900,7 +931,6 @@ export class RideScene extends Phaser.Scene {
     leftX: number,
     rightX: number,
     timeSec: number,
-    simDtSec: number,
   ): void {
     const first = Math.max(
       ride.track.firstChunkIndex,
@@ -914,6 +944,8 @@ export class RideScene extends Phaser.Scene {
       if (index < first || index > last) {
         chunk.destroy();
         this.#chunks.delete(index);
+        for (const foot of this.#portalFeet.get(index) ?? []) foot.destroy();
+        this.#portalFeet.delete(index);
       }
     }
     for (const index of this.#scenery.keys())
@@ -921,7 +953,7 @@ export class RideScene extends Phaser.Scene {
     const crossings = new Map(ride.crossings.map((c) => [c.id, c]));
     // Reduced effects calm the decorative motion (doc 07 §9).
     const motion = motionScale(this.#host.effectsQuality());
-    // The whole train's x interval, for the tunnels' see-through cover.
+    // The whole train's x interval, for tunnel coverage diagnostics.
     const trainSpan = {
       minX: ride.sample(ride.tailS).x,
       maxX: ride.sample(ride.frontS).x,
@@ -953,23 +985,47 @@ export class RideScene extends Phaser.Scene {
           ride.electrified,
         );
         this.#chunks.set(k, chunk);
+        const site = secondarySiteOfChunk(ride.seed, k);
+        if (site && chunk.secondaryPortalViews > 0) {
+          const line = new SecondaryLine(ride.seed, site, PORTAL_HILL_U);
+          this.#portalFeet.set(
+            k,
+            secondaryPortalFeet(
+              this,
+              site,
+              (x) => -line.sample(line.sAtX(x)).y,
+              DEPTH.backProps + SECONDARY_DEPTH.hill,
+              k,
+            ),
+          );
+        }
       }
       chunk.setX(k * CHUNK_WIDTH_U - this.#originX);
+      for (const foot of this.#portalFeet.get(k) ?? [])
+        foot.setX(-this.#originX);
       const site = this.#sceneryOf(ride.seed, k).crossing;
       chunk.update(timeSec, site && crossings.get(site.id), motion);
-      chunk.tunnel?.update(trainSpan, simDtSec);
+      chunk.tunnel?.update(trainSpan);
     }
-    this.stats.tunnels = [...this.#chunks.values()].flatMap((chunk) =>
-      chunk.tunnel
-        ? [
-            {
-              id: chunk.tunnel.id,
-              alpha: chunk.tunnel.alpha,
-              train: chunk.tunnel.train,
-            },
-          ]
-        : [],
-    );
+    this.stats.tunnels = [...this.#chunks.values()].flatMap((chunk) => {
+      const tunnel = chunk.tunnel;
+      if (!tunnel) return [];
+      return [
+        {
+          id: tunnel.id,
+          alpha: tunnel.alpha,
+          train: tunnel.train,
+          vehicles: this.#host.journeyVehicles().map((vehicle, i) => {
+            const pose = ride.vehiclePose(i);
+            const half = vehicle.lengthU / 2;
+            return vehicleInCover(
+              { minX: pose.centerX - half, maxX: pose.centerX + half },
+              [tunnel.coverRange],
+            );
+          }),
+        },
+      ];
+    });
     this.stats.renderedChunks = this.#chunks.size;
     this.stats.crossingViews = [...this.#chunks.values()].filter(
       (chunk) => chunk.hasCrossingView,
@@ -1147,6 +1203,8 @@ export class RideScene extends Phaser.Scene {
       maxSpeedUPerSec: gameConfig.train.maxSpeedUPerSec,
       intent: ride.lastIntent,
       emitters,
+      canEmit: this.#outsideTunnel,
+      depth: DEPTH.trainEffects,
       driverRadiusU: locomotive?.wheelRadiusU,
       wheels,
       front,
@@ -1166,8 +1224,8 @@ export class RideScene extends Phaser.Scene {
       const kind = shaped?.effect === 'none' ? undefined : shaped?.effect;
       if (!loco || !shaped || !npcArt || kind === undefined) continue;
       const pose = train.vehiclePose(0);
-      const npcEmitters: PlacedEmitter[] = (npcArt.emitters ?? [])
-        .map((emitter) => ({
+      const npcEmitters: PlacedEmitter[] = (npcArt.emitters ?? []).map(
+        (emitter) => ({
           kind,
           ...emitterWorldPoint(
             emitter,
@@ -1175,11 +1233,8 @@ export class RideScene extends Phaser.Scene {
             pose,
             { mirrored: true, scale: SECONDARY_SCALE },
           ),
-        }))
-        .filter(
-          (emitter) =>
-            emitter.x > train.site.fromX && emitter.x < train.site.toX,
-        );
+        }),
+      );
       this.#npcEffects.step(train.id, {
         dtSec,
         speedUPerSec: train.speedUPerSec,
@@ -1187,6 +1242,20 @@ export class RideScene extends Phaser.Scene {
         maxSpeedUPerSec: gameConfig.train.maxSpeedUPerSec,
         intent: 'THROTTLE',
         emitters: npcEmitters,
+        depth: DEPTH.npcEffects,
+        canEmit: (point) => {
+          if (point.x <= train.site.fromX || point.x >= train.site.toX)
+            return false;
+          return ![train.site.fromX, train.site.toX].some((portalX) => {
+            const rail = train.line.sample(train.line.sAtX(portalX));
+            return secondaryPortalCoversPoint(point, {
+              x: portalX,
+              y: -rail.y,
+              grade: rail.grade,
+              mirrored: portalX === train.site.toX,
+            });
+          });
+        },
         driverRadiusU: loco.wheelRadiusU,
         wheels: [],
         front: { x: 0, y: 0, ground: undefined },
@@ -1296,12 +1365,20 @@ export class RideScene extends Phaser.Scene {
     let open = 0;
     for (const train of ride.oncomingTrains) {
       const { site } = train;
+      const covers = [
+        { fromX: -Infinity, toX: site.fromX - PORTAL_EDGE_U },
+        { fromX: site.toX + PORTAL_EDGE_U, toX: Infinity },
+      ];
       train.vehicles.forEach((vehicle, i) => {
         const pose = train.vehiclePose(i);
         const half = vehicle.lengthU / 2;
         if (
-          pose.centerX + half < Math.max(leftX, site.fromX - PORTAL_EDGE_U) ||
-          pose.centerX - half > Math.min(rightX, site.toX + PORTAL_EDGE_U)
+          pose.centerX + half < leftX ||
+          pose.centerX - half > rightX ||
+          vehicleInCover(
+            { minX: pose.centerX - half, maxX: pose.centerX + half },
+            covers,
+          ) === 'inside'
         )
           return;
         const shaped = catalog.find((candidate) => candidate.id === vehicle.id);

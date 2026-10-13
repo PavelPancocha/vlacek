@@ -5,9 +5,8 @@ import { TUNNEL_MAST_CLEARANCE_U } from '../domain/world/Catenary.ts';
 import type { TunnelSite } from '../domain/world/Structures.ts';
 import { frameOrigin } from './atlasPacking.ts';
 import {
-  nextCoverAlpha,
-  trainInTunnel,
-  tunnelCoverTarget,
+  portalMasonryPoint,
+  vehicleInCover,
   type TrainInTunnel,
 } from './tunnelCover.ts';
 
@@ -68,18 +67,15 @@ const STEP_U = 16;
  * A short tunnel of the main track (doc 03 §8, doc 14 §2): stone portals
  * at both ends, the hill over the track in front of the train and its
  * flanks behind it, the dark inside with lamps. While the train is in or
- * at the tunnel the cover turns see-through and a darkening band shows
- * which vehicles are inside, each by its own position (TRN-06). The cover
- * fades in simulation time. Chunk-local, owned by its ChunkView.
+ * at the tunnel the opaque cover hides each vehicle progressively by its
+ * own position (TRN-06). Chunk-local, owned by its ChunkView.
  */
 export class TunnelView {
   readonly id: string;
   readonly containers: Phaser.GameObjects.Container[];
-  readonly #cover: Phaser.GameObjects.Container;
   readonly #worldFrom: number;
   readonly #worldTo: number;
-  /** Unset until the first update, which puts it right at its target. */
-  #alpha: number | undefined;
+  readonly #coveredPoint: (point: { x: number; y: number }) => boolean;
   #train: TrainInTunnel = 'outside';
 
   constructor(
@@ -372,32 +368,55 @@ export class TunnelView {
       );
     }
     cover.setDepth(depths.cover);
-    this.#cover = cover;
+    this.#coveredPoint = (point) => {
+      const x = point.x - site.chunkIndex * chunkWidthU;
+      if (
+        art &&
+        [fromX, toX].some((portalX) =>
+          portalMasonryPoint(
+            x - portalX,
+            point.y - ground.railY(portalX),
+            74,
+            222,
+            58,
+            128,
+          ),
+        )
+      )
+        return true;
+      return (
+        x >= flankFrom &&
+        x <= flankTo &&
+        point.y >= top(x) &&
+        point.y <= coverBottom(x)
+      );
+    };
     this.containers = [flanks, interior, shade, cover];
   }
 
-  /** Opacity of the cover (1 opaque … see-through while the train passes). */
+  /** Rock stays opaque, including the first restored or paused frame. */
   get alpha(): number {
-    return this.#alpha ?? 1;
+    return 1;
   }
 
-  /** Where the train was at the last update. */
+  /** Fully covered core; the open portal mouths stay visible at its ends. */
+  get coverRange(): { fromX: number; toX: number } {
+    return {
+      fromX: this.#worldFrom + COVER_INSET_U,
+      toX: this.#worldTo - COVER_INSET_U,
+    };
+  }
+
+  /** True behind the hill silhouette or portal masonry, with the arches open. */
+  coversPoint(point: { x: number; y: number }): boolean {
+    return this.#coveredPoint(point);
+  }
+
   get train(): TrainInTunnel {
     return this.#train;
   }
 
-  /**
-   * Fades the cover towards see-through while the train (its world x
-   * interval) is in or at the tunnel; `dtSec` is simulation time.
-   */
-  update(
-    train: { minX: number; maxX: number } | undefined,
-    dtSec: number,
-  ): void {
-    const tunnel = { fromX: this.#worldFrom, toX: this.#worldTo };
-    this.#train = train ? trainInTunnel(train, tunnel) : 'outside';
-    const target = train ? tunnelCoverTarget(train, tunnel) : 1;
-    this.#alpha = nextCoverAlpha(this.#alpha, target, dtSec);
-    this.#cover.setAlpha(this.#alpha);
+  update(train: { minX: number; maxX: number } | undefined): void {
+    this.#train = train ? vehicleInCover(train, [this.coverRange]) : 'outside';
   }
 }
