@@ -33,3 +33,21 @@ describe('render profile from the settings (doc 13 quality, doc 07 §9)', () => 
     });
   });
 });
+
+it('page quality wins over saved quality without changing the settings', () => {
+  const settings = { quality: 'standard', reducedEffects: false } as const;
+  expect(renderProfile(settings, quality, 'low')).toEqual({
+    maxDpr: 1,
+    fpsLimit: 30,
+    effects: 'low',
+  });
+  expect(settings.quality).toBe('standard');
+  for (const override of ['auto', 'standard'] as const)
+    expect(
+      renderProfile(
+        { quality: 'low', reducedEffects: false },
+        quality,
+        override,
+      ),
+    ).toEqual({ maxDpr: 1.5, fpsLimit: 0, effects: 'standard' });
+});

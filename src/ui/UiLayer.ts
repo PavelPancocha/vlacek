@@ -14,6 +14,8 @@ import {
 import { layoutConsist } from '../domain/train/TrainGeometry.ts';
 import type { WagonGroup } from '../domain/types.ts';
 import type { Settings } from '../platform/SaveValidation.ts';
+import { developerMenu, parseDevMenu, type DevMenuValues } from './DevMenu.ts';
+import { devTap, type DevTapState } from './DevTapGate.ts';
 import { actionButton, el } from './dom.ts';
 import { icon } from './icons.ts';
 import { vehiclePreview } from './vehiclePreview.ts';
@@ -31,6 +33,7 @@ export interface UiModel {
   portrait: boolean;
   fullscreen: { supported: boolean; active: boolean; failed: boolean };
   buildId: string;
+  devActive: boolean;
   locomotives: readonly CatalogLocomotive[];
   wagons: readonly CatalogWagon[];
   /** Length limit and coupler gap shared with every departure (doc 14 §2). */
@@ -97,9 +100,51 @@ export class UiLayer {
   #nextRevision = 1;
   #lastWagonCount = 0;
   #stripScrollLeft = 0;
+  #devValues: DevMenuValues | undefined;
+  #devGate: DevTapState = { count: 0, startMs: 0 };
 
   constructor(root: HTMLElement) {
     this.#root = root;
+  }
+
+  get developerMenuOpen(): boolean {
+    return this.#devValues !== undefined;
+  }
+
+  activateDeveloperGate(nowMs: number, values: DevMenuValues): void {
+    if (this.#devValues) return;
+    const next = devTap(this.#devGate, nowMs);
+    this.#devGate = next;
+    if (next.open) this.#devValues = values;
+  }
+
+  closeDeveloperMenu(): void {
+    this.#devValues = undefined;
+    queueMicrotask(() =>
+      this.#root.querySelector<HTMLButtonElement>('.build-id')?.focus(),
+    );
+  }
+
+  developerValues(): DevMenuValues | undefined {
+    const form = this.#root.querySelector<HTMLFormElement>('.dev-fields');
+    const world = form?.querySelector<HTMLInputElement>('[name="seed"]');
+    if (!form || !world) return undefined;
+    world.setCustomValidity('');
+    const values = parseDevMenu(Object.fromEntries(new FormData(form)));
+    if (!values)
+      world.setCustomValidity(
+        'Zadej celé číslo od 0 do 4294967295, nebo nech pole prázdné.',
+      );
+    return form.reportValidity() ? values : undefined;
+  }
+
+  developerSaveError(part: 'session' | 'dev'): void {
+    const status = this.#root.querySelector('[data-dev-error]');
+    if (status)
+      status.textContent =
+        part === 'session'
+          ? 'Volby nelze použít, protože hra nyní nemůže uložit cestu a nastavení. Zůstaň na této stránce; cesta je pouze v paměti.'
+          : 'Vývojářské volby se nepodařilo uložit. Cesta a nastavení jsou uložené; stránka se znovu nenačetla.';
   }
 
   #revision(draft: ConsistDraft): number {
@@ -112,6 +157,10 @@ export class UiLayer {
   }
 
   update(model: UiModel): void {
+    if (model.screen.name !== 'PAUSED') {
+      this.#devValues = undefined;
+      this.#devGate = { count: 0, startMs: 0 };
+    }
     const signature = JSON.stringify([
       model.screen,
       this.#revision(model.draft),
@@ -122,9 +171,13 @@ export class UiLayer {
       model.seed,
       model.portrait,
       model.fullscreen,
+      model.devActive,
+      this.#devValues !== undefined,
     ]);
     if (signature === this.#signature) return;
     this.#signature = signature;
+    // Keep unsaved native fields through layout and interruption updates.
+    if (this.#devValues && this.#root.querySelector('.dev-menu')) return;
     const fullscreenFocused =
       this.#root.querySelector('[data-action="fullscreen"]') ===
       document.activeElement;
@@ -132,6 +185,8 @@ export class UiLayer {
       model.screen,
       model.portrait,
       model.fullscreen,
+      model.devActive,
+      this.#devValues !== undefined,
     ]);
     if (viewSignature === this.#viewSignature && this.#updateView) {
       this.#updateView(model);
@@ -168,6 +223,13 @@ export class UiLayer {
       });
     }
     this.#root.dataset['screen'] = model.screen.name;
+    if (this.#devValues)
+      queueMicrotask(() => {
+        if (!signal.aborted)
+          this.#root
+            .querySelector<HTMLSelectElement>('.dev-menu select')
+            ?.focus();
+      });
     if (fullscreenFocused)
       this.#root
         .querySelector<HTMLButtonElement>('[data-action="fullscreen"]')
@@ -198,7 +260,11 @@ export class UiLayer {
         views.push(this.#hud(model));
         break;
       case 'PAUSED':
-        views.push(this.#pause(model));
+        views.push(
+          this.#devValues
+            ? developerMenu(this.#devValues, signal)
+            : this.#pause(model),
+        );
         break;
       case 'RECOVERABLE_ERROR':
         views.push(
@@ -213,7 +279,8 @@ export class UiLayer {
         );
         break;
     }
-    if (model.portrait) {
+    // Parent fields remain accessible after rotation (doc 02 §9).
+    if (model.portrait && !this.#devValues) {
       views.push(
         el(
           'section',
@@ -719,7 +786,12 @@ export class UiLayer {
       model.seed === undefined
         ? undefined
         : el('p', { class: 'world-id' }, `Svět ${model.seed}`),
-      el('p', { class: 'build-id' }, `Build ${model.buildId}`),
+      actionButton(
+        'dev-build',
+        `Build ${model.buildId}${model.devActive ? ' · dev' : ''}`,
+        [`Build ${model.buildId}${model.devActive ? ' · dev' : ''}`],
+        { className: 'build-id' },
+      ),
     );
   }
 }

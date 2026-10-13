@@ -243,6 +243,8 @@ Při načtení nejsou platné žádné rezervace na neexistující entity. Zázn
 
 Výchozí úložiště V1 je **malý verzovaný JSON v localStorage**, ne backend a ne přenos textur do save. Pro tento rozsah stačí jedna rozehraná cesta a omezené aktivní stavy. Pokud implementace prokáže potřebu větších transakcí, lze SaveRepository nahradit IndexedDB bez změny domény; není to předem povinná komplikace.
 
+Samostatný platformní klíč `vlacek.dev.v1` uchovává vývojářskou diagnostiku, renderer a volitelný seed ([D-020](../docs/decisions/020-developer-menu.md)). Není součástí save ani jeho zálohy; při neplatném obsahu či nedostupném úložišti se použijí výchozí volby. Kvalita a omezené efekty nadále patří do existujících `settings.quality` a `settings.reducedEffects`, bez změny formátu.
+
 ```ts
 export interface Settings {
   sfxEnabled: boolean;
@@ -302,6 +304,8 @@ Změna `contentVersion` má mapování přejmenovaných ID. Chybějící vagón 
 ## 8. Životní cyklus a chyby
 
 AppController vlastní přechody aplikace, pauzu a jediný simulační loop. Platformní adaptér hlídá viditelnost, resize a audio. RideScene nemá sama od sebe rozjíždět svět při každém `resume` od Phaseru.
+
+Neprůhledné obrazovky a výzva k otočení vynechávají aktualizaci kresby i render jízdy, ale aplikační snímek dál běží kvůli ukládání, událostem a UI. Průsvitná pauza dál zobrazuje zamrzlý svět. Neprůhledná clona pod UI zůstává až do renderu vracející se jízdy, i při přeskočeném browserovém snímku v 30 FPS profilu. První opět viditelný snímek přepočítá kameru, polohy pozadí a renderovací okno, ale zachová prolínání pozadí téže cesty; podrobnosti a diagnostické počítadlo `rideFramesDrawn` vlastní [D-006](../docs/decisions/006-runtime-architecture.md). Uložená data ani simulační čas tato optimalizace nemění.
 
 Při ztrátě WebGL kontextu zastavit simulaci, vymazat vstupy, uložit malý snapshot a zobrazit klidnou obnovovací vrstvu. Po úspěšné obnově znovu vytvořit render z doménového stavu a čekat na potvrzení. Při opakovaném selhání nabídnout úsporné/Canvas spuštění, pokud projde capability testem. Neukazovat dítěti stack trace.
 

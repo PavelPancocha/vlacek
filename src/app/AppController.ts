@@ -5,8 +5,17 @@ import type { Consist } from '../domain/types.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import { AudioManager } from '../platform/AudioManager.ts';
-import { isPortrait } from '../platform/browserEnvironment.ts';
-import type { RendererPreference } from '../platform/CapabilityProbe.ts';
+import { browserStorage, isPortrait } from '../platform/browserEnvironment.ts';
+import type { Settings } from '../platform/SaveValidation.ts';
+import {
+  devReloadUrl,
+  type RendererPreference,
+} from '../platform/CapabilityProbe.ts';
+import {
+  clearDevOptions,
+  defaultDevOptions,
+  writeDevOptions,
+} from '../platform/DevOptions.ts';
 import { DomInputAdapter } from '../platform/DomInputAdapter.ts';
 import { FullscreenController } from '../platform/FullscreenController.ts';
 import { FrameStats } from '../platform/FrameStats.ts';
@@ -15,6 +24,7 @@ import { createGameHost, type GameHost } from '../render/GameHost.ts';
 import { RideScene } from '../render/RideScene.ts';
 import { BRAKE_HIT_MARGIN_PX, UiLayer } from '../ui/UiLayer.ts';
 import type { DebugSnapshot } from './debugSnapshot.ts';
+import { worldHidden } from './AppState.ts';
 import { PhaseLog } from './phaseLog.ts';
 import { renderProfile } from './renderProfile.ts';
 import type { GameSession, SessionEvent } from './GameSession.ts';
@@ -22,6 +32,8 @@ import type { GameSession, SessionEvent } from './GameSession.ts';
 export interface AppControllerOptions {
   renderer: RendererPreference;
   debug: boolean;
+  qualityOverride?: Settings['quality'] | undefined;
+  seedOverride?: number | undefined;
   buildId: string;
 }
 
@@ -38,6 +50,7 @@ export class AppController {
   readonly #options: AppControllerOptions;
   readonly #gameRoot: HTMLElement;
   readonly #uiRoot: HTMLElement;
+  readonly #curtain: HTMLElement;
   readonly #ui: UiLayer;
   readonly #audio = new AudioManager();
   readonly #frames = new FrameStats(600);
@@ -66,6 +79,11 @@ export class AppController {
     this.#gameRoot = gameRoot;
     this.#uiRoot = document.createElement('div');
     this.#uiRoot.id = 'ui-layer';
+    this.#curtain = document.createElement('div');
+    this.#curtain.className = 'ride-curtain';
+    this.#curtain.setAttribute('aria-hidden', 'true');
+    this.#curtain.hidden = true;
+    app.append(this.#curtain);
     app.append(this.#uiRoot);
     this.#ui = new UiLayer(this.#uiRoot);
     if (options.debug) {
@@ -79,14 +97,39 @@ export class AppController {
     this.#scene = new RideScene({
       frame: (deltaSec, nowMs) => this.#frame(deltaSec, nowMs),
       ride: () => this.#session.ride,
+      worldHidden: () =>
+        worldHidden(
+          this.#session.screen,
+          this.#portrait,
+          this.#ui.developerMenuOpen,
+        ),
+      worldDrawn: () => {
+        if (
+          !this.#curtain.hidden &&
+          !worldHidden(
+            this.#session.screen,
+            this.#portrait,
+            this.#ui.developerMenuOpen,
+          )
+        )
+          this.#curtain.hidden = true;
+      },
       journeyVehicles: () => this.#vehiclesOfJourney(),
       journeyNpcFleet: () => this.#session.journeyNpcFleet,
       catalogVehicles: () => [...locomotives, ...wagons],
       // Reduced effects or the low profile halve the particles (doc 07 §9).
       effectsQuality: () =>
-        renderProfile(this.#session.settings, gameConfig.quality).effects,
+        renderProfile(
+          this.#session.settings,
+          gameConfig.quality,
+          options.qualityOverride,
+        ).effects,
     });
-    const profile = renderProfile(session.settings, gameConfig.quality);
+    const profile = renderProfile(
+      session.settings,
+      gameConfig.quality,
+      options.qualityOverride,
+    );
     this.#host = createGameHost({
       parent: gameRoot,
       renderer: options.renderer,
@@ -110,6 +153,46 @@ export class AppController {
         // The locomotive is the front of the train, at the strip's right end.
         const strip = this.#uiRoot.querySelector('.strip');
         strip?.scrollTo({ left: strip.scrollWidth });
+      }
+      if (action === 'dev-build' && session.screen.name === 'PAUSED')
+        this.#ui.activateDeveloperGate(performance.now(), {
+          debug: options.debug,
+          renderer: options.renderer,
+          seed: options.seedOverride,
+          quality: options.qualityOverride ?? session.settings.quality,
+          reducedEffects: session.settings.reducedEffects,
+        });
+      if (action === 'dev-close') this.#ui.closeDeveloperMenu();
+      if (action === 'dev-apply' || action === 'dev-defaults') {
+        const values =
+          action === 'dev-defaults'
+            ? {
+                ...defaultDevOptions,
+                quality: 'auto' as const,
+                reducedEffects: false,
+              }
+            : this.#ui.developerValues();
+        if (!values || !this.#ui.developerMenuOpen) return;
+        session.setRenderSettings(values);
+        if (session.interrupt() !== 'saved') {
+          this.#ui.developerSaveError('session');
+          return;
+        }
+        const storage = browserStorage();
+        const stored =
+          action === 'dev-defaults'
+            ? clearDevOptions(storage)
+            : writeDevOptions(storage, values);
+        if (!stored) {
+          this.#ui.developerSaveError('dev');
+          return;
+        }
+        window.history.replaceState(
+          null,
+          '',
+          devReloadUrl(window.location.href),
+        );
+        window.location.reload();
       }
       if (action === 'fullscreen') void this.#fullscreen.toggle();
       if (action === 'retry') window.location.reload();
@@ -225,6 +308,11 @@ export class AppController {
 
   #refreshUi(): void {
     const session = this.#session;
+    if (
+      worldHidden(session.screen, this.#portrait, this.#ui.developerMenuOpen) &&
+      this.#curtain.hidden
+    )
+      this.#curtain.hidden = false;
     const before = this.#uiRoot.dataset['screen'];
     this.#ui.update({
       screen: session.screen,
@@ -241,6 +329,13 @@ export class AppController {
         failed: this.#fullscreen.failed,
       },
       buildId: this.#options.buildId,
+      devActive:
+        this.#options.debug ||
+        this.#options.renderer !== 'auto' ||
+        this.#options.seedOverride !== undefined ||
+        (this.#options.qualityOverride ?? session.settings.quality) !==
+          'auto' ||
+        session.settings.reducedEffects,
       locomotives,
       wagons,
       lengthRules: session.lengthRules,
@@ -289,6 +384,14 @@ export class AppController {
     return {
       buildId: this.#options.buildId,
       renderer: this.#renderer,
+      renderProfile: {
+        quality: this.#options.qualityOverride ?? session.settings.quality,
+        ...renderProfile(
+          session.settings,
+          gameConfig.quality,
+          this.#options.qualityOverride,
+        ),
+      },
       screen: session.screen.name,
       seed: session.journeySeed,
       generatorVersion: TRACK_GENERATOR_VERSION,
@@ -349,6 +452,7 @@ export class AppController {
       p95FrameMs: frames.p95FrameMs,
       worstFrameMs: frames.worstFrameMs,
       frameSamples: frames.samples,
+      rideFramesDrawn: this.#scene.rideFramesDrawn,
       bubbles: canvas
         ? this.#scene.bubbleScreenPositions(canvas.getBoundingClientRect())
         : [],
@@ -402,6 +506,7 @@ export class AppController {
     this.#host.destroy();
     this.#audio.dispose();
     this.#ui.dispose();
+    this.#curtain.remove();
     this.#gameRoot.removeAttribute('data-renderer');
   }
 }

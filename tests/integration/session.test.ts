@@ -552,3 +552,78 @@ describe('GameSession: bubble touch routing (H3, INP-05)', () => {
     expect(session.router.intent()).toBe('COAST');
   });
 });
+
+it('developer render settings persist via interrupt and keep the paused journey', () => {
+  const storage = new MemoryStorage();
+  const session = createSession(storage);
+  buildAndDepart(session);
+  tap(session, 'pause');
+  const seed = session.journeySeed;
+  const head = session.ride?.headS;
+  const previous = session.settings;
+  session.setRenderSettings({ quality: 'low', reducedEffects: true });
+  expect(session.settings).toEqual({
+    ...previous,
+    quality: 'low',
+    reducedEffects: true,
+  });
+  expect(session.interrupt()).toBe('saved');
+  const restored = createSession(storage);
+  expect(restored.settings).toEqual(session.settings);
+  expect(restored.journeySeed).toBe(seed);
+  expect(restored.ride?.headS).toBe(head);
+  expect(session.screen.name).toBe('PAUSED');
+});
+
+it.each(['newer-save', 'unavailable', 'full', 'primary-write'] as const)(
+  'interrupt reports a non-durable save for %s and keeps the journey alive',
+  (failure) => {
+    const storage = new MemoryStorage();
+    if (failure === 'newer-save')
+      storage.setItem(PRIMARY_KEY, JSON.stringify({ schemaVersion: 999 }));
+    if (failure === 'unavailable')
+      storage.getItem = () => {
+        throw new Error('storage unavailable');
+      };
+    if (failure === 'full')
+      storage.setItem = () => {
+        throw new Error('quota exceeded');
+      };
+    const session = createSession(storage);
+    buildAndDepart(session);
+    tap(session, 'pause');
+    const seed = session.journeySeed;
+    const head = session.ride?.headS;
+    if (failure === 'primary-write') {
+      const write = storage.setItem.bind(storage);
+      storage.setItem = (key, value) => {
+        if (key === PRIMARY_KEY) throw new Error('primary write failed');
+        write(key, value);
+      };
+    }
+    session.setRenderSettings({ quality: 'low', reducedEffects: true });
+    expect(session.interrupt()).toBe('memory-only');
+    expect(session.journeySeed).toBe(seed);
+    expect(session.ride?.headS).toBe(head);
+    expect(session.settings.quality).toBe('low');
+    expect(session.notices).toContain('storage-limited');
+  },
+);
+
+it('render settings accept only the two save fields from a developer menu model', () => {
+  const session = createSession();
+  const previous = session.settings;
+  const menu = {
+    quality: 'low',
+    reducedEffects: true,
+    debug: true,
+    renderer: 'canvas',
+    seed: 123,
+  } as const;
+  session.setRenderSettings(menu);
+  expect(session.settings).toEqual({
+    ...previous,
+    quality: 'low',
+    reducedEffects: true,
+  });
+});

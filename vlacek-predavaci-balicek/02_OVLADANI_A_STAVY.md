@@ -156,6 +156,8 @@ Přístup držením ikony ozubeného kola po dvě sekundy, s viditelným průbě
 
 Panel obsahuje samostatně zvuky / hudbu, nižší maximální rychlost, omezení dekorativních efektů, výběr profilu výkonu Auto / Úsporný / Standard, informace o offline dostupnosti a číslo buildu. Volbu „Smazat uloženou cestu a nastavení“ doprovází druhé výslovné potvrzení. Žádná tlačítka s externími odkazy v dětské části.
 
+Vývojářské volby jsou oddělené skrytou rodičovskou brankou v pauze: pět aktivací řádky Build během 3 s (dotyk, myš, Enter nebo mezerník). Panel nabízí diagnostiku, renderer, kvalitu, omezené efekty a číslo nových světů; změny potvrzuje uložením a opětovným načtením. Zavření nic neukládá a vrací pauzu. Běžná dětská cesta nezískává viditelnou položku. Podrobnosti, priorita adresy a kompatibilita jsou v [D-020](../docs/decisions/020-developer-menu.md); akceptace UI-07 v `tests/e2e/dev-menu.spec.ts`.
+
 ## 9. Rozhraní nesmí překážet
 
 Brzda a píšťala mají minimálně 80 CSS px dotykovou plochu a odstup od ostatních tlačítek. Běžné ikony minimálně 64 CSS px. Pro vizuálně malá zvířata se rozšiřuje hit oblast, nikoli nutně samotná kresba. Rodičovský panel může být textový.

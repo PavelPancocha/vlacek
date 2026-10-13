@@ -1,7 +1,11 @@
-/** Read-only diagnostics exposed as `window.__vlacek` with `?debug=1`. */
+import type { RenderProfile } from './renderProfile.ts';
+import type { Settings } from '../platform/SaveValidation.ts';
+
+/** Read-only diagnostics via `?debug=1` or the hidden parent developer menu. */
 export interface DebugSnapshot {
   buildId: string;
   renderer: string;
+  renderProfile: RenderProfile & { quality: Settings['quality'] };
   screen: string;
   seed: number | undefined;
   generatorVersion: number;
@@ -144,6 +148,8 @@ export interface DebugSnapshot {
   p95FrameMs: number;
   worstFrameMs: number;
   frameSamples: number;
+  /** Cumulative frames that drew the ride, excluding opaque screens. */
+  rideFramesDrawn: number;
   /** Visible bubbles: stable ID and drawn center/radius in CSS px (H3). */
   bubbles: { id: number; x: number; y: number; radiusCssPx: number }[];
   objects: { id: string; x: number; y: number }[];

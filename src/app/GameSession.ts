@@ -28,7 +28,11 @@ import type { VehicleGeometry } from '../domain/train/TrainGeometry.ts';
 import type { Consist } from '../domain/types.ts';
 import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import { InputRouter, type WorldHit } from '../platform/InputRouter.ts';
-import type { SaveNotice, SaveRepository } from '../platform/SaveRepository.ts';
+import type {
+  SaveNotice,
+  SaveOutcome,
+  SaveRepository,
+} from '../platform/SaveRepository.ts';
 import {
   defaultSettings,
   type SaveEnvelopeV1,
@@ -145,6 +149,18 @@ export class GameSession {
 
   get settings(): Settings {
     return this.#settings;
+  }
+
+  /** Parent panel: these fields already belong to the normal save. */
+  setRenderSettings(
+    settings: Pick<Settings, 'quality' | 'reducedEffects'>,
+  ): void {
+    this.#settings = {
+      ...this.#settings,
+      quality: settings.quality,
+      reducedEffects: settings.reducedEffects,
+    };
+    this.#scheduler.noteEdit(this.#nowMs);
   }
 
   get draft(): ConsistDraft {
@@ -335,14 +351,14 @@ export class GameSession {
   }
 
   /** Focus loss, hidden page, resize or rotation (doc 02 §9, doc 09 §6). */
-  interrupt(): void {
+  interrupt(): SaveOutcome {
     this.router.clearAll();
     if (this.#screen.name === 'RIDING') {
       this.#apply({ type: 'externalInterruption' });
       this.#journey?.ride.resetMotion();
     }
     this.#scheduler.flushPendingEdit();
-    this.#persist();
+    return this.#persist();
   }
 
   #pause(): void {
@@ -525,8 +541,9 @@ export class GameSession {
     return envelope;
   }
 
-  #persist(): void {
+  #persist(): SaveOutcome {
     const outcome = this.#deps.repository.save(this.#envelope());
     if (outcome === 'memory-only') this.#notices.add('storage-limited');
+    return outcome;
   }
 }
