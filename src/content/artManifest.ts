@@ -94,15 +94,15 @@ export const artParts = {
   },
   'electric_retro.pantograph': {
     file: 'electric_retro.pantograph.svg',
-    widthU: 40,
-    heightU: 60,
-    pivotU: { x: 20, y: 60 },
+    widthU: 56,
+    heightU: 34,
+    pivotU: { x: 28, y: 34 },
   },
   'electric_retro.pantograph-head': {
     file: 'electric_retro.pantograph-head.svg',
-    widthU: 48,
-    heightU: 8,
-    pivotU: { x: 24, y: 8 },
+    widthU: 40,
+    heightU: 6,
+    pivotU: { x: 20, y: 6 },
   },
   'magic_stars.body': {
     file: 'magic_stars.body.svg',
@@ -744,7 +744,7 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       yU: 6,
       arms: 'electric_retro.pantograph',
       head: 'electric_retro.pantograph-head',
-      headContactU: 7,
+      headContactU: 5,
     },
   },
   magic_stars: {
@@ -872,7 +872,7 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       yU: 14,
       arms: 'electric_retro.pantograph',
       head: 'electric_retro.pantograph-head',
-      headContactU: 7,
+      headContactU: 5,
     },
   },
   electric_mountain: {
@@ -890,7 +890,7 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       yU: 14,
       arms: 'electric_retro.pantograph',
       head: 'electric_retro.pantograph-head',
-      headContactU: 7,
+      headContactU: 5,
     },
   },
   steam_express: {

@@ -1,4 +1,6 @@
 import { trainZoom } from '../../../src/render/cameraFraming.ts';
+import { vehicleArt } from '../../../src/content/artManifest.ts';
+import { locomotives, wagons } from '../../../src/content/vehicles.ts';
 import { describe, expect, it } from 'vitest';
 import {
   crossingCloseDistanceU,
@@ -6,6 +8,12 @@ import {
   validateGameConfig,
   type GameConfig,
 } from '../../../src/config/gameConfig.ts';
+
+const catalogArt = [...locomotives, ...wagons].map(({ id }) => {
+  const art = vehicleArt[id];
+  if (!art) throw new Error(`Catalog art missing: ${id}`);
+  return { id, art };
+});
 
 describe('gameConfig', () => {
   it('carries the doc 13 input defaults', () => {
@@ -50,7 +58,30 @@ describe('gameConfig', () => {
 
   it('carries the doc 13 catenary spacing and contact height (doc 03 §9)', () => {
     expect(gameConfig.world.catenaryPoleSpacingU).toBe(256);
-    expect(gameConfig.world.catenaryContactHeightU).toBe(160);
+    expect(gameConfig.world.catenaryContactHeightU).toBe(128);
+  });
+
+  it('TRN-08: clears every catalog roof and load by 20 u without towering over the train', () => {
+    const tallest = Math.max(...catalogArt.map(({ art }) => art.heightU));
+    for (const { id, art } of catalogArt)
+      expect(
+        gameConfig.world.catenaryContactHeightU - art.heightU,
+        id,
+      ).toBeGreaterThanOrEqual(20);
+    expect(gameConfig.world.catenaryContactHeightU).toBeLessThanOrEqual(
+      1.25 * tallest,
+    );
+  });
+
+  it('TRN-08: rejects a config that would leave less than 20 u above a catalog roof or load', () => {
+    const tallest = Math.max(...catalogArt.map(({ art }) => art.heightU));
+    for (const height of [tallest, tallest + 19.9, NaN, Infinity])
+      expect(
+        validateGameConfig({
+          ...gameConfig,
+          world: { ...gameConfig.world, catenaryContactHeightU: height },
+        }),
+      ).toContain('world.catenaryContactHeightU');
   });
 
   it('rejects poles that would not keep one phase across chunks', () => {

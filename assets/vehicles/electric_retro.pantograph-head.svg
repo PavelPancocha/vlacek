@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="8" viewBox="0 0 48 8">
-  <!-- Sběrač pantografu: lyžina s uhlíkovou vložkou a rohy. Pivot uprostřed
-       dole (24, 8); horní hrana vložky (styk s trolejí) v y = 1. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="6" viewBox="0 0 40 6">
+  <!-- Kompaktní lyžina: pivot (20, 6), styk s trolejí v y = 1. -->
   <defs>
     <linearGradient id="carbon" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#5d636c"/>
@@ -8,13 +7,10 @@
     </linearGradient>
   </defs>
   <g stroke="#111214" stroke-width="0.5" stroke-linejoin="round">
-    <!-- Mount on the arms. -->
-    <path d="M21 8 L22.6 4 H25.4 L27 8 Z" fill="#5d636c"/>
-    <!-- Bow with curved horns at both ends. -->
-    <path d="M6 3.2 H42 Q46.6 3.2 47.2 6.6 M6 3.2 Q1.4 3.2 0.8 6.6" stroke="#2a2d33" stroke-width="1.4" fill="none"/>
-    <rect x="6" y="1" width="36" height="2.6" rx="0.6" fill="url(#carbon)"/>
-    <path d="M6.6 1.5 H41.4" stroke="#ffffff" stroke-opacity="0.35" stroke-width="0.4" fill="none"/>
-    <path d="M14 3.6 V5 M34 3.6 V5" stroke="#3a3d44" stroke-width="0.8" fill="none"/>
-    <path d="M14 5 H34" stroke="#5d636c" stroke-width="1" fill="none"/>
+    <path d="M17 6 L18.6 3 H21.4 L23 6 Z" fill="#5d636c"/>
+    <path d="M5 2.8 H35 Q38.6 2.8 39.2 5.2 M5 2.8 Q1.4 2.8 0.8 5.2" stroke="#2a2d33" stroke-width="1.2" fill="none"/>
+    <rect x="5" y="1" width="30" height="2" rx="0.5" fill="url(#carbon)"/>
+    <path d="M5.6 1.5 H34.4" stroke="#ffffff" stroke-opacity="0.35" stroke-width="0.4" fill="none"/>
+    <path d="M12 3 V4 H28 V3" stroke="#5d636c" stroke-width="0.8" fill="none"/>
   </g>
 </svg>

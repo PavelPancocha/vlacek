@@ -263,7 +263,7 @@ export const gameConfig: GameConfig = {
     spawnChunkIndex: 0,
     spawnLocalXU: 512,
     catenaryPoleSpacingU: 256,
-    catenaryContactHeightU: 160,
+    catenaryContactHeightU: 128,
     secondaryTrackOffsetU: 64,
     secondaryRailProbability: 1 / 3,
     forcedSecondaryBiomeBlock: 1,
@@ -467,7 +467,12 @@ export function validateGameConfig(config: GameConfig): string[] {
       positiveInteger(world.catenaryPoleSpacingU) &&
         world.chunkWidthU % world.catenaryPoleSpacingU === 0,
     ],
-    ['world.catenaryContactHeightU', positive(world.catenaryContactHeightU)],
+    [
+      'world.catenaryContactHeightU',
+      Number.isFinite(world.catenaryContactHeightU) &&
+        // Pure config cannot import art; the catalog test guards this envelope.
+        world.catenaryContactHeightU >= 108 + 20,
+    ],
     ['world.secondaryTrackOffsetU', positive(world.secondaryTrackOffsetU)],
     [
       'world.secondaryRailProbability',

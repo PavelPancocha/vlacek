@@ -121,16 +121,16 @@ Vedení má pravidelný rozestup podpěr, který respektuje společnou globáln�
 
 Drát sleduje výšku koleje s konstantní přibližnou výškou kontaktu. Pantograf má jednoduchou animaci a dosáhne na drát i na mírném zlomu sklonu. Rozdíl sklonu lokomotivy a lokálního vedení řešit omezeným přizpůsobením délky pantografu. Ve vzorkovacím bodě kontaktu nesmí viditelně končit pod drátem.
 
-Výchozí rozteč běžných podpěr je 256 u a kontakt vedení 160 u nad kolejí. Konkrétní konzoly a tunelové závěsy se přizpůsobí infrastruktuře; výška kontaktu u lokomotivy zůstává konzistentní. Tyto hodnoty patří do společné konfigurace, ne do každého assetu zvlášť.
+Výchozí rozteč běžných podpěr je 256 u a kontakt vedení 128 u nad kolejí. Konkrétní konzoly a tunelové závěsy se přizpůsobí infrastruktuře; výška kontaktu u lokomotivy zůstává konzistentní. Tyto hodnoty patří do společné konfigurace, ne do každého assetu zvlášť.
 
 Parní, naftové a fantazijní lokomotivy vedení ve V1 automaticky nedostávají. Na jejich druhé koleji proto generovat parní či naftový protijedoucí vlak. V elektrifikované jízdě může být elektrifikovaná i souběžná trať. Geometrie ani seed krajiny se změnou pohonu jinak nemění.
 
 Implementace ([D-016](../docs/decisions/016-electric-locomotive-and-catenary.md)):
 
-- Jízda za `electric_retro` je elektrifikovaná celá, i po obnově ze save.
+- Jízda za kteroukoli ze tří elektrických lokomotiv je elektrifikovaná celá, i po obnově ze save.
 - Stožáry stojí v globální fázi po 256 u. Stožár, který by padl na silnici přejezdu, se posune 48 u vedle ní.
-- Drát vede rovně mezi stožáry, u každého 160 u nad kolejí. Od této výšky se odchyluje nejvýš o 3,2 u.
-- Pantograf natahuje ramena k drátu v bodě dotyku, v mezích 0,07–1,6 násobku kresby. V depu leží sklopený.
+- Drát vede rovně mezi stožáry, u každého 128 u nad kolejí. Test hlídá odchylku od kontaktu nejvýše 6 u na přechodu sklonů. Nejvyšší rám vozidla včetně nákladu je 108 u; config vyžaduje alespoň 20 u rezervy. Patrový vůz má 100 u, přepravník aut i složený bagr 96 u. Stožáry i nosné lano mají společné svislé měřítko odvozené z kontaktu.
+- Pantograf má nízká široká ramena 56 × 34 u a nenatahovanou hlavu 40 × 6 u. Pracovní dosah od paty je 34–59,4 u, na rovině 42 / 52 / 46 u pro retro / moderní / horskou elektriku. Drát mimo dosah je chyba vedení: výpočet omezí dosah na pracovní interval a vrátí diagnostický příznak `outOfRange`, bez výjimky z vykreslovací smyčky a bez dalšího natahování. Přechod rovina ↔ svah přes 192 u podporuje sklon 12 %; přímý obrat +sklon ↔ −sklon má ověřenou mez 9,8 % ([D-016](../docs/decisions/016-electric-locomotive-and-catenary.md)). V depu leží sběrač sklopený (7,38 u nad patou); přední sklopený sběrač zůstává v kresbě vozidla.
 - Stožár se drží 80 u od středu potoka pod mostem. V tunelu a méně než 60 u od portálů drží drát závěs ze stropu; na hranici a za ní stojí stožár na původním místě ([D-018](../docs/decisions/018-bridges-and-tunnels.md), oprava R6). Klasifikace a kreslení sdílejí tutéž hranici, polohy podpěr se nemění.
 - Portálové podpěry ve stanicích zatím chybějí.
 

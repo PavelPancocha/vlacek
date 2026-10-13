@@ -19,6 +19,8 @@ Evidence podle [dokumentu 07 §11](../vlacek-predavaci-balicek/07_VIZUAL_AUDIO_U
 
 Build obsahuje SVG díly vozidel a světa a nahrané zvuky; fonty ne, používá se systémový font. Licence knihoven přibalených do buildu jsou v [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
+Dne 13. 10. 2026 byly vlastní SVG díly `assets/vehicles/electric_retro.pantograph.svg` a `electric_retro.pantograph-head.svg` ručně překresleny na nízká široká ramena 56 × 34 u a hlavu 40 × 6 u. Sdílejí je všechny tři elektrické lokomotivy; původ i licence zůstávají stejné jako u repozitáře, bez log a textu.
+
 ## Zvuky
 
 Zvuky: lokální nahrané mono MP3, nikoli generativní nebo syntetizované runtime tóny. Kompletní originální URL/SHA-256/výřezy a reprodukce: [sources.json](../scripts/audio/sources.json), [D-022](../docs/decisions/022-recorded-sounds.md). Poslech na zařízení **NEOVĚŘENO**. BEDIA jsou přiznané důlní dieselové fallbacky; elektrické horns používají dieselové klipy s rate 0,9/1,15/0,75. Bubble-pop je ústní foley; rustle listí ve větru; nejde o hlas jelena/liščete/veverky/ježka.

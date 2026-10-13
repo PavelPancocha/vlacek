@@ -118,7 +118,7 @@ describe('pantograph of the electric locomotive (doc 03 §9)', () => {
   });
 
   it('stretches its arms so the head touches the wire, the head itself unscaled', () => {
-    for (const reach of [66, 74, 80]) {
+    for (const reach of [36, 42, 52, 59.4]) {
       const layers = vehicleArtLayers(electric, L, 0, reach);
       const armsLayer = find(layers, pantograph.arms);
       const head = find(layers, pantograph.head);

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
+import { vehicleArt } from '../../src/content/artManifest.ts';
 import { snapshot, tapAction } from './helpers.ts';
 
 /** First run in world 123 with this locomotive and two wagons. */
@@ -62,6 +63,43 @@ test.describe('electric locomotive and catenary (doc 03 §9, TRN-08, D-016)', ()
     'electric_modern',
     'electric_mountain',
   ]) {
+    for (const renderer of ['canvas', 'webgl']) {
+      test(`TRN-08 compact contact: ${locomotive}, ${renderer}`, async ({
+        page,
+      }) => {
+        await page.goto(`./?debug=1&seed=123&renderer=${renderer}`);
+        await tapAction(page, `loco:${locomotive}`);
+        await tapAction(page, 'to-depot');
+        await tapAction(page, 'add:passenger_double');
+        await tapAction(page, 'depart');
+        await expect
+          .poll(async () => (await snapshot(page)).screen)
+          .toBe('RIDING');
+        await expect
+          .poll(async () => (await snapshot(page)).artVehicles)
+          .toBe(2);
+        const state = await snapshot(page);
+        expect(state.renderer).toBe(renderer);
+        expect(state.catenary.pantographGapU ?? Infinity).toBeLessThan(0.5);
+        const box = state.trainBox;
+        if (!box) throw new Error('train box missing');
+        // Flat start: camera includes the wire plus 8 u and 4 u below rail.
+        const heightLimitU =
+          1.25 *
+            Math.max(
+              ...Object.values(vehicleArt).map((art) => {
+                if (!art) throw new Error('Catalog art missing');
+                return art.heightU;
+              }),
+            ) +
+          12;
+        const zoom = (0.72 * (page.viewportSize()?.width ?? 0)) / 1600;
+        expect((box.bottom - box.top) / zoom).toBeLessThanOrEqual(heightLimitU);
+        await page.screenshot({
+          path: test.info().outputPath(`${locomotive}-${renderer}-contact.png`),
+        });
+      });
+    }
     test(`TRN-08: ${locomotive} touches the wire over the bridge, tunnel and chunk seam`, async ({
       page,
     }) => {
@@ -121,6 +159,28 @@ test.describe('electric locomotive and catenary (doc 03 §9, TRN-08, D-016)', ()
       pantographGapU: undefined,
     });
   });
+
+  for (const renderer of ['canvas', 'webgl']) {
+    test(`TRN-08: fallback wire meets the electric head at the same compact height, ${renderer}`, async ({
+      page,
+    }) => {
+      await page.route(/track\.tile-a-[^/]*\.svg$/, (route) => route.abort());
+      await page.goto(`./?debug=1&seed=123&renderer=${renderer}`);
+      await tapAction(page, 'loco:electric_modern');
+      await tapAction(page, 'to-depot');
+      await tapAction(page, 'add:passenger_double');
+      await tapAction(page, 'depart');
+      await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(2);
+      const state = await snapshot(page);
+      expect(state.renderer).toBe(renderer);
+      expect(state.artAtlas).toBeUndefined();
+      expect(state.catenary.poles).toBeGreaterThan(0);
+      expect(state.catenary.pantographGapU ?? Infinity).toBeLessThan(0.5);
+      await page.screenshot({
+        path: test.info().outputPath(`fallback-wire-${renderer}.png`),
+      });
+    });
+  }
 
   test('a restored electric journey keeps its catenary', async ({ page }) => {
     await continueBeforeBridge(page, 'electric_retro');

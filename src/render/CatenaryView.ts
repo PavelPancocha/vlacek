@@ -16,6 +16,11 @@ import { frameOrigin } from './atlasPacking.ts';
 const { chunkWidthU, catenaryPoleSpacingU, catenaryContactHeightU } =
   gameConfig.world;
 
+/** Vertical scale of the mast and its messenger separation (D-016). */
+export const CATENARY_ART_SCALE_Y =
+  (catenaryContactHeightU - CATENARY_POLE_DEPTH_U) /
+  (worldParts[catenaryParts.pole].pivotU.y - catenaryAnchors.contact.y);
+
 export interface CatenaryArt {
   texture: string;
   pxPerU: number;
@@ -76,7 +81,7 @@ export function chunkCatenary(
             local - (catenaryAnchors.contact.x - pole.pivotU.x),
             railY - CATENARY_POLE_DEPTH_U,
           )
-          .setScale(1 / art.pxPerU),
+          .setScale(1 / art.pxPerU, CATENARY_ART_SCALE_Y / art.pxPerU),
       );
     }
     const next = catenaryPoleXs(seed, x + 1, x + 2 * catenaryPoleSpacingU)[0];
@@ -86,7 +91,10 @@ export function chunkCatenary(
     wires.add(
       image(catenaryParts.span)
         .setPosition(x - x0, railY - catenaryContactHeightU)
-        .setScale(Math.hypot(dx, dy) / span.widthU / art.pxPerU, 1 / art.pxPerU)
+        .setScale(
+          Math.hypot(dx, dy) / span.widthU / art.pxPerU,
+          CATENARY_ART_SCALE_Y / art.pxPerU,
+        )
         .setRotation(Math.atan2(dy, dx)),
     );
   }
@@ -114,7 +122,8 @@ export function chunkCatenaryFallback(
   bake: Bake,
 ): ChunkCatenary {
   const x0 = table.chunkIndex * chunkWidthU;
-  const poleHeightU = worldParts[catenaryParts.pole].heightU;
+  const poleHeightU =
+    worldParts[catenaryParts.pole].heightU * CATENARY_ART_SCALE_Y;
   const xs = catenaryPoleXs(seed, x0, x0 + chunkWidthU);
   const next = catenaryPoleXs(
     seed,

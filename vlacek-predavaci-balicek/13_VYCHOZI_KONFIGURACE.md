@@ -74,7 +74,7 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "npcTriggerBeforeFeatureU": 512,
     "npcHiddenPathMarginU": 256,
     "catenaryPoleSpacingU": 256,
-    "catenaryContactHeightU": 160
+    "catenaryContactHeightU": 128
   },
   "camera": {
     "trainWidthFraction": 0.72,
@@ -158,6 +158,8 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
 ```
 
 ## Odvozené hodnoty a pravidla
+
+`world.catenaryContactHeightU = 128` je vizuální kontakt nad kolejnicí, společný drátu, stožárům, tunelovým závěsům a pantografu ([D-016](../docs/decisions/016-electric-locomotive-and-catenary.md)). Čistý config nesmí importovat art manifest: validace vyžaduje konečné číslo nejméně `108 + 20` u a katalogový test nezávisle ověřuje `max(vehicleArt.heightU) + 20`, včetně všech nákladů. Geometrický test navíc chrání alespoň 12 u skutečné mezery na přechodu sklonů. Katalog má obálku 108 u, nejvyšší vagonek 104 u. Ramena 56 × 34 u se přizpůsobují v dosavadním měřítku 0,07–1,6, hlava 40 × 6 u má kontakt 5 u nad pivotem: složený dosah je 7,38 u a pracovní mez 34–59,4 u. Nedosažitelný drát omezí pracovní dosah s příznakem `outOfRange`, nevyhodí výjimku ani dále nenatáhne ramena. Při `world.profile.transitionU = 192` je ověřen celý `world.maxTrackGrade = 0,12` pro rovina ↔ svah; pro přímý obrat +sklon ↔ −sklon je ověřená mez 0,098. Jiná délka přechodu nebo rozmístění podpěr vyžaduje nové měření (D-016). Výška vedení nemění profil koleje, layout světa ani uloženou polohu, takže její změna ze 160 u nevyžaduje novou verzi generátoru.
 
 Limit soupravy je 2 000 u včetně spřáhel. [D-028](../docs/decisions/028-longer-consist.md) zachovává základ měřítka 1 600 u pro kratší jízdy; delší jízda používá svou pevnou délku. Při šířkovém podílu 0,72 a zadní rezervě 0,06 zbývá před 1 600u vlakem 488,89 u a před 2 000u vlakem 611,11 u. Výchozí `geometryTailMarginU = 1024` a `geometryLookAheadU = 2048` zůstávají: streaming se měří od skutečného konce a čela celé soupravy, ne od lokomotivy.
 

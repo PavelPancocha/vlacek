@@ -151,6 +151,17 @@ describe('catenary of an electric journey (doc 03 §9, TRN-08)', () => {
         }
       }
   });
+
+  it('R6: changes from mast to hanger strictly inside the shared portal margin', () => {
+    const tunnel = tunnelSite(123, 6);
+    if (!tunnel) throw new Error('regression tunnel missing');
+    const from = 6 * chunkWidthU + tunnel.fromX - TUNNEL_MAST_CLEARANCE_U;
+    const to = 6 * chunkWidthU + tunnel.toX + TUNNEL_MAST_CLEARANCE_U;
+    expect(catenarySupport(123, from)).toBe('mast');
+    expect(catenarySupport(123, from + 0.001)).toBe('hanger');
+    expect(catenarySupport(123, to - 0.001)).toBe('hanger');
+    expect(catenarySupport(123, to)).toBe('mast');
+  });
 });
 
 /** The pantograph adapts its height this much (doc 03 §9: limited). */
