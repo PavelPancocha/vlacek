@@ -772,12 +772,8 @@ export class RideScene extends Phaser.Scene {
     };
     const layout = ride.layout;
     const consistLengthU = layout.frontOffsetU + layout.tailOffsetU;
-    // One stable scale per screen, fitted to the longest allowed train.
-    const zoom = trainZoom(
-      viewport,
-      Math.max(gameConfig.train.maxConsistLengthU, consistLengthU),
-      framing,
-    );
+    // Fixed for this journey and viewport; short trains keep D-008 scale.
+    const zoom = trainZoom(viewport, consistLengthU, framing);
     camera.setZoom(zoom);
     this.#updateArtScale(zoom);
     this.#updateVehicleArtScale(zoom);

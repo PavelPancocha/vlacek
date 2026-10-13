@@ -1,3 +1,4 @@
+import { trainZoom } from '../../../src/render/cameraFraming.ts';
 import { describe, expect, it } from 'vitest';
 import {
   crossingCloseDistanceU,
@@ -20,13 +21,22 @@ describe('gameConfig', () => {
 
   it('doc 14 §6: the ride feels snappy on screen yet easy to follow', () => {
     const { train, camera } = gameConfig;
-    // Screen widths per second at full speed: the scale fits the longest
-    // train into trainWidthFraction of the width on every screen.
-    const widthsPerSecond =
-      (train.maxSpeedUPerSec * camera.trainWidthFraction) /
-      train.maxConsistLengthU;
-    expect(widthsPerSecond).toBeGreaterThanOrEqual(0.18);
-    expect(widthsPerSecond).toBeLessThanOrEqual(0.3);
+    const framing = { ...camera, vehicleHeightU: 150 };
+    const view = {
+      widthPx: 1280,
+      heightPx: 800,
+      reservedTopPx: 0,
+      reservedBottomPx: 0,
+    };
+    // D-028 preserves speed on screen for old trains; only longer rides shrink.
+    expect(
+      (train.maxSpeedUPerSec * trainZoom(view, 1600, framing)) / view.widthPx,
+    ).toBeCloseTo(0.216, 9);
+    expect(
+      (train.maxSpeedUPerSec *
+        trainZoom(view, train.maxConsistLengthU, framing)) /
+        view.widthPx,
+    ).toBeCloseTo(0.1728, 9);
     // Smooth start and coast: seconds from standstill to full speed and back.
     const toFull = train.maxSpeedUPerSec / train.accelerationUPerSec2;
     const coast = train.maxSpeedUPerSec / train.coastDecelerationUPerSec2;

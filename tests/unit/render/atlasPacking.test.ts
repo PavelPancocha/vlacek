@@ -44,7 +44,7 @@ const legal = ranked.filter(isLocomotive).slice(0, 1);
 let lengthU = legal.reduce((sum, v) => sum + v.lengthU, 0);
 for (const v of ranked.filter((v) => !isLocomotive(v))) {
   const nextU = lengthU + gameConfig.train.couplerGapU + v.lengthU;
-  if (nextU > gameConfig.train.maxConsistLengthU) break;
+  if (nextU > gameConfig.train.maxConsistLengthU) continue;
   legal.push(v);
   lengthU = nextU;
 }
@@ -138,6 +138,65 @@ describe('packAtlas (one texture for all vehicle parts, doc 07 §4/§10)', () =>
 });
 
 describe('vehicle art atlas', () => {
+  it('D-028: a conservative envelope of every legal distinct journey plus NPC fits at maximum scale', () => {
+    // The shortest locomotive and shortest distinct wagons bound the count.
+    let lengthU = Math.min(...locomotives.map((v) => v.lengthU));
+    let distinctWagons = 0;
+    for (const wagon of [...wagons].sort((a, b) => a.lengthU - b.lengthU)) {
+      lengthU += wagon.lengthU + gameConfig.train.couplerGapU;
+      if (lengthU > gameConfig.train.maxConsistLengthU) break;
+      distinctWagons++;
+    }
+    expect(distinctWagons).toBe(11);
+    // Each ranked-height slot dominates its real frame in both dimensions.
+    // Includes every auxiliary part, even those no single ride could need.
+    const partsByKey: Readonly<
+      Record<string, { widthU: number; heightU: number }>
+    > = artParts;
+    const envelope: Record<string, { widthU: number; heightU: number }> = {};
+    for (const [catalog, count] of [
+      [locomotives, 3],
+      [wagons, distinctWagons + 6],
+    ] as const) {
+      const heights = catalog
+        .map((v) => {
+          const body = partsByKey[`${v.id}.body`];
+          if (!body) throw new Error(v.id);
+          return body.heightU;
+        })
+        .sort((a, b) => b - a);
+      const widthU = Math.max(
+        ...locomotives.map((v) => v.lengthU),
+        ...wagons.map((v) => v.lengthU),
+      );
+      for (let i = 0; i < count; i++) {
+        const heightU = heights[i];
+        if (heightU === undefined) throw new Error('missing envelope slot');
+        for (const layer of ['body', 'overlay'])
+          envelope[`${catalog === wagons ? 'wagon' : 'loco'}-${i}.${layer}`] = {
+            widthU,
+            heightU,
+          };
+      }
+      for (const v of catalog) {
+        const body = partsByKey[`${v.id}.body`];
+        const overlay = partsByKey[`${v.id}.overlay`];
+        expect(overlay?.widthU).toBe(body?.widthU);
+        expect(overlay?.heightU).toBe(body?.heightU);
+        expect(body?.widthU).toBeLessThanOrEqual(widthU);
+      }
+    }
+    for (const [key, part] of Object.entries(artParts))
+      if (!key.endsWith('.body') && !key.endsWith('.overlay'))
+        envelope[key] = part;
+    const atlas = packAtlas(artAtlasItems(envelope, ART_MAX_PX_PER_U), {
+      maxSize: MAX_ATLAS_EDGE_PX,
+      paddingPx: ATLAS_PADDING_PX,
+    });
+    expect(atlas.width).toBeLessThanOrEqual(2048);
+    expect(atlas.height).toBeLessThanOrEqual(2048);
+  });
+
   it('rasterises at the next scale step at or above the camera zoom', () => {
     // 1280 px wide window: zoom 0.576 → 0.75; 1920: 0.864 → 1.
     expect(artScaleFor(0.576)).toBe(0.75);
@@ -154,7 +213,9 @@ describe('vehicle art atlas', () => {
 
   for (const fixture of worstJourneyCases) {
     it(`fits ${fixture.name} and the separate world atlas at ART_MAX_PX_PER_U`, () => {
-      expect(fixture.vehicles).toHaveLength(8);
+      expect(fixture.vehicles).toHaveLength(
+        fixture.name.startsWith('legal') ? 10 : 8,
+      );
       expect(
         fixture.fleet.filter((v) => v.kind === 'steam' || v.kind === 'diesel'),
       ).toHaveLength(2);

@@ -32,15 +32,18 @@ export interface TrainSpan {
 }
 
 /**
- * Render pixels per world unit. Depends only on the screen and the longest
- * allowed train, never on the current one: no zooming per added wagon.
+ * Render pixels per world unit. Rides up to 1600 u retain the original scale;
+ * longer rides fit their fixed consist length (D-028), never their position.
  */
 export function trainZoom(
   viewport: FramingViewport,
-  maxConsistLengthU: number,
+  consistLengthU: number,
   config: FramingConfig,
 ): number {
-  return (config.trainWidthFraction * viewport.widthPx) / maxConsistLengthU;
+  return (
+    (config.trainWidthFraction * viewport.widthPx) /
+    Math.max(1600, consistLengthU)
+  );
 }
 
 /**

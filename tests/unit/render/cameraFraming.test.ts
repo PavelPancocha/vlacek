@@ -15,7 +15,7 @@ const CONFIG: FramingConfig = {
   vehicleHeightU: 150,
   verticalFollowPerSec: 3,
 };
-const MAX_LENGTH_U = 1600;
+const MAX_LENGTH_U = 2000;
 
 function viewport(
   widthPx: number,
@@ -30,6 +30,14 @@ const screenX = (x: number, left: number, zoom: number) => (x - left) * zoom;
 const screenY = (y: number, top: number, zoom: number) => (top - y) * zoom;
 
 describe('cameraFraming (doc 14 §2)', () => {
+  it('D-028: preserves the old scale up to 1600 u and scales longer rides proportionally', () => {
+    const view = viewport(1280, 800);
+    for (const lengthU of [156, 800, 1528, 1600])
+      expect(trainZoom(view, lengthU, CONFIG)).toBeCloseTo(0.576, 9);
+    expect(trainZoom(view, 1800, CONFIG)).toBeCloseTo((0.576 * 1600) / 1800, 9);
+    expect(trainZoom(view, 2000, CONFIG)).toBeCloseTo(0.4608, 9);
+  });
+
   it('the longest allowed train fills 72 % of the width on any screen', () => {
     for (const [w, h] of [
       [1280, 720],
@@ -43,24 +51,35 @@ describe('cameraFraming (doc 14 §2)', () => {
   });
 
   it('the longest train stands between the rear margin and its front anchor', () => {
-    const view = viewport(1280, 720);
-    const zoom = trainZoom(view, MAX_LENGTH_U, CONFIG);
-    const frontX = 1_000_000;
-    const left = frameLeftX(frontX, MAX_LENGTH_U, view, zoom, CONFIG);
-    expect(screenX(frontX - MAX_LENGTH_U, left, zoom)).toBeCloseTo(
-      0.06 * 1280,
-      6,
-    );
-    expect(screenX(frontX, left, zoom)).toBeCloseTo(0.78 * 1280, 6);
+    for (const [w, h] of [
+      [1280, 800],
+      [844, 390],
+    ] as const) {
+      const view = viewport(w, h);
+      for (const [lengthU, lookAheadU] of [
+        [1600, 488.888889],
+        [2000, 611.111111],
+      ] as const) {
+        const zoom = trainZoom(view, lengthU, CONFIG);
+        const frontX = 1_000_000;
+        const left = frameLeftX(frontX, lengthU, view, zoom, CONFIG);
+        expect(screenX(frontX - lengthU, left, zoom)).toBeCloseTo(0.06 * w, 6);
+        expect(screenX(frontX, left, zoom)).toBeCloseTo(0.78 * w, 6);
+        expect((w - screenX(frontX, left, zoom)) / zoom).toBeCloseTo(
+          lookAheadU,
+          5,
+        );
+      }
+    }
   });
 
   it('a short train keeps its front far enough right to see ahead', () => {
     const view = viewport(1280, 720);
-    const zoom = trainZoom(view, MAX_LENGTH_U, CONFIG);
+    const zoom = trainZoom(view, 156, CONFIG);
     const left = frameLeftX(500, 156, view, zoom, CONFIG);
     expect(screenX(500, left, zoom)).toBeCloseTo(0.35 * 1280, 6);
-    // The scale never depends on the current train (no zoom per wagon).
-    expect(trainZoom(view, MAX_LENGTH_U, CONFIG)).toBe(zoom);
+    // The scale stays fixed for this journey, including while driving.
+    expect(trainZoom(view, 156, CONFIG)).toBe(zoom);
   });
 
   it('the first frame puts the train in the free band without easing in', () => {

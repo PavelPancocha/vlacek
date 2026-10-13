@@ -487,6 +487,13 @@ h1 {
   }
 }
 
+/* Keep the scrolling catalog clear of the floating departure button. */
+@media (max-height: 500px) and (min-width: 761px) {
+  .builder > .catalog {
+    margin-right: 104px;
+  }
+}
+
 /* Narrower phones held sideways (e.g. 667 × 375, 568 × 320): the two control
    rows no longer fit side by side, so stack them. Vyjet joins the edit row
    and the strip takes the height that is left. */

@@ -76,11 +76,11 @@ test.describe('user path', () => {
     await page.goto('./?debug=1');
     await tapAction(page, 'loco:steam_local');
     await tapAction(page, 'to-depot');
-    // 156 u locomotive + 7 × (8 u coupler + 188 u container) = 1528 u of
-    // 1600 u; the shortest wagon (144 u) no longer fits.
+    // 156 u locomotive + 9 × (8 u coupler + 188 u container) = 1920 u of
+    // 2000 u; the shortest wagon (144 u) no longer fits.
     const container = page.locator('[data-action="add:cargo_container"]');
     while (await container.isEnabled()) await container.click();
-    await expect(page.locator('.count')).toHaveText('7');
+    await expect(page.locator('.count')).toHaveText('9');
     for (const card of await page.locator('[data-action^="add:"]').all())
       await expect(card).toBeDisabled();
     await expect(page.locator('.full-text')).toBeVisible();
@@ -89,9 +89,9 @@ test.describe('user path', () => {
       '96',
     );
     // Removing one makes room again; nothing was dropped.
-    await tapAction(page, 'wagon:w7');
+    await tapAction(page, 'wagon:w9');
     await tapAction(page, 'remove');
-    await expect(page.locator('.count')).toHaveText('6');
+    await expect(page.locator('.count')).toHaveText('8');
     await expect(container).toBeEnabled();
   });
 

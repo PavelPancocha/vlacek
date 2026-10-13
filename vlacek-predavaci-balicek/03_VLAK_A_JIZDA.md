@@ -12,7 +12,7 @@ Doménový svět má osu `x` doprava, `y` nahoru. Phaser má obrazovou osu `y` d
 
 Nepoužívat rigid-body fyziku, pružinová spřáhla ani výpočet tažné síly podle hmotnosti. Vlak je geometricky vedená souprava. Neexistuje prokluz, vykolejení, zlomení spřáhla ani neschopnost vyjet kopec.
 
-Základní hodnoty (dokument 14 §6): maximální rychlost 480 u/s, rozjezd 160 u/s², dojezdové zpomalení 96 u/s², brzda 480 u/s². Rozjezd na plnou rychlost trvá 3 s, prostý dojezd 5 s a aktivní brzda 1 s. Na obrazovce to odpovídá asi 0,22 šířky za sekundu na každém zařízení, protože měřítko vychází z nejdelší soupravy ([D-008](../docs/decisions/008-whole-train-in-view.md)); obrazovku vlak přejede asi za 4,6 s. Verze 0.1 měla 180 u/s při větším měřítku (0,14 šířky za sekundu na 16:9). Hodnoty jsou laditelné; jejich zamýšlený pocit hlídá test `gameConfig` (0,18–0,30 šířky/s, rozjezd 2–4 s, dojezd 4–7 s).
+Základní hodnoty (dokument 14 §6): maximální rychlost 480 u/s, rozjezd 160 u/s², dojezdové zpomalení 96 u/s², brzda 480 u/s². Rozjezd na plnou rychlost trvá 3 s, prostý dojezd 5 s a aktivní brzda 1 s. Na obrazovce to odpovídá 0,216 šířky/s pro soupravy do 1 600 u a 0,173 šířky/s pro 2 000 u; kratší vlaky zachovávají původní měřítko ([D-028](../docs/decisions/028-longer-consist.md)). Verze 0.1 měla 180 u/s při větším měřítku (0,14 šířky za sekundu na 16:9). Hodnoty jsou laditelné; jejich zamýšlený pocit hlídá test `gameConfig` (0,216 / 0,1728 šířky/s podle délky jízdy, rozjezd 2–4 s, dojezd 4–7 s).
 
 ### Aktualizace rychlosti
 
@@ -79,17 +79,17 @@ Chyba vzorkování do 0.5 u a šev mezi chunky do 0.1 u jsou akceptační cíle.
 
 ## 6. Dlouhé soupravy a inicializace
 
-Limit je délkový (dokument 14 §2, [D-008](../docs/decisions/008-whole-train-in-view.md)): `train.maxConsistLengthU` (výchozí 1600 u) od čela lokomotivy po konec posledního vagonku včetně spřáhel, spočítaný stejným rozložením jako jízda. V depu lze přidat jen vagonek, který se vejde. Původní limit 100 vagonků neplatí. Výkonový profil nesmí tiše zahodit část vagonků nebo zkrátit vlak; delší souprava ze starší uložené hry zůstane celá v depu a vyjede až po ubrání.
+Limit je délkový (dokument 14 §2, [D-008](../docs/decisions/008-whole-train-in-view.md)): `train.maxConsistLengthU` (výchozí 2000 u, [D-028](../docs/decisions/028-longer-consist.md)) od čela lokomotivy po konec posledního vagonku včetně spřáhel, spočítaný stejným rozložením jako jízda. V depu lze přidat jen vagonek, který se vejde. Původní limit 100 vagonků neplatí. Výkonový profil nesmí tiše zahodit část vagonků nebo zkrátit vlak; souprava nad 2 000 u ze starší uložené hry zůstane celá v depu a vyjede až po ubrání. Cesta mezi původním limitem 1 600 u a novým 2 000 u se nyní obnoví jako zastavená jízda se všemi vozy; při stejné verzi generátoru zachová polohu i tick.
 
 Na nové cestě se hlava umístí do chunku 0. **Před zobrazením** se vygeneruje dostatečná trať i za ní, včetně záporných indexů chunků. Celá souprava existuje od prvního snímku. Nesmí být nejprve vidět vagonky ve vzduchu a později pro ně přibýt koleje.
 
-V depu se simuluje rovná kolej, nikoli celá krajina. Náhled celé soupravy je posuvný. Měřítko jízdy je pro danou obrazovku pevné a vychází z nejdelší povolené soupravy; nemění se podle aktuální délky vlaku.
+V depu se simuluje rovná kolej, nikoli celá krajina. Náhled celé soupravy je posuvný. Měřítko jízdy je pevné pro danou sestavu a obrazovku podle [D-028](../docs/decisions/028-longer-consist.md): do 1 600 u zůstává původní, delší souprava se rámuje podle své délky.
 
 ## 7. Kamera
 
-Od prvního snímku je vidět celá souprava (dokument 14 §2, [D-008](../docs/decisions/008-whole-train-in-view.md)). Nejdelší povolená souprava zabere `camera.trainWidthFraction` (0.72) šířky, za koncem zůstává `camera.rearMarginFraction` (0.06) a čelo krátkého vlaku stojí nejméně na `camera.minFrontFraction` (0.35) šířky. Vodorovné sledování je přesné. Svislé vedení zná výšku koleje pod celou soupravou a vede její střed plynule (`camera.verticalFollowPerSec`) do `camera.bandAnchor` pásu volného od tlačítek v rozích a brzdy; hranice pásu mají přednost, takže vlak nikdy nezajede pod ovládání ani mimo obraz. Výpočet je čistý modul `src/render/cameraFraming.ts` s jednotkovými testy.
+Od prvního snímku je vidět celá souprava (dokument 14 §2, [D-008](../docs/decisions/008-whole-train-in-view.md)). Měřítko je pevné pro danou jízdu a velikost obrazovky: `0.72 × šířka / max(1600, délka soupravy)` ([D-028](../docs/decisions/028-longer-consist.md)). Soupravy do 1 600 u mají přesně původní měřítko; pouze delší se zmenší podle své délky. Nejdelší povolená souprava zabere `camera.trainWidthFraction` (0.72) šířky, za koncem zůstává `camera.rearMarginFraction` (0.06) a čelo krátkého vlaku stojí nejméně na `camera.minFrontFraction` (0.35) šířky. Vodorovné sledování je přesné. Svislé vedení zná výšku koleje pod celou soupravou a vede její střed plynule (`camera.verticalFollowPerSec`) do `camera.bandAnchor` pásu volného od tlačítek v rozích a brzdy; hranice pásu mají přednost, takže vlak nikdy nezajede pod ovládání ani mimo obraz. Výpočet je čistý modul `src/render/cameraFraming.ts` s jednotkovými testy.
 
-Žádné třesení při houkání či průjezdu mostem. Žádné automatické zoomování při přidávání vagonků. Objekty musí být rozpoznatelné při běžném měřítku. Na širokém displeji je vlak větší a zabírá stejný podíl šířky; na užším (4:3) je menší, ale celý.
+Žádné třesení při houkání či průjezdu mostem. Za jízdy žádné zoomování podle polohy či rychlosti; změna sestavy se projeví až při nové jízdě. Objekty musí být rozpoznatelné při běžném měřítku. Na širokém displeji je vlak větší a zabírá stejný podíl šířky; na užším (4:3) je menší, ale celý.
 
 Za jízdy nejsou gesta kamery. To je vědomý rozdíl proti dřívějšímu návrhu: levé gesto je brzda a běžný dotyk je plyn. Celou soupravu dítě vidí v depu.
 

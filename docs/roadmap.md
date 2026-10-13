@@ -12,7 +12,7 @@ Stav k 2026-10-11. Rozsah a brány milníků vlastní [implementační plán](..
 | M4 — obsah a výtvarný základ    | částečně | Detailní vektorová grafika všech současných vozidel ([D-011](decisions/011-vector-vehicle-art-and-atlas.md)), kolej a terén ([D-012](decisions/012-track-tiles-and-terrain.md)), krajina z 18 lokalit, částice a drobné animace ([D-014](decisions/014-particles-and-small-animations.md)). Katalog je kompletní: všech 10 lokomotiv a 32 druhů vagonků má vlastní grafiku (H0–H3). Zvuky jsou dočasné. |
 | M5 — PWA a vydání V1            | částečně | Hra běží jako online web na GitHub Pages ([D-002](decisions/002-github-pages.md)). Volitelné tlačítko celé obrazovky a jeho fallback jsou ověřené v headless Chromium ([protokol](validation/2026-10-12-cela-obrazovka.md)); PWA instalace, offline a ověření skutečných zařízení zbývají.                                                                                                              |
 
-Dokument 14 je splněný v §1–7: pořadí soupravy, celý vlak v obraze s délkovým limitem ([D-008](decisions/008-whole-train-in-view.md)), detailní grafika, částice, bohatší krajina s přejezdy, druhou kolejí, mosty a tunely, svižnější jízda a snímky ze skutečné aplikace.
+Dokument 14 je splněný v §1–7: pořadí soupravy, celý vlak v obraze s délkovým limitem 2 000 u a původním měřítkem do 1 600 u ([D-008](decisions/008-whole-train-in-view.md), [D-028](decisions/028-longer-consist.md)), detailní grafika, částice, bohatší krajina s přejezdy, druhou kolejí, mosty a tunely, svižnější jízda a snímky ze skutečné aplikace.
 
 ## Rozhodnutí, která čekají na vlastníka
 

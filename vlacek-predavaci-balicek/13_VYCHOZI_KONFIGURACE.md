@@ -16,7 +16,7 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "resumeSpeedUPerSec": 0
   },
   "train": {
-    "maxConsistLengthU": 1600,
+    "maxConsistLengthU": 2000,
     "maxVehicleLengthU": 220,
     "couplerGapU": 8,
     "maxSpeedUPerSec": 480,
@@ -156,6 +156,8 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
 ```
 
 ## Odvozené hodnoty a pravidla
+
+Limit soupravy je 2 000 u včetně spřáhel. [D-028](../docs/decisions/028-longer-consist.md) zachovává základ měřítka 1 600 u pro kratší jízdy; delší jízda používá svou pevnou délku. Při šířkovém podílu 0,72 a zadní rezervě 0,06 zbývá před 1 600u vlakem 488,89 u a před 2 000u vlakem 611,11 u. Výchozí `geometryTailMarginU = 1024` a `geometryLookAheadU = 2048` zůstávají: streaming se měří od skutečného konce a čela celé soupravy, ne od lokomotivy.
 
 `interaction.npcTrainMinSpeedUPerSec` a `interaction.npcTrainMaxSpeedUPerSec` musí být konečná kladná čísla, minimum nejvýš maximum. Validace odmítne také nekonečné maximum, aby protijedoucí vlak nemohl opustit svoji dráhu skokem do nekonečna (R2). Výchozí hodnoty 100–160 u/s ani uložená data se nemění.
 

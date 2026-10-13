@@ -1,3 +1,4 @@
+import { consistLengthU } from '../../src/domain/consist/ConsistEditor.ts';
 import { describe, expect, it } from 'vitest';
 import { longestMixedConsist } from '../e2e/perfConsist.ts';
 import { gameConfig } from '../../src/config/gameConfig.ts';
@@ -35,18 +36,29 @@ describe('performance measurement consist', () => {
     },
   );
 
-  it('preserves the default mixed train', () => {
+  it('fills the new limit with the default mixed train', () => {
     const consist = longestMixedConsist('steam_local');
     expect(consist.locomotiveId).toBe('steam_local');
+    expect(
+      consistLengthU(consist, {
+        maxLengthU: gameConfig.train.maxConsistLengthU,
+        couplerGapU: gameConfig.train.couplerGapU,
+        geometryOf: (id) =>
+          [...locomotives, ...wagons].find((v) => v.id === id),
+      }),
+    ).toBe(2000);
     expect(consist.wagons.map((wagon) => wagon.definitionId)).toEqual([
       'passenger_classic',
       'passenger_open',
       'cargo_box',
-      'cargo_coal',
+      'cargo_apples',
       'cargo_container',
       'service_crane',
       'fun_balloons',
-      'passenger_classic',
+      'passenger_open',
+      'passenger_open',
+      'passenger_open',
+      'passenger_open',
     ]);
   });
 });

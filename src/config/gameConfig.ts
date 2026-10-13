@@ -22,7 +22,7 @@ export interface SimulationConfig {
 export interface TrainConfig {
   /**
    * Longest train, locomotive front to last wagon end with couplers (doc 14
-   * §2). The camera fits this length into its share of the screen width.
+   * §2, D-028). Each longer ride fits its own length; short rides keep scale.
    */
   maxConsistLengthU: number;
   maxVehicleLengthU: number;
@@ -223,7 +223,7 @@ export const gameConfig: GameConfig = {
     npcTrainMaxSpeedUPerSec: 160,
   },
   train: {
-    maxConsistLengthU: 1600,
+    maxConsistLengthU: 2000,
     maxVehicleLengthU: 220,
     couplerGapU: 8,
     // ≈ 0.22 screen widths per second at the doc 14 §2 scale (doc 14 §6).
