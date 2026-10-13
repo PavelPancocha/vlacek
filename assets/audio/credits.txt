@@ -1,0 +1,289 @@
+Nahrané zvuky — licence a autoři
+
+wheels.mp3
+Train Track Joints Slow (Loop)
+Autor: KayleRustone
+Zdroj: https://freesound.org/people/KayleRustone/sounds/474977/
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0–17.62 s, mono, EQ 70 Hz–6 kHz, normalizace -28 LUFS / -6 dBTP, jemné fades, crossfade 0.03 s a smyčkové okraje, MP3.
+Původní soubor: wheels-joints--fs474977-hq.mp3
+SHA-256: 651f31394b3a3a78c2b1adb50dc386fa82130ac048f4e92f1936621367eccee0
+
+steam-chuff.mp3
+single steam train chuff
+Autor: birdOfTheNorth (edit); Keith Peter / keithpeter (recording)
+Zdroj: https://freesound.org/people/birdOfTheNorth/sounds/623817/
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0.02–0.6 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: steam-chuff--fs623817-hq.mp3
+SHA-256: 35d320af6aa34c36f0e03554124cf28a666633ebcfc64afaef231ab9dc706ee7
+
+steam-local.mp3
+Steam Whistle.wav
+Autor: mike_stranks
+Zdroj: https://freesound.org/people/mike_stranks/sounds/407394/
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 4.6–5.55 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: steam-whistle-local--fs407394-hq.mp3
+SHA-256: be11bdc2c9bc8c1f7835320cd412f4d60be20b39b79c16c7404d43e41f82f44e
+
+steam-express.mp3
+Hiss of steam train #3
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/hiss-of-steam-train-3-s3011.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0.05–2.35 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: steam-whistle-martel--bsb3011.flac
+SHA-256: b0bb424b31a391615ddb3319c322feca39e99e295a3777c2029ea2caf06bb8cc
+
+diesel-shunter.mp3
+Diesel Locomotive Horn - 2300 Class.wav
+Autor: JotrainG
+Zdroj: https://freesound.org/people/JotrainG/sounds/662553/
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0–0.87 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: diesel-horn--fs662553-hq.mp3
+SHA-256: 87cb5019d6ffdb62794a2f6b07b953d1483784b8bf589d8c19a847b7f08bf0cf
+
+diesel-mainline.mp3
+renfe 333 horn
+Autor: Fercraft64
+Zdroj: https://freesound.org/people/Fercraft64/sounds/747798/
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0–1.6 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: diesel-horn-renfe--fs747798-hq.mp3
+SHA-256: 60051bb8a067f12f63ccf7ea1ddf1ce2467e734d16a19ba81043c679dfd2ae18
+
+diesel-idle.mp3
+WWS Bediadiesellocomotiveidling.ogg
+Autor: Work With Sounds / Technical Museum of Slovenia; sound recordist Dušan Oblak
+Zdroj: https://commons.wikimedia.org/wiki/File:WWS_Bediadiesellocomotiveidling.ogg
+Licence: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+Změny: výřez 10–30 s, mono, EQ 70 Hz–6 kHz, normalizace -28 LUFS / -6 dBTP, jemné fades, crossfade 0.2 s a smyčkové okraje, MP3.
+Původní soubor: diesel-small-idle--commons.ogg
+SHA-256: 530cc9dcaf1b09c3dd05b7505692cea69e90ff413c2eb9e0849cca61a2ebef46
+
+diesel-running.mp3
+WWS DiesellocomotiveBediamoving.ogg
+Autor: Work With Sounds / Technical Museum of Slovenia; sound recordist Boštjan Troha
+Zdroj: https://commons.wikimedia.org/wiki/File:WWS_DiesellocomotiveBediamoving.ogg
+Licence: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+Změny: výřez 10–30 s, mono, EQ 70 Hz–6 kHz, normalizace -28 LUFS / -6 dBTP, jemné fades, crossfade 0.3 s a smyčkové okraje, MP3.
+Původní soubor: diesel-small-running--commons.ogg
+SHA-256: 6aa050baada94ee763f454804c9ab6167e34e0523b66e8620edaa3a36d069c44
+
+electric-hum.mp3
+Electric Train Motor Idle - Loop (Queensland Rail InterCity Express).wav
+Autor: JotrainG
+Zdroj: https://freesound.org/people/JotrainG/sounds/700034/
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0–2.432 s, mono, EQ 70 Hz–6 kHz, normalizace -28 LUFS / -6 dBTP, jemné fades, crossfade 0.03 s a smyčkové okraje, MP3.
+Původní soubor: electric-hum--fs700034-hq.mp3
+SHA-256: 78780ecc238165161ce8faffe99d7ca934d53209e598df8144dd457787a1e595
+
+magic-stars.mp3
+Glockenspiel
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/glockenspiel-s0920.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0.05–2.2 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: magic-stars--bsb0920.wav
+SHA-256: 6b12efb3fd465d97a94112e8561a066efb51b20cbd1bf0a3ee4bd857e8c14a84
+
+magic-bubbles.mp3
+Chimes "Dream" #1
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/chimes-dream-1-s2079.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0–2.29 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: magic-bubbles--bsb2079.flac
+SHA-256: 1257cc546b69523e2b320f6e1cf05f302e3c253368634639dfcbb98afccc0499
+
+magic-rainbow.mp3
+Chimes "butterfly" #1
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/chimes-butterfly-1-s2087.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0–2.07 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: magic-rainbow--bsb2087.flac
+SHA-256: 58fa4b221490611084df79c7a8881c56811ae5817265f647ee3974afb725cf55
+
+bubble-pop.mp3
+Bubbles Burst
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/bubbles-burst-s1074.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0.05–0.45 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: bubble-pop--bsb1074.flac
+SHA-256: 9527bb6c6fcddc3545686aac1464b5ef9d1638522344aef7501137f8d01d1bb3
+
+crossing-bell.mp3
+Level crossing Belgium 2022.ogg
+Autor: Bert76
+Zdroj: https://commons.wikimedia.org/wiki/File:Level_crossing_Belgium_2022.ogg
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 2–10 s, mono, EQ 70 Hz–6 kHz, normalizace -28 LUFS / -6 dBTP, jemné fades, crossfade 0.1 s a smyčkové okraje, MP3.
+Původní soubor: crossing-belgium--commons.ogg
+SHA-256: c2485283e4ac6fce5b32ace7e552a19f952d06caa06d3eec0ef23c663e6f155c
+
+meadow.mp3
+Birds Waking #3
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/wake-birds-3-s0999.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 10–40 s, mono, EQ 70 Hz–6 kHz, normalizace -28 LUFS / -6 dBTP, jemné fades, crossfade 2 s a smyčkové okraje, MP3.
+Původní soubor: ambience-meadow--bsb0999.mp3
+SHA-256: aa98471a9f33755284d6456cd2a3b9425ae6efa57cb7a8df6bb1ff0597b0ddab
+
+forest.mp3
+Forest
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/forest-s0100.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 5–35 s, mono, EQ 70 Hz–6 kHz, normalizace -28 LUFS / -6 dBTP, jemné fades, crossfade 2 s a smyčkové okraje, MP3.
+Původní soubor: ambience-forest--bsb0100.wav
+SHA-256: 32f942fce9840c60f662f653605e81c1eb7a8b9662981cccc1a56c25252587de
+
+wind.mp3
+Wind in the Trees
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/forest-wind-in-the-trees-s0904.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 20–50 s, mono, EQ 70 Hz–6 kHz, normalizace -28 LUFS / -6 dBTP, jemné fades, crossfade 2 s a smyčkové okraje, MP3.
+Původní soubor: ambience-light-wind--bsb0904.mp3
+SHA-256: 25f907ab068df5836b28af2c923468b97d2b75afbc56cce27834d3526ac7b3c0
+
+brook.mp3
+Small Stream
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/small-stream-s0823.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 10–40 s, mono, EQ 70 Hz–6 kHz, normalizace -28 LUFS / -6 dBTP, jemné fades, crossfade 2 s a smyčkové okraje, MP3.
+Původní soubor: ambience-brook--bsb0823.mp3
+SHA-256: d32083bb18dd27661c77a6b17f5b7ae3db40a7860ff1089cd9281f1148d04e6d
+
+sea.mp3
+Sea Waves with Tern Calls
+Autor: DenisChardonnet
+Zdroj: https://bigsoundbank.com/sea-waves-and-seagulls-s0267.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 5–35 s, mono, EQ 70 Hz–6 kHz, normalizace -28 LUFS / -6 dBTP, jemné fades, crossfade 2 s a smyčkové okraje, MP3.
+Původní soubor: ambience-sea--bsb0267.wav
+SHA-256: 6fa4b6a5e7bd850b615daff8984f89f995d91ff229ec2b9e9a3db49a3da2bb59
+
+crickets.mp3
+Field cricket
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/field-cricket-s1020.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 3.5–20.8 s, mono, EQ 70 Hz–6 kHz, normalizace -28 LUFS / -6 dBTP, jemné fades, crossfade 0.5 s a smyčkové okraje, MP3.
+Původní soubor: ambience-crickets--bsb1020.flac
+SHA-256: 20732c71e5e85a1274273dc704c70bbbb87d8938b85cb34f031b3b8b72441b6b
+
+sheep.mp3
+Sheep #1
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/sheep-1-s2343.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0.03–0.82 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: sheep--bsb2343.flac
+SHA-256: 16ad233fa826893d1569e660e4552428367e638428385ac2c241620688a09e79
+
+cow.mp3
+Cow Moos #1
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/cow-moos-s0546.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 3.55–5.4 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: cow--bsb0546.flac
+SHA-256: 78e0b38c0a2c3a028ca267822f0e4fc6270abee612a09f4be9effc1db9a8eab0
+
+hen.mp3
+Hens Lays
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/hens-lays-s0978.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 6.3–7.1 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: hen--bsb0978.flac
+SHA-256: 810839a6f95ab7d991b0134683f6a1fe7a88997802ce13c89641e55c110c9f2f
+
+dog.mp3
+Old dog barking #2
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/old-dog-barking-2-s2353.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 12.25–12.8 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: dog--bsb2353.flac
+SHA-256: b1834c279f3c13f401db6fabaa4b1904830c86db9919a51d8063e160a781fc9f
+
+cat.mp3
+Little Meow of a Cat #1
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/little-meow-of-a-cat-s0494.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0–0.479 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: cat--bsb0494.wav
+SHA-256: a3af64f8c9dd921343f076d7ed3bcfc9d0f7db49b84e6a81c84fae72d1c8b38d
+
+duck.mp3
+Ducks
+Autor: DenisChardonnet
+Zdroj: https://bigsoundbank.com/ducks-s0276.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 5.5–6.4 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: duck--bsb0276.wav
+SHA-256: 844c93963502b2b2d88a8fa2cb6fab5ee9790bd4b945e6d6e37eba8bc0009cb5
+
+frog.mp3
+One frog
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/one-frog-s0819.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 2.2–3.55 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: frog--bsb0819.wav
+SHA-256: 8269b3c43af56797903e5aac23b114ceb17e37fd1ba5304145f09e495f3215ca
+
+gull.mp3
+Gulls on the Harbor
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/gulls-on-the-harbor-s2573.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 2.3–2.9 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: gull--bsb2573.mp3
+SHA-256: 1b8ba09dfc1460422d01843b6c0bdef7ce078a238cca650041e592393502f0cf
+
+horse.mp3
+Horse Neighing #3
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/horse-neighing-3-s0863.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0.1–2.4 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: horse--bsb0863.flac
+SHA-256: 8e575e3330f81a5d26193c88348dcbcaf7a304070232923259d4d94c324b3499
+
+songbird.mp3
+Robin #4
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/robin-4-s1670.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0.1–3.1 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: songbird--bsb1670.flac
+SHA-256: b911fb610b50e07f7d693cc4b2a9733c3f30c51d537ff308a0bbc0beee3f5f08
+
+train-full.mp3
+3 Blows at the Theater
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/3-blows-at-the-theater-s1025.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 4.7–5.2 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: ui-wood-thud--bsb1025.flac
+SHA-256: c8b8b9c4248b2e66b824a15ac2f6fc93e656bfebd3d535a5dc1f84713d98add1
+
+rustle.mp3
+Wind in the Trees
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/forest-wind-in-the-trees-s0904.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 23–23.6 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: ambience-light-wind--bsb0904.mp3
+SHA-256: 25f907ab068df5836b28af2c923468b97d2b75afbc56cce27834d3526ac7b3c0

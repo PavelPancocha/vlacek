@@ -165,5 +165,14 @@ export interface DebugSnapshot {
     { left: number; top: number; right: number; bottom: number } | undefined;
   brakeRect:
     { left: number; top: number; width: number; height: number } | undefined;
+  audioDetails: {
+    active: { id: string; kind: string; key: string }[];
+    played: string[];
+    loaded: number;
+    pending: number;
+    pendingLayers: number;
+    failures: { file: string; reason: string }[];
+    covered: number;
+  };
   audio: string;
 }

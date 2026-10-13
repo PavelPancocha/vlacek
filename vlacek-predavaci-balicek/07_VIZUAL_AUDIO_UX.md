@@ -85,6 +85,8 @@ Audio manager má celkový limit osm hlasů: nejvýše tři smyčky a nejvýše 
 
 Lokální hlasitost se může mírně měnit podle vzdálenosti, ale důležitá odezva na dotyk nesmí být neslyšitelná jen kvůli výtvarné hloubce. Žádné výrazné stereo efekty vyžadující sluchátka.
 
+Implementace nahrávek: [D-022](../docs/decisions/022-recorded-sounds.md). Lokální MP3 se načítají po gestu až na vyžádání; 32 souborů má 1,84 MiB. Kola a engine reagují na rychlost, pára na ujetou délku, výstražný zvonek na fázi a vzdálenost, tunel na překrytí celé soupravy. Nejvýše 3 smyčky a 5 jednorázových hlasů; výstraha má přednost před ambientem. Elektrické houkačky a trakce mají přiznané nahrané fallbacky. Poslech na zařízení zůstává **NEOVĚŘENO**; seznam Zvuky ve skrytém D-020 menu dovoluje přehrát každé ID.
+
 ## 7. Bezpečné audiovizuální chování
 
 Žádné lekání, výbuchy, sirény přes celou scénu, prudké otřesy, rychlé celoobrazovkové blikání ani hlasité reklamy. Praskání balónků je měkké. Přejezd má přiměřenou lokální signalizaci. Noční sova se ozve krátce, ne strašidelně.

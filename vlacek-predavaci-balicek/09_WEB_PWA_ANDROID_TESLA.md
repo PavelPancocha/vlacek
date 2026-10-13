@@ -106,6 +106,8 @@ Při skrytí stránky či ztrátě fokusu pozastavit simulaci a audio, vymazat v
 
 Po návratu zobrazit pauzu a nechat dítě/dospělého potvrdit pokračování. Chybějící audio oprávnění nesmí způsobit samovolné obnovení rychlosti nebo vstupu.
 
+Implementace [D-022](../docs/decisions/022-recorded-sounds.md): jeden AudioContext, lokální fingerprintované MP3 URL bez inline audia. Fetch a `decodeAudioData` až po gestu a na vyžádání; mute nezačíná novou práci a zastaví hlasy. Pauza/skrytí suspendují kontext bez automatického resume. Selhání fetch/decode je tiché a diagnostikované. Vývojářský poslech v pauze je explicitní gesto; jeho Zavřít zvuk znovu suspenduje.
+
 ## 7. Offline balík a service worker
 
 Service worker vyžaduje podporované bezpečné prostředí; lokální vývoj může použít localhost. Skutečné LAN HTTP na adrese zařízení není ekvivalent localhostu pro ostatní zařízení. PWA/offline testovat na HTTPS testovacím nasazení nebo vhodně zabezpečeném lokálním prostředí. Viz S14.

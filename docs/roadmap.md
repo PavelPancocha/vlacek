@@ -16,6 +16,7 @@ Dokument 14 je splněný v §1–7: pořadí soupravy, celý vlak v obraze s dé
 
 Iterace světa v2 podle zadání vlastníka z 2026-10-13 (rozpracováno, jeden PR):
 
+- **Nahrané zvuky:** Nahrané zvuky doplněny ([D-022](decisions/022-recorded-sounds.md)): 32 MP3 / 1,84 MiB, kola, pára, diesel, electric hum, deset horn ID, přejezd, ambient, reakce a tlumení v tunelu. Seznam Zvuky ve skrytých vývojářských volbách umožňuje poslech všech nahrávek; kredity CC BY jsou v buildu.
 - **Přejezdy na dohled:** přejezdy řídí nejčasnější příjezd celé soupravy: nejprve čekají auta a blikají světla, potom se sklápějí závory. Krátká souprava vidí sklápění při plném plynu i kolem 240 u/s; souprava 1 600 u vidí při vstupu přejezdu do záběru závory v pohybu nebo dole. Souvislá vozovka přes násep, dráhy aut i paty výstražníků používají společnou výšku a sklon koleje, v art i fallback cestě. Fronta v E2E skutečně dokončí průjezd po posledním vagónu ([D-021](decisions/021-crossing-closes-in-view.md)).
 
 ## Rozhodnutí, která čekají na vlastníka
@@ -230,7 +231,10 @@ Volitelné místní reakce vagonků (dokument 06 §3) zůstávají mimo tento pl
 
 Každé omezení má podmínku odstranění v uvedeném rozhodnutí.
 
-- **Zvuky** jsou syntetizované tóny. Zvonění přejezdu i zvuk lokomotivy v tunelu přijdou s finálními zvuky ([D-015](decisions/015-level-crossings.md), [D-018](decisions/018-bridges-and-tunnels.md)).
+- **Zvuky:** nahrané, ale poslech a kalibrace na zařízení zbývají ([D-022](decisions/022-recorded-sounds.md)):
+  - Elektrická houkačka není ověřená česká/evropská elektrická řada; používá upravenou skutečnou dieselovou nahrávku. Trakční rozjezd nahrazuje nahraný elektrický volnoběh. Identifikované CC0 zdroje při opakovaném pokusu vracely 403.
+  - Městský bed vynechán, protože nešlo potvrdit absenci řeči. Sezónní cvrčci jsou dodaní, ale jízda je použije až po napojení world-core sezóny; dnešní přepínač zná biom. Horse/songbird nejsou druhy současného katalogu zvířat.
+  - Poslech všech klipů, jemnost/hlasitost a spoje na zařízení **NEOVĚŘENO**. Skrytý seznam Zvuky připraven pro vlastníka. MP3 decode v Playwright Chromium ověřeno; Firefox/Safari, fyzický Android a konkrétní Tesla/firmware **NEOVĚŘENO**.
 - **Světla lokomotiv** chybí. Přijdou se dnem a nocí ([D-017](decisions/017-second-track-and-oncoming-train.md), [D-018](decisions/018-bridges-and-tunnels.md)).
 - **Souběžná kolej** zatím nemá vedení a protijedoucí vlak je parní nebo naftový. Doplní se s další elektrickou lokomotivou ([D-016](decisions/016-electric-locomotive-and-catenary.md), [D-017](decisions/017-second-track-and-oncoming-train.md)).
 - **Portálové podpěry vedení ve stanici** chybí. Přijdou s vícekolejnými nádražími ([D-016](decisions/016-electric-locomotive-and-catenary.md)).

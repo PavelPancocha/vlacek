@@ -70,7 +70,7 @@ Test kreslení `src/render/TunnelView.test.ts` běží v Node s náhradou pouze 
 
 ## Dočasná omezení a podmínky odstranění
 
-- **Zvuk lokomotivy v tunelu** (dokument 03 §8) se zatím nemění. Doplní se se skutečnými zvuky lokomotiv místo dočasných syntetizovaných tónů.
+- **Zvuk lokomotivy v tunelu** doplněn v [D-022](022-recorded-sounds.md): podíl soupravy v hlavním tunelu plynule tlumí kola i engine low-pass filtrem a krátkým echem. Poslech a kalibrace zařízení NEOVĚŘENO.
 - **Světla lokomotivy v tunelu** zatím chybí. Přijdou se světly lokomotiv (den a noc, dokument 04 §10), stejně jako v D-017.
 - **Mostní konzoly** (dokument 03 §9, „lze použít“) nejsou potřeba, protože stožáry stojí vedle opěr. Doplní se s delšími mosty, kde rozteč stožárů nestačí.
 - **Varianty mostů** (CNT-04): zatím je jen kamenný mostek přes potok. Další varianty (ocelový přes řeku, viadukt) přijdou s infrastrukturou podle biomů při rozšíření katalogu.

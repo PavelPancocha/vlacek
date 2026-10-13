@@ -122,6 +122,23 @@ Job **Deploy to GitHub Pages** běží jen pro push nebo ruční spuštění na 
 
 V nastavení repozitáře musí být **Settings → Pages → Source: GitHub Actions**. Prostředí `github-pages` standardně povoluje nasazení jen z výchozí větve; pracovní větve proto web nemění. Adresa je <https://pavelpancocha.github.io/vlacek/>. Nasazený obsah ověř podle `<meta name="vlacek-build">`, který musí odpovídat commitu běhu. Workflow ověř lokálně pomocí actionlint podle [protokolu nástrojů](validation/2026-10-09-toolchain.md); ověření nasazení je v [protokolu zástupné stránky](validation/2026-10-09-pages-skeleton.md). Volbu popisuje [rozhodnutí D-002](decisions/002-github-pages.md).
 
+## Reprodukce nahraných zvuků
+
+Audio používá FFmpeg **6.1.1-3ubuntu5** / libmp3lame, mono MP3 44 100 Hz VBR q=5. Není nová npm závislost. FFmpeg musí být v PATH (`ffmpeg -version`); na Ubuntu 24.04 odpovídá použitý balík verzi `7:6.1.1-3ubuntu5` (`sudo apt-get install ffmpeg=7:6.1.1-3ubuntu5`). Na jiných systémech použij FFmpeg 6.1.1 s libmp3lame z [oficiálního rozcestníku](https://ffmpeg.org/download.html). Nová instalace na čistém stroji NEOVĚŘENO; lokální export použil již nainstalovanou verzi. Úplné zdrojové nahrávky nepatří do Gitu. Ze [sources.json](../scripts/audio/sources.json) stáhni každou unikátní adresu `download` pod jménem `original`; SHA-256 musí přesně souhlasit. HTTP 403 ze zdrojového CDN je překážka reprodukce, nikoli důvod měnit nahrávku bez nového ověření licence a hashe. Podrobnosti v [D-022](decisions/022-recorded-sounds.md).
+
+```bash
+volta run node scripts/audio/process-audio.ts /cesta/k/originalum
+volta run node scripts/audio/credits.ts
+volta run node scripts/audio/verify-audio.ts
+volta run node scripts/audio/contact-sheet.ts /cesta/k/vystupu
+VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/content/soundManifest.test.ts tests/unit/platform/AudioManager.test.ts tests/unit/platform/AudioDirector.test.ts tests/unit/platform/VoiceBudget.test.ts
+flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- tests/e2e/horns.spec.ts tests/e2e/recorded-audio.spec.ts --workers=2
+```
+
+`process-audio` ověří originály, vytvoří a odstraní dočasný normalizovaný PCM WAV, trimuje po vzorcích, provede jemné fades/crossfades, EQ a normalizaci a exportuje MP3. `verify-audio` ověří dekódované délky, smyčkové body, špičky, spoje a rozpočet 3 MiB; FFmpeg není potřebný pro běžný webový build ani unit testy. CI `npm run check` kontroluje manifest, soubory a provenienci unit testy, numerický audio audit se provádí při exportu. Export obnoví také `assets/audio/credits.txt`. Samostatný příkaz `credits.ts` obnoví pouze kredity z téže provenience bez FFmpeg a originálů. Unit kontrola vyžaduje přesnou shodu textu s generátorem a úplný kredit každé CC BY nahrávky. Vite dodá fingerprintovaný text do buildu; odkaz O zvucích — autoři a licence v sekci Zvuky je dostupný i na publikovaném webu. E2E ověřuje text z produkčního serveru. Kontaktní list obsahuje waveform a spektrogram každého souboru. Číselné a obrazové kontroly nenahrazují poslech. Fyzický Android/Tesla, Firefox a Safari jsou **NEOVĚŘENO**.
+
+Před prvním gestem se nestahuje žádné audio. S vypnutými zvuky nezačíná fetch/decode; již zahájené dekódování nelze přerušit, ale jeho výsledek po ztlumení nic nepřehraje. Selhání v `audioDetails.failures` neruší hru; nepovedený soubor se během návštěvy neopakuje. Znovunačtení stránky dovolí nový pokus. Každý klíč vrstvy má nejvýše jednu čekající operaci; další framy přepisují jen poslední požadovaný stav. Dispose abortuje vlastněné fetch požadavky a zabrání pozdnímu playbacku i cache; probíhající decode nelze přerušit. `audioDetails.pendingLayers` ukazuje počet čekajících operací. Zvířecí reakce, pop a dřevěné ťuknutí se po 250 ms zahodí; buffer zůstane pro další čerstvý požadavek. Píšťaly a explicitní vývojářský poslech tuto lhůtu nemají, pauza/přerušení je však stále invalidují. Pauza/skrytí vždy suspendují kontext, pokračování vyžaduje gesto. Vývojářský seznam Zvuky dovolí explicitní poslech v pauze, Zastavit/Zavřít jej ukončí.
+
 ## Diagnostika
 
 - `EBADENGINE`: ověř `volta run node --version`, `volta run npm --version`, kořen projektu a Volta shims v PATH. Při zděděném jiném runtime použij explicitní `volta run npm ci`. Nepřepisuj `engine-strict` jen kvůli obejití chyby.

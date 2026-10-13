@@ -1,3 +1,5 @@
+import { soundManifest } from '../content/soundManifest.ts';
+import audioCreditsUrl from '../../assets/audio/credits.txt?url&no-inline';
 import { seedOverride } from '../platform/CapabilityProbe.ts';
 import { actionButton, el } from './dom.ts';
 import type { DevOptions } from '../platform/DevOptions.ts';
@@ -99,6 +101,39 @@ export function developerMenu(
       'p',
       { class: 'hint', id: 'dev-world-hint' },
       'Prázdné = náhodný svět; jinak 0–4294967295. Platí pro nové cesty.',
+    ),
+  );
+  form.append(
+    el(
+      'details',
+      { style: 'grid-column: 1 / -1' },
+      el('summary', {}, 'Zvuky'),
+      el(
+        'p',
+        { class: 'hint' },
+        'Poslech na zařízení: NEOVĚŘENO. Každé tlačítko přehraje jednu nahrávku; platí nastavení Zvuky.',
+      ),
+      el(
+        'p',
+        { class: 'hint' },
+        el(
+          'a',
+          {
+            href: audioCreditsUrl,
+            target: '_blank',
+            rel: 'noopener',
+          },
+          'O zvucích — autoři a licence',
+        ),
+      ),
+      actionButton('dev-sound-stop', 'Zastavit zvuky', ['Zastavit']),
+      el(
+        'div',
+        { class: 'dev-fields' },
+        ...Object.keys(soundManifest).map((id) =>
+          actionButton(`dev-sound:${id}`, `Přehrát ${id}`, [id]),
+        ),
+      ),
     ),
   );
   form.addEventListener('submit', (event) => event.preventDefault(), {
