@@ -404,17 +404,19 @@ h1 {
 
 #diagnostics {
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: calc(4px + var(--safe-top));
+  left: calc(4px + var(--safe-left));
   margin: 0;
-  max-height: 60vh;
+  max-width: calc(100% - 160px - var(--safe-left) - var(--safe-right));
   overflow: hidden;
   font:
-    11px/1.2 ui-monospace,
+    10px/1.4 ui-monospace,
     monospace;
   background: rgb(0 0 0 / 0.55);
   color: #fff;
   padding: 4px 6px;
+  box-sizing: border-box;
+  border-radius: 4px;
   pointer-events: none;
   z-index: 20;
 }
@@ -591,4 +593,78 @@ button.build-id {
 .dev-fields :focus-visible {
   outline: 4px solid var(--focus);
   outline-offset: 3px;
+}
+
+.dev-menu[hidden] {
+  display: none;
+}
+
+.dev-world-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dev-world-actions > :is(h2, p, div) {
+  grid-column: 1 / -1;
+}
+
+.dev-current-world {
+  margin: 8px 0;
+}
+
+.diagnostics-detail {
+  align-items: center;
+}
+
+.diagnostics-groups {
+  width: min(100%, 900px);
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  align-content: start;
+  gap: 12px 24px;
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+
+.diagnostics-groups h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.diagnostics-groups dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px 12px;
+  font-size: 0.85rem;
+}
+
+.diagnostics-groups dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, monospace;
+}
+
+[data-copy-output] {
+  width: min(100%, 900px);
+}
+
+[data-copy-status] {
+  margin: 0;
+}
+
+[data-copy-output] textarea {
+  box-sizing: border-box;
+  width: 100%;
+  height: 80px;
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+  touch-action: auto;
+  font:
+    12px/1.4 ui-monospace,
+    monospace;
 }

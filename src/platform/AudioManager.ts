@@ -9,6 +9,7 @@ import { VoiceBudget } from './VoiceBudget.ts';
 export class AudioManager {
   #context: AudioContext | undefined;
   #failed = false;
+  readonly #voices = new Set<() => void>();
   readonly #budget = new VoiceBudget({
     maxVoices: 8,
     maxLoopVoices: 3,
@@ -38,6 +39,11 @@ export class AudioManager {
       void this.#context.suspend().catch(() => undefined);
   }
 
+  /** Stop/disconnect all sources and release their budget; never unlock or resume. */
+  stopAll(): void {
+    for (const stop of this.#voices) stop();
+  }
+
   play(id: string): void {
     const context = this.#context;
     const tone = Object.hasOwn(soundTones, id) ? soundTones[id] : undefined;
@@ -49,9 +55,25 @@ export class AudioManager {
     gain.gain.exponentialRampToValueAtTime(tone.volume, now + 0.03);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + tone.durationSec);
     gain.connect(context.destination);
-    let remaining = tone.frequencies.length;
+    const oscillators = new Set<OscillatorNode>();
+    const release = () => {
+      gain.disconnect();
+      this.#budget.release('oneShot');
+      this.#voices.delete(stop);
+    };
+    const stop = () => {
+      for (const oscillator of oscillators) {
+        oscillator.stop();
+        oscillator.disconnect();
+      }
+      // Late ended events must not release the next journey's voice budget.
+      oscillators.clear();
+      release();
+    };
+    this.#voices.add(stop);
     for (const frequency of tone.frequencies) {
       const oscillator = context.createOscillator();
+      oscillators.add(oscillator);
       oscillator.type = tone.type;
       oscillator.frequency.setValueAtTime(frequency, now);
       if (tone.glideTo !== undefined) {
@@ -64,12 +86,9 @@ export class AudioManager {
       oscillator.addEventListener(
         'ended',
         () => {
+          if (!oscillators.delete(oscillator)) return;
           oscillator.disconnect();
-          remaining -= 1;
-          if (remaining === 0) {
-            gain.disconnect();
-            this.#budget.release('oneShot');
-          }
+          if (oscillators.size === 0) release();
         },
         { once: true },
       );
@@ -79,6 +98,7 @@ export class AudioManager {
   }
 
   dispose(): void {
+    this.stopAll();
     void this.#context?.close().catch(() => undefined);
     this.#context = undefined;
   }

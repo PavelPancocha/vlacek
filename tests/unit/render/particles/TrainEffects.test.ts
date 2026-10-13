@@ -59,6 +59,22 @@ function run(
 const steam = [{ kind: 'steam' as const, x: 0, y: -94, tiltDeg: 0 }];
 
 describe('TrainEffects (doc 14 §4)', () => {
+  it('drops partial emission clocks when starting a new journey', () => {
+    const field = new ParticleField(PARTICLE_KINDS, 100, () => 0.5);
+    const effects = new TrainEffects(field, () => 0.5);
+    const input = {
+      ...base,
+      dtSec: 0.2,
+      emitters: [{ kind: 'diesel' as const, x: 0, y: 0, tiltDeg: 0 }],
+    };
+    expect(effects.step(input).size).toBe(0); // 0.6 of an idle puff.
+    field.clear();
+    effects.reset();
+    expect(effects.step(input).size).toBe(0);
+    expect(field.live).toBe(0);
+    expect(effects.step(input).get('diesel')).toBe(1);
+  });
+
   it.each([
     {
       id: 'steam_express',

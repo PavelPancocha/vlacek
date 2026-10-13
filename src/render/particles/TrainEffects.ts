@@ -76,6 +76,11 @@ export class TrainEffects {
     this.#random = random;
   }
 
+  /** New journey: discard the previous train's fractional emission clocks. */
+  reset(): void {
+    this.#clocks.clear();
+  }
+
   /** Emits this frame's particles; returns the count per kind. */
   step(input: TrainEffectsInput): Map<string, number> {
     const emitted = new Map<string, number>();
