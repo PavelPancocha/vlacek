@@ -1,9 +1,13 @@
 import { expect, test } from '@playwright/test';
+import { gameConfig } from '../../src/config/gameConfig.ts';
+import { locomotives, wagons } from '../../src/content/vehicles.ts';
+import { parseSave, saveRules } from '../../src/platform/SaveValidation.ts';
 import {
   buildLongestTrain,
   driveUntilMoving,
   expectWholeTrainInView,
   snapshot,
+  restoredTrain,
   startRide,
   tapAction,
   trainBoxesOverFrames,
@@ -372,11 +376,29 @@ test.describe('user path', () => {
   test('doc 14 §2: after a reload Pokračovat shows the whole train at once', async ({
     page,
   }) => {
-    await buildLongestTrain(page);
-    await tapAction(page, 'depart');
-    await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+    // Picker assembly has its own tests; exercise the actual save/reload here.
+    await restoredTrain(page, true);
+    expect((await snapshot(page)).consistLengthU).toBe(2000);
     await tapAction(page, 'pause');
+    const saved = await page.evaluate(() =>
+      localStorage.getItem('vlacek.save.v1'),
+    );
+    expect(saved).not.toBeNull();
     await page.reload();
+    const reloaded = await page.evaluate(() =>
+      localStorage.getItem('vlacek.save.v1'),
+    );
+    if (saved === null || reloaded === null) throw new Error('save missing');
+    const rules = saveRules(gameConfig, locomotives, wagons);
+    const before = parseSave(saved, rules);
+    const after = parseSave(reloaded, rules);
+    if (before.status !== 'valid' || after.status !== 'valid')
+      throw new Error('invalid saved ride');
+    // pagehide refreshes the timestamp; every other saved field must survive.
+    expect(after.save).toEqual({
+      ...before.save,
+      savedAtIso: after.save.savedAtIso,
+    });
     await tapAction(page, 'continue');
     await tapAction(page, 'resume');
     await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 10));

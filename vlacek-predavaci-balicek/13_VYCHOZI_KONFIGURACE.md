@@ -61,7 +61,7 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     },
     "arcSampleSpacingU": 8,
     "geometryLookAheadU": 2048,
-    "geometryTailMarginU": 1024,
+    "geometryTailMarginU": 1600,
     "renderMarginChunks": 1,
     "logicalActivationAheadU": 2048,
     "maxPlacementAttempts": 8,
@@ -77,10 +77,9 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "catenaryContactHeightU": 128
   },
   "camera": {
-    "trainWidthFraction": 0.72,
-    "rearMarginFraction": 0.06,
-    "minFrontFraction": 0.35,
-    "bandAnchor": 0.55,
+    "trainWidthFraction": 0.6,
+    "trainCenterFraction": 0.46,
+    "bandAnchor": 0.5,
     "verticalFollowPerSec": 3,
     "manualPanDuringRide": false
   },
@@ -161,7 +160,7 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
 
 `world.catenaryContactHeightU = 128` je vizuální kontakt nad kolejnicí, společný drátu, stožárům, tunelovým závěsům a pantografu ([D-016](../docs/decisions/016-electric-locomotive-and-catenary.md)). Čistý config nesmí importovat art manifest: validace vyžaduje konečné číslo nejméně `108 + 20` u a katalogový test nezávisle ověřuje `max(vehicleArt.heightU) + 20`, včetně všech nákladů. Geometrický test navíc chrání alespoň 12 u skutečné mezery na přechodu sklonů. Katalog má obálku 108 u, nejvyšší vagonek 104 u. Ramena 56 × 34 u se přizpůsobují v dosavadním měřítku 0,07–1,6, hlava 40 × 6 u má kontakt 5 u nad pivotem: složený dosah je 7,38 u a pracovní mez 34–59,4 u. Nedosažitelný drát omezí pracovní dosah s příznakem `outOfRange`, nevyhodí výjimku ani dále nenatáhne ramena. Při `world.profile.transitionU = 192` je ověřen celý `world.maxTrackGrade = 0,12` pro rovina ↔ svah; pro přímý obrat +sklon ↔ −sklon je ověřená mez 0,098. Jiná délka přechodu nebo rozmístění podpěr vyžaduje nové měření (D-016). Výška vedení nemění profil koleje, layout světa ani uloženou polohu, takže její změna ze 160 u nevyžaduje novou verzi generátoru.
 
-Limit soupravy je 2 000 u včetně spřáhel. [D-028](../docs/decisions/028-longer-consist.md) zachovává základ měřítka 1 600 u pro kratší jízdy; delší jízda používá svou pevnou délku. Při šířkovém podílu 0,72 a zadní rezervě 0,06 zbývá před 1 600u vlakem 488,89 u a před 2 000u vlakem 611,11 u. Výchozí `geometryTailMarginU = 1024` a `geometryLookAheadU = 2048` zůstávají: streaming se měří od skutečného konce a čela celé soupravy, ne od lokomotivy.
+Limit soupravy je 2 000 u včetně spřáhel. [D-028, camera-1](../docs/decisions/028-longer-consist.md) rámuje střed na 46 % šířky, nejdelší vlak na 60 % a výřez na 3 333,33 u. Zoom je pevný pro jízdu a viewport: `0.60 × šířka / max(2000, délka soupravy)`. Geometricky zbývá nejméně 16 % šířky za vlakem a 24 % před ním; výhled před 1 600u vlakem je 1 000 u a před 2 000u vlakem 800 u. Streamování musí pokrývat celý viditelný kontext i skutečnou soupravu; zadní rezerva je 1 600 u a předstih 2 048 u. `geometryTailMarginU` musí být konečná hodnota nejméně 1 600 u; změna retence nemění geometrii generátoru ani save. Svislý cíl je polovina volného pásu, follow 3/s.
 
 `interaction.npcTrainMinSpeedUPerSec` a `interaction.npcTrainMaxSpeedUPerSec` musí být konečná kladná čísla, minimum nejvýš maximum. Validace odmítne také nekonečné maximum, aby protijedoucí vlak nemohl opustit svoji dráhu skokem do nekonečna (R2). Výchozí hodnoty 100–160 u/s ani uložená data se nemění.
 

@@ -129,12 +129,10 @@ export interface SaveConfig {
 
 /** Ride camera framing (doc 14 §2); see `src/render/cameraFraming.ts`. */
 export interface CameraConfig {
-  /** Share of the screen width the longest allowed train fills. */
+  /** Share of the screen width a 2000 u reference train fills. */
   trainWidthFraction: number;
-  /** Room behind the last wagon, share of the width. */
-  rearMarginFraction: number;
-  /** A short train's front stays at least this far right. */
-  minFrontFraction: number;
+  /** Train middle, slightly left of screen centre to see more ahead. */
+  trainCenterFraction: number;
   /** Train middle within the band free of controls (0 top, 1 bottom). */
   bandAnchor: number;
   /** Vertical follow rate, 1/s. */
@@ -227,7 +225,7 @@ export const gameConfig: GameConfig = {
     maxConsistLengthU: 2000,
     maxVehicleLengthU: 220,
     couplerGapU: 8,
-    // ≈ 0.22 screen widths per second at the doc 14 §2 scale (doc 14 §6).
+    // ≈ 0.144 screen widths per second at the D-028 camera scale (doc 14 §6).
     maxSpeedUPerSec: 480,
     accelerationUPerSec2: 160,
     coastDecelerationUPerSec2: 96,
@@ -259,7 +257,7 @@ export const gameConfig: GameConfig = {
     maxPlacementAttempts: 8,
     arcSampleSpacingU: 8,
     geometryLookAheadU: 2048,
-    geometryTailMarginU: 1024,
+    geometryTailMarginU: 1600,
     spawnChunkIndex: 0,
     spawnLocalXU: 512,
     catenaryPoleSpacingU: 256,
@@ -271,10 +269,9 @@ export const gameConfig: GameConfig = {
     npcHiddenPathMarginU: 256,
   },
   camera: {
-    trainWidthFraction: 0.72,
-    rearMarginFraction: 0.06,
-    minFrontFraction: 0.35,
-    bandAnchor: 0.55,
+    trainWidthFraction: 0.6,
+    trainCenterFraction: 0.46,
+    bandAnchor: 0.5,
     verticalFollowPerSec: 3,
   },
   input: {
@@ -397,11 +394,14 @@ export function validateGameConfig(config: GameConfig): string[] {
     [
       'camera.trainWidthFraction',
       // It sets the zoom, so 0 would divide the viewport by zero.
-      positive(camera.trainWidthFraction) &&
-        camera.trainWidthFraction + camera.rearMarginFraction < 1,
+      positive(camera.trainWidthFraction) && camera.trainWidthFraction < 1,
     ],
-    ['camera.rearMarginFraction', fraction(camera.rearMarginFraction)],
-    ['camera.minFrontFraction', fraction(camera.minFrontFraction)],
+    [
+      'camera.trainCenterFraction',
+      fraction(camera.trainCenterFraction) &&
+        camera.trainCenterFraction >= camera.trainWidthFraction / 2 &&
+        camera.trainCenterFraction + camera.trainWidthFraction / 2 < 1,
+    ],
     ['camera.bandAnchor', fraction(camera.bandAnchor)],
     ['camera.verticalFollowPerSec', positive(camera.verticalFollowPerSec)],
     ['world.maxTrackGrade', positive(world.maxTrackGrade)],
@@ -456,7 +456,11 @@ export function validateGameConfig(config: GameConfig): string[] {
       Number.isFinite(world.geometryLookAheadU) &&
         world.geometryLookAheadU >= 2048,
     ],
-    ['world.geometryTailMarginU', positive(world.geometryTailMarginU)],
+    [
+      'world.geometryTailMarginU',
+      Number.isFinite(world.geometryTailMarginU) &&
+        world.geometryTailMarginU >= 1600,
+    ],
     ['world.spawnChunkIndex', Number.isSafeInteger(world.spawnChunkIndex)],
     [
       'world.spawnLocalXU',

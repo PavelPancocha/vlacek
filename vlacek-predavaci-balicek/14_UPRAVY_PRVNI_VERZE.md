@@ -30,9 +30,9 @@ Nynější chyba: po stisknutí „Vyjeď“ vlak není vidět. Oprav skutečnou
 
 Vlak může být menší než v současné verzi, ale musí zůstat rozpoznatelný a detailní. Navrhni společné stabilní měřítko a maximální délku soupravy podle skutečně dostupné herní plochy. Neřeš to neomezeným zmenšováním při každém přidaném voze.
 
-Aktuální délkový limit je **2 000 u** ([D-028](../docs/decisions/028-longer-consist.md)), dříve 1 600 u. Soupravy do 1 600 u zachovávají původní měřítko; delší používají poměrně menší měřítko pevné pro celou jízdu. Resize přepočítá zobrazení se stejným pravidlem.
+Aktuální délkový limit je **2 000 u** ([D-028](../docs/decisions/028-longer-consist.md)), dříve 1 600 u. Aktualizace `camera-1` rámuje střed soupravy na 46 % šířky a používá pevné měřítko `0.60 × šířka / max(2000, délka soupravy)`. Nejdelší vlak zabírá 60 % šířky, za ním je geometricky 16 % a před ním 24 %. Resize přepočítá zobrazení se stejným pravidlem.
 
-Výchozí kompoziční cíl: nejdelší povolená souprava zabere přibližně **70–75 % využitelné šířky**, aby zůstalo místo před lokomotivou na krajinu a interakce a malá rezerva za posledním vozem. Toto je ladicí výchozí hodnota, ne povinnost vynucovat stejné procento na každém zařízení.
+Výchozí kompoziční cíl: nejdelší povolená souprava zabere přibližně **60 % využitelné šířky** podle aktualizace `camera-1` v D-028, aby zůstal prostor pro krajinu a interakce před lokomotivou i za posledním vozem. Toto je ladicí výchozí hodnota, ne povinnost vynucovat stejné procento na každém zařízení.
 
 Limit odvozuj od délky konkrétní lokomotivy, všech zvolených vagonků, spřáhel a mezer. Nestačí univerzální počet vozů, jestliže mají různou délku. V depu dovol přidat pouze vagonek, který se do limitu vejde. Dosažení limitu naznač jednoduše a bez chybového dialogu; existující soupravu nemaž.
 

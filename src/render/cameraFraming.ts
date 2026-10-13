@@ -3,12 +3,10 @@
  * units (y up) and render pixels (y down); no Phaser, testable in Node.
  */
 export interface FramingConfig {
-  /** Share of the width the longest allowed train fills. */
+  /** Share of the width a 2000 u reference train fills. */
   trainWidthFraction: number;
-  /** Room kept behind the last wagon, as a share of the width. */
-  rearMarginFraction: number;
-  /** A short train's front stays at least this far right, to see ahead. */
-  minFrontFraction: number;
+  /** Train middle, slightly left of screen centre to see more ahead. */
+  trainCenterFraction: number;
   /** Where the train's middle sits in the free band (0 top, 1 bottom). */
   bandAnchor: number;
   /** Height above the rails kept in view for vehicle tops. */
@@ -32,8 +30,8 @@ export interface TrainSpan {
 }
 
 /**
- * Render pixels per world unit. Rides up to 1600 u retain the original scale;
- * longer rides fit their fixed consist length (D-028), never their position.
+ * Stable scale for a ride and viewport, with a 2000 u reference (D-028).
+ * Grades, speed and position never change the zoom.
  */
 export function trainZoom(
   viewport: FramingViewport,
@@ -42,13 +40,12 @@ export function trainZoom(
 ): number {
   return (
     (config.trainWidthFraction * viewport.widthPx) /
-    Math.max(1600, consistLengthU)
+    Math.max(2000, consistLengthU)
   );
 }
 
 /**
- * World x of the left screen edge. The front sits where the longest train
- * would leave its rear margin, or further right for a short train.
+ * World x of the left edge; the whole train's middle keeps its screen anchor.
  */
 export function frameLeftX(
   frontX: number,
@@ -58,10 +55,7 @@ export function frameLeftX(
   config: FramingConfig,
 ): number {
   const trainFraction = (consistLengthU * zoom) / viewport.widthPx;
-  const frontFraction = Math.max(
-    config.minFrontFraction,
-    config.rearMarginFraction + trainFraction,
-  );
+  const frontFraction = config.trainCenterFraction + trainFraction / 2;
   return frontX - (frontFraction * viewport.widthPx) / zoom;
 }
 
@@ -96,4 +90,20 @@ export function frameTopY(
   topY =
     lowest <= highest ? Math.min(highest, Math.max(lowest, topY)) : highest;
   return topY;
+}
+
+/** Screen projection of the actual drawn camera view, not a second framing calculation. */
+export function projectWorldX(
+  worldX: number,
+  leftWorldX: number,
+  zoom: number,
+  renderWidthPx: number,
+  canvasRect: { left: number; width: number },
+): number {
+  return (
+    canvasRect.left +
+    (worldX - leftWorldX) *
+      zoom *
+      (Math.max(1, canvasRect.width) / renderWidthPx)
+  );
 }

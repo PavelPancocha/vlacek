@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { gameConfig } from '../../src/config/gameConfig.ts';
+import { trainZoom } from '../../src/render/cameraFraming.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 import { vehicleArt } from '../../src/content/artManifest.ts';
 import { snapshot, tapAction } from './helpers.ts';
@@ -93,7 +95,25 @@ test.describe('electric locomotive and catenary (doc 03 §9, TRN-08, D-016)', ()
               }),
             ) +
           12;
-        const zoom = (0.72 * (page.viewportSize()?.width ?? 0)) / 1600;
+        const viewport = page.viewportSize();
+        if (!viewport) throw new Error('viewport missing');
+        const zoom = trainZoom(
+          {
+            widthPx: viewport.width,
+            heightPx: viewport.height,
+            reservedTopPx: 0,
+            reservedBottomPx: 0,
+          },
+          state.consistLengthU,
+          { ...gameConfig.camera, vehicleHeightU: heightLimitU },
+        );
+        const [firstEdge, secondEdge] = state.chunkEdges;
+        if (firstEdge === undefined || secondEdge === undefined)
+          throw new Error('camera chunk edges missing');
+        expect(zoom).toBeCloseTo(
+          (secondEdge - firstEdge) / gameConfig.world.chunkWidthU,
+          9,
+        );
         expect((box.bottom - box.top) / zoom).toBeLessThanOrEqual(heightLimitU);
         await page.screenshot({
           path: test.info().outputPath(`${locomotive}-${renderer}-contact.png`),

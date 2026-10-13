@@ -12,15 +12,7 @@ function journeySave(onCrossing = false, longest = false): string {
   const consist = {
     locomotiveId: 'steam_local',
     wagons: (longest
-      ? [
-          'cargo_cars',
-          'cargo_cars',
-          'cargo_cars',
-          'cargo_cars',
-          'passenger_panorama',
-          'passenger_panorama',
-          'cargo_container',
-        ]
+      ? [...Array.from({ length: 11 }, () => 'passenger_open'), 'cargo_box']
       : ['cargo_box', 'passenger_open', 'cargo_coal']
     ).map((definitionId, i) => ({
       instanceId: `w${i + 1}`,
@@ -87,7 +79,7 @@ test.describe('level crossings (doc 05 §4, doc 14 §5, D-015)', () => {
     }) => {
       await continueJourney(page, false, scenario.longest);
       if (scenario.longest)
-        expect((await snapshot(page)).consistLengthU).toBe(1600);
+        expect((await snapshot(page)).consistLengthU).toBe(2000);
       const result = await page.evaluate(
         async ({ crossingId, halfSpeed }) => {
           const api = (
@@ -141,16 +133,11 @@ test.describe('level crossings (doc 05 §4, doc 14 §5, D-015)', () => {
         expect(result.lowering?.speed).toBeGreaterThan(220);
         expect(result.lowering?.speed).toBeLessThan(270);
       } else expect(result.lowering?.speed).toBeGreaterThanOrEqual(430);
-      if (scenario.longest) {
-        expect(['CLOSING', 'CLOSED']).toContain(result.entering?.phase);
-        expect(result.entering?.barrier).toBeGreaterThan(0);
-      } else {
-        expect(result.lowering).toBeDefined();
-        expect(result.lowering?.x).toBeGreaterThan(0);
-        expect(result.lowering?.x).toBeLessThan(
-          page.viewportSize()?.width ?? 0,
-        );
-      }
+      // Camera-1 shows more ahead: even the longest train must show the
+      // start of lowering, rather than first seeing an already closed crossing.
+      expect(result.lowering).toBeDefined();
+      expect(result.lowering?.x).toBeGreaterThan(0);
+      expect(result.lowering?.x).toBeLessThan(page.viewportSize()?.width ?? 0);
     });
   }
 

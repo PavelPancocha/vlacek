@@ -27,7 +27,7 @@ describe('gameConfig', () => {
     });
   });
 
-  it('doc 14 §6: the ride feels snappy on screen yet easy to follow', () => {
+  it('camera-1: the wider fixed scale changes screen speed while preserving motion', () => {
     const { train, camera } = gameConfig;
     const framing = { ...camera, vehicleHeightU: 150 };
     const view = {
@@ -36,15 +36,15 @@ describe('gameConfig', () => {
       reservedTopPx: 0,
       reservedBottomPx: 0,
     };
-    // D-028 preserves speed on screen for old trains; only longer rides shrink.
+    // Camera-1 keeps one fixed wider scale for every allowed ride.
     expect(
       (train.maxSpeedUPerSec * trainZoom(view, 1600, framing)) / view.widthPx,
-    ).toBeCloseTo(0.216, 9);
+    ).toBeCloseTo(0.144, 9);
     expect(
       (train.maxSpeedUPerSec *
         trainZoom(view, train.maxConsistLengthU, framing)) /
         view.widthPx,
-    ).toBeCloseTo(0.1728, 9);
+    ).toBeCloseTo(0.144, 9);
     // Smooth start and coast: seconds from standstill to full speed and back.
     const toFull = train.maxSpeedUPerSec / train.accelerationUPerSec2;
     const coast = train.maxSpeedUPerSec / train.coastDecelerationUPerSec2;
@@ -245,6 +245,13 @@ describe('gameConfig', () => {
     expect(validateGameConfig(broken)).toEqual(['camera.trainWidthFraction']);
   });
 
+  it('camera-1: rejects a centre that clips the reference train', () => {
+    const camera = { ...gameConfig.camera, trainCenterFraction: 0.1 };
+    expect(validateGameConfig({ ...gameConfig, camera })).toEqual([
+      'camera.trainCenterFraction',
+    ]);
+  });
+
   it('rejects a terrain without lattice or with a negative embankment', () => {
     const broken: GameConfig = {
       ...gameConfig,
@@ -273,6 +280,17 @@ describe('gameConfig', () => {
       world: { ...gameConfig.world, geometryLookAheadU: Infinity },
     };
     expect(validateGameConfig(broken)).toEqual(['world.geometryLookAheadU']);
+  });
+
+  it('camera-2: rejects a tail reserve below the wider view or an unbounded reserve', () => {
+    for (const geometryTailMarginU of [1024, 1599, Infinity, NaN]) {
+      expect(
+        validateGameConfig({
+          ...gameConfig,
+          world: { ...gameConfig.world, geometryTailMarginU },
+        }),
+      ).toEqual(['world.geometryTailMarginU']);
+    }
   });
 });
 

@@ -60,7 +60,7 @@ test('D-028/TRN-07: build, ride and restore the exact 2000 u train through cross
       const s = api.snapshot();
       allDrawn &&= s.artVehicles === 13 && s.renderedVehicles === 13;
       retained &&=
-        s.trackStartS <= s.tailS - 1024 && s.trackEndS >= s.frontS + 2048;
+        s.trackStartS <= s.tailS - 1600 && s.trackEndS >= s.frontS + 2048;
       allInView &&=
         !!s.trainBox && s.trainBox.left >= 0 && s.trainBox.right <= innerWidth;
       const c = s.crossings.find(

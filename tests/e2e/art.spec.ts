@@ -188,15 +188,15 @@ test.describe('vehicle art (doc 14 §3)', () => {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.setViewportSize({ width: 1280, height: 720 });
     await startRide(page, ['cargo_box']);
-    // Zoom 0.72 × 1280 / 1600 = 0.576 game px per u → raster step 0.75.
+    // Zoom 0.60 × 1280 / 2000 = 0.384 game px per u → raster step 0.5.
+    await expect
+      .poll(async () => (await snapshot(page)).vehicleAtlas?.pxPerU)
+      .toBe(0.5);
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    // 0.60 × 1920 / 2000 = 0.576 → 0.75.
     await expect
       .poll(async () => (await snapshot(page)).vehicleAtlas?.pxPerU)
       .toBe(0.75);
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    // 0.72 × 1920 / 1600 = 0.864 → 1.
-    await expect
-      .poll(async () => (await snapshot(page)).vehicleAtlas?.pxPerU)
-      .toBe(1);
     const state = await snapshot(page);
     expect(state.artVehicles).toBe(2);
     expect(state.trainBox).toBeDefined();

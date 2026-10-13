@@ -3,6 +3,7 @@ import type { ArtPart } from '../../content/artManifest.ts';
 import { worldParts } from '../../content/worldArt.ts';
 import { frameOrigin } from '../atlasPacking.ts';
 import type { ParticleField } from './ParticleField.ts';
+import { bubbleSizeU } from './bubbleInteraction.ts';
 
 const parts: Readonly<Record<string, ArtPart | undefined>> = worldParts;
 
@@ -34,7 +35,7 @@ export class EffectsView {
     this.#frames.length = 0;
   }
 
-  draw(field: ParticleField, originX: number): void {
+  draw(field: ParticleField, originX: number, unitsPerCss = 0): void {
     const texture = this.#texture;
     const particles = field.particles();
     let used = 0;
@@ -46,7 +47,10 @@ export class EffectsView {
         const image = this.#image(used, texture, frame, part);
         used += 1;
         const at = field.positionOf(particle);
-        const size = field.sizeOf(particle);
+        const size =
+          frame === 'fx.bubble'
+            ? bubbleSizeU(field, particle, unitsPerCss)
+            : field.sizeOf(particle);
         const kind = field.kindOf(particle);
         const depth = particle.depth ?? this.#depth;
         // Phaser queues a scene-wide sort even when the depth has not changed.

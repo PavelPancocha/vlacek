@@ -1,5 +1,9 @@
 import { expect, type Page } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
+import { gameConfig } from '../../src/config/gameConfig.ts';
+import { locomotives, wagons } from '../../src/content/vehicles.ts';
+import { RideSimulation } from '../../src/domain/ride/RideSimulation.ts';
+import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 
 export async function snapshot(page: Page): Promise<DebugSnapshot> {
   return page.evaluate(() => {
@@ -92,4 +96,68 @@ export async function expectWholeTrainInView(
     expect(box.top).toBeGreaterThanOrEqual(corner.y + corner.height - 1);
     expect(box.bottom).toBeLessThanOrEqual(brake.y + 1);
   }
+}
+
+/** A real saved ride in world 123; camera tests share the exact 2000 u consist. */
+export async function restoredTrain(
+  page: Page,
+  longest: boolean,
+  chunkIndex = 3,
+): Promise<RideSimulation> {
+  const ids = longest
+    ? [...Array.from({ length: 11 }, () => 'passenger_open'), 'cargo_box']
+    : ['cargo_box', 'passenger_open', 'cargo_coal'];
+  const consist = {
+    locomotiveId: 'steam_local',
+    wagons: ids.map((definitionId, i) => ({
+      instanceId: `w${i + 1}`,
+      definitionId,
+      visualSeed: i,
+    })),
+  };
+  const head = { chunkIndex, arcOffsetU: 650 };
+  const save = {
+    schemaVersion: 1,
+    contentVersion: 1,
+    savedAtIso: '2026-10-13T00:00:00.000Z',
+    appBuildId: 'camera-test',
+    settings: {
+      sfxEnabled: false,
+      musicEnabled: false,
+      reducedEffects: false,
+      maxSpeedFactor: 1,
+      quality: 'standard',
+    },
+    lastConsist: consist,
+    journey: {
+      seed: 123,
+      generatorVersion: TRACK_GENERATOR_VERSION,
+      consist,
+      head,
+      simulationTick: 0,
+      activeEntities: [],
+    },
+  };
+  await page.addInitScript((json) => {
+    if (localStorage.getItem('vlacek.save.v1') === null)
+      localStorage.setItem('vlacek.save.v1', json);
+  }, JSON.stringify(save));
+  await page.goto('./?debug=1');
+  await tapAction(page, 'continue');
+  await tapAction(page, 'resume');
+  await expect
+    .poll(async () => (await snapshot(page)).artVehicles)
+    .toBe(ids.length + 1);
+  const vehicles = [consist.locomotiveId, ...ids].map((id) => {
+    const vehicle = [...locomotives, ...wagons].find((v) => v.id === id);
+    if (!vehicle) throw new Error(id);
+    return vehicle;
+  });
+  return new RideSimulation({
+    seed: 123,
+    vehicles,
+    speedFactor: 1,
+    config: gameConfig,
+    head,
+  });
 }

@@ -86,6 +86,7 @@ import { secondaryPortalFeet } from './SecondaryView.ts';
 import {
   frameLeftX,
   frameTopY,
+  projectWorldX,
   trainZoom,
   type FramingConfig,
 } from './cameraFraming.ts';
@@ -540,6 +541,7 @@ export class RideScene extends Phaser.Scene {
         world.x + this.#originX,
         world.y,
         this.#outsideTunnel,
+        (gameConfig.input.minTargetCssPx / 2) * world.unitsPerCss,
       );
       if (bubbleId !== undefined) return { bubbleId };
     }
@@ -583,7 +585,8 @@ export class RideScene extends Phaser.Scene {
           id: bubble.id,
           x: canvasRect.left + (at.x - this.#originX - this.#view.left) * scale,
           y: canvasRect.top + (at.y - this.#view.top) * scale,
-          radiusCssPx: bubbleRadiusU(this.#particles, bubble) * scale,
+          radiusCssPx:
+            bubbleRadiusU(this.#particles, bubble, 1 / scale) * scale,
         };
       })
       .filter(
@@ -633,9 +636,19 @@ export class RideScene extends Phaser.Scene {
     return box;
   }
 
+  /** Projects with the latest drawn camera, including interpolation and rebase. */
+  worldScreenX(worldX: number, canvasRect: DOMRect): number {
+    return projectWorldX(
+      worldX,
+      this.#view.left + this.#originX,
+      this.#view.zoom,
+      this.scale.width,
+      canvasRect,
+    );
+  }
+
   /** Screen x (CSS px) of the chunk boundaries in view, for E2E. */
   chunkEdgesScreenX(canvasRect: DOMRect): number[] {
-    const cssPerGame = Math.max(1, canvasRect.width) / this.scale.width;
     const left = this.#view.left + this.#originX;
     const right = left + this.scale.width / this.#view.zoom;
     const edges: number[] = [];
@@ -644,10 +657,7 @@ export class RideScene extends Phaser.Scene {
       k * CHUNK_WIDTH_U <= right;
       k++
     )
-      edges.push(
-        canvasRect.left +
-          (k * CHUNK_WIDTH_U - left) * this.#view.zoom * cssPerGame,
-      );
+      edges.push(this.worldScreenX(k * CHUNK_WIDTH_U, canvasRect));
     return edges;
   }
 
@@ -800,7 +810,7 @@ export class RideScene extends Phaser.Scene {
     };
     const layout = ride.layout;
     const consistLengthU = layout.frontOffsetU + layout.tailOffsetU;
-    // Fixed for this journey and viewport; short trains keep D-008 scale.
+    // Fixed for this journey and viewport; neither grades nor speed zoom it.
     const zoom = trainZoom(viewport, consistLengthU, framing);
     camera.setZoom(zoom);
     this.#updateArtScale(zoom);
@@ -862,7 +872,16 @@ export class RideScene extends Phaser.Scene {
     this.#drawObjects(ride, leftX, rightX, timeSec);
     this.#drawTrain(ride, headS, leftX, rightX);
     this.#drawOncoming(ride, leftX, rightX);
-    this.#drawEffects(ride, headS, leftX, rightX, viewW, viewH, simDtSec);
+    this.#drawEffects(
+      ride,
+      headS,
+      leftX,
+      rightX,
+      viewW,
+      viewH,
+      simDtSec,
+      gamePerCss / zoom,
+    );
 
     const horizonTarget = -(minRailY + maxRailY) / 2;
     this.#horizonY =
@@ -1145,6 +1164,7 @@ export class RideScene extends Phaser.Scene {
     viewW: number,
     viewH: number,
     dtSec: number,
+    unitsPerCss: number,
   ): void {
     const quality = this.#host.effectsQuality();
     this.#particles.setCapacity(
@@ -1288,7 +1308,7 @@ export class RideScene extends Phaser.Scene {
       rateScale,
     });
     this.#particles.step(dtSec);
-    this.#effectsView?.draw(this.#particles, this.#originX);
+    this.#effectsView?.draw(this.#particles, this.#originX, unitsPerCss);
   }
 
   /** Particle counts for diagnostics and E2E. */

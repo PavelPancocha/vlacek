@@ -574,23 +574,12 @@ export class AppController {
       frontX: ride.sample(ride.frontS).x,
     };
     const canvasRect = this.#host.canvas?.getBoundingClientRect();
-    const width = canvasRect?.width ?? 0;
-    const cssPerU =
-      (width * gameConfig.camera.trainWidthFraction) /
-      gameConfig.train.maxConsistLengthU;
-    const lengthU = ride.layout.frontOffsetU + ride.layout.tailOffsetU;
-    const frontFraction = Math.max(
-      gameConfig.camera.minFrontFraction,
-      gameConfig.camera.rearMarginFraction +
-        (lengthU * cssPerU) / Math.max(1, width),
-    );
     return ride.crossings.map((crossing) => ({
       id: crossing.id,
       worldX: crossing.worldX,
-      screenX:
-        (canvasRect?.left ?? 0) +
-        width * frontFraction +
-        (crossing.worldX - train.frontX) * cssPerU,
+      screenX: canvasRect
+        ? this.#scene.worldScreenX(crossing.worldX, canvasRect)
+        : 0,
       tailX: train.tailX,
       phase: crossing.phase,
       phases: [...this.#crossingPhases.phases(crossing.id)],

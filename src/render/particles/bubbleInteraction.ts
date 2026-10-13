@@ -16,28 +16,50 @@ export function visibleBubbles(
     );
 }
 
-/** Radius of the drawn circle in fx.bubble.svg (10.5 of its 24 u frame). */
-export function bubbleRadiusU(field: ParticleField, bubble: Particle): number {
-  return (field.sizeOf(bubble) * 10.5) / 24;
+/** Minimum readable circle: 12 CSS px; other particles keep world sizes. */
+export function bubbleSizeU(
+  field: ParticleField,
+  bubble: Particle,
+  unitsPerCss = 0,
+): number {
+  return Math.max(field.sizeOf(bubble), (12 * unitsPerCss * 24) / 21);
 }
 
-/** Topmost visible bubble at the render-world point; y points down. */
+/** Radius of the drawn circle in fx.bubble.svg (10.5 of its 24 u frame). */
+export function bubbleRadiusU(
+  field: ParticleField,
+  bubble: Particle,
+  unitsPerCss = 0,
+): number {
+  return (bubbleSizeU(field, bubble, unitsPerCss) * 10.5) / 24;
+}
+
+/** Nearest eligible centre; drawing order breaks exact ties. Y points down. */
 export function bubbleAt(
   field: ParticleField,
   xU: number,
   yU: number,
   canSee?: (point: { x: number; y: number }) => boolean,
+  minRadiusU = 0,
 ): number | undefined {
   if (canSee?.({ x: xU, y: yU }) === false) return undefined;
   const bubbles = visibleBubbles(field, canSee);
+  let nearestId: number | undefined;
+  let nearestDistanceU = Infinity;
   for (let i = bubbles.length - 1; i >= 0; i--) {
     const bubble = bubbles[i];
     if (!bubble) continue;
     const at = field.positionOf(bubble);
-    if (Math.hypot(xU - at.x, yU - at.y) <= bubbleRadiusU(field, bubble))
-      return bubble.id;
+    const distanceU = Math.hypot(xU - at.x, yU - at.y);
+    if (
+      distanceU <= Math.max(minRadiusU, bubbleRadiusU(field, bubble)) &&
+      distanceU < nearestDistanceU
+    ) {
+      nearestId = bubble.id;
+      nearestDistanceU = distanceU;
+    }
   }
-  return undefined;
+  return nearestId;
 }
 
 /** A single small pop shares the decorative cap; reduced effects shrink it. */

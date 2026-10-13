@@ -29,6 +29,7 @@ describe('D-028 longest consist, world 123', () => {
     const chunks = new Set<number>();
     let metNpc = false;
     let maxChunks = 0;
+    let maxSamples = 0;
     for (let tick = 0; tick < 60 * 50; tick++) {
       ride.step('THROTTLE');
       chunks.add(ride.headCursor().chunkIndex);
@@ -44,6 +45,16 @@ describe('D-028 longest consist, world 123', () => {
         );
       });
       maxChunks = Math.max(maxChunks, ride.track.chunkCount);
+      if (tick % 30 === 0) {
+        let samples = 0;
+        for (
+          let k = ride.track.firstChunkIndex;
+          k <= ride.track.lastChunkIndex;
+          k++
+        )
+          samples += ride.track.chunkTable(k).xs.length;
+        maxSamples = Math.max(maxSamples, samples);
+      }
       expect(ride.track.startS).toBeLessThanOrEqual(
         ride.tailS - gameConfig.world.geometryTailMarginU,
       );
@@ -76,6 +87,7 @@ describe('D-028 longest consist, world 123', () => {
     }
     expect([...chunks]).toEqual(expect.arrayContaining([2, 3, 6, 11, 12]));
     expect(metNpc).toBe(true);
-    expect(maxChunks).toBeLessThanOrEqual(8);
+    expect(maxChunks).toBeLessThanOrEqual(7);
+    expect(maxSamples).toBeLessThanOrEqual(903);
   });
 });
