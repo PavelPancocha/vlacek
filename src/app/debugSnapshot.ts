@@ -120,6 +120,11 @@ export interface DebugSnapshot {
   /** Level crossings the ride simulates (doc 05 §4, D-015). */
   crossings: {
     id: string;
+    /** Crossing centre in world units and CSS px, including offscreen positions. */
+    worldX: number;
+    screenX: number;
+    /** Player train tail in world units, to observe clearance of the extended zone. */
+    tailX: number;
     phase: string;
     /** Every distinct phase so far, recorded each frame, newest last. */
     phases: string[];

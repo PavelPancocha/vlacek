@@ -144,6 +144,8 @@ describe('gameConfig', () => {
     expect(gameConfig.crossing).toEqual({
       roadClearanceSeconds: 2,
       warningSeconds: 1.2,
+      maxWarningSeconds: 4,
+      openHysteresisSeconds: 0.5,
       closingSeconds: 0.8,
       openingSeconds: 0.8,
       safetySeconds: 0.5,
@@ -241,4 +243,28 @@ describe('gameConfig', () => {
     };
     expect(validateGameConfig(broken)).toEqual(['world.geometryLookAheadU']);
   });
+});
+
+it('rejects invalid crossing deadlines and a maximum warning shorter than the minimum', () => {
+  for (const maxWarningSeconds of [
+    0,
+    NaN,
+    Infinity,
+    gameConfig.crossing.warningSeconds - 0.1,
+  ]) {
+    expect(
+      validateGameConfig({
+        ...gameConfig,
+        crossing: { ...gameConfig.crossing, maxWarningSeconds },
+      }),
+    ).toContain('crossing.maxWarningSeconds');
+  }
+  for (const openHysteresisSeconds of [0, NaN, Infinity]) {
+    expect(
+      validateGameConfig({
+        ...gameConfig,
+        crossing: { ...gameConfig.crossing, openHysteresisSeconds },
+      }),
+    ).toContain('crossing.openHysteresisSeconds');
+  }
 });

@@ -5,11 +5,17 @@ import {
 } from '../../../src/config/gameConfig.ts';
 import {
   CROSSING_ZONE_HALF_U,
+  earliestArrivalSeconds,
   LevelCrossing,
   worstClearingSeconds,
   type CrossingRules,
-  type TrainSpan,
+  type CrossingTrain,
 } from '../../../src/domain/interaction/LevelCrossing.ts';
+
+import {
+  motionParams,
+  stepMotion,
+} from '../../../src/domain/train/TrainMotion.ts';
 
 const VMAX = gameConfig.train.maxSpeedUPerSec;
 const rules: CrossingRules = {
@@ -20,16 +26,22 @@ const DT = 1 / gameConfig.simulation.fixedHz;
 const X = 10_000;
 
 /** A train `lengthU` long whose front is at `frontX`. */
-const span = (frontX: number, lengthU = 600): TrainSpan => ({
+const span = (frontX: number, lengthU = 600): CrossingTrain => ({
   tailX: frontX - lengthU,
   frontX,
+  direction: 1,
+  speedUPerSec: 0,
+  maxSpeedUPerSec: VMAX,
+  accelerationUPerSec2:
+    gameConfig.train.accelerationUPerSec2 *
+    (1 + gameConfig.train.gradeAccelerationFactor),
 });
 
 /** Runs the crossing while the train moves; returns what happened. */
 function drive(
   crossing: LevelCrossing,
-  start: TrainSpan,
-  speedAt: (t: number, train: TrainSpan) => number,
+  start: CrossingTrain,
+  speedAt: (t: number, train: CrossingTrain) => number,
   seconds: number,
 ) {
   let train = start;
@@ -40,7 +52,12 @@ function drive(
   let openWhileOccupied = 0;
   for (let i = 0; i < Math.round(seconds / DT); i++) {
     const v = speedAt(i * DT, train);
-    train = { tailX: train.tailX + v * DT, frontX: train.frontX + v * DT };
+    train = {
+      ...train,
+      speedUPerSec: v,
+      tailX: train.tailX + v * DT,
+      frontX: train.frontX + v * DT,
+    };
     crossing.step(DT, train);
     if (phases.at(-1) !== crossing.phase) phases.push(crossing.phase);
     if (crossing.trainInConflict(train) && crossing.roadInConflict())
@@ -54,6 +71,137 @@ function drive(
 }
 
 describe('LevelCrossing: barriers that really close (doc 05 §4)', () => {
+  it('keeps barriers up after the minimum warning while arrival is still distant', () => {
+    const crossing = new LevelCrossing('visible', X, 1, rules, span(X - 5000));
+    const train = span(X - 1500);
+    for (let i = 0; i < 120; i++) crossing.step(DT, train);
+    expect(crossing.phase).toBe('WARNING');
+    expect(crossing.barrier).toBe(0);
+  });
+
+  it('predicts rest, cruise, full speed and constant-speed oncoming arrivals', () => {
+    expect(earliestArrivalSeconds(100, 0, 480, 200)).toBeCloseTo(1);
+    expect(earliestArrivalSeconds(400, 200, 480, 200)).toBeCloseTo(
+      (Math.sqrt(200 ** 2 + 2 * 200 * 400) - 200) / 200,
+    );
+    expect(earliestArrivalSeconds(960, 480, 480, 200)).toBe(2);
+    expect(earliestArrivalSeconds(2000, 0, 480, 200)).toBeCloseTo(
+      2.4 + (2000 - 576) / 480,
+    );
+    expect(earliestArrivalSeconds(600, 120, 120, 0)).toBe(5);
+    expect(earliestArrivalSeconds(600, 0, 120, 0)).toBe(Infinity);
+    expect(earliestArrivalSeconds(0, 0, 480, 200)).toBe(0);
+  });
+
+  it('lowers after the maximum warning even for a standing train, never before the minimum', () => {
+    const crossing = new LevelCrossing('standing', X, 1, rules, span(X - 5000));
+    const train = span(X - 1500);
+    crossing.step(DT, train);
+    crossing.step(DT, train);
+    expect(crossing.phase).toBe('WARNING');
+    for (let i = 0; i < 60; i++) crossing.step(DT, train);
+    expect(crossing.phase).toBe('WARNING');
+    for (let i = 0; i < 3 * 60 + 2; i++) crossing.step(DT, train);
+    expect(crossing.phase).toBe('CLOSING');
+    for (let i = 0; i < 60; i++) crossing.step(DT, train);
+    expect(crossing.phase).toBe('CLOSED');
+  });
+
+  it('uses release hysteresis before opening and re-closes for a second train', () => {
+    const approaching = {
+      ...span(X - CROSSING_ZONE_HALF_U - rules.closeDistanceU + 1),
+      speedUPerSec: VMAX,
+    };
+    const crossing = new LevelCrossing('hysteresis', X, 2, rules, approaching);
+    const justOutside = {
+      ...approaching,
+      frontX: approaching.frontX - 2,
+      tailX: approaching.tailX - 2,
+    };
+    for (let i = 0; i < 60; i++) crossing.step(DT, justOutside);
+    expect(crossing.phase).toBe('CLOSED');
+    const far = span(X - 5000);
+    crossing.step(DT, far);
+    expect(crossing.phase).toBe('OPENING');
+    const second: CrossingTrain = {
+      frontX: X + CROSSING_ZONE_HALF_U + 250,
+      tailX: X + CROSSING_ZONE_HALF_U + 850,
+      direction: -1,
+      speedUPerSec: 120,
+      maxSpeedUPerSec: 120,
+      accelerationUPerSec2: 0,
+    };
+    crossing.step(DT, [far, second]);
+    expect(crossing.phase).toBe('CLOSING');
+    expect(crossing.roadPermitted()).toBe(false);
+    for (let i = 0; i < 10 * 60; i++) {
+      second.frontX -= 120 * DT;
+      second.tailX -= 120 * DT;
+      crossing.step(DT, [far, second]);
+      if (crossing.trainInConflict(second)) {
+        expect(crossing.barrier).toBe(1);
+        expect(crossing.roadInConflict()).toBe(false);
+      }
+    }
+    expect(crossing.phase).toBe('OPEN');
+    const restored = new LevelCrossing('restore-second', X, 2, rules, [
+      far,
+      { ...second, frontX: X - 10, tailX: X + 100 },
+    ]);
+    expect(restored.phase).toBe('CLOSED');
+  });
+
+  it('keeps barriers fully down for Tsafety before the extended zone under seeded throttle/brake/coast (1600 u train)', () => {
+    const params = motionParams(gameConfig, 1);
+    for (let seed = 1; seed <= 40; seed++) {
+      let state = seed;
+      const random = () => {
+        state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+        return state / 2 ** 32;
+      };
+      let train = span(X - 5000, 1600);
+      const crossing = new LevelCrossing('safety', X, seed, rules, train);
+      let closedSeconds = 0;
+      let entered = false;
+      let intent: 'THROTTLE' | 'COAST' | 'BRAKE' = 'THROTTLE';
+      for (let tick = 0; tick < 60 * 180; tick++) {
+        if (tick % 60 === 0) {
+          const roll = random();
+          intent = roll < 0.7 ? 'THROTTLE' : roll < 0.85 ? 'COAST' : 'BRAKE';
+        }
+        const motion = stepMotion(
+          train.speedUPerSec,
+          intent,
+          (random() * 2 - 1) * params.maxTrackGrade,
+          params,
+          DT,
+        );
+        train = {
+          ...train,
+          frontX: train.frontX + motion.distanceU,
+          tailX: train.tailX + motion.distanceU,
+          speedUPerSec: motion.speedUPerSec,
+        };
+        crossing.step(DT, train);
+        if (!entered && train.frontX > X - CROSSING_ZONE_HALF_U) {
+          entered = true;
+          expect(
+            closedSeconds,
+            `seed=${seed}, tick=${tick}, train=${JSON.stringify(train)}`,
+          ).toBeGreaterThanOrEqual(gameConfig.crossing.safetySeconds);
+        }
+        if (crossing.trainInConflict(train)) {
+          expect(crossing.barrier, `seed=${seed}, tick=${tick}`).toBe(1);
+          expect(crossing.roadInConflict(), `seed=${seed}, tick=${tick}`).toBe(
+            false,
+          );
+        }
+        closedSeconds = crossing.barrier === 1 ? closedSeconds + DT : 0;
+      }
+      expect(entered, `seed=${seed}`).toBe(true);
+    }
+  });
+
   it('stays open with no train near, letting road traffic across', () => {
     const crossing = new LevelCrossing('c', X, 1, rules, span(X - 5000));
     const result = drive(crossing, span(X - 5000), () => 0, 60);
@@ -117,6 +265,8 @@ describe('LevelCrossing: barriers that really close (doc 05 §4)', () => {
     let reclosed = false;
     for (let i = 0; i < 60 * 30; i++) {
       train = {
+        ...train,
+        speedUPerSec: 400,
         tailX: train.tailX + 400 * DT,
         frontX: train.frontX + 400 * DT,
       };
@@ -193,6 +343,8 @@ describe('LevelCrossing: barriers that really close (doc 05 §4)', () => {
         if (crossing.phase === 'OPEN' && random() < 0.004)
           train = span(X - CROSSING_ZONE_HALF_U - rules.closeDistanceU + 1);
         train = {
+          ...train,
+          speedUPerSec: VMAX,
           tailX: train.tailX + VMAX * DT,
           frontX: train.frontX + VMAX * DT,
         };

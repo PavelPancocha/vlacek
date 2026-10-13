@@ -21,6 +21,7 @@ import {
   POST_SIDE_GAP_U,
   ROAD_ACTOR_SCALE,
   boomAngle,
+  crossingRoadRange,
   laneOffsetU,
   redLampsLit,
   roadActorAlpha,
@@ -34,9 +35,59 @@ import {
 const allowedNearHeight = (roadU: number) =>
   NEAR_PROP_MAX_HEIGHT_U + (roadU - ROAD_CONFLICT_U);
 
-const frame = { railY: -100, meadowY: -60 };
+const frame = { railY: -100, meadowY: -60, railSlope: 0 };
 
 describe('crossing road in the picture (doc 05 §4)', () => {
+  it('meets the rail head exactly at the common crossing point', () => {
+    expect(roadPointY(frame, 0)).toBe(frame.railY);
+  });
+
+  it('fits uphill and downhill rails on both road edges and puts posts beside the sloping road', () => {
+    for (const railSlope of [-0.18, 0, 0.18]) {
+      const graded = { ...frame, railSlope };
+      for (const offsetXU of [-TRACK_CONFLICT_U, 0, TRACK_CONFLICT_U])
+        expect(roadPointY(graded, 0, offsetXU)).toBeCloseTo(
+          frame.railY + railSlope * offsetXU,
+        );
+      for (const roadU of [FAR_POST_ROAD_U, NEAR_POST_ROAD_U]) {
+        const side = roadU < 0 ? -1 : 1;
+        const offsetXU = side * (roadHalfWidthU(roadU) + POST_SIDE_GAP_U);
+        expect(Math.abs(offsetXU)).toBeGreaterThan(roadHalfWidthU(roadU));
+        expect(
+          roadPointY(graded, roadU, offsetXU) - roadPointY(graded, roadU),
+        ).toBeCloseTo(railSlope * offsetXU);
+      }
+    }
+  });
+
+  it('paints a continuous road across both deck edges and the whole bank on sloped crossings', () => {
+    const back = crossingRoadRange('back', ROAD_NEAR_END_U);
+    const near = crossingRoadRange('near', ROAD_NEAR_END_U);
+    expect(back.fromRoadU).toBe(ROAD_FAR_END_U);
+    expect(near.toRoadU).toBe(ROAD_NEAR_END_U);
+    expect(back.toRoadU).toBeGreaterThanOrEqual(near.fromRoadU);
+    for (const railSlope of [-0.0638882403448224, 0.0527, -0.0796]) {
+      const graded = { railY: -100, meadowY: -35, railSlope };
+      for (const offsetXU of [-TRACK_CONFLICT_U, TRACK_CONFLICT_U]) {
+        const joinBackY = roadPointY(graded, back.toRoadU, offsetXU);
+        const joinNearY = roadPointY(graded, near.fromRoadU, offsetXU);
+        expect(joinBackY).toBeGreaterThanOrEqual(joinNearY);
+        // Every road position, including the uncovered embankment beyond the deck.
+        for (let roadU = ROAD_FAR_END_U; roadU <= ROAD_NEAR_END_U; roadU++) {
+          expect(
+            (roadU >= back.fromRoadU && roadU <= back.toRoadU) ||
+              (roadU >= near.fromRoadU && roadU <= near.toRoadU),
+            `grade=${railSlope}, x=${offsetXU}, roadU=${roadU}`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('preserves the shared bridge-stream depth profile when no crossing grade is supplied', () => {
+    expect(roadPointY({ railY: -100, meadowY: -60 }, 0)).toBe(-91);
+  });
+
   it('runs from the horizon behind the track down past the meadow without a jump', () => {
     let previous = roadPointY(frame, ROAD_FAR_END_U);
     expect(previous).toBeCloseTo(frame.railY + ROAD_FAR_END_U, 9);

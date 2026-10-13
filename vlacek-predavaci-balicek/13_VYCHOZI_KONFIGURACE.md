@@ -87,6 +87,8 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
   "crossing": {
     "roadClearanceSeconds": 2.0,
     "warningSeconds": 1.2,
+    "maxWarningSeconds": 4.0,
+    "openHysteresisSeconds": 0.5,
     "closingSeconds": 0.8,
     "openingSeconds": 0.8,
     "safetySeconds": 0.5,
@@ -161,7 +163,7 @@ Limit soupravy je 2 000 u včetně spřáhel. [D-028](../docs/decisions/028-long
 
 `interaction.npcTrainMinSpeedUPerSec` a `interaction.npcTrainMaxSpeedUPerSec` musí být konečná kladná čísla, minimum nejvýš maximum. Validace odmítne také nekonečné maximum, aby protijedoucí vlak nemohl opustit svoji dráhu skokem do nekonečna (R2). Výchozí hodnoty 100–160 u/s ani uložená data se nemění.
 
-`Dclose` není druhá nezávislá konstanta. Počítá se podle dokumentu 05 z rychlostního limitu a přejezdových časů. Při standardním limitu vychází 890 u. Každý relevantní konflikt má ještě vlastní fyzickou šířku; vzdálenost se měří od čela vlaku k bližšímu okraji rozšířené konfliktní zóny, ne k libovolnému středu budovy. Proto `roadClearanceSeconds` nesmí být kratší než nejhorší doba, za kterou silniční aktér za stop čárou opustí zónu (dnes 2,0 s, D-015); kratší hodnotu validace odmítne.
+`Dclose` není druhá nezávislá konstanta. Je konzervativním dosahem simulace a blokováním silnice při plné rychlosti: `Vmax × (roadClearanceSeconds + warningSeconds + closingSeconds + safetySeconds) + distanceMarginU`, při nynějších 480 u/s tedy 2 240 u. Jednotlivé fáze řídí nejkratší možný čas příjezdu se zrychlením podle dokumentu 05 a [D-021](../docs/decisions/021-crossing-closes-in-view.md). Vzdálenost se měří od čela k bližšímu okraji rozšířené zóny (±62 u). `roadClearanceSeconds` nesmí být kratší než nejhorší doba opuštění konfliktu aktérem za stop čárou (2,0 s, D-015). `maxWarningSeconds` je kladná konečná hodnota nejméně `warningSeconds`: i při stání spustí závory po nejvýše 4 s výstrahy. Kladná konečná `openHysteresisSeconds` prodlužuje práh pro otevření o 0,5 s. Časová rezerva pro každou predikci je `distanceMarginU / Vmax` daného vlaku; validace odmítá neplatné hodnoty.
 
 `world.chunksPerBiomeBlock` je pevně 8, stejně jako `world.blocksPerRouteCycle`. Rozvržení motivů podle dokumentu 04 §6 používá sloty 0–7; validace proto odmítá jinou velikost bloku, včetně 4 (R8). Odvození slotů pro jiné velikosti se zavede až při konkrétním požadavku spolu s novou verzí generátoru. Výchozí konfigurace ani uložené cesty se touto kontrolou nemění.
 

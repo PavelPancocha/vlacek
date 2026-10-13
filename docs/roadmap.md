@@ -14,6 +14,10 @@ Stav k 2026-10-11. Rozsah a brány milníků vlastní [implementační plán](..
 
 Dokument 14 je splněný v §1–7: pořadí soupravy, celý vlak v obraze s délkovým limitem 2 000 u a původním měřítkem do 1 600 u ([D-008](decisions/008-whole-train-in-view.md), [D-028](decisions/028-longer-consist.md)), detailní grafika, částice, bohatší krajina s přejezdy, druhou kolejí, mosty a tunely, svižnější jízda a snímky ze skutečné aplikace.
 
+Iterace světa v2 podle zadání vlastníka z 2026-10-13 (rozpracováno, jeden PR):
+
+- **Přejezdy na dohled:** přejezdy řídí nejčasnější příjezd celé soupravy: nejprve čekají auta a blikají světla, potom se sklápějí závory. Krátká souprava vidí sklápění při plném plynu i kolem 240 u/s; souprava 1 600 u vidí při vstupu přejezdu do záběru závory v pohybu nebo dole. Souvislá vozovka přes násep, dráhy aut i paty výstražníků používají společnou výšku a sklon koleje, v art i fallback cestě. Fronta v E2E skutečně dokončí průjezd po posledním vagónu ([D-021](decisions/021-crossing-closes-in-view.md)).
+
 ## Rozhodnutí, která čekají na vlastníka
 
 - **Číslo světa u příliš dlouhé jízdy z 0.1.** Taková jízda nemůže pokračovat; hráč vlak zkrátí v depu a vyjede v novém světě, stejně jako po každé úpravě vlaku. Codex navrhl staré číslo zachovat. Zatím beze změny, rozhodnutí je ve vlákně PR #2.
@@ -233,5 +237,6 @@ Každé omezení má podmínku odstranění v uvedeném rozhodnutí.
 - **Zem se kreslí nejvýše 1 px/u.** Zvýší se, pokud test zařízení ukáže rušivou neostrost ([D-013](decisions/013-landscape-localities-and-backdrops.md)).
 - **Kvalita `auto`** je zatím totéž co `standard`. Odstraní ji R4.
 - **Přejezd a nádraží prvního bloku** nejsou zaručené (přejezd chybí v 0,08 % světů, nádraží v 53 %). Odstraní je R3.
+- **Křížení druhé koleje s přejezdem** zatím ve světě není: druhá kolej ve slotech 4–6 nekříží silnici přejezdu ve slotu 3. Rozhraní přejezdu přijímá více vlaků a bezpečnost ověřuje syntetický protijedoucí vlak; při přidání skutečného křížení musí simulace zahrnout jeho vlaky do seznamu ([D-021](decisions/021-crossing-closes-in-view.md)).
 - **WebGL dávky s jednou texturou** obcházejí chybu Phaseru 4.2.1 ([D-010](decisions/010-webgl-single-texture-batches.md)).
 - **Fyzický tablet, telefon a Tesla:** NEOVĚŘENO ([matice zařízení](device-tests/v0.1.md)).

@@ -7,7 +7,7 @@ import { CooldownGate, ObjectReactions } from '../interaction/Cooldowns.ts';
 import {
   LevelCrossing,
   type CrossingRules,
-  type TrainSpan,
+  type CrossingTrain,
 } from '../interaction/LevelCrossing.ts';
 import {
   layoutConsist,
@@ -248,10 +248,17 @@ export class RideSimulation {
   }
 
   /** The whole train as an x interval (doc 05 §4). */
-  #trainSpan(): TrainSpan {
+  #trainSpan(): CrossingTrain {
     return {
       tailX: this.track.sample(this.tailS).x,
       frontX: this.track.sample(this.frontS).x,
+      direction: 1,
+      speedUPerSec: this.speedUPerSec,
+      maxSpeedUPerSec: this.#motion.maxSpeedUPerSec,
+      // Downhill acceleration is the fastest allowed by stepMotion.
+      accelerationUPerSec2:
+        this.#motion.accelerationUPerSec2 *
+        (1 + this.#motion.gradeAccelerationFactor),
     };
   }
 

@@ -28,9 +28,38 @@ export interface TrainSpan {
   frontX: number;
 }
 
+/** Front and tail follow direction; speeds are nonnegative upper bounds in x. */
+export interface CrossingTrain extends TrainSpan {
+  direction: 1 | -1;
+  speedUPerSec: number;
+  maxSpeedUPerSec: number;
+  accelerationUPerSec2: number;
+}
+
+/** Fastest arrival with maximum acceleration, then cruising; Infinity if stopped forever. */
+export function earliestArrivalSeconds(
+  distanceU: number,
+  speedUPerSec: number,
+  maxSpeedUPerSec: number,
+  accelerationUPerSec2: number,
+): number {
+  if (distanceU <= 0) return 0;
+  const speed = Math.min(speedUPerSec, maxSpeedUPerSec);
+  if (accelerationUPerSec2 === 0)
+    return speed > 0 ? distanceU / speed : Infinity;
+  const acceleratingSec = (maxSpeedUPerSec - speed) / accelerationUPerSec2;
+  const acceleratingU = ((speed + maxSpeedUPerSec) / 2) * acceleratingSec;
+  if (distanceU <= acceleratingU)
+    return (
+      (2 * distanceU) /
+      (Math.sqrt(speed * speed + 2 * accelerationUPerSec2 * distanceU) + speed)
+    );
+  return acceleratingSec + (distanceU - acceleratingU) / maxSpeedUPerSec;
+}
+
 export interface CrossingRules {
   crossing: CrossingConfig;
-  /** Dclose, derived from the top speed (`crossingCloseDistanceU`). */
+  /** Conservative streaming horizon, not the phase trigger. */
   closeDistanceU: number;
 }
 
@@ -75,8 +104,8 @@ const BIKE_SHARE = 0.25;
 
 /**
  * A level crossing as a real state machine (doc 05 §4): it starts closing
- * when the train's front comes within Dclose or the train occupies the
- * crossing, lets committed road traffic clear, warns, lowers the barriers
+ * from every relevant train's earliest arrival, lets committed road
+ * traffic clear, warns, lowers the barriers
  * and opens them again only when no part of the train is on it and none
  * is approaching. Road actors enter the conflict zone only while it is
  * open with no train predicted, and never stop inside it. Runs on fixed
@@ -95,14 +124,14 @@ export class LevelCrossing {
   #spawned = 0;
   #crossed = 0;
   #actors: RoadActor[] = [];
-  #needClosed: boolean;
+  #needClosed = false;
 
   constructor(
     id: string,
     worldX: number,
     seed: number,
     rules: CrossingRules,
-    train: TrainSpan,
+    trains: CrossingTrain | readonly CrossingTrain[],
   ) {
     this.id = id;
     this.worldX = worldX;
@@ -110,7 +139,7 @@ export class LevelCrossing {
     this.#rules = rules;
     // Restored with a train on or near it: closed before the first frame,
     // and traffic only appears later, outside the crossing (SCN-08).
-    this.#needClosed = this.#closureNeeded(train);
+    this.#needClosed = this.#closureNeeded(trains);
     this.#phase = this.#needClosed ? 'CLOSED' : 'OPEN';
     this.#barrier = this.#needClosed ? 1 : 0;
     this.#nextSpawnSec = this.#spawnPause();
@@ -139,10 +168,10 @@ export class LevelCrossing {
     return this.#phase !== 'OPEN';
   }
 
-  step(dtSec: number, train: TrainSpan): void {
+  step(dtSec: number, trains: CrossingTrain | readonly CrossingTrain[]): void {
     this.#time += dtSec;
     this.#phaseSec += dtSec;
-    this.#needClosed = this.#closureNeeded(train);
+    this.#needClosed = this.#closureNeeded(trains);
     const { crossing } = this.#rules;
     switch (this.#phase) {
       case 'OPEN':
@@ -153,7 +182,12 @@ export class LevelCrossing {
         if (!this.roadCommitted()) this.#enter('WARNING');
         break;
       case 'WARNING':
-        if (this.#phaseSec >= crossing.warningSeconds) this.#enter('CLOSING');
+        if (
+          this.#phaseSec >= crossing.warningSeconds &&
+          (this.#closingDue(trains) ||
+            this.#phaseSec >= crossing.maxWarningSeconds)
+        )
+          this.#enter('CLOSING');
         break;
       case 'CLOSING':
         this.#barrier = Math.min(
@@ -206,8 +240,8 @@ export class LevelCrossing {
   /** Some part of the train is on the road. */
   trainInConflict(train: TrainSpan): boolean {
     return (
-      train.frontX > this.worldX - TRACK_CONFLICT_U &&
-      train.tailX < this.worldX + TRACK_CONFLICT_U
+      Math.max(train.frontX, train.tailX) > this.worldX - TRACK_CONFLICT_U &&
+      Math.min(train.frontX, train.tailX) < this.worldX + TRACK_CONFLICT_U
     );
   }
 
@@ -224,14 +258,62 @@ export class LevelCrossing {
     this.#phaseSec = 0;
   }
 
-  /** Occupied (with a margin) or the front within Dclose of the zone. */
-  #closureNeeded(train: TrainSpan): boolean {
+  /** Earliest arrival at the extended zone; a passed train cannot re-close it. */
+  arrivalSeconds(train: CrossingTrain): number {
     const from = this.worldX - CROSSING_ZONE_HALF_U;
     const to = this.worldX + CROSSING_ZONE_HALF_U;
-    const occupied = train.frontX > from && train.tailX < to;
-    const approaching =
-      train.frontX <= from && from - train.frontX <= this.#rules.closeDistanceU;
-    return occupied || approaching;
+    if (
+      Math.max(train.frontX, train.tailX) > from &&
+      Math.min(train.frontX, train.tailX) < to
+    )
+      return 0;
+    const distanceU =
+      train.direction === 1 ? from - train.frontX : train.frontX - to;
+    if (distanceU < 0) return Infinity;
+    return earliestArrivalSeconds(
+      distanceU,
+      train.speedUPerSec,
+      train.maxSpeedUPerSec,
+      train.accelerationUPerSec2,
+    );
+  }
+
+  #closureNeeded(trains: CrossingTrain | readonly CrossingTrain[]): boolean {
+    const { crossing } = this.#rules;
+    return this.#arrivesWithin(
+      trains,
+      crossing.roadClearanceSeconds +
+        crossing.warningSeconds +
+        crossing.closingSeconds +
+        crossing.safetySeconds,
+      this.#needClosed ? crossing.openHysteresisSeconds : 0,
+    );
+  }
+
+  #closingDue(trains: CrossingTrain | readonly CrossingTrain[]): boolean {
+    const { crossing } = this.#rules;
+    return this.#arrivesWithin(
+      trains,
+      crossing.closingSeconds + crossing.safetySeconds,
+      0,
+    );
+  }
+
+  #arrivesWithin(
+    trains: CrossingTrain | readonly CrossingTrain[],
+    seconds: number,
+    hysteresisSeconds: number,
+  ): boolean {
+    if ('frontX' in trains)
+      return (
+        this.arrivalSeconds(trains) <=
+        seconds +
+          this.#rules.crossing.distanceMarginU / trains.maxSpeedUPerSec +
+          hysteresisSeconds
+      );
+    return trains.some((train) =>
+      this.#arrivesWithin(train, seconds, hysteresisSeconds),
+    );
   }
 
   /** Past its stop line towards the track and not yet clear of it. */

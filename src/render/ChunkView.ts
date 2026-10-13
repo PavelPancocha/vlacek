@@ -59,7 +59,12 @@ import { chunkSecondaryTrack } from './SecondaryView.ts';
 import { CrossingView, type CrossingState } from './CrossingView.ts';
 import { CrossingFallbackView } from './CrossingFallbackView.ts';
 import { TunnelView, type Bake } from './TunnelView.ts';
-import { roadHalfWidthU, roadPointY } from './crossingLayout.ts';
+import {
+  crossingRoadRange,
+  roadHalfWidthU,
+  roadPointY,
+  type RoadFrame,
+} from './crossingLayout.ts';
 import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
 import { trackTilePlacements } from './trackTiles.ts';
 
@@ -494,7 +499,7 @@ export class ChunkView {
         scene,
         art,
         x,
-        { railY: -this.#railAt(x), meadowY: this.#meadowTop(x) },
+        this.#crossingRoadFrame(x),
         {
           back: depths.backProps + 0.5,
           deck: depths.track + 0.5,
@@ -632,7 +637,7 @@ export class ChunkView {
       this.#crossing = new CrossingFallbackView(
         scene,
         x,
-        { railY: -this.#railAt(x), meadowY: this.#meadowTop(x) },
+        this.#crossingRoadFrame(x),
         {
           back: depths.backProps + 0.5,
           deck: depths.track + 0.5,
@@ -1182,6 +1187,15 @@ export class ChunkView {
     return y - (this.#meadowTop(x) + NEAR_FOOT_OFFSET_U) + ROAD_CONFLICT_U;
   }
 
+  /** Shared rail point and render grade for the road, traffic and post feet. */
+  #crossingRoadFrame(x: number): RoadFrame {
+    return {
+      railY: -this.#railAt(x),
+      meadowY: this.#meadowTop(x),
+      railSlope: -(this.#railAt(x + 8) - this.#railAt(x - 8)) / 16,
+    };
+  }
+
   /**
    * The road of a level crossing (doc 05 §4), painted into the ground:
    * behind the track up to the horizon, in front of it down the meadow,
@@ -1194,10 +1208,14 @@ export class ChunkView {
     part: 'back' | 'near',
     bottomY: number,
   ): void {
-    const frame = { railY: -this.#railAt(x), meadowY: this.#meadowTop(x) };
-    const from = part === 'back' ? ROAD_FAR_END_U : ROAD_NEAR_FROM_U;
-    const to =
-      part === 'back' ? -ROAD_CONFLICT_U + 10 : this.#roadUAt(x, bottomY) + 2;
+    const frame = this.#crossingRoadFrame(x);
+    const bottomRoadU = this.#roadUAt(x, bottomY);
+    const { fromRoadU: from, toRoadU: to } = crossingRoadRange(
+      part,
+      bottomRoadU +
+        2 +
+        Math.abs(frame.railSlope ?? 0) * (roadHalfWidthU(bottomRoadU) + 4),
+    );
     const rs: number[] = [];
     for (let r = from; r < to; r += 8) rs.push(r);
     rs.push(to);
@@ -1206,7 +1224,7 @@ export class ChunkView {
         (r) =>
           new Phaser.Math.Vector2(
             x + side * (roadHalfWidthU(r) + grow),
-            roadPointY(frame, r),
+            roadPointY(frame, r, side * (roadHalfWidthU(r) + grow)),
           ),
       );
     const strip = (grow: number) => [
@@ -1227,10 +1245,15 @@ export class ChunkView {
     // Stop line across the lane that comes up to the track on this side.
     const stopU = part === 'back' ? -FAR_STOP_LINE_U : NEAR_STOP_LINE_U;
     const half = roadHalfWidthU(stopU);
-    const y = roadPointY(frame, stopU);
+    const lineFrom = part === 'back' ? -half + 2 : 1;
+    const lineTo = part === 'back' ? -1 : half - 2;
     g.lineStyle(2.6, 0xffffff, 0.95);
-    if (part === 'back') g.lineBetween(x - half + 2, y, x - 1, y);
-    else g.lineBetween(x + 1, y, x + half - 2, y);
+    g.lineBetween(
+      x + lineFrom,
+      roadPointY(frame, stopU, lineFrom),
+      x + lineTo,
+      roadPointY(frame, stopU, lineTo),
+    );
   }
 
   /**

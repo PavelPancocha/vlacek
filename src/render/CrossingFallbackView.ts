@@ -76,7 +76,7 @@ export class CrossingFallbackView {
       const scale = roadScale(roadU);
       const sign = side === 'left' ? -1 : 1;
       const x = this.#x + sign * (roadHalfWidthU(roadU) + POST_SIDE_GAP_U);
-      const footY = roadPointY(this.#frame, roadU);
+      const footY = roadPointY(this.#frame, roadU, x - this.#x);
       const post = worldParts[key];
       const anchors = crossingPostAnchors[key];
       const at = (point: { x: number; y: number }) => ({
@@ -122,7 +122,7 @@ export class CrossingFallbackView {
       const g = r < 0 ? this.#back : this.#near;
       const scale = roadScale(r);
       const x = this.#x + laneOffsetU(actor.direction, r);
-      const y = roadPointY(this.#frame, r);
+      const y = roadPointY(this.#frame, r, x - this.#x);
       const [w, h] = actor.kind === 'bike' ? [8, 14] : [18, 12];
       g.fillStyle(actor.kind === 'bike' ? BIKE : CAR, 1);
       g.fillRoundedRect(

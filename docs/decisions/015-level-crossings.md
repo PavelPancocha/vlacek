@@ -2,6 +2,8 @@
 
 Datum: 2026-10-10. Stav: přijato.
 
+Časování fází, predikci více vlaků a návaznost silnice na společný bod koleje aktualizuje [D-021](021-crossing-closes-in-view.md); níže popsaný pevný spouštěcí Dclose je historický.
+
 Dokument 14 §5 chce přejezdy s blikající výstrahou a závorami, které zůstanou zavřené, dokud neprojede poslední vagon. Dokument 05 §4 k tomu dává pravidla:
 
 - závory jsou skutečný stavový automat, ne dekorace;

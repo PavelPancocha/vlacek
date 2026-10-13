@@ -149,6 +149,8 @@ export interface CrossingConfig {
    */
   roadClearanceSeconds: number;
   warningSeconds: number;
+  maxWarningSeconds: number;
+  openHysteresisSeconds: number;
   closingSeconds: number;
   openingSeconds: number;
   safetySeconds: number;
@@ -158,9 +160,8 @@ export interface CrossingConfig {
 }
 
 /**
- * Dclose (doc 05 §4): how far ahead of the conflict zone a crossing
- * starts closing, derived from the top speed so a train that sets off at
- * full throttle can never reach an open crossing.
+ * Dclose (doc 05 §4): conservative streaming horizon and full-speed road
+ * hold distance. Phase deadlines use earliest arrival (D-021).
  */
 export function crossingCloseDistanceU(
   crossing: CrossingConfig,
@@ -291,6 +292,8 @@ export const gameConfig: GameConfig = {
   crossing: {
     roadClearanceSeconds: 2,
     warningSeconds: 1.2,
+    maxWarningSeconds: 4,
+    openHysteresisSeconds: 0.5,
     closingSeconds: 0.8,
     openingSeconds: 0.8,
     safetySeconds: 0.5,
@@ -499,6 +502,8 @@ export function validateGameConfig(config: GameConfig): string[] {
     ...(
       [
         'warningSeconds',
+        'maxWarningSeconds',
+        'openHysteresisSeconds',
         'closingSeconds',
         'openingSeconds',
         'safetySeconds',
@@ -510,6 +515,10 @@ export function validateGameConfig(config: GameConfig): string[] {
     [
       'crossing.roadClearanceSeconds',
       config.crossing.roadClearanceSeconds >= worstClearingSeconds(),
+    ],
+    [
+      'crossing.maxWarningSeconds',
+      config.crossing.maxWarningSeconds >= config.crossing.warningSeconds,
     ],
     ['crossing.maxQueuedCars', positiveInteger(config.crossing.maxQueuedCars)],
     [

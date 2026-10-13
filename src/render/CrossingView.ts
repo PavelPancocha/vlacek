@@ -157,7 +157,7 @@ export class CrossingView {
     const scale = roadScale(roadU);
     const sign = side === 'left' ? -1 : 1;
     const x = this.#x + sign * (roadHalfWidthU(roadU) + POST_SIDE_GAP_U);
-    const footY = roadPointY(this.#frame, roadU);
+    const footY = roadPointY(this.#frame, roadU, x - this.#x);
     const post = worldParts[postKey];
     const anchors = crossingPostAnchors[postKey];
     const at = (point: { x: number; y: number }) => ({
@@ -202,7 +202,7 @@ export class CrossingView {
           : this.#depths.near + r * DEPTH_PER_ROAD_U;
     this.#placed.set(image, x);
     image
-      .setPosition(this.#chunkX + x, roadPointY(this.#frame, r))
+      .setPosition(this.#chunkX + x, roadPointY(this.#frame, r, x - this.#x))
       .setScale((ROAD_ACTOR_SCALE * roadScale(r)) / this.#art.pxPerU)
       .setAlpha(roadActorAlpha(r))
       .setDepth(depth);
