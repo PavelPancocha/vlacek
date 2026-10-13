@@ -146,9 +146,13 @@ export function developerMenu(
       'aria-labelledby': 'dev-menu-title',
     },
     el('h1', { id: 'dev-menu-title' }, 'Vývojářské volby'),
-    el('p', { class: 'hint' }, 'Změny se použijí po opětovném načtení.'),
-    form,
-    el('p', { class: 'hint', role: 'status', 'data-dev-error': '' }),
+    el(
+      'div',
+      { class: 'screen-content' },
+      el('p', { class: 'hint' }, 'Změny se použijí po opětovném načtení.'),
+      form,
+      el('p', { class: 'hint', role: 'status', 'data-dev-error': '' }),
+    ),
     el(
       'div',
       { class: 'row dev-actions' },

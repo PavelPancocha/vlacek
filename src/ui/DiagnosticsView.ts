@@ -14,27 +14,31 @@ export function diagnosticsView(snapshot: DebugSnapshot): HTMLElement {
     el('h1', { id: 'diagnostics-title', tabindex: '-1' }, 'Diagnostika'),
     el(
       'div',
-      { class: 'diagnostics-groups' },
-      ...diagnosticGroups(snapshot).map((group) =>
-        el(
-          'section',
-          {},
-          el('h2', {}, group.title),
+      { class: 'screen-content' },
+      el(
+        'div',
+        { class: 'diagnostics-groups' },
+        ...diagnosticGroups(snapshot).map((group) =>
           el(
-            'dl',
+            'section',
             {},
-            ...group.rows.flatMap(([key, value]) => [
-              el('dt', {}, key),
-              el('dd', {}, value),
-            ]),
+            el('h2', {}, group.title),
+            el(
+              'dl',
+              {},
+              ...group.rows.flatMap(([key, value]) => [
+                el('dt', {}, key),
+                el('dd', {}, value),
+              ]),
+            ),
           ),
         ),
       ),
-    ),
-    el(
-      'div',
-      { 'data-copy-output': '' },
-      el('p', { role: 'status', 'data-copy-status': '' }),
+      el(
+        'div',
+        { 'data-copy-output': '' },
+        el('p', { role: 'status', 'data-copy-status': '' }),
+      ),
     ),
     el(
       'div',

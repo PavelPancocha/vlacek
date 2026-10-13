@@ -24,14 +24,15 @@ body {
 #app {
   position: fixed;
   inset: 0;
-  /* The game owns touches on the play area (doc 02 §3). */
-  touch-action: none;
+  height: 100dvh;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
 
 #game-root {
+  /* The game owns touches only on the play area (doc 02 §3). */
+  touch-action: none;
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -97,6 +98,48 @@ button:disabled {
   overflow: hidden;
 }
 
+/* Only content yields space; actions never shrink or scroll out of view. */
+.screen > *,
+.overlay > *,
+.builder-content > * {
+  flex-shrink: 0;
+}
+
+.screen-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+  overflow: auto;
+  touch-action: pan-y;
+}
+
+.select .screen-content {
+  align-self: stretch;
+}
+
+.select .row.bottom {
+  position: relative;
+}
+
+.scroll-cue {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--primary);
+  background: #f5f1e8;
+  border-radius: 50%;
+  line-height: 0;
+  pointer-events: none;
+}
+
+.scroll-cue svg {
+  transform: rotate(90deg);
+}
+
 .screen.center,
 .overlay {
   align-items: center;
@@ -105,6 +148,8 @@ button:disabled {
 }
 
 .overlay {
+  box-sizing: border-box;
+  overflow: hidden;
   position: absolute;
   inset: 0;
   display: flex;
@@ -159,6 +204,12 @@ h1 {
   padding: 8px 14px;
 }
 
+.button.primary {
+  min-height: 80px;
+  background: var(--primary);
+  color: var(--primary-ink);
+}
+
 .button.big {
   min-width: 96px;
   min-height: 88px;
@@ -168,11 +219,6 @@ h1 {
   min-width: 180px;
   min-height: 150px;
   font-size: 1.15rem;
-}
-
-.button.primary {
-  background: var(--primary);
-  color: var(--primary-ink);
 }
 
 .button.danger {
@@ -230,7 +276,7 @@ h1 {
   overflow-x: auto;
   overflow-y: hidden;
   /* Scrolling the train is allowed here; it never brakes (doc 02 §7). */
-  touch-action: pan-x;
+  touch-action: pan-x pan-y;
   background: #e8e1d2;
   border-radius: 12px;
 }
@@ -311,7 +357,7 @@ h1 {
   justify-content: flex-start;
   overflow-x: auto;
   overflow-y: hidden;
-  touch-action: pan-x;
+  touch-action: pan-x pan-y;
 }
 
 .group {
@@ -341,6 +387,7 @@ h1 {
 }
 
 .hud {
+  touch-action: none;
   position: absolute;
   inset: 0;
 }
@@ -382,8 +429,9 @@ h1 {
 }
 
 .error-view {
-  display: grid;
-  place-content: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   gap: 16px;
   height: 100%;
   padding: 16px;
@@ -440,7 +488,7 @@ h1 {
     justify-content: flex-start;
     overflow-x: auto;
     overflow-y: hidden;
-    touch-action: pan-x;
+    touch-action: pan-x pan-y;
     flex: 0 0 auto;
     max-width: 100%;
   }
@@ -452,9 +500,15 @@ h1 {
   .builder {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    align-content: start;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    align-content: stretch;
   }
-  .builder > * {
+  .builder-content {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    gap: 8px;
+  }
+  .builder-content > * {
     min-width: 0;
   }
   .builder > .row.actions {
@@ -466,12 +520,6 @@ h1 {
     grid-column: 1;
     flex-wrap: nowrap;
   }
-  .builder > .strip,
-  .builder > .catalog,
-  .builder > .hint,
-  .builder > .notices {
-    grid-column: 1 / -1;
-  }
   .builder .strip {
     height: 100px;
   }
@@ -479,9 +527,8 @@ h1 {
     min-height: 64px;
   }
   .builder > .row.bottom {
-    position: absolute;
-    right: calc(16px + var(--safe-right));
-    bottom: calc(8px + var(--safe-bottom));
+    grid-row: 3;
+    grid-column: 1 / -1;
     margin: 0;
   }
   .builder .button.big {
@@ -491,14 +538,13 @@ h1 {
 
 /* Narrower phones held sideways (e.g. 667 × 375, 568 × 320): the two control
    rows no longer fit side by side, so stack them. Vyjet joins the edit row
-   and the strip takes the height that is left. */
+   and the train/catalog area scrolls in the height that is left. */
 @media (max-height: 500px) and (max-width: 760px) {
   .builder {
     height: 100%;
-    gap: 6px;
+    gap: 4px;
     grid-template-columns: minmax(0, 1fr);
-    /* The strip keeps room for 64 px wagon touch targets (doc 13). */
-    grid-template-rows: auto auto minmax(76px, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
   }
   .builder > .row.top {
     grid-row: 1;
@@ -527,19 +573,22 @@ h1 {
     min-height: 64px;
     padding: 4px 12px;
   }
+  /* Leave room for the 80 px action without reducing 64 px card targets. */
+  .builder .card.small {
+    padding: 1px;
+    border-width: 2px;
+  }
   .builder .group {
     padding: 2px;
   }
-  .builder > .strip {
+  .builder-content {
     grid-row: 3;
+    gap: 4px;
+  }
+  /* Keep 64 px wagon targets and the locomotive clear of the edit row. */
+  .builder .strip {
     height: auto;
-  }
-  .builder > .catalog {
-    grid-row: 4;
-  }
-  .builder > .hint,
-  .builder > .notices {
-    grid-row: 5;
+    flex: 1 0 80px;
   }
 }
 
@@ -559,13 +608,11 @@ button.build-id {
 .dev-fields {
   width: min(100%, 800px);
   min-height: 0;
-  flex: 1;
+  flex: none;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
   gap: 12px 16px;
-  overflow-y: auto;
-  touch-action: pan-y;
   padding: 8px;
   box-sizing: border-box;
 }
@@ -618,16 +665,15 @@ button.build-id {
   align-items: center;
 }
 
-.diagnostics-groups {
+.diagnostics-detail .screen-content {
   width: min(100%, 900px);
-  flex: 1;
-  min-height: 0;
+}
+
+.diagnostics-groups {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   align-content: start;
   gap: 12px 24px;
-  overflow-y: auto;
-  touch-action: pan-y;
 }
 
 .diagnostics-groups h2 {
@@ -667,4 +713,22 @@ button.build-id {
   font:
     12px/1.4 ui-monospace,
     monospace;
+}
+
+.builder .button.big.primary {
+  min-height: 80px;
+}
+
+.dev-menu .screen-content {
+  width: min(100%, 800px);
+}
+
+.error-view p {
+  min-height: 0;
+  overflow: auto;
+  touch-action: pan-y;
+}
+
+.error-view .big-button {
+  flex-shrink: 0;
 }
