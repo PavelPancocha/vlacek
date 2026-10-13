@@ -1,5 +1,7 @@
 # Vláček — implementační předání
 
+**Hrát online:** [pavelpancocha.github.io/vlacek](https://pavelpancocha.github.io/vlacek/) — vždy poslední build z větve `master`; jeho číslo ukazuje pauza.
+
 **Pracovní název:** Vláček  
 **Verze specifikace:** 1.0 · **Datum:** 9. října 2026  
 **Jazyk hry:** čeština; hlavní ovládání obrázky, bez nutnosti číst.  
