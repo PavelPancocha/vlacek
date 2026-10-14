@@ -86,6 +86,7 @@ async function restore(
   chunkIndex: number,
   arcOffsetU: number,
   wagonIds: string[] = [],
+  seed = 123,
 ): Promise<void> {
   const consist = {
     locomotiveId: 'steam_local',
@@ -111,7 +112,7 @@ async function restore(
       },
       lastConsist: consist,
       journey: {
-        seed: 123,
+        seed,
         generatorVersion: TRACK_GENERATOR_VERSION,
         consist,
         head: { chunkIndex, arcOffsetU },
@@ -355,7 +356,8 @@ for (const renderer of ['canvas', 'webgl']) {
       await probeScene(page);
       if (fallback)
         await page.route(/track\.tile-a-[^/]*\.svg$/, (route) => route.abort());
-      await restore(page, renderer, 11, 340);
+      // V2 chooses a steam NPC in world 123; world 8 keeps a diesel and both sloped portals.
+      await restore(page, renderer, 11, 340, [], 8);
       expect((await snapshot(page)).artAtlas === undefined).toBe(fallback);
       await page.keyboard.down('ArrowRight');
       await expect

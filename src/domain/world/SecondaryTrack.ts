@@ -37,7 +37,7 @@ export const SECONDARY_SCALE = 0.9;
  */
 export const SECONDARY_CLEAR_DEPTH = 0.45;
 /** The portal hills reach this far beyond each portal, u. */
-export const PORTAL_HILL_U = 320;
+export const PORTAL_HILL_U = 380;
 
 /** The visible stretch of a second track (doc 04 §7). */
 export interface SecondarySite {
@@ -62,8 +62,7 @@ export function secondarySite(
     return undefined;
   const chosen =
     block === forcedSecondaryBiomeBlock ||
-    unitRandom(seed, TRACK_GENERATOR_VERSION, 'secondary-rail', block) <
-      secondaryRailProbability;
+    unitRandom(seed, 1, 'secondary-rail', block) < secondaryRailProbability;
   if (!chosen) return undefined;
   const first = block * chunksPerBiomeBlock + FIRST_SLOT;
   return {

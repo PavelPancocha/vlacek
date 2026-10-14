@@ -4,6 +4,7 @@ import { RideScene, type RideSceneHost } from './RideScene.ts';
 
 vi.mock('phaser', () => {
   const graphics = {
+    setDepth: vi.fn().mockReturnThis(),
     fillStyle: vi.fn().mockReturnThis(),
     fillCircle: vi.fn().mockReturnThis(),
     lineStyle: vi.fn().mockReturnThis(),
@@ -18,6 +19,7 @@ vi.mock('phaser', () => {
         game = { events: new EventEmitter(), renderer: new EventEmitter() };
         events = new EventEmitter();
         cameras = { main: { setBackgroundColor: vi.fn() } };
+        add = { graphics: () => graphics };
         make = { graphics: () => graphics };
       },
       Math: { Vector2: class {} },

@@ -230,14 +230,14 @@ describe('pantographReachU (doc 03 §9)', () => {
         0,
         gameConfig.world,
       );
-      track.ensureRange(-2048, 32 * gameConfig.world.chunkWidthU + 1024);
+      track.ensureRange(-2048, 48 * gameConfig.world.chunkWidthU + 1024);
       const rail = (x: number) =>
         heightAtX(
           track.chunkTable(Math.floor(x / gameConfig.world.chunkWidthU)),
           x,
         );
       const wire = (x: number) => contactWireHeightU(seed, x, rail);
-      for (let k = -1; k < 32; k++) {
+      for (let k = -1; k < 48; k++) {
         if (bridgeSite(seed, k)) bridges++;
         if (tunnelSite(seed, k)) tunnels++;
         for (

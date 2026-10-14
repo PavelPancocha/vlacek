@@ -1,3 +1,9 @@
+import { contextAt } from '../domain/world/WorldPlan.ts';
+import {
+  regionAt,
+  transitionAt,
+  type RegionPlan,
+} from '../domain/world/Regions.ts';
 import type { Biome } from '../domain/world/Biomes.ts';
 import type {
   BackGround,
@@ -111,6 +117,8 @@ export const BACKDROP_FILL: Readonly<Record<Biome, number>> = {
   foothills: 0x5e8c40,
   mountains: 0xdae5ee,
   coast: 0xe2cb90,
+  dunes: 0xe2cb90,
+  town: 0x6aa63c,
 };
 
 /** Colours of a water basin, from its far edge to its near shore. */
@@ -178,7 +186,7 @@ function bandColour(palette: NearPalette, u: number): number {
 }
 
 /** Each RGB channel from `a` (t = 0) to `b` (t = 1), rounded. */
-function mixColour(a: number, b: number, t: number): number {
+export function mixColour(a: number, b: number, t: number): number {
   let mixed = 0;
   for (const shift of [16, 8, 0]) {
     const from = (a >> shift) & 255;
@@ -186,4 +194,55 @@ function mixColour(a: number, b: number, t: number): number {
     mixed |= Math.round(from + (to - from) * t) << shift;
   }
   return mixed;
+}
+
+function regionGround(region: RegionPlan): NearGround {
+  return region.season === 'winter'
+    ? 'snow'
+    : region.landscape === 'forest'
+      ? 'forest'
+      : ['coast', 'dunes'].includes(region.landscape)
+        ? 'sand'
+        : 'meadow';
+}
+export function spatialNearPalette(
+  seed: number,
+  worldXU: number,
+  base: NearGround,
+): NearPalette {
+  const t = transitionAt(seed, worldXU);
+  return t.progress === 0
+    ? NEAR_PALETTE[base]
+    : blendNearPalette(
+        NEAR_PALETTE[regionGround(t.from)],
+        NEAR_PALETTE[regionGround(t.to)],
+        t.progress,
+      );
+}
+export function spatialBackPalette(
+  seed: number,
+  worldXU: number,
+  base: BackGround,
+  ownerXU?: number,
+): BackPalette {
+  if (
+    ownerXU !== undefined &&
+    regionAt(seed, worldXU).id !== regionAt(seed, ownerXU).id
+  )
+    base = contextAt(seed, worldXU, 'back').surface;
+  const t = transitionAt(seed, worldXU),
+    // Placement climate may already be incoming; authored owner ground is not.
+    a = BACK_PALETTE[base],
+    b = BACK_PALETTE[regionGround(t.to)];
+  if (t.progress === 0) return a;
+  return {
+    base: mixColour(a.base, b.base, t.progress),
+    edge: mixColour(a.edge, b.edge, t.progress),
+    patches: a.patches.map((c, i) =>
+      mixColour(c, b.patches[i % b.patches.length] ?? b.base, t.progress),
+    ),
+    ...(a.rows !== undefined
+      ? { rows: mixColour(a.rows, b.base, t.progress) }
+      : {}),
+  };
 }

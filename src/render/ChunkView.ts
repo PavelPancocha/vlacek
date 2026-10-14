@@ -1,3 +1,19 @@
+import { transitionAt } from '../domain/world/Regions.ts';
+import { nearGroundRuns, nearGroundTailStrips } from './groundLayout.ts';
+import {
+  clipPolygonX,
+  propFootU,
+  propScale,
+  roadSide,
+  waterSectionU,
+  waterLevelU,
+  type RoadPath,
+} from '../domain/world/SceneryGeometry.ts';
+import {
+  FENCE_PARTS,
+  fenceChildId,
+  type FenceFeature,
+} from '../domain/world/Fences.ts';
 import Phaser from 'phaser';
 import { gameConfig } from '../config/gameConfig.ts';
 import type { ArtPart } from '../content/artManifest.ts';
@@ -18,9 +34,7 @@ import {
 import type { ArcLengthTable } from '../domain/world/ArcLengthTable.ts';
 import { hash32 } from '../domain/world/Hash.ts';
 import {
-  NEAR_DEPTH_RANGE_U,
   WATER_END_U,
-  nearDepthScale,
   propDrawOrder,
   type ChunkScenery,
   type SceneryProp,
@@ -40,10 +54,11 @@ import {
   type TunnelSite,
 } from '../domain/world/Structures.ts';
 import {
-  BACK_PALETTE,
   NEAR_PALETTE,
   WATER_PALETTE,
   blendNearPalette,
+  spatialNearPalette,
+  spatialBackPalette,
   type NearPalette,
   type WaterPalette,
 } from './groundPalette.ts';
@@ -101,9 +116,9 @@ const ROAD_TAIL_DASHES_U = 600;
 /** Flashing glints on each water basin. */
 const GLINTS_PER_BASIN = 6;
 /** A road bends away to the horizon over this many u at each end. */
-const ROAD_BEND_U = 90;
+
 /** Road width at the track (narrower with distance). */
-const ROAD_WIDTH_U = 22;
+
 /**
  * Every how many track samples the ground outlines take a vertex (32 u at
  * 8 u samples); the track tiles overlap the bank top by more than the
@@ -202,6 +217,7 @@ function blendStrips(x: number): { fromX: number; toX: number; t: number }[] {
 export class ChunkView {
   readonly #table: ArcLengthTable;
   readonly #seed: number;
+  readonly fragmentIds: readonly string[];
   readonly #pxPerU: number;
   readonly #scene: Phaser.Scene;
   readonly #objects: Phaser.GameObjects.Container[] = [];
@@ -245,6 +261,9 @@ export class ChunkView {
     this.#scene = scene;
     this.#table = table;
     this.#seed = seed;
+    this.fragmentIds = scenery.features.map(
+      (feature) => `${feature.id}:fragment:${table.chunkIndex}`,
+    );
     this.#pxPerU = art?.pxPerU ?? 1;
     const groundScale = Math.min(this.#pxPerU, GROUND_MAX_PX_PER_U);
     let lowRail = Infinity;
@@ -259,17 +278,18 @@ export class ChunkView {
         for (const span of scenery.back) this.#paintBack(g, span);
         for (const basin of scenery.water) {
           const middle = (basin.fromX + basin.toX) / 2;
-          const coast = scenery.near.some(
-            (span) =>
-              span.style === 'sand' &&
-              middle >= span.fromX &&
-              middle < span.toX,
-          );
+          const coast =
+            basin.kind === 'sea' ||
+            scenery.near.some(
+              (span) =>
+                span.style === 'sand' &&
+                middle >= span.fromX &&
+                middle < span.toX,
+            );
           this.#paintWater(g, basin, WATER_PALETTE[coast ? 'sea' : 'lake']);
         }
         // Cars drive on a road (doc 04 §6: a car gets a road).
-        for (const prop of scenery.props)
-          if (prop.kind === 'back.car' && prop.motion) this.#paintRoad(g, prop);
+        for (const road of scenery.roads) this.#paintRoad(g, road);
         if (scenery.crossing)
           this.#paintCrossingRoad(g, scenery.crossing.localXU, 'back', 0);
         if (scenery.bridge)
@@ -287,14 +307,19 @@ export class ChunkView {
     let meadowBottom = -Infinity;
     for (let x = 0; x <= CHUNK_WIDTH_U; x += 16)
       meadowBottom = Math.max(meadowBottom, this.#meadowTop(x));
-    const bandsEnd =
+    const surfaces = scenery.reservations.filter(
+      (r) => r.purpose === 'field' || r.purpose === 'forest-floor',
+    );
+    const bandsEnd = Math.max(
       meadowBottom +
-      Math.max(
-        ...scenery.near.map(
-          (span) => NEAR_PALETTE[span.style].bands.at(-1)?.fromU ?? 0,
-        ),
-      ) +
-      NEAR_TAIL_U;
+        Math.max(
+          ...scenery.near.map(
+            (span) => NEAR_PALETTE[span.style].bands.at(-1)?.fromU ?? 0,
+          ),
+        ) +
+        NEAR_TAIL_U,
+      ...surfaces.flatMap((r) => r.polygon.map((p) => p.yU + 8)),
+    );
     const ground = this.#bake(
       (g) => {
         for (const span of scenery.near) this.#paintNear(g, span, bandsEnd);
@@ -312,6 +337,8 @@ export class ChunkView {
               strip.toX,
               bandsEnd,
             );
+        for (const surface of surfaces)
+          this.#paintNearSurface(g, surface, scenery.features);
         for (const span of scenery.near) this.#paintNearShade(g, span);
         if (scenery.crossing)
           this.#paintCrossingRoad(
@@ -332,17 +359,23 @@ export class ChunkView {
       groundScale,
     ).setDepth(depths.ground);
     for (const span of scenery.near)
-      ground.add(
-        scene.add
-          .rectangle(
-            span.fromX,
-            bandsEnd - 1,
-            span.toX - span.fromX + GROUND_OVERLAP_U,
-            GROUND_DEPTH_U,
-            NEAR_PALETTE[span.style].bands.at(-1)?.color ?? 0x74b448,
-          )
-          .setOrigin(0, 0),
-      );
+      for (const strip of nearGroundTailStrips(
+        this.#seed,
+        (table.xs[0] ?? 0) + span.fromX,
+        (table.xs[0] ?? 0) + span.toX,
+        span.style,
+      ))
+        ground.add(
+          scene.add
+            .rectangle(
+              strip.fromXU - (table.xs[0] ?? 0),
+              bandsEnd - 1,
+              strip.toXU - strip.fromXU + GROUND_OVERLAP_U,
+              GROUND_DEPTH_U,
+              strip.color,
+            )
+            .setOrigin(0, 0),
+        );
     for (const edge of nearEdges(scenery.near))
       for (const strip of blendStrips(edge.x))
         ground.add(
@@ -567,6 +600,7 @@ export class ChunkView {
     for (const prop of propDrawOrder(scenery.props)) {
       if (parts[prop.kind] === undefined) continue;
       const image = this.#image(scene, art, prop.kind, prop.flip);
+      if (prop.layer === 'back') image.setDepth(-prop.depth);
       this.#placeProp(image, prop, prop.xU);
       (prop.layer === 'back' ? backProps : nearProps).add(image);
       if (prop.layer === 'near') this.#near.push(image);
@@ -578,6 +612,9 @@ export class ChunkView {
           phase: (hash32('sway', prop.id) % 1000) / 1000,
         });
     }
+    if (art)
+      for (const fence of scenery.fences) this.#addFence(backProps, fence, art);
+    backProps.sort('depth');
     // Glints flash on the water, under the boats and reeds.
     for (const spot of this.#glintSpots) {
       const image = this.#image(scene, art, 'fx.glint', false);
@@ -801,6 +838,11 @@ export class ChunkView {
     this.#objects.push(...this.#tunnel.containers);
   }
 
+  /** Actual animated decorative view objects; no simulation or RNG work. */
+  get animatedObjectCount(): number {
+    return this.#moving.length + this.#swaying.length + this.#glints.length;
+  }
+
   /** Catenary masts of this chunk (0 unless the journey is electric). */
   get catenaryPoles(): number {
     return this.#poles;
@@ -899,23 +941,64 @@ export class ChunkView {
     return image;
   }
 
+  #addFence(
+    container: Phaser.GameObjects.Container,
+    fence: FenceFeature,
+    art: ChunkArt,
+  ): void {
+    const x0 = this.#table.chunkIndex * CHUNK_WIDTH_U,
+      to = x0 + CHUNK_WIDTH_U,
+      parts = FENCE_PARTS[fence.style];
+    for (const [i, p] of fence.posts.entries()) {
+      const end = i === fence.posts.length - 1;
+      const owner = Math.floor((p.xU - (end ? 1e-7 : 0)) / CHUNK_WIDTH_U);
+      if (owner === this.#table.chunkIndex) {
+        const image = this.#image(this.#scene, art, parts.post, false).setDepth(
+          -fence.depth,
+        );
+        image
+          .setName(
+            `${fenceChildId(fence, 'post', i)}:fragment:${this.#table.chunkIndex}`,
+          )
+          .setPosition(p.xU - x0, p.yU)
+          .setScale(1 / art.pxPerU);
+        container.add(image);
+      }
+      const next = fence.posts[i + 1];
+      if (!next || p.xU < x0 || p.xU >= to) continue;
+      const key = i === fence.gatePanel ? parts.gate : parts.panel;
+      const image = this.#image(this.#scene, art, key, false).setDepth(
+          -fence.depth,
+        ),
+        part = worldParts[key];
+      const length = Math.hypot(next.xU - p.xU, next.yU - p.yU);
+      image
+        .setName(
+          `${fenceChildId(fence, i === fence.gatePanel ? 'gate' : 'panel', i)}:fragment:${this.#table.chunkIndex}`,
+        )
+        .setPosition((p.xU + next.xU) / 2 - x0, (p.yU + next.yU) / 2)
+        .setRotation(Math.atan2(next.yU - p.yU, next.xU - p.xU))
+        .setScale(length / part.widthU / art.pxPerU, 1 / art.pxPerU);
+      container.add(image);
+    }
+  }
+
   #placeProp(
     image: Phaser.GameObjects.Image,
     prop: SceneryProp,
     x: number,
   ): void {
-    // Farther back props are a little smaller, nearer meadow ones larger.
-    const depthScale =
-      prop.layer === 'back'
-        ? 1 - 0.35 * prop.depth
-        : nearDepthScale(prop.depth);
-    const y =
-      prop.layer === 'back'
-        ? -this.#railAt(x) - prop.depth * BACK_PLANE_U
-        : this.#meadowTop(x) +
-          NEAR_FOOT_OFFSET_U +
-          prop.depth * NEAR_DEPTH_RANGE_U;
-    image.setPosition(x, y).setScale((prop.scale * depthScale) / this.#pxPerU);
+    const foot = propFootU(
+      prop,
+      x,
+      this.#railAt(x),
+      prop.layer === 'near'
+        ? bankHeightU(this.#seed, (this.#table.xs[0] ?? 0) + x)
+        : 0,
+    );
+    image
+      .setPosition(foot.xU, foot.yU)
+      .setScale(propScale(prop) / this.#pxPerU);
   }
 
   /** Rail height (world, up) at a chunk-local x. */
@@ -969,13 +1052,20 @@ export class ChunkView {
     span: GroundSpan<NearGround>,
     bandsEnd: number,
   ): void {
-    this.#paintNearBands(
-      g,
-      NEAR_PALETTE[span.style],
-      span.fromX,
-      span.toX,
-      bandsEnd,
-    );
+    const x0 = this.#table.xs[0] ?? 0;
+    for (const strip of nearGroundRuns(
+      this.#seed,
+      x0 + span.fromX,
+      x0 + span.toX,
+      span.style,
+    ))
+      this.#paintNearBands(
+        g,
+        strip.palette,
+        strip.fromXU - x0,
+        strip.toXU - x0,
+        bandsEnd,
+      );
   }
 
   /** Embankment face and meadow bands of a palette over [fromX, toX]. */
@@ -1016,11 +1106,86 @@ export class ChunkView {
   }
 
   /** Soft shadow where the bank meets the meadow. */
+  #paintNearSurface(
+    g: Phaser.GameObjects.Graphics,
+    surface: import('../domain/world/Reservations.ts').Reservation,
+    features: ChunkScenery['features'],
+  ): void {
+    const x0 = this.#table.xs[0] ?? 0;
+    const points = surface.polygon.map(
+      (p) => new Phaser.Math.Vector2(p.xU - x0, p.yU),
+    );
+    g.fillStyle(surface.purpose === 'field' ? 0xb6a563 : 0x6c8043, 1);
+    g.fillPoints(points, true);
+    const half = points.length / 2;
+    const upper = points.slice(0, half),
+      lower = points.slice(half).reverse();
+    // Only longitudinal edges: a clipped chunk boundary is not a field edge.
+    g.lineStyle(12, 0x75954f, 0.45);
+    g.strokePoints(upper, false, false);
+    g.strokePoints(lower, false, false);
+    const feature = features.find((f) => f.id === surface.ownerId);
+    const x0World = this.#table.xs[0] ?? 0;
+    for (const t of surface.purpose === 'field'
+      ? [0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
+      : [0.1, 0.45, 0.8]) {
+      g.lineStyle(
+        surface.purpose === 'field' ? 1.4 : 3,
+        surface.purpose === 'field' ? 0x928248 : 0x527239,
+        0.65,
+      );
+      const row = upper
+        .map(
+          (p, i) =>
+            new Phaser.Math.Vector2(
+              p.x,
+              p.y + ((lower[i]?.y ?? p.y) - p.y) * t,
+            ),
+        )
+        .filter(
+          (p) =>
+            feature !== undefined &&
+            p.x + x0World >= feature.fromXU + 160 &&
+            p.x + x0World <= feature.toXU - 160,
+        );
+      if (row.length >= 2) g.strokePoints(row, false, false);
+    }
+    if (surface.purpose === 'forest-floor') {
+      // A low irregular edge below the train; adult crowns stay behind it.
+      const edge = upper.map(
+        (p, i) =>
+          new Phaser.Math.Vector2(
+            p.x,
+            Math.max(
+              -this.#railAt(p.x) + 26,
+              p.y -
+                Math.min(1, Math.max(0, (lower[i]?.y ?? p.y) - p.y) / 48) *
+                  (24 +
+                    ((hash32('forest-edge', this.#seed, Math.round(x0 + p.x)) %
+                      100) /
+                      100) *
+                      16),
+            ),
+          ),
+      );
+      g.fillStyle(0x4b7436, 0.9);
+      g.fillPoints([...edge, ...upper.slice().reverse()], true);
+    }
+  }
+
   #paintNearShade(
     g: Phaser.GameObjects.Graphics,
     span: GroundSpan<NearGround>,
   ): void {
-    g.lineStyle(1.6, NEAR_PALETTE[span.style].bankShade, 0.7);
+    g.lineStyle(
+      1.6,
+      spatialNearPalette(
+        this.#seed,
+        (this.#table.xs[0] ?? 0) + (span.fromX + span.toX) / 2,
+        span.style,
+      ).bankShade,
+      0.7,
+    );
     g.strokePoints(
       this.#samples(span.fromX, span.toX).map(
         (x) => new Phaser.Math.Vector2(x, this.#meadowTop(x)),
@@ -1048,7 +1213,11 @@ export class ChunkView {
     g: Phaser.GameObjects.Graphics,
     span: GroundSpan<BackGround>,
   ): void {
-    const palette = BACK_PALETTE[span.style];
+    const palette = spatialBackPalette(
+      this.#seed,
+      (this.#table.xs[0] ?? 0) + (span.fromX + span.toX) / 2,
+      span.style,
+    );
     const rail = (x: number) => -this.#railAt(x);
     const depthY = (x: number, depth: number) => rail(x) - depth * BACK_PLANE_U;
     const leanLeft = this.#lean(span.fromX);
@@ -1057,17 +1226,51 @@ export class ChunkView {
     const leftAt = (depth: number) => span.fromX + leanLeft * (2 * depth - 1);
     const rightAt = (depth: number) =>
       span.toX + leanRight * (2 * depth - 1) + GROUND_OVERLAP_U;
-    /** Band between two depths, cut by the leaning edges. */
-    const band = (near: number, far: number, below = 0) => {
+    const bandPolygon = (near: number, far: number, below = 0) => {
       const line = (depth: number, dy: number) =>
-        this.#samples(leftAt(depth), rightAt(depth)).map(
-          (x) => new Phaser.Math.Vector2(x, depthY(x, depth) + dy),
-        );
+        this.#samples(leftAt(depth), rightAt(depth)).map((x) => ({
+          xU: x,
+          yU: depthY(x, depth) + dy,
+        }));
       return [...line(far, 0), ...line(near, below).reverse()];
     };
-    // From a little in front of the rails (under the track tiles) up.
-    g.fillStyle(palette.base, 1);
-    g.fillPoints(band(0, 1, 4), true);
+    const fullBase = bandPolygon(0, 1, 4),
+      fullEdge = bandPolygon(0.968, 1);
+    // Equal colours share a path; technical edges still sample the same world field.
+    const strips: { from: number; to: number; base: number; edge: number }[] =
+      [];
+    for (
+      let from = span.fromX - FIELD_EDGE_LEAN_U;
+      from < span.toX + FIELD_EDGE_LEAN_U + GROUND_OVERLAP_U;
+      from += 16
+    ) {
+      const to = Math.min(
+        span.toX + FIELD_EDGE_LEAN_U + GROUND_OVERLAP_U,
+        from + 16,
+      );
+      const at = spatialBackPalette(
+        this.#seed,
+        (this.#table.xs[0] ?? 0) + (from + to) / 2,
+        span.style,
+        this.#table.xs[0] ?? 0,
+      );
+      const previous = strips.at(-1);
+      if (previous && previous.base === at.base && previous.edge === at.edge)
+        previous.to = to;
+      else strips.push({ from, to, base: at.base, edge: at.edge });
+    }
+    for (const { from, to, base, edge } of strips) {
+      const basePolygon = clipPolygonX(fullBase, from, to + 1).map(
+        (p) => new Phaser.Math.Vector2(p.xU, p.yU),
+      );
+      const edgePolygon = clipPolygonX(fullEdge, from, to + 1).map(
+        (p) => new Phaser.Math.Vector2(p.xU, p.yU),
+      );
+      g.fillStyle(base, 1);
+      if (basePolygon.length >= 3) g.fillPoints(basePolygon, true);
+      g.fillStyle(edge, 1);
+      if (edgePolygon.length >= 3) g.fillPoints(edgePolygon, true);
+    }
     // Soft patches, flatter towards the horizon (fewer on fields).
     const chunk = this.#table.chunkIndex;
     const patches = palette.rows === undefined ? 7 : 3;
@@ -1090,20 +1293,47 @@ export class ChunkView {
         width * 0.22 * (1 - 0.5 * depth),
       );
     }
-    // A darker strip along the horizon: hedges, the far shore, drifts.
-    g.fillStyle(palette.edge, 1);
-    g.fillPoints(band(0.968, 1), true);
     if (palette.rows !== undefined) {
       // Crop rows, closer together and thinner towards the horizon.
       for (const depth of [0.12, 0.27, 0.42, 0.56, 0.69, 0.8, 0.9]) {
-        g.lineStyle(3.2 - 2.4 * depth, palette.rows, 1);
-        g.strokePoints(
-          this.#samples(leftAt(depth), rightAt(depth) - GROUND_OVERLAP_U).map(
-            (x) => new Phaser.Math.Vector2(x, depthY(x, depth)),
-          ),
-          false,
-          false,
-        );
+        const end = rightAt(depth) - GROUND_OVERLAP_U;
+        const x0 = this.#table.xs[0] ?? 0;
+        const startTransition = transitionAt(this.#seed, x0 + leftAt(depth)),
+          endTransition = transitionAt(this.#seed, x0 + end);
+        if (
+          startTransition.progress === 0 &&
+          endTransition.progress === 0 &&
+          startTransition.from.id === endTransition.from.id
+        ) {
+          g.lineStyle(3.2 - 2.4 * depth, palette.rows, 1);
+          g.strokePoints(
+            this.#samples(leftAt(depth), end).map(
+              (x) => new Phaser.Math.Vector2(x, depthY(x, depth)),
+            ),
+            false,
+            false,
+          );
+          continue;
+        }
+        for (let from = leftAt(depth); from < end; from += 16) {
+          const to = Math.min(end, from + 16),
+            worldX = (this.#table.xs[0] ?? 0) + (from + to) / 2;
+          const color = spatialBackPalette(this.#seed, worldX, span.style).rows;
+          if (color === undefined) continue;
+          g.lineStyle(
+            3.2 - 2.4 * depth,
+            color,
+            1 - transitionAt(this.#seed, worldX).progress,
+          );
+          g.strokePoints(
+            [
+              new Phaser.Math.Vector2(from, depthY(from, depth)),
+              new Phaser.Math.Vector2(to, depthY(to, depth)),
+            ],
+            false,
+            false,
+          );
+        }
       }
     }
   }
@@ -1113,47 +1343,15 @@ export class ChunkView {
    * car's depth, curving away to the horizon at both ends and narrower
    * with distance; asphalt with a dashed middle line.
    */
-  #paintRoad(g: Phaser.GameObjects.Graphics, prop: SceneryProp): void {
-    const range = prop.motion?.rangeU ?? 0;
-    const bend = ROAD_BEND_U;
-    const from = Math.max(bend, prop.xU - range / 2 - 12);
-    const to = Math.min(CHUNK_WIDTH_U - bend, prop.xU + range / 2 + 12);
-    const rail = (x: number) => -this.#railAt(x);
-    // Centre line as (x, depth): in from the horizon, straight, out again.
-    const path: [number, number][] = [];
-    const steps = 10;
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      path.push([
-        from - bend * (1 - t),
-        prop.depth + (1 - prop.depth) * (1 - t) ** 2,
-      ]);
-    }
-    for (let x = from + 32; x < to; x += 32) path.push([x, prop.depth]);
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      path.push([to + bend * t, prop.depth + (1 - prop.depth) * t ** 2]);
-    }
-    // The car's wheels stand on the near half of the road.
-    const points = path.map(([x, depth]) => ({
-      x,
-      y: rail(x) - depth * BACK_PLANE_U - ROAD_WIDTH_U * 0.3 * (1 - depth),
-      half: (ROAD_WIDTH_U / 2) * (1 - 0.7 * depth),
-    }));
-    // Offset along the screen normal, so the bends keep their width.
+  #paintRoad(g: Phaser.GameObjects.Graphics, road: RoadPath): void {
+    const x0 = this.#table.chunkIndex * CHUNK_WIDTH_U;
+    const from = road.fromXU - x0,
+      to = road.toXU - x0;
+    const points = road.points.map((p) => ({ x: p.xU - x0, y: p.yU }));
     const side = (sign: number, grow = 0) =>
-      points.map((point, i) => {
-        const before = points[Math.max(0, i - 1)] ?? point;
-        const after = points[Math.min(points.length - 1, i + 1)] ?? point;
-        const dx = after.x - before.x;
-        const dy = after.y - before.y;
-        const length = Math.hypot(dx, dy) || 1;
-        const offset = sign * (point.half + grow);
-        return new Phaser.Math.Vector2(
-          point.x - (dy / length) * offset,
-          point.y + (dx / length) * offset,
-        );
-      });
+      roadSide(road, sign, grow).map(
+        (p) => new Phaser.Math.Vector2(p.xU - x0, p.yU),
+      );
     const strip = (grow: number) => [
       ...side(-1, grow),
       ...side(1, grow).reverse(),
@@ -1355,38 +1553,27 @@ export class ChunkView {
     basin: WaterBasin,
     palette: WaterPalette,
   ): void {
-    const rail = (x: number) => -this.#railAt(x);
-    const from = basin.fromX + WATER_SIDE_U;
-    const to = basin.toX - WATER_SIDE_U;
-    let level = Infinity;
-    for (let x = from; x <= to; x += 16) level = Math.min(level, rail(x));
-    const far = (x: number) =>
-      Math.max(
-        level - basin.farDepth * BACK_PLANE_U,
-        rail(x) - BACK_PLANE_U + 4,
-      );
-    const near = (x: number) => rail(x) - basin.nearDepth * BACK_PLANE_U;
-    // Sample densely at the curved ends, coarsely in between.
+    const sea = basin.kind === 'sea';
+    const from = sea
+      ? basin.fromX - FIELD_EDGE_LEAN_U - GROUND_OVERLAP_U
+      : basin.fromX + WATER_SIDE_U;
+    const to = sea
+      ? basin.toX + FIELD_EDGE_LEAN_U + GROUND_OVERLAP_U
+      : basin.toX - WATER_SIDE_U;
+    const level = waterLevelU(this.#seed, this.#table.chunkIndex, basin);
+    const section = (x: number) =>
+      waterSectionU(this.#seed, this.#table.chunkIndex, basin, x, level);
+    const far = (x: number) => section(x).topU,
+      near = (x: number) => section(x).bottomU;
     const xs: number[] = [];
-    for (let x = from; x < from + WATER_END_U; x += 6) xs.push(x);
-    for (let x = from + WATER_END_U; x < to - WATER_END_U; x += 32) xs.push(x);
-    for (let x = to - WATER_END_U; x < to; x += 6) xs.push(x);
+    for (let x = from; x < to; x += 8) xs.push(x);
     xs.push(to);
-    /** How much of the depth range the water covers at x (ends curve in). */
-    const open = (x: number) => {
-      const end = Math.min(x - from, to - x) / (WATER_END_U - WATER_SIDE_U);
-      const f = Math.max(0, Math.min(1, end));
-      return Math.sqrt(1 - (1 - f) * (1 - f));
-    };
+    const open = (x: number) =>
+      sea ? 1 : Math.max(0, Math.min(1, Math.min(x - from, to - x) / 62));
     /** Outline between two fractions of the water (0 far edge … 1 near). */
     const outline = (t0: number, t1: number): Phaser.Math.Vector2[] => {
       const point = (x: number, t: number) => {
-        const top = far(x);
-        const bottom = near(x);
-        // The curve closes towards a point a little nearer than the middle.
-        const middle = top + (bottom - top) * 0.55;
-        const k = open(x);
-        const y = middle + (top + (bottom - top) * t - middle) * k;
+        const y = far(x) + (near(x) - far(x)) * t;
         return new Phaser.Math.Vector2(x, y);
       };
       return [
@@ -1396,9 +1583,21 @@ export class ChunkView {
     };
     const whole = outline(0, 1);
     g.lineStyle(9, palette.shore, 1);
-    g.strokePoints(whole, true, true);
+    if (sea)
+      g.strokePoints(
+        xs.map((x) => new Phaser.Math.Vector2(x, near(x))),
+        false,
+        false,
+      );
+    else g.strokePoints(whole, true, true);
     g.lineStyle(4, palette.wetShore, 1);
-    g.strokePoints(whole, true, true);
+    if (sea)
+      g.strokePoints(
+        xs.map((x) => new Phaser.Math.Vector2(x, near(x))),
+        false,
+        false,
+      );
+    else g.strokePoints(whole, true, true);
     g.fillStyle(palette.middle, 1);
     g.fillPoints(whole, true);
     g.fillStyle(palette.far, 1);

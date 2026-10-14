@@ -82,6 +82,7 @@ test.describe('electric locomotive and catenary (doc 03 §9, TRN-08, D-016)', ()
           .toBe(2);
         const state = await snapshot(page);
         expect(state.renderer).toBe(renderer);
+        expect(state.catenary).toHaveProperty('outOfRange', 0);
         expect(state.catenary.pantographGapU ?? Infinity).toBeLessThan(0.5);
         const box = state.trainBox;
         if (!box) throw new Error('train box missing');
@@ -177,6 +178,7 @@ test.describe('electric locomotive and catenary (doc 03 §9, TRN-08, D-016)', ()
       electrified: false,
       poles: 0,
       pantographGapU: undefined,
+      outOfRange: 0,
     });
   });
 

@@ -40,9 +40,9 @@ function constantRuns(grades: readonly number[]): [number, number][] {
   return runs;
 }
 
-describe('track generator v1 (doc 14 §6)', () => {
-  it('is generator version 1', () => {
-    expect(TRACK_GENERATOR_VERSION).toBe(1);
+describe('track generator v2 (D-023)', () => {
+  it('is generator version 2', () => {
+    expect(TRACK_GENERATOR_VERSION).toBe(2);
   });
 
   it('GEN-01: the same seed and index give the same profile', () => {

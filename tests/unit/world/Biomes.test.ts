@@ -1,8 +1,15 @@
+import {
+  REGION_CYCLE_BLOCKS,
+  REGION_NEIGHBOURS,
+  REGION_ROUTES,
+  regionAt,
+} from '../../../src/domain/world/Regions.ts';
 import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
 import { BIOMES, biomeAt } from '../../../src/domain/world/Biomes.ts';
 
-const { chunksPerBiomeBlock, blocksPerRouteCycle } = gameConfig.world;
+const { chunksPerBiomeBlock } = gameConfig.world;
+const blocksPerRouteCycle = REGION_CYCLE_BLOCKS;
 
 describe('biomeAt: the route grammar of doc 04 §5', () => {
   it('starts every cycle in the countryside and visits all six biomes', () => {
@@ -35,14 +42,7 @@ describe('biomeAt: the route grammar of doc 04 §5', () => {
   });
 
   it('only follows a biome with one it blends into (no snow straight to beach)', () => {
-    const neighbours: Record<string, readonly string[]> = {
-      countryside: ['forest', 'lakes'],
-      forest: ['foothills', 'lakes'],
-      lakes: ['coast', 'forest', 'foothills', 'countryside'],
-      foothills: ['mountains', 'lakes', 'countryside'],
-      mountains: ['foothills'],
-      coast: ['lakes'],
-    };
+    const neighbours = REGION_NEIGHBOURS;
     for (let k = -2000; k < 2000; k += chunksPerBiomeBlock) {
       const place = biomeAt(42, k);
       if (place.next === place.biome) continue;
@@ -54,16 +54,18 @@ describe('biomeAt: the route grammar of doc 04 §5', () => {
   });
 
   it('chooses the itinerary per cycle from the seed', () => {
-    const route = (seed: number, cycle: number) =>
-      Array.from(
-        { length: blocksPerRouteCycle },
-        (_, b) =>
-          biomeAt(seed, (cycle * blocksPerRouteCycle + b) * chunksPerBiomeBlock)
-            .biome,
-      ).join(' ');
+    const route = (seed: number, cycle: number) => {
+      let r = regionAt(seed, cycle * REGION_CYCLE_BLOCKS * 8192);
+      const landscapes: string[] = [];
+      for (let i = 0; i < 12; i++) {
+        landscapes.push(r.landscape);
+        r = regionAt(seed, r.toXU);
+      }
+      return landscapes.join(' ');
+    };
     const routes = new Set<string>();
     for (let cycle = 0; cycle < 40; cycle++) routes.add(route(3, cycle));
-    expect(routes.size).toBe(3);
+    expect(routes.size).toBe(REGION_ROUTES.length);
     expect(route(3, 5)).toBe(route(3, 5));
   });
 });

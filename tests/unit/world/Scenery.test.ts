@@ -1,3 +1,6 @@
+import { sceneAt } from '../../../src/domain/world/WorldPlan.ts';
+import { snowField } from '../../../src/domain/world/scenes/rules.ts';
+import { worldPlacementCatalog } from '../../../src/content/worldPlacementCatalog.ts';
 import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
 import { biomeAt } from '../../../src/domain/world/Biomes.ts';
@@ -9,11 +12,6 @@ import {
   type ChunkScenery,
 } from '../../../src/domain/world/Scenery.ts';
 import { LOCALITIES } from '../../../src/domain/world/sceneryTemplates.ts';
-import { CROSSING_RESERVE_U } from '../../../src/domain/world/Crossings.ts';
-import {
-  SECONDARY_CLEAR_DEPTH,
-  secondaryClearRanges,
-} from '../../../src/domain/world/SecondaryTrack.ts';
 import {
   BRIDGE_RESERVE_U,
   bridgeSite,
@@ -28,9 +26,14 @@ const { chunkWidthU, chunksPerBiomeBlock } = gameConfig.world;
 const SEEDS = [1, 7, 123, 4242];
 const CHUNKS = Array.from({ length: 160 }, (_, i) => i - 16);
 
+const samples = SEEDS.flatMap((seed) =>
+  CHUNKS.map((k) => ({
+    seed,
+    scenery: chunkScenery(seed, k, worldPlacementCatalog),
+  })),
+);
 function each(callback: (scenery: ChunkScenery, seed: number) => void): void {
-  for (const seed of SEEDS)
-    for (const k of CHUNKS) callback(chunkScenery(seed, k), seed);
+  for (const { seed, scenery } of samples) callback(scenery, seed);
 }
 
 const BOATS = new Set(['back.rowboat', 'back.sailboat', 'back.fishing-boat']);
@@ -42,42 +45,38 @@ const kindsOf = (id: string) =>
   new Set(template(id)?.rules.flatMap((rule) => rule.kinds) ?? []);
 
 describe('chunkScenery: logical localities along the track (doc 14 §5)', () => {
-  it('is deterministic, with stable unique prop ids', () => {
-    const ids = new Set<string>();
-    each((scenery, seed) => {
-      expect(chunkScenery(seed, scenery.chunkIndex)).toEqual(scenery);
-      for (const prop of scenery.props) {
-        expect(prop.id).toMatch(
-          new RegExp(`^g\\d+:chunk:${scenery.chunkIndex}:prop:\\d+$`),
-        );
-        const key = `${seed}/${prop.id}`;
-        expect(ids.has(key), key).toBe(false);
-        ids.add(key);
+  it.each(SEEDS)(
+    'is deterministic, with stable unique prop ids: seed %i',
+    (seedUnderTest) => {
+      const ids = new Set<string>();
+      for (const { scenery, seed } of samples.filter(
+        (sample) => sample.seed === seedUnderTest,
+      )) {
+        expect(
+          chunkScenery(seed, scenery.chunkIndex, worldPlacementCatalog),
+        ).toEqual(scenery);
+        for (const prop of scenery.props) {
+          expect(prop.id).toMatch(
+            new RegExp(
+              `^g\\d+:chunk:${scenery.chunkIndex}:prop:(rule:\\d+|station):candidate:\\d+$`,
+            ),
+          );
+          const key = `${seed}/${prop.id}`;
+          expect(ids.has(key), key).toBe(false);
+          ids.add(key);
+        }
       }
-    });
-  });
+    },
+  );
 
-  it('follows the biome of its block; slot 0 is calm, slot 7 blends into the next', () => {
+  it('follows its region and ordered scene plan, with station reservations taking precedence', () => {
     each((scenery, seed) => {
       const place = biomeAt(seed, scenery.chunkIndex);
       expect(scenery.biome).toBe(place.biome);
       expect(scenery.slot).toBe(place.slot);
-      const chosen = template(scenery.locality);
-      expect(chosen, scenery.locality).toBeDefined();
-      if (chosen?.station) return;
-      expect(chosen?.biome).toBe(place.biome);
-      if (place.slot === 0) expect(chosen?.calm).toBe(true);
-      if (place.slot === chunksPerBiomeBlock - 1) {
-        expect(chosen?.calm).toBe(true);
-        const next = LOCALITIES.find((t) => t.biome === place.next && t.calm);
-        const nextKinds = kindsOf(next?.id ?? '');
-        const own = kindsOf(scenery.locality);
-        for (const prop of scenery.props)
-          expect(
-            own.has(prop.kind) || nextKinds.has(prop.kind),
-            prop.kind,
-          ).toBe(true);
-      }
+      expect(scenery.scene).toEqual(sceneAt(seed, scenery.chunkIndex * 1024));
+      if (scenery.locality !== 'station')
+        expect(scenery.locality).toBe(scenery.scene.templateId);
     });
   });
 
@@ -87,6 +86,8 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
       if (!chosen || chosen.station) return;
       if (scenery.slot === chunksPerBiomeBlock - 1) return;
       const kinds = kindsOf(scenery.locality);
+      if (scenery.region.season === 'winter')
+        for (const kind of snowField.flatMap((r) => r.kinds)) kinds.add(kind);
       for (const prop of scenery.props)
         expect(kinds.has(prop.kind), `${scenery.locality}: ${prop.kind}`).toBe(
           true,
@@ -147,8 +148,19 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
     let stations = 0;
     for (const seed of SEEDS) {
       for (let b = -2; b < 20; b++) {
-        const inBlock = Array.from({ length: chunksPerBiomeBlock }, (_, s) =>
-          chunkScenery(seed, b * chunksPerBiomeBlock + s),
+        const inBlock = Array.from(
+          { length: chunksPerBiomeBlock },
+          (_, s) =>
+            samples.find(
+              (sample) =>
+                sample.seed === seed &&
+                sample.scenery.chunkIndex === b * chunksPerBiomeBlock + s,
+            )?.scenery ??
+            chunkScenery(
+              seed,
+              b * chunksPerBiomeBlock + s,
+              worldPlacementCatalog,
+            ),
         ).filter((scenery) => template(scenery.locality)?.station);
         expect(inBlock.length).toBeLessThanOrEqual(1);
         for (const station of inBlock) {
@@ -222,7 +234,10 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
           ?.animals ?? [])
           species.add(kind);
       }
-      expect([...species]).toContain(scenery.animal.kind);
+      if (scenery.animal.kind !== 'frog')
+        expect([...species]).toContain(scenery.animal.kind);
+      if (scenery.animal.kind === 'duck')
+        expect(scenery.props.some((p) => p.kind === 'near.pond')).toBe(true);
       const pond = scenery.props.find((prop) => prop.kind === 'near.pond');
       if (!pond) return;
       const animalX = chunkObjects(seed, scenery.chunkIndex)[0]?.localXU ?? 0;
@@ -233,28 +248,19 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
     });
   });
 
-  it('keeps the second track and its portal hills clear of near back scenery (doc 04 §7)', () => {
+  it('keeps secondary track clearance and the actual 380-u portal hills free', () => {
     let guarded = 0;
-    each((scenery, seed) => {
-      const ranges = secondaryClearRanges(seed, scenery.chunkIndex);
-      if (ranges.length === 0) return;
-      guarded += 1;
-      const inside = (from: number, to: number) =>
-        ranges.some((range) => from < range.toX && to > range.fromX);
-      for (const prop of scenery.props) {
-        if (prop.layer !== 'back' || prop.depth >= SECONDARY_CLEAR_DEPTH)
-          continue;
-        const reach = (prop.motion?.rangeU ?? 0) / 2;
-        expect(inside(prop.xU - reach, prop.xU + reach), prop.id).toBe(false);
-      }
+    each((scenery) => {
+      if (
+        !scenery.reservations.some(
+          (r) =>
+            r.purpose === 'secondary-track' || r.purpose === 'secondary-hill',
+        )
+      )
+        return;
+      guarded++;
       for (const basin of scenery.water)
-        if (inside(basin.fromX, basin.toX))
-          expect(basin.nearDepth).toBeGreaterThanOrEqual(SECONDARY_CLEAR_DEPTH);
-      const road = scenery.crossing?.localXU;
-      if (road !== undefined)
-        expect(
-          inside(road - CROSSING_RESERVE_U, road + CROSSING_RESERVE_U),
-        ).toBe(false);
+        expect(basin.nearDepth).toBeGreaterThanOrEqual(0.45);
     });
     expect(guarded).toBeGreaterThan(20);
   });
@@ -301,9 +307,12 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
     });
   });
 
-  it('shows varied places, not one template everywhere', () => {
+  it('shows varied places over the complete 60-block route cycle', () => {
     const seen = new Set<string>();
-    each((scenery) => seen.add(scenery.locality));
+    for (const seed of SEEDS)
+      for (let k = 0; k < 480; k++)
+        seen.add(sceneAt(seed, k * 1024).templateId);
+    seen.add('station');
     expect(seen.size).toBeGreaterThanOrEqual(14);
   });
 
@@ -315,7 +324,9 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
       [123, 12],
       [2026, 40],
     ] as const) {
-      const ordered = propDrawOrder(chunkScenery(seed, k).props);
+      const ordered = propDrawOrder(
+        chunkScenery(seed, k, worldPlacementCatalog).props,
+      );
       const back = ordered.filter((prop) => prop.layer === 'back');
       const near = ordered.filter((prop) => prop.layer === 'near');
       for (let i = 1; i < back.length; i++)

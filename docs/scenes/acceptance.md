@@ -21,6 +21,8 @@ Generátorové kontroly pracují s logickými objekty, jejich rozsahem a vztahy;
 | SCN-G11 | Povinné motivy mají rezervované místo; generátor nesplnění jejich garance hlásí jako chybu testu, nikoli jako úspěšné vynechání.        |
 | SCN-G12 | Všechny číselné profily dodržují `abs(grade) ≤ world.maxTrackGrade` a absolutní výškový limit; výška i sklon navazují na hranicích.     |
 
+SCN-G06 navíc chrání oblé travnaté konce předních podpor bez hrotů a travnatou mezeru mezi sousedy.
+
 U vody a pohybových obalů se ověřuje celý koridor; několik náhodně vybraných bodů není úplný důkaz containmentu.
 U vizuálního obalu se zahrnuje měřítko, pivot, zrcadlení, náklon, reakční skok, rameno i maximální rozsah částic.
 Krajinné rozsahy výšek platí pro jádro regionu; přechody musí navazovat a nesmějí geometrii useknout.

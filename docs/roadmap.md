@@ -16,6 +16,7 @@ Dokument 14 je splněný v §1–7: pořadí soupravy, celý vlak v obraze s dé
 
 Iterace světa v2 podle zadání vlastníka z 2026-10-13 (rozpracováno, jeden PR):
 
+- **Generátor světa v2:** regiony po 3–7 blocích s plynulými přechody podle polohy, scénky s geometrickými rezervacemi a stopami (nic na koleji, silnice jen na přejezdech, sloupy vedení nikdy ve vodě), souvislé moře bez jezírek na pláži, celé ploty, kontrola opakování, profily tratě podle krajiny, přední pole a lesní okraj, validátor v `check` a skryté vývojářské překryvy, stopa umístění a testovací scény ([D-023](decisions/023-world-generator-v2.md)).
 - **Vlak uprostřed obrazu:** střed soupravy je na 46 % šířky, nejdelší souprava 2 000 u zabírá 60 % a zbytek obrazu ukazuje trať před čelem i za koncem; měřítko je pevné pro jízdu a viewport, zadní geometrická rezerva 1 600 u, bubliny mají dotykový průměr aspoň 64 CSS px a dotyk vybírá nejbližší střed ([D-028](decisions/028-longer-consist.md)).
 - **Nahrané zvuky:** Nahrané zvuky doplněny ([D-022](decisions/022-recorded-sounds.md)): 32 MP3 / 1,84 MiB, kola, pára, diesel, electric hum, deset horn ID, přejezd, ambient, reakce a tlumení v tunelu. Seznam Zvuky ve skrytých vývojářských volbách umožňuje poslech všech nahrávek; kredity CC BY jsou v buildu.
 - **Nižší trolej a kompaktní sběrače:** kontakt 160 → 128 u, ramena 56 × 34 u a menší hlava, pracovní dosah 34–59,4 u; nedosažitelný drát se omezí a nahlásí, nikdy nevyhodí výjimku. Obálky všech 42 vozidel mají na rovině nejméně 20 u rezervy, na sklonu nejméně 12 u. Sběrač zvládne zlom rovina–svah do 12 % a přímý obrat sklonu do 9,8 % při přechodu 192 u ([D-016](decisions/016-electric-locomotive-and-catenary.md)).
@@ -128,7 +129,7 @@ Codex je našel při recenzi PR #2 (`f5cde58` a dřív). Všechny jsou ověřen�
 
 Generátor v1 i veškerý obsah světa zatím existují jen v PR #2 (`master` má generátor 0). Po sloučení se v1 vydá, takže každá oprava, která mění svět v1 (R3), už potřebuje generátor v2 a migraci uložených cest.
 
-R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na nález; red a green jsou v [protokolu oprav recenze](validation/2026-10-11-opravy-recenze.md). R3 a R4 zůstávají otevřené.
+R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na nález; red a green jsou v [protokolu oprav recenze](validation/2026-10-11-opravy-recenze.md). R3 je hotové v generátoru v2 ([D-023](decisions/023-world-generator-v2.md)); otevřené zůstává R4.
 
 #### R1 — novější save se pozná dřív, než se ověří jeho obsah
 
@@ -162,6 +163,8 @@ R1, R2 a R5–R10 opravuje jeden PR (větev `codex/review-fixes`), commit na ná
   - nové rozhodnutí D-0xx a poznámka v [D-009](decisions/009-track-generator-v1.md);
   - volitelně (rozhodne D-0xx) oddělit klíče náhodnosti od čísla verze (dnes 36 míst), aby se svět mimo první blok nezměnil.
 - **d) E2E:** znovu ověřit pozice, na které testy spoléhají: svět 123 (přejezd v chunku 3, tunel v chunku 6, druhá kolej v bloku 1) a svět 7.
+
+**Stav: hotovo v generátoru v2 ([D-023](decisions/023-world-generator-v2.md)).** První blok vždy rezervuje stanici ve slotu 1 s použitelnou rovinou alespoň 448 u a přejezd ve slotu 3; zvíře ustupuje přejezdu (regresní seed 1226). Cesty vydaného generátoru v1 i v0 se přes stávající restart obnoví od začátku, se zachovaným vlakem, číslem světa a upozorněním. Fixtury chrání vydanou v1, historický budoucí katalog i dosud nepodporovaný generátor 3. Čistý validátor ověřuje 20 000 prvních bloků a determinismus světa nezávisle na pořadí dotazů. V2 zároveň zavádí delší regiony, scénky, geometrické rezervace, podpory a plotové cesty, profily tratě podle krajiny (hory výš a víc nahoru a dolů), přední pole a lesní okraj, prostorově plynulé palety a rodičovskou diagnostiku.
 
 #### R4 — adaptivní kvalita `auto`
 
@@ -243,7 +246,10 @@ Každé omezení má podmínku odstranění v uvedeném rozhodnutí.
 - **Portálové podpěry vedení ve stanici** chybí. Přijdou s vícekolejnými nádražími ([D-016](decisions/016-electric-locomotive-and-catenary.md)).
 - **Zem se kreslí nejvýše 1 px/u.** Zvýší se, pokud test zařízení ukáže rušivou neostrost ([D-013](decisions/013-landscape-localities-and-backdrops.md)).
 - **Kvalita `auto`** je zatím totéž co `standard`. Odstraní ji R4.
-- **Přejezd a nádraží prvního bloku** nejsou zaručené (přejezd chybí v 0,08 % světů, nádraží v 53 %). Odstraní je R3.
+- **Městský region** zatím skládá vesnické a venkovské scény; nahradí je linka osad a nádraží v témže PR ([D-023](decisions/023-world-generator-v2.md)).
+- **Přední obsah** má první řez: pole s traktorem a lesní půdu s kládami a nízkými smrčky, s oblými nepravidelnými souvratěmi a travnatým lemem. Sezónní nářadí, harvester a vyvážečku, kreslený nízký okraj lesa a rybníky doplní obsahové linky v témže PR. Teplé přední podklady se do zimy nekreslí.
+- **Maximální sklon pod pantografem:** rovina ↔ svah podporuje `world.maxTrackGrade = 0,12`; přímý obrat +g → −g na 192 u má validovaný strop `pantographMaxReversingGrade = 0,098`. Regionové plány mezi opačné svahy vkládají rovinu. Snapshot `catenary.outOfRange` počítá omezený hráčův sběrač.
+- **Sezónní vzhled a počasí** navazují na regionová data; nové vizuály dodá linka ročních období v témže PR.
 - **Křížení druhé koleje s přejezdem** zatím ve světě není: druhá kolej ve slotech 4–6 nekříží silnici přejezdu ve slotu 3. Rozhraní přejezdu přijímá více vlaků a bezpečnost ověřuje syntetický protijedoucí vlak; při přidání skutečného křížení musí simulace zahrnout jeho vlaky do seznamu ([D-021](decisions/021-crossing-closes-in-view.md)).
 - **WebGL dávky s jednou texturou** obcházejí chybu Phaseru 4.2.1 ([D-010](decisions/010-webgl-single-texture-batches.md)).
 - **Fyzický tablet, telefon a Tesla:** NEOVĚŘENO ([matice zařízení](device-tests/v0.1.md)).

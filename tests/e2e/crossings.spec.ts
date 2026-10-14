@@ -5,8 +5,8 @@ import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts'
 import { snapshot, tapAction } from './helpers.ts';
 
 /**
- * A stopped journey in world 123 before the crossing of chunk 3 (x 3808),
- * outside its closing distance, as a v1 save.
+ * A stopped journey in world 123 before the v2 crossing of chunk 3 (x 3328),
+ * outside its closing distance, in save schema 1.
  */
 function journeySave(onCrossing = false, longest = false): string {
   const consist = {
@@ -39,7 +39,7 @@ function journeySave(onCrossing = false, longest = false): string {
       consist,
       head: onCrossing
         ? { chunkIndex: 3, arcOffsetU: 800 }
-        : { chunkIndex: 1, arcOffsetU: 100 },
+        : { chunkIndex: 0, arcOffsetU: 800 },
       simulationTick: 0,
       activeEntities: [],
     },

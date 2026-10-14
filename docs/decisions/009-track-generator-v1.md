@@ -2,6 +2,8 @@
 
 Datum: 2026-10-10. Stav: přijato. Navazuje na [D-005](005-provisional-track-generator-v0.md).
 
+**Aktualizace 2026-10-13:** aktuální regiony, scénky, rezervace, identity, prostorové přechody a migraci na generátor 2 vlastní [D-023](023-world-generator-v2.md). Následující popis zachovává historické rozhodnutí v1; jeho rozvržení krajiny a časové prolínání jsou nahrazené v2.
+
 Zadání [14 §6](../../vlacek-predavaci-balicek/14_UPRAVY_PRVNI_VERZE.md) požaduje pestřejší výškový profil, který nepřipomíná sinusovku ani horskou dráhu: roviny a delší rovná stoupání a klesání spojená krátkými plynulými zaobleními v nepravidelných délkách. Generátor v0 verze 0.1 skládal smootherstep přechody s nulovým sklonem na každé hranici chunku. Měření na světech 1, 77 a 123 ukázalo, že se sklon mění na **91–95 %** délky a výška zůstává v ±42 u.
 
 **Rozhodnutí.** Generátor **v1** plánuje trať po blocích 8 chunků jako lomenou čáru rovin (384–1536 u) a sklonů (768–2304 u, 3–8 %). Zlomy nahrazují parabolické přechody délky 192 u. Bloky začínají a končí rovinou v seedované výšce (±160 u), takže chunk se počítá jen ze svého bloku. Výška zůstává v ±400 u. Přesná konstrukce je v dokumentu 04 §4, parametry v `world.profile` (dokument 13). Na stejných světech se sklon mění na méně než 25 % délky; test to hlídá.

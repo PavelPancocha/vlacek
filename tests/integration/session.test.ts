@@ -487,32 +487,35 @@ describe('GameSession: a longer train saved by version 0.1', () => {
   });
 });
 
-describe('GameSession: a journey from track generator v0 (version 0.1)', () => {
-  it('keeps the train and world number and starts the new track with a notice', () => {
-    const storage = new MemoryStorage();
-    storage.data.set(
-      PRIMARY_KEY,
-      readFileSync(
-        resolve(import.meta.dirname, '../fixtures/save/v1-journey.json'),
-        'utf8',
-      ),
-    );
-    const session = createSession(storage);
-    expect(session.screen).toEqual({ name: 'HOME' });
-    expect(session.notices).toContain('track-changed');
-    expect(session.journeySeed).toBe(3141592653);
-    expect(
-      session.journeyConsist?.wagons.map((wagon) => wagon.definitionId),
-    ).toEqual(['cargo_box', 'fun_balloons']);
-    // Not at the v0 position (chunk 7): a fresh start on the new track.
-    expect(session.ride?.headCursor().chunkIndex).toBe(
-      gameConfig.world.spawnChunkIndex,
-    );
-    tap(session, 'continue');
-    tap(session, 'resume');
-    expect(session.screen.name).toBe('RIDING');
-  });
-});
+describe.each(['v1-journey.json', 'released-v1-journey.json'])(
+  'GameSession: older-generator journey %s',
+  (fixtureName) => {
+    it('keeps the train and world number and starts the new track with a notice', () => {
+      const storage = new MemoryStorage();
+      storage.data.set(
+        PRIMARY_KEY,
+        readFileSync(
+          resolve(import.meta.dirname, '../fixtures/save', fixtureName),
+          'utf8',
+        ),
+      );
+      const session = createSession(storage);
+      expect(session.screen).toEqual({ name: 'HOME' });
+      expect(session.notices).toContain('track-changed');
+      expect(session.journeySeed).toBe(3141592653);
+      expect(
+        session.journeyConsist?.wagons.map((wagon) => wagon.definitionId),
+      ).toEqual(['cargo_box', 'fun_balloons']);
+      // Not at the v0 position (chunk 7): a fresh start on the new track.
+      expect(session.ride?.headCursor().chunkIndex).toBe(
+        gameConfig.world.spawnChunkIndex,
+      );
+      tap(session, 'continue');
+      tap(session, 'resume');
+      expect(session.screen.name).toBe('RIDING');
+    });
+  },
+);
 
 describe('GameSession: bubble touch routing (H3, INP-05)', () => {
   it('pops once through the world hit boundary, emits sound feedback once and leaves throttle/coast/brake priority intact', () => {

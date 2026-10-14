@@ -1,3 +1,8 @@
+import { WorldOverlay } from './WorldOverlay.ts';
+import type { WorldOverlayOptions } from '../domain/world/WorldDebugGeometry.ts';
+import { transitionAt } from '../domain/world/Regions.ts';
+import { worldDiagnostics } from '../domain/world/WorldValidation.ts';
+import { worldPlacementCatalog } from '../content/worldPlacementCatalog.ts';
 import Phaser from 'phaser';
 import type { WorldHit } from '../platform/InputRouter.ts';
 import { gameConfig } from '../config/gameConfig.ts';
@@ -76,7 +81,7 @@ import { Backdrop } from './Backdrop.ts';
 import { ChunkView, SECONDARY_DEPTH } from './ChunkView.ts';
 import { BACK_PLANE_U, NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
 import { motionScale } from './ambientMotion.ts';
-import { pantographReachU } from './pantograph.ts';
+import { pantographReach } from './pantograph.ts';
 import {
   secondaryPortalCoversPoint,
   vehicleInCover,
@@ -93,6 +98,7 @@ import {
 
 /** What the scene needs from the application each frame. */
 export interface RideSceneHost {
+  worldOverlays?(): WorldOverlayOptions;
   /** Runs one application frame; returns the render interpolation alpha. */
   frame(deltaSec: number, nowMs: number): number;
   ride(): RideSimulation | undefined;
@@ -133,6 +139,7 @@ export interface RenderStats {
    * without a raised pantograph in view.
    */
   pantographGapU: number | undefined;
+  pantographOutOfRange: number;
   /** Vehicles of oncoming trains drawn out in the open (doc 05 §6). */
   oncomingVehicles: number;
   /** Tunnels in the rendered chunks, their hills' opacity and the train. */
@@ -157,6 +164,7 @@ const NO_STATS: RenderStats = {
   secondaryPortalViews: 0,
   backdropMidOffsetU: 0,
   pantographGapU: undefined,
+  pantographOutOfRange: 0,
   oncomingVehicles: 0,
   tunnels: [],
 };
@@ -297,6 +305,7 @@ interface VehicleSlot {
  */
 export class RideScene extends Phaser.Scene {
   readonly #host: RideSceneHost;
+  #worldOverlay: WorldOverlay | undefined;
   readonly #chunks = new Map<number, ChunkView>();
   readonly #objectImages = new Map<string, Phaser.GameObjects.Image>();
   readonly #slots: VehicleSlot[] = [];
@@ -447,6 +456,7 @@ export class RideScene extends Phaser.Scene {
     } catch (error) {
       console.error(error);
     }
+    this.#worldOverlay = new WorldOverlay(this, DEPTH.effects + 1);
     this.#effectsView = new EffectsView(this, DEPTH.effects);
     this.#backdrop = new Backdrop(this, {
       sky: DEPTH.sky,
@@ -456,6 +466,7 @@ export class RideScene extends Phaser.Scene {
     });
     this.events.once('destroy', () => {
       stopPresenting();
+      this.#worldOverlay?.destroy();
       for (const feet of this.#portalFeet.values())
         for (const foot of feet) foot.destroy();
       this.#portalFeet.clear();
@@ -636,6 +647,10 @@ export class RideScene extends Phaser.Scene {
     return box;
   }
 
+  get worldOverlayCount(): number {
+    return this.#worldOverlay?.count ?? 0;
+  }
+
   /** Projects with the latest drawn camera, including interpolation and rebase. */
   worldScreenX(worldX: number, canvasRect: DOMRect): number {
     return projectWorldX(
@@ -747,7 +762,7 @@ export class RideScene extends Phaser.Scene {
   #sceneryOf(seed: number, chunkIndex: number): ChunkScenery {
     let scenery = this.#scenery.get(chunkIndex);
     if (!scenery) {
-      scenery = chunkScenery(seed, chunkIndex);
+      scenery = chunkScenery(seed, chunkIndex, worldPlacementCatalog);
       this.#scenery.set(chunkIndex, scenery);
     }
     return scenery;
@@ -780,6 +795,7 @@ export class RideScene extends Phaser.Scene {
     if (this.stats === NO_STATS)
       this.stats = { ...NO_STATS, localities: [], tunnels: [] };
     this.stats.pantographGapU = undefined;
+    this.stats.pantographOutOfRange = 0;
     this.#pantographContact = undefined;
     // Simulation time since the last frame: 0 while paused (and on a
     // ride's first frame), at most the simulation's catch-up per frame.
@@ -864,6 +880,18 @@ export class RideScene extends Phaser.Scene {
     const leftX = leftWorldX - 64;
     const rightX = leftWorldX + viewW + 64;
     this.#drawTrack(ride, leftX, rightX, timeSec);
+    this.#worldOverlay?.draw(
+      ride.seed,
+      Math.max(ride.track.firstChunkIndex, Math.floor(leftX / 1024) - 1),
+      Math.min(ride.track.lastChunkIndex, Math.floor(rightX / 1024) + 1),
+      this.#originX,
+      zoom,
+      this.#host.worldOverlays?.() ?? {
+        areas: false,
+        boundaries: false,
+        roads: false,
+      },
+    );
     // Animals stay above the controls in the bottom corners (doc 02).
     this.#freeBottomY =
       this.#view.top +
@@ -919,9 +947,25 @@ export class RideScene extends Phaser.Scene {
       },
       this.#horizonY,
       groundTopY,
-      biome,
+      transitionAt(ride.seed, ride.sample(ride.headS).x),
       timeSec,
-      simDtSec,
+      {
+        ...worldDiagnostics(
+          ride.seed,
+          ride.sample(ride.headS).x,
+          [...this.#scenery.values()],
+          this.#chunks.size,
+        ),
+        animatedObjects:
+          [...this.#chunks.values()].reduce(
+            (sum, chunk) => sum + chunk.animatedObjectCount,
+            0,
+          ) + this.#objectImages.size,
+        renderedFragments: [...this.#chunks.values()].reduce(
+          (sum, chunk) => sum + chunk.fragmentIds.length,
+          0,
+        ),
+      },
     );
     this.stats.backdrop = this.#backdrop?.state;
     this.stats.backdropMidOffsetU = this.#backdrop?.midOffsetU ?? 0;
@@ -938,6 +982,7 @@ export class RideScene extends Phaser.Scene {
   }
 
   #destroyChunks(): void {
+    this.#worldOverlay?.clear();
     for (const chunk of this.#chunks.values()) chunk.destroy();
     this.#chunks.clear();
     for (const feet of this.#portalFeet.values())
@@ -1554,7 +1599,9 @@ export class RideScene extends Phaser.Scene {
         x,
       );
     const wire = (x: number) => contactWireHeightU(ride.seed, x, rail);
-    const reach = pantographReachU(base, pose.angleRad, wire);
+    const result = pantographReach(base, pose.angleRad, wire);
+    if (result.outOfRange) this.stats.pantographOutOfRange++;
+    const reach = result.reachU;
     this.#pantographContact = {
       x: base.x - reach * Math.sin(pose.angleRad),
       y: base.y - reach * Math.cos(pose.angleRad),

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
+import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 import { gameConfig } from '../../src/config/gameConfig.ts';
 import { locomotives, wagons } from '../../src/content/vehicles.ts';
 import { parseSave, saveRules } from '../../src/platform/SaveValidation.ts';
@@ -100,6 +101,10 @@ test('UI-04: depot hides the live ride; back snaps the first frame and resume dr
     currentBiome: first.scenery.biome,
     incomingBiome: undefined,
     fade: 1,
+    world: expect.objectContaining({
+      generatorVersion: TRACK_GENERATOR_VERSION,
+      seed: first.seed,
+    }),
   });
   expect(first.effects.checksum).toBe(paused.effects.checksum);
   expect(first.trainBox).toBeDefined();
@@ -137,6 +142,10 @@ test('UI-06/INP-13: rotate hides the ride, landscape restores it and pause keeps
     currentBiome: first.scenery.biome,
     incomingBiome: undefined,
     fade: 1,
+    world: expect.objectContaining({
+      generatorVersion: TRACK_GENERATOR_VERSION,
+      seed: first.seed,
+    }),
   });
   expect(first.renderedVehicles).toBe(1);
   await expect(page.locator('.overlay.rotate')).toHaveCount(0);

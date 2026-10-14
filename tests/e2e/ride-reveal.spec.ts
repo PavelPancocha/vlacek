@@ -1,3 +1,10 @@
+import { regionAt } from '../../src/domain/world/Regions.ts';
+import {
+  buildArcLengthTable,
+  arcAtX,
+} from '../../src/domain/world/ArcLengthTable.ts';
+import { generateTrackProfile } from '../../src/domain/world/TrackProfile.ts';
+import type { TrackCursor } from '../../src/domain/world/TrackWindow.ts';
 import { expect, test, type Page } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
@@ -11,6 +18,7 @@ async function savedProfile(
   page: Page,
   quality: 'standard' | 'low',
   journey = false,
+  head: TrackCursor = { chunkIndex: 7, arcOffsetU: 100 },
 ): Promise<void> {
   const consist = { locomotiveId: 'steam_local', wagons: [] };
   const save: SaveEnvelopeV1 = {
@@ -26,7 +34,7 @@ async function savedProfile(
       seed: 123,
       generatorVersion: TRACK_GENERATOR_VERSION,
       consist,
-      head: { chunkIndex: 7, arcOffsetU: 100 },
+      head,
       simulationTick: 0,
       activeEntities: [],
     };
@@ -267,7 +275,14 @@ for (const quality of ['standard', 'low'] as const) {
 test('same journey preserves a paused mid-biome crossfade through the depot', async ({
   page,
 }) => {
-  await savedProfile(page, 'standard', true);
+  const region = regionAt(123, 0);
+  const x = region.toXU - 8192 + 8192 * 0.35;
+  const k = Math.floor(x / 1024);
+  const table = buildArcLengthTable(generateTrackProfile(123, k), k, 1024, 8);
+  await savedProfile(page, 'standard', true, {
+    chunkIndex: k,
+    arcOffsetU: arcAtX(table, x),
+  });
   await page.goto('./?debug=1');
   await tapAction(page, 'continue');
   await expect
@@ -276,7 +291,7 @@ test('same journey preserves a paused mid-biome crossfade through the depot', as
   await tapAction(page, 'resume');
   await page.keyboard.down('ArrowRight');
   // Pause from the browser RAF that observes the midpoint, so automation
-  // channel latency cannot let the 1.2 s crossfade finish before the pause.
+  // channel latency cannot move the train past the spatial transition window.
   const paused = await page.evaluate(async () => {
     const api = (
       window as unknown as { __vlacek: { snapshot(): DebugSnapshot } }

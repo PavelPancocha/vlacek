@@ -1,3 +1,5 @@
+import type { RegionTransition } from '../domain/world/Regions.ts';
+import type { WorldDiagnostics } from '../domain/world/WorldValidation.ts';
 import Phaser from 'phaser';
 import type { ArtPart } from '../content/artManifest.ts';
 import { backdropParts, cloudParts, worldParts } from '../content/worldArt.ts';
@@ -38,7 +40,6 @@ const BACKDROP_WIDTH_U = 1020;
  * through as a light vertical seam.
  */
 const TILE_OVERLAP_U = 2;
-const CROSSFADE_SEC = 1.2;
 const CLOUDS = 6;
 const CLOUD_DRIFT_U_PER_SEC = 5;
 const SKY_TEXTURE = 'sky-gradient';
@@ -73,6 +74,7 @@ export class Backdrop {
   /** 0 … 1: how far the incoming layer (index 1) has faded in. */
   #fade = 1;
   #groundTopY = 0;
+  #world: WorldDiagnostics | undefined;
 
   constructor(scene: Phaser.Scene, depths: BackdropDepths) {
     this.#scene = scene;
@@ -130,6 +132,7 @@ export class Backdrop {
     this.#fade = 1;
     this.#midOffsetU = 0;
     this.#groundTopY = 0;
+    this.#world = undefined;
   }
 
   /** Biomes actually drawn by both layers and their crossfade progress. */
@@ -138,6 +141,7 @@ export class Backdrop {
       currentBiome: this.#layers[0].biome,
       incomingBiome: this.#layers[1].biome,
       fade: this.#fade,
+      world: this.#world,
     };
   }
 
@@ -157,9 +161,9 @@ export class Backdrop {
     view: ViewRect,
     horizonY: number,
     groundTopY: number,
-    biome: Biome,
+    transition: RegionTransition,
     timeSec: number,
-    deltaSec: number,
+    world: WorldDiagnostics,
   ): void {
     // Only down to the mid backdrop's foot: the ground covers the rest
     // (fill rate on low-end GPUs, D-013).
@@ -172,28 +176,20 @@ export class Backdrop {
       .setPosition(view.left, view.top)
       .setDisplaySize(view.width, Math.max(1, skyBottom - view.top));
     this.#groundTopY = groundTopY;
+    this.#world = world;
     const texture = this.#texture;
     if (texture === undefined) return;
     this.#placeClouds(texture, view, timeSec);
     const [current, incoming] = this.#layers;
-    if (current.biome === undefined) this.#show(current, biome);
-    else if (biome !== (this.#fade < 1 ? incoming.biome : current.biome)) {
-      // A new biome ahead: fade it in over whatever is shown now.
-      if (this.#fade < 1 && incoming.biome !== undefined)
-        this.#show(current, incoming.biome);
-      this.#show(incoming, biome);
-      this.#fade = 0;
-    }
-    if (this.#fade < 1) {
-      this.#fade = Math.min(1, this.#fade + deltaSec / CROSSFADE_SEC);
-      if (this.#fade >= 1 && incoming.biome !== undefined) {
-        this.#show(current, incoming.biome);
-        this.#hide(incoming);
-      }
-    }
+    const from = transition.from.landscape,
+      to = transition.to.landscape;
+    this.#show(current, from);
+    this.#fade = transition.progress === 0 ? 1 : transition.progress;
     this.#placeLayer(current, view, horizonY, 1);
-    if (this.#fade < 1) this.#placeLayer(incoming, view, horizonY, this.#fade);
-    else this.#hide(incoming);
+    if (transition.progress > 0 && from !== to) {
+      this.#show(incoming, to);
+      this.#placeLayer(incoming, view, horizonY, transition.progress);
+    } else this.#hide(incoming);
   }
 
   destroy(): void {
@@ -206,6 +202,7 @@ export class Backdrop {
   }
 
   #show(layer: Layer, biome: Biome): void {
+    if (layer.biome === biome) return;
     layer.biome = biome;
     const keys = backdropParts[biome];
     for (const image of layer.far) image.setFrame(keys.far);

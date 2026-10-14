@@ -2,6 +2,8 @@
 
 Datum: 2026-10-10. Stav: přijato.
 
+**Aktualizace 2026-10-13:** aktuální regiony, scénky, rezervace, identity, prostorové přechody a migraci na generátor 2 vlastní [D-023](023-world-generator-v2.md). Následující popis zachovává historické rozhodnutí v1; jeho rozvržení krajiny a časové prolínání jsou nahrazené v2.
+
 Dokument 14 §5 chce bohatší krajinu z logických lokalit, ne náhodnou změť: farma k polím, rákosí k vodě, nástupiště k nádraží. Klidné úseky se mají střídat s bohatšími a dekorace nesmí dlouhodobě zakrývat vlak. Dokument 14 §3 chce detailní poloreálnou grafiku. Dokument 07 §3 určuje vrstvy a dvě až tři rychlosti parallaxy, dokument 04 §5 šest biomů a gramatiku trasy.
 
 Vlastník zvolil „vektory a vyřezaná scenérie“. Referenční listy ale nikdy nebyly v repozitáři jako soubory, jen jako obrázky v konverzaci, takže z nich nelze nic vyřezat ani evidovat původ. Proto je i scenérie vlastní vektorová kresba ve stylu listů. Jakmile vlastník listy uloží do `docs/reference/art/`, výřez se znovu posoudí.

@@ -1,8 +1,17 @@
+import type { TestSceneLocation } from '../domain/world/TestScenes.ts';
+import type { WorldOverlayOptions } from '../domain/world/WorldDebugGeometry.ts';
+import type { WorldDiagnostics } from '../domain/world/WorldValidation.ts';
 import type { RenderProfile } from './renderProfile.ts';
 import type { Settings } from '../platform/SaveValidation.ts';
 
 /** Read-only diagnostics via `?debug=1` or the hidden parent developer menu. */
 export interface DebugSnapshot {
+  worldDebug: {
+    temporaryRide: boolean;
+    location: TestSceneLocation | undefined;
+    overlays: WorldOverlayOptions;
+    overlayPrimitives: number;
+  };
   buildId: string;
   renderer: string;
   renderProfile: RenderProfile & { quality: Settings['quality'] };
@@ -80,6 +89,8 @@ export interface DebugSnapshot {
     poles: number;
     /** How far the drawn pantograph head misses the wire, u. */
     pantographGapU: number | undefined;
+    /** Player pantographs currently clamped by their working reach. */
+    outOfRange: number;
   };
   /**
    * Tunnels in view, the opacity of their hills (1 opaque) and whether the
@@ -98,6 +109,7 @@ export interface DebugSnapshot {
         currentBiome: string | undefined;
         incomingBiome: string | undefined;
         fade: number;
+        world: WorldDiagnostics | undefined;
       }
     | undefined;
   /** Parallax: the first mid backdrop tile's x from the view's left, u. */

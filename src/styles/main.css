@@ -550,6 +550,8 @@ h1 {
 
 /* The parent gate keeps the existing small build line's appearance. */
 button.build-id {
+  min-height: 44px;
+  margin-block: calc((1lh - 44px) / 2);
   padding: 0;
   border: 0;
   background: none;
@@ -598,4 +600,23 @@ button.build-id {
 .dev-fields :focus-visible {
   outline: 4px solid var(--focus);
   outline-offset: 3px;
+}
+
+.dev-world-sections {
+  width: 100%;
+}
+.dev-world-sections details {
+  margin-block: 8px;
+}
+.dev-world-sections summary {
+  min-height: 44px;
+  cursor: pointer;
+}
+.dev-world-sections pre {
+  max-width: 100%;
+  overflow: auto;
+  max-height: 320px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.75rem;
 }

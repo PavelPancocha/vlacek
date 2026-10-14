@@ -1,8 +1,9 @@
 import { gameConfig } from '../../config/gameConfig.ts';
+import { regionAt } from './Regions.ts';
 import { unitRandom } from './Hash.ts';
 
 /**
- * Track generator v1 (doc 14 §6, D-009). The track is planned in blocks of
+ * Track generator v2 (D-023): landscape-dependent envelopes. The track is planned in blocks of
  * `blockChunks` chunks: flats and long constant grades in irregular lengths,
  * joined by short parabolic transitions (vertical curves), so the grade
  * changes only briefly and never with a kink. Every block starts and ends
@@ -10,7 +11,7 @@ import { unitRandom } from './Hash.ts';
  * alone, also far from the start. Version 0 (smootherstep waves of 0.1)
  * journeys are not regenerated under v1 (D-005).
  */
-export const TRACK_GENERATOR_VERSION = 1;
+export const TRACK_GENERATOR_VERSION = 2;
 
 /** Point of the straight-line plan; x local to its block or chunk. */
 export interface ProfileVertex {
@@ -29,7 +30,7 @@ const plan = gameConfig.world.profile;
 const BLOCK_U = plan.blockChunks * chunkWidthU;
 
 function random(seed: number, key: string, ...parts: number[]): number {
-  return unitRandom(seed, TRACK_GENERATOR_VERSION, key, ...parts);
+  return unitRandom(seed, 1, key, ...parts);
 }
 
 /** Seeded length in [min, max], a multiple of the length step. */
@@ -47,20 +48,32 @@ function length(
   );
 }
 
-/** Height of the boundary where block `b` starts. */
+/** Shared region borders are flat at zero; inner anchors retain finite random access. */
 function blockStartHeightU(seed: number, b: number): number {
-  const roll = random(seed, 'block-height', b);
-  return Math.round((2 * roll - 1) * plan.blockHeightRangeU);
+  const region = regionAt(seed, b * BLOCK_U),
+    local = b - region.fromXU / BLOCK_U;
+  if (local === 0) return 0;
+  const p = gameConfig.world.landscapeProfiles[region.landscape];
+  if (region.landscape === 'mountains' || region.landscape === 'foothills') {
+    if (local === 1) return p.blockHeightRangeU;
+    if (local === 2) return -p.blockHeightRangeU;
+  }
+  return Math.round(
+    (2 * unitRandom(seed, 'profile-v2:boundary', b) - 1) * p.blockHeightRangeU,
+  );
 }
 
-/** Shortest slope reaching a height difference at the steepest grade. */
-function finalSlopeU(riseU: number): number {
+/** Shortest final slope within this landscape and the validated pantograph bound. */
+function finalSlopeU(
+  riseU: number,
+  p: typeof gameConfig.world.profile,
+): number {
   if (riseU === 0) return 0;
-  const steps = Math.ceil(
-    Math.max(plan.slopeMinU, Math.abs(riseU) / plan.gradeRangeMax) /
-      plan.lengthStepU,
+  return (
+    Math.ceil(
+      Math.max(p.slopeMinU, Math.abs(riseU) / p.gradeRangeMax) / p.lengthStepU,
+    ) * p.lengthStepU
   );
-  return steps * plan.lengthStepU;
 }
 
 /**
@@ -68,10 +81,25 @@ function finalSlopeU(riseU: number): number {
  * flat, slope, flat, slope, …, flat. Random slopes are taken only while the
  * block can still reach the next block's height with one final slope.
  */
-export function blockPlan(seed: number, b: number): ProfileVertex[] {
+function buildBlockPlan(seed: number, b: number): ProfileVertex[] {
+  const region = regionAt(seed, b * BLOCK_U);
+  const landscape = gameConfig.world.landscapeProfiles[region.landscape];
+  const plan = {
+    ...gameConfig.world.profile,
+    ...landscape,
+    gradeRangeMax: Math.min(
+      landscape.gradeRangeMax,
+      gameConfig.world.pantographMaxTrackGrade,
+      gameConfig.world.maxTrackGrade,
+    ),
+  };
   const target = blockStartHeightU(seed, b + 1);
   let y = blockStartHeightU(seed, b);
-  let x = length(seed, 'flat', b, 0, plan.flatMinU, plan.flatMaxU);
+  // R3: slot 1 and both transition shoulders are reserved before slopes.
+  let x =
+    b === 0
+      ? 2 * chunkWidthU + plan.transitionU / 2
+      : length(seed, 'flat', b, 0, plan.flatMinU, plan.flatMaxU);
   const vertices: ProfileVertex[] = [
     { xU: 0, yU: y },
     { xU: x, yU: y },
@@ -87,7 +115,8 @@ export function blockPlan(seed: number, b: number): ProfileVertex[] {
     if (y - grade * slopeU < -plan.maxHeightU) up = true;
     const next = y + (up ? grade : -grade) * slopeU;
     const flatU = length(seed, 'flat', b, i, plan.flatMinU, plan.flatMaxU);
-    const needed = slopeU + flatU + finalSlopeU(target - next) + plan.flatMinU;
+    const needed =
+      slopeU + flatU + finalSlopeU(target - next, plan) + plan.flatMinU;
     if (Math.abs(next) > plan.maxHeightU || x + needed > BLOCK_U) break;
     x += slopeU;
     y = next;
@@ -95,7 +124,7 @@ export function blockPlan(seed: number, b: number): ProfileVertex[] {
     x += flatU;
     vertices.push({ xU: x, yU: y });
   }
-  const finalU = finalSlopeU(target - y);
+  const finalU = finalSlopeU(target - y, plan);
   if (finalU > 0) {
     // The last slope ends one minimal flat before the block boundary.
     x = BLOCK_U - plan.flatMinU - finalU;
@@ -106,6 +135,22 @@ export function blockPlan(seed: number, b: number): ProfileVertex[] {
   return vertices;
 }
 
+const blockCache = new Map<string, readonly ProfileVertex[]>();
+/** Bounded, immutable memoization; cache order cannot affect geometry. */
+export function blockPlan(seed: number, b: number): readonly ProfileVertex[] {
+  const key = `${seed}/${b}`,
+    cached = blockCache.get(key);
+  if (cached) return cached;
+  const plan = Object.freeze(
+    buildBlockPlan(seed, b).map((vertex) => Object.freeze(vertex)),
+  );
+  if (blockCache.size === 128) {
+    const first = blockCache.keys().next().value;
+    if (first !== undefined) blockCache.delete(first);
+  }
+  blockCache.set(key, plan);
+  return plan;
+}
 export function generateTrackProfile(seed: number, k: number): TrackProfile {
   const b = Math.floor(k / plan.blockChunks);
   const offsetU = (k - b * plan.blockChunks) * chunkWidthU;

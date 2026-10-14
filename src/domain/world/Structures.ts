@@ -37,6 +37,8 @@ const TUNNEL_SHARE: Readonly<Record<Biome, number>> = {
   foothills: 0.9,
   mountains: 1,
   coast: 0.3,
+  dunes: 0.3,
+  town: 0.3,
 };
 
 /** A stone bridge over a stream across the track (doc 03 §8). */
@@ -86,8 +88,7 @@ export function bridgeSite(
       candidates.push(x);
   const pick =
     candidates[
-      hash32(seed, TRACK_GENERATOR_VERSION, 'bridge', chunkIndex) %
-        Math.max(1, candidates.length)
+      hash32(seed, 1, 'bridge', chunkIndex) % Math.max(1, candidates.length)
     ];
   if (pick === undefined) return undefined;
   return {
@@ -109,17 +110,13 @@ export function tunnelSite(
   if (!place) return undefined;
   if (
     place.block !== 0 &&
-    unitRandom(seed, TRACK_GENERATOR_VERSION, 'tunnel', place.block) >=
-      TUNNEL_SHARE[place.biome]
+    unitRandom(seed, 1, 'tunnel', place.block) >= TUNNEL_SHARE[place.biome]
   )
     return undefined;
   const room = chunkWidthU - 2 * EDGE_U - TUNNEL_LENGTH_U;
   const steps = Math.floor(room / STEP_U);
   const fromX =
-    EDGE_U +
-    STEP_U *
-      (hash32(seed, TRACK_GENERATOR_VERSION, 'tunnel-at', chunkIndex) %
-        (steps + 1));
+    EDGE_U + STEP_U * (hash32(seed, 1, 'tunnel-at', chunkIndex) % (steps + 1));
   return {
     id: `g${TRACK_GENERATOR_VERSION}:chunk:${chunkIndex}:tunnel:0`,
     chunkIndex,

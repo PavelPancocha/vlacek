@@ -420,6 +420,9 @@ test('developer menu targets fit a small landscape phone and stay accessible aft
   await page.setViewportSize({ width: 568, height: 320 });
   await paused(page);
   await openMenu(page);
+  // Every expandable parent section is opened before measuring its controls.
+  for (const summary of await page.locator('.dev-menu details > summary').all())
+    await summary.click();
   for (const control of await page
     .locator('.dev-menu select, .dev-menu input, .dev-menu button')
     .all()) {

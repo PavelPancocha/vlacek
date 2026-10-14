@@ -1,3 +1,4 @@
+import { worldDeveloperSections } from './DevWorldMenu.ts';
 import { soundManifest } from '../content/soundManifest.ts';
 import audioCreditsUrl from '../../assets/audio/credits.txt?url&no-inline';
 import { seedOverride } from '../platform/CapabilityProbe.ts';
@@ -136,6 +137,7 @@ export function developerMenu(
       ),
     ),
   );
+  form.append(worldDeveloperSections());
   form.addEventListener('submit', (event) => event.preventDefault(), {
     signal,
   });

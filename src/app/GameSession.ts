@@ -93,6 +93,8 @@ export class GameSession {
   #lastConsist: Consist;
   #draft: ConsistDraft;
   #journey: Journey | undefined;
+  #diagnosticOriginal:
+    { journey: Journey; settings: Settings; screen: Screen } | undefined;
   #fixedStep: FixedStepState = initialFixedStep();
   #hitObject: (clientX: number, clientY: number) => WorldHit | undefined = () =>
     undefined;
@@ -142,6 +144,57 @@ export class GameSession {
 
   /** The length limit the depot and every departure respect (doc 14 §2). */
   readonly lengthRules: ConsistLengthRules;
+
+  /** A temporary parent-only ride; ordinary journey and all stored bytes remain owned by the session. */
+  startDiagnosticRide(head: {
+    chunkIndex: number;
+    arcOffsetU: number;
+  }): boolean {
+    if (
+      this.#diagnosticOriginal ||
+      !this.#journey ||
+      this.#screen.name !== 'PAUSED' ||
+      !Number.isSafeInteger(head.chunkIndex) ||
+      !Number.isFinite(head.arcOffsetU) ||
+      head.arcOffsetU < 0
+    )
+      return false;
+    let ride: RideSimulation;
+    try {
+      ride = this.#createRide(this.#journey.seed, this.#journey.consist, {
+        head,
+        simulationTick: 0,
+      });
+    } catch {
+      return false;
+    }
+    this.#diagnosticOriginal = {
+      journey: this.#journey,
+      settings: this.#settings,
+      screen: this.#screen,
+    };
+    this.#journey = { ...this.#journey, ride };
+    this.#fixedStep = initialFixedStep();
+    this.#events = [];
+    this.#apply({ type: 'resume' });
+    this.router.resumeLock();
+    return true;
+  }
+  endDiagnosticRide(): void {
+    const original = this.#diagnosticOriginal;
+    if (!original) return;
+    this.#journey = original.journey;
+    this.#settings = original.settings;
+    this.#diagnosticOriginal = undefined;
+    this.#screen = original.screen;
+    this.router.clearAll();
+    this.router.setMode('menu');
+    this.#fixedStep = initialFixedStep();
+    this.#events = [];
+  }
+  get diagnosticRide(): boolean {
+    return this.#diagnosticOriginal !== undefined;
+  }
 
   get screen(): Screen {
     return this.#screen;
@@ -421,6 +474,8 @@ export class GameSession {
   }
 
   #onAction(action: string): void {
+    if (['open-depot', 'build-new', 'to-depot'].includes(action))
+      this.endDiagnosticRide();
     const separator = action.indexOf(':');
     const name = separator < 0 ? action : action.slice(0, separator);
     const argument = separator < 0 ? undefined : action.slice(separator + 1);
@@ -542,6 +597,8 @@ export class GameSession {
   }
 
   #persist(): SaveOutcome {
+    // Diagnostic checkpoints, pause, resize and reload must never replace the ordinary save.
+    if (this.#diagnosticOriginal) return 'saved';
     const outcome = this.#deps.repository.save(this.#envelope());
     if (outcome === 'memory-only') this.#notices.add('storage-limited');
     return outcome;

@@ -9,6 +9,8 @@ Daleko se táhnou nízké kopce s dlouhými pruhy polí.
 Za tratí leží větší lán, jehož brázdy směřují k polní cestě.
 U náspu zůstává travnatý pás s několika máky a odvodňovací strouhou.
 Před vlakem pokračuje druhé pole, kde traktor pomalu projíždí připraveným pracovním pruhem.
+Pole zakončuje oblá travnatá souvrať, nikoli špičatý klín; brázdy končí před ní.
+Sousední lány odděluje travnatý pás a celý pohybový obal traktoru zůstává na nosné ploše.
 Za pluhem zůstává krátká stopa tmavší půdy a při suchu nepatrný prach.
 Nad zoráním někdy krouží několik bílých ptáků; v létě může práci převzít kombajn.
 

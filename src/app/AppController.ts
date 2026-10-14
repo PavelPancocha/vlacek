@@ -1,3 +1,13 @@
+import {
+  locateTestScene,
+  TEST_SCENES,
+  type TestSceneLocation,
+} from '../domain/world/TestScenes.ts';
+import {
+  traceChunkPlacement,
+  placementQuery,
+} from '../domain/world/PlacementTrace.ts';
+import type { WorldOverlayOptions } from '../domain/world/WorldDebugGeometry.ts';
 import { gameConfig } from '../config/gameConfig.ts';
 import type { ShapedVehicle } from '../content/placeholderShapes.ts';
 import { locomotives, wagons } from '../content/vehicles.ts';
@@ -8,6 +18,7 @@ import { animalSounds } from '../content/soundManifest.ts';
 import { biomeAt } from '../domain/world/Biomes.ts';
 import { chunkOfEntityId } from '../domain/world/ChunkObjects.ts';
 import { chunkScenery } from '../domain/world/Scenery.ts';
+import { worldPlacementCatalog } from '../content/worldPlacementCatalog.ts';
 import { tunnelSite } from '../domain/world/Structures.ts';
 import {
   AudioDirector,
@@ -74,6 +85,12 @@ export class AppController {
   readonly #host: GameHost;
   readonly #input: DomInputAdapter;
   readonly #fullscreen: FullscreenController;
+  readonly #worldOverlays: WorldOverlayOptions = {
+    areas: false,
+    boundaries: false,
+    roads: false,
+  };
+  #worldLocation: TestSceneLocation | undefined;
   #renderer = 'pending';
   #diagnostics: HTMLElement | undefined;
   #lastDiagnosticsMs = 0;
@@ -109,6 +126,7 @@ export class AppController {
     this.#portrait = isPortrait();
 
     this.#scene = new RideScene({
+      worldOverlays: () => this.#worldOverlays,
       frame: (deltaSec, nowMs) => this.#frame(deltaSec, nowMs),
       ride: () => this.#session.ride,
       worldHidden: () =>
@@ -163,6 +181,10 @@ export class AppController {
       (id) => this.#scene.popBubble(id),
     );
     session.setUnhandledActionHandler((action) => {
+      if (action.startsWith('dev-world-')) {
+        this.#worldDeveloperAction(action);
+        return;
+      }
       if (action === 'strip-start') {
         // The locomotive is the front of the train, at the strip's right end.
         const strip = this.#uiRoot.querySelector('.strip');
@@ -197,6 +219,8 @@ export class AppController {
               }
             : this.#ui.developerValues();
         if (!values || !this.#ui.developerMenuOpen) return;
+        session.endDiagnosticRide();
+        this.#worldLocation = undefined;
         session.setRenderSettings(values);
         if (session.interrupt() !== 'saved') {
           this.#ui.developerSaveError('session');
@@ -251,6 +275,67 @@ export class AppController {
       this.#refreshUi();
     });
     this.#refreshUi();
+  }
+
+  #worldDeveloperAction(action: string): void {
+    if (!this.#ui.developerMenuOpen) return;
+    const seed = this.#session.journeySeed;
+    if (seed === undefined) return;
+    if (action.startsWith('dev-world-overlay:')) {
+      const name = action.slice('dev-world-overlay:'.length);
+      if (name === 'areas' || name === 'boundaries' || name === 'roads') {
+        this.#worldOverlays[name] = !this.#worldOverlays[name];
+        this.#ui.worldOverlayPressed(name, this.#worldOverlays[name]);
+      }
+    } else if (action.startsWith('dev-world-scene:')) {
+      const kind = TEST_SCENES.find(
+        (k) => k === action.slice('dev-world-scene:'.length),
+      );
+      if (!kind) return;
+      const location = locateTestScene(seed, kind, worldPlacementCatalog);
+      if (!location) {
+        this.#ui.worldDeveloperStatus(
+          'Scéna v omezeném hledání tohoto světa nenalezena.',
+        );
+        return;
+      }
+      // A second selection first releases the previous temporary ride.
+      this.#session.endDiagnosticRide();
+      if (!this.#session.startDiagnosticRide(location.head)) {
+        this.#ui.worldDeveloperStatus('Dočasnou jízdu nelze zahájit.');
+        return;
+      }
+      this.#worldLocation = location;
+      this.#ui.closeDeveloperMenu();
+    } else if (action === 'dev-world-return') {
+      this.#session.endDiagnosticRide();
+      this.#worldLocation = undefined;
+      this.#ui.closeDeveloperMenu();
+    } else if (action === 'dev-world-trace') {
+      const input = this.#ui.developerWorldQuery(),
+        x = this.#session.ride?.sample(this.#session.ride.headS).x ?? 0;
+      const location = placementQuery(input, x);
+      if (!location) {
+        this.#ui.worldDeveloperStatus(
+          'Neplatné ID nebo světová souřadnice.',
+          true,
+        );
+        return;
+      }
+      this.#ui.worldDeveloperStatus(
+        JSON.stringify(
+          traceChunkPlacement(
+            seed,
+            location.chunkIndex,
+            worldPlacementCatalog,
+            location.query,
+          ),
+          null,
+          2,
+        ),
+        true,
+      );
+    }
   }
 
   #vehiclesOfJourney(): readonly ShapedVehicle[] {
@@ -391,7 +476,9 @@ export class AppController {
         const seed = this.#session.journeySeed;
         if (chunk !== undefined && seed !== undefined)
           this.#audio.play(
-            animalSounds[chunkScenery(seed, chunk).animal.kind],
+            animalSounds[
+              chunkScenery(seed, chunk, worldPlacementCatalog).animal.kind
+            ],
             1,
             40,
           );
@@ -437,6 +524,9 @@ export class AppController {
       wagons,
       lengthRules: session.lengthRules,
     });
+    if (this.#ui.developerMenuOpen)
+      for (const name of ['areas', 'boundaries', 'roads'] as const)
+        this.#ui.worldOverlayPressed(name, this.#worldOverlays[name]);
     const now = this.#uiRoot.dataset['screen'];
     if (now !== before) {
       this.#measureBrake();
@@ -479,6 +569,12 @@ export class AppController {
     const frames = this.#frames.summary();
     const canvas = this.#host.canvas as HTMLCanvasElement | undefined;
     return {
+      worldDebug: {
+        temporaryRide: session.diagnosticRide,
+        location: session.diagnosticRide ? this.#worldLocation : undefined,
+        overlays: { ...this.#worldOverlays },
+        overlayPrimitives: this.#scene.worldOverlayCount,
+      },
       buildId: this.#options.buildId,
       renderer: this.#renderer,
       renderProfile: {
@@ -516,6 +612,7 @@ export class AppController {
         electrified: ride?.electrified ?? false,
         poles: this.#scene.stats.catenaryPoles,
         pantographGapU: this.#scene.stats.pantographGapU,
+        outOfRange: this.#scene.stats.pantographOutOfRange,
       },
       crossings: ride ? this.#crossings(ride) : [],
       backdropMidOffsetU: this.#scene.stats.backdropMidOffsetU,

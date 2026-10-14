@@ -7,7 +7,7 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
 ```json
 {
   "specVersion": "1.0",
-  "generatorVersion": 1,
+  "generatorVersion": 2,
   "contentVersion": 1,
   "simulation": {
     "fixedHz": 60,
@@ -172,7 +172,7 @@ Limit soupravy je 2 000 u včetně spřáhel. [D-028, camera-1](../docs/decision
 
 `spawnLocalXU` se při startu převádí na `arcOffsetU` pomocí LUT; tyto hodnoty nejsou zaměnitelné.
 
-`generatorVersion: 1` patří generátoru V1 podle dokumentu 04. Průběžná verze 0.1 používá dočasný generátor 0 se stejnými hranicemi a profily, ale bez biomů a rezervací ([D-005](../docs/decisions/005-provisional-track-generator-v0.md)). Geometrické parametry `world.*` jsou vstupem generátoru; jejich změna vyžaduje novou verzi generátoru, nikoli jen úpravu konfigurace. Všechny další konstanty s příponou U se vztahují ke světu, `CssPx` ke skutečné dotykové ploše a atlasové `Px` k souboru textury.
+`generatorVersion: 2` patří aktuálnímu generátoru podle dokumentu 04 a D-023; dříve vydaná verze 1 je historicky popsána v D-009. Průběžná verze 0.1 používá dočasný generátor 0 se stejnými hranicemi a profily, ale bez biomů a rezervací ([D-005](../docs/decisions/005-provisional-track-generator-v0.md)). Geometrické parametry `world.*` jsou vstupem generátoru; jejich změna vyžaduje novou verzi generátoru, nikoli jen úpravu konfigurace. Všechny další konstanty s příponou U se vztahují ke světu, `CssPx` ke skutečné dotykové ploše a atlasové `Px` k souboru textury.
 
 Počasí má při prvním okně nové cesty vždy jasno. Další okna se vybírají samostatným seedovým klíčem; zbývající pravděpodobnost po jasnu je lehká srážka vhodná pro daný biom. Denní fáze je `(initialDayPhase + simulationSeconds/dayCycleSeconds) mod 1`.
 
@@ -183,3 +183,39 @@ Výše uvedený JSON není hotový konfigurační soubor běžící aplikace. Im
 Pro měření lze profil při načtení přepsat adresou `?quality=auto|standard|low`. Jiná hodnota se ignoruje. Volba platí jen pro toto načtení a nemění uložené `settings.quality`; bez parametru se použije uložená kvalita. Stejný efektivní profil řídí DPR, limit FPS i efekty. Diagnostika `window.__vlacek.snapshot().renderProfile` při `?debug=1` uvádí efektivní `quality`, `maxDpr`, `fpsLimit` (0 = bez limitu) a `effects`.
 
 Uložené `settings.quality` a `settings.reducedEffects` lze nastavit skrytou rodičovskou brankou v pauze ([D-020](../docs/decisions/020-developer-menu.md)). Platná adresa má před uloženou kvalitou přednost; neplatný parametr se ignoruje. Menu změny použije přes reload, takže renderer i profil startují se stejnými efektivními volbami.
+
+## Svět v2 — hodnoty D-023
+
+- Geometrický blok: 8 × 1 024 u; region: 3–7 bloků; cyklus: 12 regionů / 60 bloků. Staré `blocksPerRouteCycle: 8` je historická konfigurace v1, v2 plán regionů ji nepoužívá.
+- Scénka: 2 048 u; prostorový přechod: posledních 8 192 u regionu.
+- První rovina bloku 0: do x = 2 144 u, včetně 96u ramene; stanice slot 1 s minimálně 448 u použitelné roviny, přejezd slot 3 před zvířetem.
+- Výrazné rybníky: plánový odstup 4 096 u; mlýny: nejvýše jeden za region / nejméně 8 192 u; maják: nejvýše jedna přístavní příležitost.
+- Plot: 512 u cesty, rozteč sloupků 64 u po délce cesty, dřevěné/piketové díly 8 × 26 / 64 × 22 / 48 × 26 u.
+- Stopy a podporované presety jsou normativní v `PlacementCatalog` a `ALLOWED_PRESETS`; nejvýše osm pokusů. Rozpočty 80 rekvizit / 48 blízkých rekvizit na chunk zůstávají.
+- Cache: 8 cyklů, 256 scén, 128 geometrických bloků a přejezdů, 32 projekčních profilů, 64 celých plotů a 256 dvojic nedávných fasád na numerický katalog (WeakMap, žádná historie kamery).
+- `volta run npm run validate:world`: pevná matice včetně auditů, záporných/vzdálených pozic a regionových hranic; samostatně 20 000 seedů pro první blok.
+
+Verze generátoru 2 mění svět a obnovuje cesty v0/v1 od startu se zachovaným vlakem a seedem. Schéma a katalog zůstávají na 1. Nové plánování má explicitní RNG jmenné prostory, nezměněné algoritmy zachovávají sůl 1. Sezónní vzhled/počasí doplní seasons-life; fyzické zařízení a Tesla NEOVĚŘENO.
+
+Kontaktní stopa má tloušťku 0,5 u; kmen zabírá 18 % šířky stromového assetu, koruna má celý obrys včetně maximálního kývání. Zadní projekční rovina má 220 u, blízká louka 440 u, pevné odsazení paty 8 u. Moře má nominální hloubky 0,70–0,98 a břeh sleduje společný 8 192u přechod. Relativní hustota pro přechod je 1,3 v lese, 0,7 v dunách a 1 jinde; nejde o naměřený výkonový slib.
+
+### Krajinné profily a diagnostika — krok 2
+
+`world.landscapeProfiles` vlastní následující obálky; roviny a svahy jsou délky přímého plánu před 192u přechody.
+
+| Krajina     | Max výška ±u | Vnitřní uzel ±u | Rozsah sklonu | Roviny u  | Náhodné svahy u |
+| ----------- | ------------ | --------------- | ------------- | --------- | --------------- |
+| countryside | 100          | 50              | 0,015–0,035   | 768–1536  | 1024–2304       |
+| forest      | 160          | 80              | 0,025–0,06    | 512–1280  | 1024–2560       |
+| lakes       | 60           | 30              | 0,01–0,025    | 1024–1792 | 1024–2560       |
+| foothills   | 260          | 180             | 0,04–0,09     | 512–1024  | 1024–3072       |
+| mountains   | 380          | 320             | 0,08–0,10     | 768–960   | 1536–3072       |
+| coast       | 60           | 30              | 0,01–0,025    | 1024–1792 | 1024–2560       |
+| dunes       | 100          | 50              | 0,015–0,04    | 768–1536  | 1024–2560       |
+| town        | 120          | 60              | 0,01–0,03     | 1024–1792 | 1024–2560       |
+
+Konečný svah může být delší, aby blok přesně dosáhl dalšího uzlu; zůstává pod krajinným maximem. Globální strop výšky je 400 u, `world.maxTrackGrade` 0,12 a `world.pantographMaxTrackGrade` 0,12 pro rovina ↔ svah a `world.pantographMaxReversingGrade` 0,098 pro přímý obrat přes 192 u. Kontrola ověřuje konečnost, pořadí rozsahů a místo pro dosažení sousedního uzlu. Parametry původního společného profilu jsou geometrický základ, tabulka je ve v2 přepisuje; nejde o změnu vydaného v1.
+
+Vzorek barvy země/spodní výplně: 16 u. Přední pole má hloubky 0,18–0,62, traktor 0,35–0,40 a patrolu 180 u při 26 u/s. Lesní práce mají podklad 0,15–0,90, klády 0,32–0,60 a mladé smrčky 0,25–0,70. Tyto hloubky jsou podmíněné úplnou bezpečnou stopou, nejsou povolením zasáhnout vlak. Suchý zadní vodní okraj má hloubku alespoň 0,12.
+
+Build branka: alespoň 44 CSS px, stále pět aktivací během 3000 ms. Lokátor: nejvýše 1920 chunků, start 640 u před cílem přes LUT. Překryvy mají jediný objekt a nejsou v save. Stopa se vytváří pouze na žádost, vstup se validuje před generováním. Scan silnic/vody: 100 celých itinerářů vedle hlavní deterministické matice a 20000 prvních bloků R3.

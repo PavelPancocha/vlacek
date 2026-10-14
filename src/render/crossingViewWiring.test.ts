@@ -1,10 +1,26 @@
+import { hash32 } from '../domain/world/Hash.ts';
+import { pointInside, waterSectionU } from '../domain/world/SceneryGeometry.ts';
 import type Phaser from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import { crossingParts } from '../content/worldArt.ts';
 import type { ArcLengthTable } from '../domain/world/ArcLengthTable.ts';
 import type { ChunkScenery } from '../domain/world/Scenery.ts';
+import { regionAt, transitionAt } from '../domain/world/Regions.ts';
+import { contextAt } from '../domain/world/WorldPlan.ts';
+import { sceneAt } from '../domain/world/WorldPlan.ts';
 import { ChunkView } from './ChunkView.ts';
+import { chunkScenery } from '../domain/world/Scenery.ts';
+import { worldPlacementCatalog } from '../content/worldPlacementCatalog.ts';
+import { generateTrackProfile } from '../domain/world/TrackProfile.ts';
+import { buildArcLengthTable } from '../domain/world/ArcLengthTable.ts';
 import { NEAR_POST_ROAD_U } from './crossingLayout.ts';
+import {
+  NEAR_PALETTE,
+  BACK_PALETTE,
+  WATER_PALETTE,
+  spatialNearPalette,
+  spatialBackPalette,
+} from './groundPalette.ts';
 
 vi.mock('phaser', () => ({
   default: {
@@ -25,6 +41,7 @@ type Point = { x: number; y: number };
 function drawingScene() {
   const images: { key: string | undefined; x: number; y: number }[] = [];
   const polygons: { color: number; points: Point[] }[] = [];
+  const strokes: { color: number; alpha: number; points: Point[] }[] = [];
   const rectangles: {
     color: number;
     x: number;
@@ -32,8 +49,21 @@ function drawingScene() {
     w: number;
     h: number;
   }[] = [];
+  const tailFills: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    color: number;
+  }[] = [];
+  const bakes: { left: number; top: number; width: number; height: number }[] =
+    [];
   const object = (x = 0, y = 0, key?: string) => {
-    let color = 0;
+    let strokeColor = 0,
+      strokeAlpha = 1;
+    let color = 0,
+      translateX = 0,
+      translateY = 0;
     const target = { x, y, key, frame: { width: 128, height: 128 } };
     const proxy = new Proxy(target, {
       get(target, property) {
@@ -47,13 +77,37 @@ function drawingScene() {
             target.y = y;
             return proxy;
           };
+        if (property === 'translateCanvas')
+          return (x: number, y: number) => {
+            translateX = x;
+            translateY = y;
+            return proxy;
+          };
+        if (property === 'generateTexture')
+          return (_key: string, width: number, height: number) => {
+            bakes.push({ left: -translateX, top: -translateY, width, height });
+            return proxy;
+          };
         if (property === 'fillStyle')
           return (value: number) => {
             color = value;
             return proxy;
           };
+        if (property === 'lineStyle')
+          return (_width: number, color: number, alpha = 1) => {
+            strokeColor = color;
+            strokeAlpha = alpha;
+            return proxy;
+          };
+        if (property === 'strokePoints')
+          return (points: Point[]) => {
+            strokes.push({ color: strokeColor, alpha: strokeAlpha, points });
+            return proxy;
+          };
         if (property === 'fillPoints')
           return (points: Point[]) => {
+            if (points.length < 3)
+              throw new Error('Phaser fillPoints requires a nonempty polygon');
             polygons.push({ color, points });
             return proxy;
           };
@@ -75,7 +129,16 @@ function drawingScene() {
         return image;
       },
       container: () => object(),
-      rectangle: () => object(),
+      rectangle: (
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        color: number,
+      ) => {
+        tailFills.push({ x, y, width, height, color });
+        return object(x, y);
+      },
       graphics: () => object(),
     },
     make: { graphics: () => object() },
@@ -86,7 +149,10 @@ function drawingScene() {
     scene: scene as unknown as Phaser.Scene,
     images,
     polygons,
+    strokes,
     rectangles,
+    bakes,
+    tailFills,
   };
 }
 
@@ -105,12 +171,18 @@ describe('ChunkView crossing geometry wiring', () => {
           lengthU: 1024 * Math.hypot(1, railSlope),
         };
         const scenery: ChunkScenery = {
+          region: regionAt(1, 3072),
+          scene: sceneAt(1, 3072),
+          roads: [],
+          fences: [],
+          reservations: [],
+          features: [],
           chunkIndex: 3,
           biome: 'countryside',
           slot: 3,
           locality: 'meadow',
           near: [{ fromX: 0, toX: 1024, style: 'meadow' }],
-          back: [],
+          back: [{ fromX: 0, toX: 1024, style: 'meadow' }],
           water: [],
           props: [],
           crossing: { id: 'crossing', chunkIndex: 3, localXU: x },
@@ -135,6 +207,27 @@ describe('ChunkView crossing geometry wiring', () => {
             nearProps: 6,
           },
         );
+        // Every point just inside the sloping back-band edges must remain painted after strip clipping.
+        const base = drawn.polygons.filter((p) => p.color === 0x92cc66);
+        for (const side of ['left', 'right'])
+          for (const depth of [0.1, 0.25, 0.5, 0.75, 0.9]) {
+            const edgeX = side === 'left' ? 0 : 1024;
+            const lean =
+              ((hash32('field-edge', 1, 3072 + edgeX) % 1000) / 1000 - 0.5) *
+              80;
+            const at =
+              edgeX + lean * (2 * depth - 1) + (side === 'left' ? 2 : -2);
+            const y = -100 + railSlope * (at - x) - depth * 220;
+            expect(
+              base.some((p) =>
+                pointInside(
+                  { xU: at, yU: y },
+                  p.points.map((v) => ({ xU: v.x, yU: v.y })),
+                ),
+              ),
+              `unpainted ${side} depth ${depth}`,
+            ).toBe(true);
+          }
         view.update(0, {
           barrier: 0,
           warning: false,
@@ -190,4 +283,387 @@ describe('ChunkView crossing geometry wiring', () => {
         view.destroy();
       });
     }
+});
+
+it.each([4, 5, 60, 61])(
+  'SCN-G06/GEN-23: the full foreground surface is baked, never cropped at chunk %i',
+  (k) => {
+    const sc = chunkScenery(1, k, worldPlacementCatalog);
+    const surfaces = sc.reservations.filter(
+      (r) => r.purpose === 'field' || r.purpose === 'forest-floor',
+    );
+    expect(surfaces.length).toBeGreaterThan(0);
+    const drawn = drawingScene();
+    const table = buildArcLengthTable(generateTrackProfile(1, k), k, 1024, 8);
+    const view = new ChunkView(drawn.scene, table, 1, sc, undefined, {
+      backGround: 0,
+      backProps: 1,
+      ground: 2,
+      track: 3,
+      train: 4,
+      wires: 5,
+      nearProps: 6,
+    });
+    const ground = drawn.bakes[1];
+    if (!ground) throw new Error('ground was not baked');
+    const bottom = ground.top + ground.height;
+    for (const surface of surfaces)
+      for (const p of surface.polygon)
+        expect(p.yU, `${k}/${surface.id}`).toBeLessThanOrEqual(bottom);
+    const groundColors = new Set(
+      sc.near.map((span) => NEAR_PALETTE[span.style].bands.at(-1)?.color),
+    );
+    expect(
+      drawn.tailFills.filter((r) => groundColors.has(r.color)).length,
+    ).toBeLessThanOrEqual(sc.near.length);
+    view.destroy();
+  },
+);
+
+it.each([48, 51, 52, 55, 56])(
+  'GEN-23: renderer paints full-height spatial ground at transition chunk %i',
+  (k) => {
+    const seed = 1,
+      sc = {
+        ...chunkScenery(seed, k, worldPlacementCatalog),
+        reservations: [],
+        props: [],
+        water: [],
+        roads: [],
+        crossing: undefined,
+        bridge: undefined,
+      },
+      drawn = drawingScene();
+    const table = buildArcLengthTable(
+      generateTrackProfile(seed, k),
+      k,
+      1024,
+      8,
+    );
+    const view = new ChunkView(drawn.scene, table, seed, sc, undefined, {
+      backGround: 0,
+      backProps: 1,
+      ground: 2,
+      track: 3,
+      train: 4,
+      wires: 5,
+      nearProps: 6,
+    });
+    const span = sc.near[0],
+      back = sc.back[0];
+    if (!span || !back) throw new Error('ground missing');
+    for (const x of [136, 504, 888]) {
+      const expected = spatialNearPalette(
+        seed,
+        k * 1024 + x,
+        span.style,
+      ).bands.at(-1)?.color;
+      const deep = drawn.tailFills.findLast(
+        (r) => r.x <= x && x < r.x + r.width && r.height > 1000,
+      );
+      expect(deep?.color, `deep fill ${k}/${x}`).toBe(expected);
+      const middle = drawn.polygons.findLast((p) =>
+        pointInside(
+          {
+            xU: x,
+            yU: (drawn.bakes[1]?.top ?? 0) + (drawn.bakes[1]?.height ?? 0) - 4,
+          },
+          p.points.map((v) => ({ xU: v.x, yU: v.y })),
+        ),
+      );
+      expect(middle?.color, `baked fill ${k}/${x}`).toBe(expected);
+      const background = drawn.polygons.findLast((p) =>
+        pointInside(
+          { xU: x, yU: -(table.ys[Math.round(x / 8)] ?? 0) - 210 },
+          p.points.map((v) => ({ xU: v.x, yU: v.y })),
+        ),
+      );
+      expect(background, `back ${k}/${x}`).toBeDefined();
+      const atBack = sc.back.find((s) => s.fromX <= x && x < s.toX);
+      if (!atBack) throw new Error('background span missing');
+      const color = spatialBackPalette(seed, k * 1024 + x, atBack.style).base;
+      for (const shift of [0, 8, 16])
+        expect(
+          Math.abs(
+            (((background?.color ?? 0) >> shift) & 255) -
+              ((color >> shift) & 255),
+          ),
+        ).toBeLessThanOrEqual(1);
+    }
+    view.destroy();
+  },
+);
+it.each([4, 5, 60, 61])(
+  'SCN-G06: rendered foreground has tapered scene endpoints at chunk %i',
+  (k) => {
+    const sc = chunkScenery(1, k, worldPlacementCatalog),
+      drawn = drawingScene();
+    const table = buildArcLengthTable(generateTrackProfile(1, k), k, 1024, 8);
+    const view = new ChunkView(drawn.scene, table, 1, sc, undefined, {
+      backGround: 0,
+      backProps: 1,
+      ground: 2,
+      track: 3,
+      train: 4,
+      wires: 5,
+      nearProps: 6,
+    });
+    const polygon = drawn.polygons.find(
+      (p) => p.color === (k < 10 ? 0xb6a563 : 0x6c8043),
+    );
+    if (!polygon) throw new Error('foreground was not painted');
+    const a =
+      k % 2 === 0
+        ? polygon.points[0]
+        : polygon.points[polygon.points.length / 2 - 1];
+    const b =
+      k % 2 === 0
+        ? polygon.points.at(-1)
+        : polygon.points[polygon.points.length / 2];
+    expect(a).toEqual(b);
+    if (k >= 60) {
+      const edge = drawn.polygons.find((p) => p.color === 0x4b7436);
+      if (!edge) throw new Error('forest silhouette missing');
+      const first =
+        k % 2 === 0 ? edge.points[0] : edge.points[edge.points.length / 2 - 1];
+      const last =
+        k % 2 === 0 ? edge.points.at(-1) : edge.points[edge.points.length / 2];
+      expect(first).toEqual(last);
+    }
+    if (k >= 60)
+      expect(drawn.polygons.some((p) => p.color === 0x4b7436)).toBe(true);
+    view.destroy();
+  },
+);
+
+it('GEN-23: renderer retains authored field rows while their transition begins', () => {
+  const sc = chunkScenery(1, 48, worldPlacementCatalog),
+    drawn = drawingScene();
+  expect(sc.back.some((s) => s.style === 'wheat')).toBe(true);
+  const table = buildArcLengthTable(generateTrackProfile(1, 48), 48, 1024, 8);
+  const view = new ChunkView(drawn.scene, table, 1, sc, undefined, {
+    backGround: 0,
+    backProps: 1,
+    ground: 2,
+    track: 3,
+    train: 4,
+    wires: 5,
+    nearProps: 6,
+  });
+  const rowColor = spatialBackPalette(1, 49152 + 512, 'wheat').rows;
+  expect(rowColor).toBeDefined();
+  expect(
+    drawn.strokes.some(
+      (s) =>
+        s.alpha > 0 &&
+        s.alpha < 1 &&
+        [0, 8, 16].every(
+          (shift) =>
+            Math.abs(
+              ((s.color >> shift) & 255) - (((rowColor ?? 0) >> shift) & 255),
+            ) <= 1,
+        ),
+    ),
+  ).toBe(true);
+  view.destroy();
+});
+
+it.each(['wheat', 'crops', 'glade'] as const)(
+  'GEN-23 review2 authored %s is rendered on both sides of x 49152',
+  (style) => {
+    for (const k of [47, 48]) {
+      const sc = chunkScenery(1, k, worldPlacementCatalog);
+      sc.back = [{ style, fromX: 0, toX: 1024 }];
+      const drawn = drawingScene();
+      const table = buildArcLengthTable(generateTrackProfile(1, k), k, 1024, 8);
+      const view = new ChunkView(drawn.scene, table, 1, sc, undefined, {
+        backGround: 0,
+        backProps: 1,
+        ground: 2,
+        track: 3,
+        train: 4,
+        wires: 5,
+        nearProps: 6,
+      });
+      const x = k === 47 ? 1016 : 8;
+      const worldX = k * 1024 + x;
+      const expected = spatialBackPalette(1, worldX, style);
+      const fill = drawn.polygons.findLast((p) =>
+        pointInside(
+          { xU: x, yU: -(table.ys[Math.round(x / 8)] ?? 0) - 110 },
+          p.points.map((v) => ({ xU: v.x, yU: v.y })),
+        ),
+      );
+      expect(fill).toBeDefined();
+      // Independent authored-colour assertion on the rendered fill itself.
+      for (const shift of [0, 8, 16])
+        expect(
+          Math.abs(
+            (((fill?.color ?? 0) >> shift) & 255) -
+              ((BACK_PALETTE[style].base >> shift) & 255),
+          ),
+        ).toBeLessThanOrEqual(1);
+      expect(fill?.color).toBe(expected.base);
+      const rows = BACK_PALETTE[style].rows;
+      if (rows !== undefined)
+        expect(
+          drawn.strokes.some(
+            (s) =>
+              s.alpha > 0.98 &&
+              s.points.some((p) => Math.abs(p.x - x) <= 8) &&
+              [0, 8, 16].every(
+                (shift) =>
+                  Math.abs(
+                    ((s.color >> shift) & 255) - ((rows >> shift) & 255),
+                  ) <= 1,
+              ),
+          ),
+        ).toBe(true);
+      else expect(expected.rows).toBeUndefined();
+      view.destroy();
+    }
+  },
+);
+
+it('GEN-23 review2 authored surface survives an already incoming winter climate', () => {
+  let found: { seed: number; x: number } | undefined;
+  for (let seed = 0; seed < 20 && !found; seed++) {
+    let r = regionAt(seed, 0);
+    for (let i = 0; i < 12; i++, r = regionAt(seed, r.toXU))
+      if (r.season !== 'winter' && regionAt(seed, r.toXU).season === 'winter') {
+        found = { seed, x: r.toXU - 3072 + 8 };
+        break;
+      }
+  }
+  if (!found) throw new Error('winter transition witness missing');
+  const { seed, x } = found;
+  expect(contextAt(seed, x, 'back').season).toBe('winter');
+  const t = transitionAt(seed, x);
+  for (const style of ['wheat', 'crops', 'glade'] as const) {
+    const palette = spatialBackPalette(seed, x, style);
+    for (const shift of [0, 8, 16]) {
+      const a = (BACK_PALETTE[style].base >> shift) & 255;
+      const b = (BACK_PALETTE.snow.base >> shift) & 255;
+      expect((palette.base >> shift) & 255).toBe(
+        Math.round(a + (b - a) * t.progress),
+      );
+    }
+    expect(palette.rows !== undefined).toBe(
+      BACK_PALETTE[style].rows !== undefined,
+    );
+  }
+});
+
+it.each([4, 5, 60, 61])(
+  'SCN-G06 review2 rounded headland and grass margin at chunk %i',
+  (k) => {
+    const sc = chunkScenery(1, k, worldPlacementCatalog),
+      drawn = drawingScene();
+    const table = buildArcLengthTable(generateTrackProfile(1, k), k, 1024, 8);
+    const view = new ChunkView(drawn.scene, table, 1, sc, undefined, {
+      backGround: 0,
+      backProps: 1,
+      ground: 2,
+      track: 3,
+      train: 4,
+      wires: 5,
+      nearProps: 6,
+    });
+    const soil = k < 10 ? 0xb6a563 : 0x6c8043;
+    const polygon = drawn.polygons.find((p) => p.color === soil);
+    if (!polygon) throw new Error('surface not drawn');
+    const upper = polygon.points.slice(0, polygon.points.length / 2);
+    const lower = polygon.points.slice(polygon.points.length / 2).reverse();
+    const i = k % 2 === 0 ? 1 : upper.length - 2;
+    const a = upper[i],
+      b = lower[i];
+    if (!a || !b) throw new Error('cap sample missing');
+    // First 8 u opens with a rounded, near-vertical tangent, not an acute wedge.
+    expect(b.y - a.y).toBeGreaterThan(40);
+    const margin = drawn.strokes.filter(
+      (s) => s.color === 0x75954f && s.alpha === 0.45,
+    );
+    expect(margin).toHaveLength(2);
+    const feature = sc.features.find(
+      (f) => f.kind === (k < 10 ? 'field' : 'forest-floor'),
+    );
+    if (!feature) throw new Error('feature missing');
+    const lines = drawn.strokes.filter(
+      (s) => s.color === (k < 10 ? 0x928248 : 0x527239),
+    );
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines)
+      for (const p of line.points) {
+        expect(p.x + k * 1024).toBeGreaterThanOrEqual(feature.fromXU + 160);
+        expect(p.x + k * 1024).toBeLessThanOrEqual(feature.toXU - 160);
+      }
+    view.destroy();
+  },
+);
+
+it('SCN-CO02/GEN-23: the connected incoming sea keeps its own water palette before the coast border', () => {
+  let coast = regionAt(1, 0);
+  for (let i = 0; i < 12 && coast.landscape !== 'coast'; i++)
+    coast = regionAt(1, coast.toXU);
+  expect(coast.landscape).toBe('coast');
+  const k = coast.fromXU / 1024 - 1,
+    sc = chunkScenery(1, k, worldPlacementCatalog),
+    drawn = drawingScene();
+  expect(sc.water.some((w) => w.kind === 'sea')).toBe(true);
+  expect(sc.near.some((s) => s.style === 'sand')).toBe(false);
+  const table = buildArcLengthTable(generateTrackProfile(1, k), k, 1024, 8);
+  const view = new ChunkView(drawn.scene, table, 1, sc, undefined, {
+    backGround: 0,
+    backProps: 1,
+    ground: 2,
+    track: 3,
+    train: 4,
+    wires: 5,
+    nearProps: 6,
+  });
+  expect(drawn.polygons.some((p) => p.color === WATER_PALETTE.sea.near)).toBe(
+    true,
+  );
+  view.destroy();
+});
+
+it('SCN-CO02/GEN-23: later background fragments never erase the continuous sea at 0/331→332', () => {
+  const polygons: { color: number; points: { xU: number; yU: number }[] }[] =
+    [];
+  for (const k of [331, 332]) {
+    const sc = {
+        ...chunkScenery(0, k, worldPlacementCatalog),
+        props: [],
+        roads: [],
+        crossing: undefined,
+        bridge: undefined,
+      },
+      drawn = drawingScene();
+    const table = buildArcLengthTable(generateTrackProfile(0, k), k, 1024, 8);
+    const view = new ChunkView(drawn.scene, table, 0, sc, undefined, {
+      backGround: 0,
+      backProps: 1,
+      ground: 2,
+      track: 3,
+      train: 4,
+      wires: 5,
+      nearProps: 6,
+    });
+    polygons.push(
+      ...drawn.polygons.map((p) => ({
+        color: p.color,
+        points: p.points.map((v) => ({ xU: k * 1024 + v.x, yU: v.y })),
+      })),
+    );
+    view.destroy();
+  }
+  const sea = chunkScenery(0, 332, worldPlacementCatalog).water.find(
+    (w) => w.kind === 'sea',
+  );
+  if (!sea) throw new Error('sea witness missing');
+  const section = waterSectionU(0, 332, sea, -8),
+    point = { xU: 332 * 1024 - 8, yU: (section.topU + section.bottomU) / 2 };
+  expect(polygons.findLast((p) => pointInside(point, p.points))?.color).toBe(
+    WATER_PALETTE.sea.middle,
+  );
 });

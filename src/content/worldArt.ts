@@ -1,3 +1,7 @@
+import {
+  additionalWorldParts,
+  additionalPartKeys,
+} from './worldRegistry.generated.ts';
 import type { Biome } from '../domain/world/Biomes.ts';
 import type {
   AnimalKind,
@@ -12,7 +16,7 @@ import type { ArtPart, ArtPoint } from './artManifest.ts';
  * track tiles on the rail top, backdrops on their bottom left corner.
  * Prop keys are the kinds the world generator places.
  */
-export const worldParts = {
+const baseWorldParts = {
   'animal.cat': {
     file: 'animal.cat.svg',
     widthU: 22,
@@ -157,11 +161,41 @@ export const worldParts = {
     heightU: 92,
     pivotU: { x: 65, y: 92 },
   },
-  'back.fence': {
-    file: 'back.fence.svg',
-    widthU: 66,
+  'fence.wood-post': {
+    file: 'fence.wood-post.svg',
+    widthU: 8,
+    heightU: 26,
+    pivotU: { x: 4, y: 26 },
+  },
+  'fence.wood-panel': {
+    file: 'fence.wood-panel.svg',
+    widthU: 64,
     heightU: 22,
-    pivotU: { x: 33, y: 22 },
+    pivotU: { x: 32, y: 22 },
+  },
+  'fence.wood-gate': {
+    file: 'fence.wood-gate.svg',
+    widthU: 48,
+    heightU: 26,
+    pivotU: { x: 24, y: 26 },
+  },
+  'fence.picket-post': {
+    file: 'fence.picket-post.svg',
+    widthU: 8,
+    heightU: 26,
+    pivotU: { x: 4, y: 26 },
+  },
+  'fence.picket-panel': {
+    file: 'fence.picket-panel.svg',
+    widthU: 64,
+    heightU: 22,
+    pivotU: { x: 32, y: 22 },
+  },
+  'fence.picket-gate': {
+    file: 'fence.picket-gate.svg',
+    widthU: 48,
+    heightU: 26,
+    pivotU: { x: 24, y: 26 },
   },
   'back.fishing-boat': {
     file: 'back.fishing-boat.svg',
@@ -667,12 +701,6 @@ export const worldParts = {
     heightU: 12,
     pivotU: { x: 9, y: 12 },
   },
-  'near.picket-fence': {
-    file: 'near.picket-fence.svg',
-    widthU: 66,
-    heightU: 20,
-    pivotU: { x: 33, y: 20 },
-  },
   'near.pond': {
     file: 'near.pond.svg',
     widthU: 200,
@@ -951,6 +979,13 @@ export const worldParts = {
   },
 } satisfies Record<string, ArtPart>;
 
+if (
+  new Set(additionalPartKeys).size !== additionalPartKeys.length ||
+  additionalPartKeys.some((key) => key in baseWorldParts)
+)
+  throw new Error('duplicate world art key');
+export const worldParts = { ...baseWorldParts, ...additionalWorldParts };
+
 export type WorldPartKey = keyof typeof worldParts;
 
 /**
@@ -989,6 +1024,8 @@ export const backdropParts: Readonly<
   foothills: { far: 'backdrop.foothills-far', mid: 'backdrop.foothills-mid' },
   mountains: { far: 'backdrop.mountains-far', mid: 'backdrop.mountains-mid' },
   coast: { far: 'backdrop.coast-far', mid: 'backdrop.coast-mid' },
+  dunes: { far: 'backdrop.forest-far', mid: 'backdrop.forest-mid' },
+  town: { far: 'backdrop.countryside-far', mid: 'backdrop.countryside-mid' },
 };
 
 export const cloudParts: readonly WorldPartKey[] = [

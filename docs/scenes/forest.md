@@ -10,6 +10,8 @@ Za loukou se zvedá nejprve řídký a potom souvislejší pás stromů.
 Na horizontu už je les, ale mezi bližšími korunami stále prosvítá obloha.
 Za tratí rostou duby, břízy a několik borovic ve skupinách.
 U náspu přechází tráva do kapradí a lesní půdy.
+Přední lesní půda má měkký nepravidelný travnatý lem a oblé zakončení; netvoří obdélník ani ostrý hrot.
+Její obrys pokračuje přes technické hranice chunků.
 Před vlakem jsou bobulové keře a mladé smrčky pod chráněným pásem.
 Srnka občas vykoukne na kraji porostu a klidně se vrátí o několik kroků zpět.
 

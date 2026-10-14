@@ -138,6 +138,28 @@ export class UiLayer {
     return form.reportValidity() ? values : undefined;
   }
 
+  developerWorldQuery(): string {
+    return (
+      this.#root
+        .querySelector<HTMLInputElement>('[data-world-trace-query]')
+        ?.value.trim() ?? ''
+    );
+  }
+  worldDeveloperStatus(message: string, trace = false): void {
+    const node = this.#root.querySelector(
+      trace ? '[data-world-trace]' : '[data-world-status]',
+    );
+    if (node) node.textContent = message;
+  }
+  worldOverlayPressed(name: string, pressed: boolean): void {
+    const button = this.#root.querySelector(
+        `[data-action="dev-world-overlay:${name}"]`,
+      ),
+      value = String(pressed);
+    if (button && button.getAttribute('aria-pressed') !== value)
+      button.setAttribute('aria-pressed', value);
+  }
+
   developerSaveError(part: 'session' | 'dev'): void {
     const status = this.#root.querySelector('[data-dev-error]');
     if (status)

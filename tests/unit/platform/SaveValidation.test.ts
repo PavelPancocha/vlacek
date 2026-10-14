@@ -88,11 +88,27 @@ describe('parseSave', () => {
   });
 
   it('DATA-04 R1: detects a newer generator before validating catalog IDs', () => {
-    expect(parseSave(fixture('v1-future-catalog.json'), rules)).toEqual({
+    expect(
+      parseSave(fixture('v1-future-catalog.json'), {
+        ...rules,
+        trackGeneratorVersion: 1,
+      }),
+    ).toEqual({
       status: 'newer',
       schemaVersion: 1,
       generatorVersion: 2,
     });
+  });
+
+  it('DATA-04: generator 3 is protected by the current v2 reader before catalog validation', () => {
+    expect(parseSave(fixture('v1-generator-3.json'), rules)).toEqual({
+      status: 'newer',
+      schemaVersion: 1,
+      generatorVersion: 3,
+    });
+    expect(parseSave(fixture('v1-future-catalog.json'), rules).status).toBe(
+      'invalid',
+    );
   });
 
   it('DATA-04 R1: detects newer content before validating catalog IDs', () => {
