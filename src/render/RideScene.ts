@@ -732,6 +732,8 @@ export class RideScene extends Phaser.Scene {
 
   #reset(): void {
     this.#particles.clear();
+    this.#trainEffects.reset();
+    this.#ambient.reset();
     this.#backdrop?.reset();
     this.#bubblePops = 0;
     this.#npcEffects.clear();

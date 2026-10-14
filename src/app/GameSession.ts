@@ -414,6 +414,41 @@ export class GameSession {
     return this.#persist();
   }
 
+  /** Parent-only restart: save the old journey before replacing it (D-020). */
+  restartJourney(seed: number): 'saved' | 'save-failed' | 'start-failed' {
+    if (
+      this.#screen.name !== 'PAUSED' ||
+      !this.#journey ||
+      !Number.isInteger(seed) ||
+      seed < 0 ||
+      seed > 0xffffffff
+    )
+      return 'start-failed';
+    this.endDiagnosticRide();
+    const previous = this.#journey;
+    if (!previous) return 'start-failed';
+    if (this.interrupt() !== 'saved') return 'save-failed';
+    let journey: Journey;
+    try {
+      journey = {
+        seed,
+        consist: previous.consist,
+        ride: this.#createRide(seed, previous.consist),
+      };
+    } catch {
+      return 'start-failed';
+    }
+    // Persist the candidate before publishing it to input or rendering.
+    if (this.#deps.repository.save(this.#envelope(journey)) !== 'saved') {
+      this.#persist();
+      return 'save-failed';
+    }
+    this.#journey = journey;
+    this.#fixedStep = initialFixedStep();
+    this.#events = [];
+    return 'saved';
+  }
+
   #pause(): void {
     if (this.#screen.name !== 'RIDING') return;
     this.#apply({ type: 'pause' });
@@ -566,7 +601,7 @@ export class GameSession {
     }
   }
 
-  #envelope(): SaveEnvelopeV1 {
+  #envelope(journey = this.#journey): SaveEnvelopeV1 {
     const envelope: SaveEnvelopeV1 = {
       schemaVersion: 1,
       contentVersion: 1,
@@ -582,7 +617,6 @@ export class GameSession {
       // Not yet used by the depot: keep it across ride checkpoints.
       envelope.builderDraft = this.#restoredDraft.consist;
     }
-    const journey = this.#journey;
     if (journey) {
       envelope.journey = {
         seed: journey.seed,

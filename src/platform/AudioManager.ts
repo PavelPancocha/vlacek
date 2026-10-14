@@ -34,9 +34,15 @@ export class AudioManager {
   #covered = 0;
   #fadeSequence = 0;
   readonly #buffers = new Map<string, AudioBuffer>();
-  readonly #loading = new Map<string, Promise<AudioBuffer | undefined>>();
+  readonly #loading = new Map<
+    string,
+    {
+      controller: AbortController;
+      promise: Promise<AudioBuffer | undefined>;
+    }
+  >();
   readonly #requests = new Set<AbortController>();
-  readonly #pendingLayers = new Set<string>();
+  readonly #pendingLayers = new Map<string, number>();
   readonly #failures = new Map<string, string>();
   readonly #voices = new Map<string, Voice>();
   readonly #layers = new Map<string, AudioLayer>();
@@ -117,6 +123,19 @@ export class AudioManager {
         .suspend()
         .catch(() => this.#failures.set('context', 'suspend failed'));
   }
+  /** Release every old-journey source and async consumer without resuming the context. */
+  stopAll(): void {
+    this.#epoch += 1;
+    this.#resuming = undefined;
+    this.#layers.clear();
+    for (const request of this.#requests) request.abort();
+    this.#requests.clear();
+    this.#loading.clear();
+    this.#pendingLayers.clear();
+    for (const voice of [...this.#voices.values()]) this.#stop(voice);
+    this.setCovered(0);
+  }
+
   #clip(id: string): SoundClip | undefined {
     return Object.hasOwn(soundManifest, id) ? soundManifest[id] : undefined;
   }
@@ -127,7 +146,7 @@ export class AudioManager {
     if (cached) return cached;
     if (this.#failures.has(clip.file)) return undefined;
     const pending = this.#loading.get(clip.file);
-    if (pending) return pending;
+    if (pending) return pending.promise;
     const epoch = this.#epoch;
     const controller = new AbortController();
     this.#requests.add(controller);
@@ -146,7 +165,8 @@ export class AudioManager {
         )
           return undefined;
         const buffer = await context.decodeAudioData(bytes);
-        if (this.#context !== context) return undefined;
+        if (this.#context !== context || controller.signal.aborted)
+          return undefined;
         this.#buffers.set(clip.file, buffer);
         return buffer;
       } catch (error) {
@@ -158,10 +178,11 @@ export class AudioManager {
         return undefined;
       } finally {
         this.#requests.delete(controller);
-        if (this.#context === context) this.#loading.delete(clip.file);
+        if (this.#loading.get(clip.file)?.controller === controller)
+          this.#loading.delete(clip.file);
       }
     })();
-    this.#loading.set(clip.file, request);
+    this.#loading.set(clip.file, { controller, promise: request });
     return request;
   }
   #reserve(kind: VoiceKind, priority: number): boolean {
@@ -325,7 +346,7 @@ export class AudioManager {
     )
       return;
     const epoch = this.#epoch;
-    this.#pendingLayers.add(key);
+    this.#pendingLayers.set(key, epoch);
     try {
       const buffer = await this.#load(clip);
       const desired = this.#layers.get(key);
@@ -372,13 +393,16 @@ export class AudioManager {
       const voice = this.#voices.get(key);
       if (voice) this.#stop(voice);
     } finally {
-      this.#pendingLayers.delete(key);
-      // A changed clip or explicit resume reconciles once, using the latest frame.
-      if (
-        this.#context === context &&
-        (this.#layers.get(key)?.id !== layer.id || this.#epoch !== epoch)
-      )
-        void this.#startLayer(key);
+      // A stopped journey must not delete or reconcile the new journey's consumer.
+      if (this.#pendingLayers.get(key) === epoch) {
+        this.#pendingLayers.delete(key);
+        // A changed clip or explicit resume reconciles once, using the latest frame.
+        if (
+          this.#context === context &&
+          (this.#layers.get(key)?.id !== layer.id || this.#epoch !== epoch)
+        )
+          void this.#startLayer(key);
+      }
     }
   }
   #adjust(voice: Voice, layer: AudioLayer, clip: SoundClip): void {
@@ -423,6 +447,7 @@ export class AudioManager {
     source.addEventListener(
       'ended',
       () => {
+        if (!voice.strokes.has(source)) return;
         source.disconnect();
         envelope.disconnect();
         voice.strokes.delete(source);
@@ -443,9 +468,7 @@ export class AudioManager {
   }
   dispose(): void {
     this.suspend();
-    for (const request of this.#requests) request.abort();
-    this.#requests.clear();
-    this.#loading.clear();
+    this.stopAll();
     this.#filter?.disconnect();
     this.#delay?.disconnect();
     this.#echo?.disconnect();

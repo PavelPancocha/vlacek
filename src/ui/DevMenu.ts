@@ -39,6 +39,7 @@ export function parseDevMenu(
 export function developerMenu(
   values: DevMenuValues,
   signal: AbortSignal,
+  currentSeed: number | undefined,
 ): HTMLElement {
   const select = (
     name: string,
@@ -103,6 +104,39 @@ export function developerMenu(
       { class: 'hint', id: 'dev-world-hint' },
       'Prázdné = náhodný svět; jinak 0–4294967295. Platí pro nové cesty.',
     ),
+    el(
+      'section',
+      { class: 'dev-world-actions' },
+      el('h2', { class: 'dev-current-world' }, `Svět ${currentSeed ?? '—'}`),
+      actionButton('dev-copy-seed', 'Kopírovat číslo', ['Kopírovat číslo'], {
+        disabled: currentSeed === undefined,
+      }),
+      actionButton('dev-details', 'Diagnostika – podrobnosti', [
+        'Diagnostika – podrobnosti',
+      ]),
+      actionButton(
+        'dev-restart',
+        'Znovu tento svět od začátku',
+        ['Znovu tento svět od začátku'],
+        { disabled: currentSeed === undefined },
+      ),
+      actionButton(
+        'dev-random-world',
+        'Nový náhodný svět',
+        ['Nový náhodný svět'],
+        { disabled: currentSeed === undefined },
+      ),
+      el(
+        'p',
+        { class: 'hint' },
+        'Restart zachová soupravu, uloží novou cestu a vrátí pauzu. Rozpracované volby nepoužije.',
+      ),
+      el(
+        'div',
+        { 'data-copy-output': '' },
+        el('p', { role: 'status', 'data-copy-status': '' }),
+      ),
+    ),
   );
   form.append(
     el(
@@ -149,9 +183,13 @@ export function developerMenu(
       'aria-labelledby': 'dev-menu-title',
     },
     el('h1', { id: 'dev-menu-title' }, 'Vývojářské volby'),
-    el('p', { class: 'hint' }, 'Změny se použijí po opětovném načtení.'),
-    form,
-    el('p', { class: 'hint', role: 'status', 'data-dev-error': '' }),
+    el(
+      'div',
+      { class: 'screen-content' },
+      el('p', { class: 'hint' }, 'Změny se použijí po opětovném načtení.'),
+      form,
+      el('p', { class: 'hint', role: 'status', 'data-dev-error': '' }),
+    ),
     el(
       'div',
       { class: 'row dev-actions' },

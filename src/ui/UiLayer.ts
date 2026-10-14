@@ -1,4 +1,5 @@
 import type { Screen } from '../app/AppState.ts';
+import type { DebugSnapshot } from '../app/debugSnapshot.ts';
 import type { SessionNotice } from '../app/GameSession.ts';
 import type { CatalogLocomotive, CatalogWagon } from '../content/vehicles.ts';
 import {
@@ -16,6 +17,7 @@ import type { WagonGroup } from '../domain/types.ts';
 import type { Settings } from '../platform/SaveValidation.ts';
 import { developerMenu, parseDevMenu, type DevMenuValues } from './DevMenu.ts';
 import { devTap, type DevTapState } from './DevTapGate.ts';
+import { copyDiagnosticText, diagnosticsView } from './DiagnosticsView.ts';
 import { actionButton, el } from './dom.ts';
 import { icon } from './icons.ts';
 import { vehiclePreview } from './vehiclePreview.ts';
@@ -102,6 +104,7 @@ export class UiLayer {
   #stripScrollLeft = 0;
   #devValues: DevMenuValues | undefined;
   #devGate: DevTapState = { count: 0, startMs: 0 };
+  #detailSnapshot: DebugSnapshot | undefined;
 
   constructor(root: HTMLElement) {
     this.#root = root;
@@ -120,9 +123,50 @@ export class UiLayer {
 
   closeDeveloperMenu(): void {
     this.#devValues = undefined;
+    this.#detailSnapshot = undefined;
     queueMicrotask(() =>
       this.#root.querySelector<HTMLButtonElement>('.build-id')?.focus(),
     );
+  }
+
+  openDiagnostics(snapshot: DebugSnapshot): void {
+    const menu = this.#root.querySelector<HTMLElement>('.dev-menu');
+    if (!menu || this.#detailSnapshot) return;
+    this.#detailSnapshot = snapshot;
+    menu.hidden = true;
+    this.#root.append(diagnosticsView(snapshot));
+    this.#root.querySelector<HTMLElement>('#diagnostics-title')?.focus();
+  }
+
+  closeDiagnostics(): void {
+    this.#detailSnapshot = undefined;
+    this.#root.querySelector('.diagnostics-detail')?.remove();
+    const menu = this.#root.querySelector<HTMLElement>('.dev-menu');
+    if (menu) menu.hidden = false;
+    this.#root
+      .querySelector<HTMLElement>('[data-action="dev-details"]')
+      ?.focus();
+  }
+
+  copyDiagnostics(seed: number | undefined, json: boolean): void {
+    const panel = this.#root.querySelector(
+      json ? '.diagnostics-detail' : '.dev-menu',
+    );
+    const output = panel?.querySelector<HTMLElement>('[data-copy-output]');
+    const text =
+      json && this.#detailSnapshot
+        ? JSON.stringify(this.#detailSnapshot, null, 2)
+        : seed === undefined
+          ? undefined
+          : String(seed);
+    if (output && text !== undefined) void copyDiagnosticText(text, output);
+  }
+
+  developerStartError(): void {
+    const status = this.#root.querySelector('[data-dev-error]');
+    if (status)
+      status.textContent =
+        'Novou cestu se nepodařilo spustit. Původní cesta zůstává.';
   }
 
   developerValues(): DevMenuValues | undefined {
@@ -181,6 +225,7 @@ export class UiLayer {
   update(model: UiModel): void {
     if (model.screen.name !== 'PAUSED') {
       this.#devValues = undefined;
+      this.#detailSnapshot = undefined;
       this.#devGate = { count: 0, startMs: 0 };
     }
     const signature = JSON.stringify([
@@ -260,6 +305,7 @@ export class UiLayer {
 
   dispose(): void {
     this.#updateView = undefined;
+    this.#detailSnapshot = undefined;
     this.#renderScope?.abort();
     this.#root.replaceChildren();
   }
@@ -273,7 +319,7 @@ export class UiLayer {
         views.push(this.#home(model));
         break;
       case 'SELECT_LOCO':
-        views.push(this.#selectLoco(model));
+        views.push(this.#selectLoco(model, signal));
         break;
       case 'BUILD_TRAIN':
         views.push(this.#builder(model, signal));
@@ -284,7 +330,7 @@ export class UiLayer {
       case 'PAUSED':
         views.push(
           this.#devValues
-            ? developerMenu(this.#devValues, signal)
+            ? developerMenu(this.#devValues, signal, model.seed)
             : this.#pause(model),
         );
         break;
@@ -293,7 +339,11 @@ export class UiLayer {
           el(
             'section',
             { class: 'screen center' },
-            el('p', {}, 'Vláček se teď nepodařilo spustit.'),
+            el(
+              'div',
+              { class: 'screen-content' },
+              el('p', {}, 'Vláček se teď nepodařilo spustit.'),
+            ),
             actionButton('retry', 'Zkusit znovu', [label('Zkusit znovu')], {
               className: 'button big',
             }),
@@ -367,12 +417,16 @@ export class UiLayer {
         ),
       ),
       this.#fullscreen(model),
-      this.#fullscreenNotice(model),
-      notices(model),
+      el(
+        'div',
+        { class: 'screen-content' },
+        this.#fullscreenNotice(model),
+        notices(model),
+      ),
     );
   }
 
-  #selectLoco(model: UiModel): HTMLElement {
+  #selectLoco(model: UiModel, signal: AbortSignal): HTMLElement {
     const selected = model.draft.consist.locomotiveId;
     const origin =
       model.screen.name === 'SELECT_LOCO' ? model.screen.origin : 'new';
@@ -419,6 +473,33 @@ export class UiLayer {
       this.#fullscreenNotice(model),
       notices(model),
     );
+    const content = el('div', { class: 'screen-content' });
+    for (const node of section.querySelectorAll('.cards, .hint, .notices'))
+      content.append(node);
+    section.querySelector('.row.bottom')?.before(content);
+    const cue = el(
+      'span',
+      {
+        class: 'scroll-cue',
+        role: 'img',
+        'aria-label': 'Další mašinky dole',
+        hidden: true,
+      },
+      icon('towardLocomotive', 24),
+    );
+    section.querySelector('.row.bottom')?.append(cue);
+    const updateCue = () => {
+      cue.hidden =
+        content.scrollTop + content.clientHeight >= content.scrollHeight - 1;
+    };
+    content.addEventListener('scroll', updateCue, { signal, passive: true });
+    const observer = new ResizeObserver(updateCue);
+    observer.observe(content);
+    const cards = content.querySelector('.cards');
+    if (cards) observer.observe(cards);
+    signal.addEventListener('abort', () => observer.disconnect(), {
+      once: true,
+    });
     this.#updateView = (next) => {
       for (const card of section.querySelectorAll<HTMLElement>('.card')) {
         const selected =
@@ -432,6 +513,7 @@ export class UiLayer {
         else if (!selected) mark?.remove();
       }
       this.#updateNotices(section, next);
+      updateCue();
     };
     return section;
   }
@@ -623,9 +705,9 @@ export class UiLayer {
             style: 'width: 0%',
           }),
         ),
-        el('span', { class: 'full-text', hidden: true }),
       ),
       strip,
+      el('span', { class: 'full-text', role: 'status', hidden: true }),
       el(
         'div',
         { class: 'row actions' },
@@ -691,6 +773,11 @@ export class UiLayer {
         : undefined,
       notices(model),
     );
+    const content = el('div', { class: 'screen-content builder-content' });
+    for (const node of [...section.children]) {
+      if (!node.matches('.row')) content.append(node);
+    }
+    section.querySelector('.row.bottom')?.before(content);
     this.#updateView = (next) => {
       this.#updateBuilder(section, next);
       update(next);
@@ -702,7 +789,8 @@ export class UiLayer {
   #updateNotices(section: HTMLElement, model: UiModel): void {
     section.querySelector('.notices')?.remove();
     const notice = notices(model);
-    if (notice) section.append(notice);
+    if (notice)
+      (section.querySelector('.screen-content') ?? section).append(notice);
   }
 
   #updateBuilder(section: HTMLElement, model: UiModel): void {
@@ -803,11 +891,15 @@ export class UiLayer {
         ),
         this.#fullscreen(model),
       ),
-      this.#fullscreenNotice(model),
-      notices(model),
-      model.seed === undefined
-        ? undefined
-        : el('p', { class: 'world-id' }, `Svět ${model.seed}`),
+      el(
+        'div',
+        { class: 'screen-content' },
+        this.#fullscreenNotice(model),
+        notices(model),
+        model.seed === undefined
+          ? undefined
+          : el('p', { class: 'world-id' }, `Svět ${model.seed}`),
+      ),
       actionButton(
         'dev-build',
         `Build ${model.buildId}${model.devActive ? ' · dev' : ''}`,

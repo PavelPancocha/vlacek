@@ -105,6 +105,119 @@ function setup() {
 
 afterEach(() => vi.unstubAllGlobals());
 describe('recorded sounds / H1', () => {
+  it('stopAll stops loops, fading beds, scheduled chuffs and shots exactly once and remains reusable', async () => {
+    const { audio, context, voices, gains } = setup();
+    audio.unlock();
+    const layers = (id: string) => [
+      { key: 'ambient', id, gain: 1, rate: 1, priority: 10 },
+      {
+        key: 'engine',
+        id: 'steam-chuff',
+        gain: 1,
+        rate: 1,
+        priority: 70,
+        pulsed: true,
+      },
+    ];
+    audio.setLayers(layers('meadow'));
+    audio.play('audio.horn.steam_local');
+    await vi.waitFor(() => expect(audio.diagnostics.active).toHaveLength(3));
+    audio.chuff(0.1);
+    audio.setLayers(layers('forest'));
+    await vi.waitFor(() => expect(audio.diagnostics.active).toHaveLength(4));
+    const previous = [...voices];
+    audio.stopAll();
+    audio.stopAll();
+    expect(audio.diagnostics.active).toEqual([]);
+    expect(context.resume).not.toHaveBeenCalled();
+    expect(context.suspend).not.toHaveBeenCalled();
+    for (const voice of previous) {
+      expect(voice.stop).toHaveBeenLastCalledWith();
+      expect(voice.disconnect).toHaveBeenCalledOnce();
+    }
+    const disconnected = gains.map((gain) => gain.disconnect.mock.calls.length);
+    // Five distinct recorded shots fill the budget again after cleanup.
+    for (const id of ['sheep', 'cow', 'hen', 'dog', 'cat']) audio.play(id);
+    await vi.waitFor(() => expect(audio.diagnostics.active).toHaveLength(5));
+    for (const voice of previous) voice.finish();
+    expect(
+      gains
+        .slice(0, disconnected.length)
+        .map((gain) => gain.disconnect.mock.calls.length),
+    ).toEqual(disconnected);
+    audio.play('songbird', 1, 10);
+    await vi.waitFor(() => expect(audio.diagnostics.pending).toBe(0));
+    expect(audio.diagnostics.active).toHaveLength(5);
+    expect(audio.diagnostics.played).not.toContain('songbird');
+    audio.suspend();
+    audio.stopAll();
+    expect(audio.state).toBe('suspended');
+    expect(context.resume).not.toHaveBeenCalled();
+    audio.unlock();
+    audio.play('sheep');
+    await vi.waitFor(() => expect(audio.diagnostics.active).toHaveLength(1));
+    audio.dispose();
+  });
+
+  it('stopAll aborts pending loads and delayed reactions without deleting a new journey request', async () => {
+    const { audio, fetch, context, voices } = setup();
+    const old = deferred<ReturnType<typeof response>>();
+    const next = deferred<ReturnType<typeof response>>();
+    fetch
+      .mockImplementationOnce(() => old.promise)
+      .mockImplementationOnce(() => old.promise);
+    audio.unlock();
+    const layer = [
+      { key: 'ambient', id: 'meadow', gain: 1, rate: 1, priority: 10 },
+    ];
+    audio.setLayers(layer);
+    audio.play('audio.horn.steam_local');
+    const signals = fetch.mock.calls.map((call) => call[1]?.signal);
+    audio.stopAll();
+    expect(signals.every((signal) => signal?.aborted)).toBe(true);
+    expect(audio.diagnostics.pending).toBe(0);
+    expect(audio.diagnostics.pendingLayers).toBe(0);
+    fetch.mockImplementation(() => next.promise);
+    audio.setLayers(layer);
+    old.resolve(response());
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(3));
+    expect(audio.diagnostics.pending).toBe(1);
+    expect(audio.diagnostics.pendingLayers).toBe(1);
+    expect(context.decodeAudioData).not.toHaveBeenCalled();
+    next.resolve(response());
+    await vi.waitFor(() => expect(voices).toHaveLength(1));
+    expect(audio.diagnostics.played).toEqual(['meadow']);
+    expect(audio.diagnostics.failures).toEqual([]);
+    audio.dispose();
+  });
+
+  it('stopAll cancels an in-flight decode and keeps a fresh request for the same clip usable', async () => {
+    const { audio, context, voices } = setup();
+    const old = deferred<{ duration: number }>();
+    const next = deferred<{ duration: number }>();
+    context.decodeAudioData
+      .mockImplementationOnce(() => old.promise)
+      .mockImplementationOnce(() => next.promise);
+    audio.unlock();
+    audio.play('audio.horn.steam_local');
+    await vi.waitFor(() =>
+      expect(context.decodeAudioData).toHaveBeenCalledOnce(),
+    );
+    audio.stopAll();
+    audio.play('audio.horn.steam_local');
+    await vi.waitFor(() =>
+      expect(context.decodeAudioData).toHaveBeenCalledTimes(2),
+    );
+    old.resolve({ duration: 3 });
+    await vi.waitFor(() => expect(audio.diagnostics.loaded).toBe(0));
+    expect(audio.diagnostics.pending).toBe(1);
+    expect(voices).toHaveLength(0);
+    next.resolve({ duration: 3 });
+    await vi.waitFor(() => expect(voices).toHaveLength(1));
+    expect(audio.diagnostics.played).toEqual(['audio.horn.steam_local']);
+    audio.dispose();
+  });
+
   it('bounds pending layer consumers across repeated frames and discards them after suspension', async () => {
     const { audio, fetch, context } = setup();
     const pending = deferred<ReturnType<typeof response>>();
