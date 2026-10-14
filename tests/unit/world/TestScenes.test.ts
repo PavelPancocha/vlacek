@@ -6,7 +6,7 @@ import {
 import { contextAt } from '../../../src/domain/world/WorldPlan.ts';
 import { chunkScenery } from '../../../src/domain/world/Scenery.ts';
 import { worldPlacementCatalog } from '../../../src/content/worldPlacementCatalog.ts';
-it('DEV-02: all eleven test scenes resolve within a bounded seeded search', () => {
+it('DEV-02: all test scenes resolve within a bounded seeded search', () => {
   for (const seed of [1, 7, 123, 1226])
     for (const kind of TEST_SCENES) {
       const found = locateTestScene(seed, kind, worldPlacementCatalog);
@@ -24,7 +24,9 @@ it('DEV-02: all eleven test scenes resolve within a bounded seeded search', () =
             seed,
             Math.floor(found.worldXU / 1024),
             worldPlacementCatalog,
-          ).props.some((p) => p.layer === 'near' && p.kind === 'back.logs'),
+          ).props.some(
+            (p) => p.layer === 'near' && p.kind === 'back.harvester',
+          ),
         ).toBe(true);
       expect(found.head.chunkIndex * 1024 + found.head.arcOffsetU).toBeLessThan(
         found.worldXU,

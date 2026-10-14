@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="34" height="14" viewBox="0 0 34 14">
+  <!-- Vláček, art-farm-forest-1: První kloub lesního ramene s hydraulikou. -->
+  <defs><linearGradient id="ochre" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#dbbd65"/><stop offset="1" stop-color="#a28a3f"/></linearGradient></defs>
+  <path d="M3 8 L29 2 L32 6 L6 12 Z" fill="url(#ochre)" stroke="#1d2a14" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 8 L27 4" fill="none" stroke="#f1d788" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10 L27 7" fill="none" stroke="#69746b" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="4" cy="8" rx="2" ry="2" fill="#737b65" stroke="#1d2a14" stroke-width=".6"/><ellipse cx="30" cy="5" rx="2" ry="2" fill="#737b65" stroke="#1d2a14" stroke-width=".6"/>
+</svg>

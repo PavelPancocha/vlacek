@@ -63,16 +63,16 @@ Krajinné rozsahy výšek platí pro jádro regionu; přechody musí navazovat a
 
 ## Les
 
-| ID       | Očekávaný výsledek                                                                                                     |
-| -------- | ---------------------------------------------------------------------------------------------------------------------- |
-| SCN-FO01 | Každý region `forest` obsahuje husté jádro FO-02 dlouhé alespoň 2 048 u a nejméně dvě další různé lesní scény.         |
-| SCN-FO02 | Husté jádro má alespoň dvě seskupené zadní hloubkové vrstvy a individuální stromy v povolených mezích.                 |
-| SCN-FO03 | Přední les tvoří nízký pás nebo mladé stromky; žádná dospělá koruna ani kmen nepřekrývá vlak.                          |
-| SCN-FO04 | V alespoň jednom lesním regionu každého úplného itineráře je FO-04 s harvesterem, vyvážečkou, cestou a skládáním klád. |
-| SCN-FO05 | Kmen během celé manipulace zůstává v úchopu nebo na loži; jeho obal nezasahuje kolej, člověka, auto ani druhý stroj.   |
-| SCN-FO06 | Cesta vyvážečky spojuje pracovní kapsu a skládku; nákladní auto stojí na přístupové cestě, ne uvnitř hromady klád.     |
-| SCN-FO07 | FO-05 má propojený potok a břeh; žába ani lávka nezůstanou po odmítnutí vody osamocené.                                |
-| SCN-FO08 | Listí vzniká u listnáčů nebo listové půdy; jehličnany samy nevytvářejí široké podzimní listy.                          |
+| ID       | Očekávaný výsledek                                                                                                                                                                                                                                             |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SCN-FO01 | Každý region `forest` obsahuje husté jádro FO-02 dlouhé alespoň 2 048 u a nejméně dvě další různé lesní scény.                                                                                                                                                 |
+| SCN-FO02 | Husté jádro má dva sezónní atlasové zadní pásy a 12–20 bližších kmenů v překrývajících se skupinách za čistým koridorem; před ním souvislý kreslený nízký okraj. Promítnuté skupiny překrývají průhledné lemy přes technické švy; skutečné konce jsou plynulé. |
+| SCN-FO03 | Přední les tvoří nízký pás nebo mladé stromky; žádná dospělá koruna ani kmen nepřekrývá vlak.                                                                                                                                                                  |
+| SCN-FO04 | V alespoň jednom lesním regionu každého úplného itineráře je FO-04 s harvesterem, vyvážečkou, cestou a skládáním klád.                                                                                                                                         |
+| SCN-FO05 | Kmen zůstává v úchopu nebo na loži během 32s cyklu; úplný obal ramen i kmene nezasahuje kolej, člověka, auto ani druhý stroj.                                                                                                                                  |
+| SCN-FO06 | Cesta vyvážečky spojuje pracovní kapsu a skládku; nákladní auto stojí na přístupové cestě, ne uvnitř hromady klád.                                                                                                                                             |
+| SCN-FO07 | FO-05 má propojený potok a břeh; žába ani lávka nezůstanou po odmítnutí vody osamocené.                                                                                                                                                                        |
+| SCN-FO08 | Listí vzniká u listnáčů nebo listové půdy; jehličnany samy nevytvářejí široké podzimní listy.                                                                                                                                                                  |
 
 ## Jezera a řeky
 
@@ -205,3 +205,23 @@ Testy aktivit používají explicitní simulační kroky a kontrolu celého cykl
 Vznikl textový kontrakt scén nad aktuálním katalogem, projekcí, závazným plánem a auditními podklady; soubory nebyly zapsány ani commitnuty.
 Vynecháno: implementace, běh testů a nové runtime snímky; fyzický tablet a Tesla jsou NEOVĚŘENO.
 Riziko: nové hustoty, pracovní obaly a výraznější horský profil musí projít generátorovou i obrazovou akceptací, než se označí za hotové.
+
+Řez farm-forest-2 prokazuje SCN-CR01/02/03/04 a SCN-FO01/02/03 regionovými,
+geometrickými a obrazovými kontrolami. Pracovní část SCN-FO05/06 má celý 32s
+renderovaný cyklus: oba stop stavy, směry, skutečné světové kontakty úchopu/loží,
+kolové fáze a návrat. Farmové E2E: 12/12 Canvas/WebGL × krátká/nejdelší souprava;
+původní world-diagnostics sériově 4/4. Úplná unit sada: 904/904, světový
+validátor: 7 974 kompozic a regionové garance nad skutečným složením.
+Headless WebGL neprokazuje 45 FPS bránu; fyzický tablet/Tesla zůstávají NEOVĚŘENO.
+SCN-CR05 není dokončený dvůr/sad/napití. SCN-FO07 zahrnuje lávku na skutečném
+potoku, žába a navazující břeh patří nature-water. SCN-FO08 a zimní listnáče
+vlastní seasons-life; celý zimní les vyžaduje ověření po integraci. Nové audio
+a večerní čas sovy zůstávají otevřené. Formát save se nemění.
+
+Farm-forest-3 doplňuje SCN-FO02: promítnuté pokrytí a sdílené dlaždice seedu 1 na
+švu 64/65, plynulý skutečný výstup a ukončení u stanice (seed 2 / chunk 33).
+SCN-CR01/FO02 doplňují pixelové regrese Canvas/WebGL na potoku, přejezdu a pracovní
+pasece, včetně zákazu varování nepodporované masky a kontroly uvolnění statických
+textur při opakovaných lokátorech. Výkonová brána se posuzuje zvlášť pro standard
+(45 FPS) a low (medián 30 FPS, p95 nejvýše 50 ms), nikoli z nastavení auto.
+Otevřené části CR05/FO07/FO08, nové audio a večerní sova se tímto nerozšiřují.

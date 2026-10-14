@@ -1,8 +1,10 @@
+import type { Season } from '../domain/world/Regions.ts';
+import { farmForestBackdropKey } from './farmForestBackdrop.ts';
 import type { RegionTransition } from '../domain/world/Regions.ts';
 import type { WorldDiagnostics } from '../domain/world/WorldValidation.ts';
 import Phaser from 'phaser';
 import type { ArtPart } from '../content/artManifest.ts';
-import { backdropParts, cloudParts, worldParts } from '../content/worldArt.ts';
+import { cloudParts, worldParts } from '../content/worldArt.ts';
 import type { Biome } from '../domain/world/Biomes.ts';
 import { frameOrigin } from './atlasPacking.ts';
 import { BACKDROP_FILL } from './groundPalette.ts';
@@ -49,6 +51,7 @@ const parts: Readonly<Record<string, ArtPart | undefined>> = worldParts;
 interface Layer {
   /** Biome shown by the tiles, or undefined while unused. */
   biome: Biome | undefined;
+  season: Season | undefined;
   far: Phaser.GameObjects.Image[];
   mid: Phaser.GameObjects.Image[];
   fill: Phaser.GameObjects.Rectangle;
@@ -100,6 +103,7 @@ export class Backdrop {
       .setDepth(depths.sky);
     const layer = (offset: number): Layer => ({
       biome: undefined,
+      season: undefined,
       far: [],
       mid: [],
       fill: scene.add
@@ -183,11 +187,14 @@ export class Backdrop {
     const [current, incoming] = this.#layers;
     const from = transition.from.landscape,
       to = transition.to.landscape;
-    this.#show(current, from);
+    this.#show(current, from, transition.from.season);
     this.#fade = transition.progress === 0 ? 1 : transition.progress;
     this.#placeLayer(current, view, horizonY, 1);
-    if (transition.progress > 0 && from !== to) {
-      this.#show(incoming, to);
+    if (
+      transition.progress > 0 &&
+      (from !== to || transition.from.season !== transition.to.season)
+    ) {
+      this.#show(incoming, to, transition.to.season);
       this.#placeLayer(incoming, view, horizonY, transition.progress);
     } else this.#hide(incoming);
   }
@@ -201,12 +208,23 @@ export class Backdrop {
     }
   }
 
-  #show(layer: Layer, biome: Biome): void {
-    if (layer.biome === biome) return;
+  #show(layer: Layer, biome: Biome, season: Season): void {
+    if (layer.biome === biome && layer.season === season) return;
     layer.biome = biome;
-    const keys = backdropParts[biome];
-    for (const image of layer.far) image.setFrame(keys.far);
-    for (const image of layer.mid) image.setFrame(keys.mid);
+    layer.season = season;
+    const keys = {
+      far: farmForestBackdropKey(biome, season, 'far'),
+      mid: farmForestBackdropKey(biome, season, 'mid'),
+    };
+    for (const which of ['far', 'mid'] as const)
+      for (const image of layer[which]) {
+        image.setFrame(keys[which]);
+        const pivot = parts[keys[which]]?.pivotU;
+        if (pivot) {
+          const origin = frameOrigin(pivot, this.#pxPerU, image.frame);
+          image.setOrigin(origin.x, origin.y);
+        }
+      }
     layer.fill.setFillStyle(BACKDROP_FILL[biome]);
   }
 
@@ -225,7 +243,7 @@ export class Backdrop {
     const texture = this.#texture;
     const biome = layer.biome;
     if (texture === undefined || biome === undefined) return images;
-    const key = backdropParts[biome][which];
+    const key = farmForestBackdropKey(biome, layer.season ?? 'summer', which);
     while (images.length < count) {
       const part = parts[key];
       const image = this.#scene.add
@@ -248,22 +266,23 @@ export class Backdrop {
     horizonY: number,
     alpha: number,
   ): void {
-    const count = Math.ceil(view.width / BACKDROP_WIDTH_U) + 2;
+    const width = layer.biome === 'forest' ? 480 : BACKDROP_WIDTH_U;
+    const count = Math.ceil(view.width / width) + 2;
     for (const [which, base] of [
       ['far', FAR_BASE_U],
       ['mid', MID_BASE_U],
     ] as const) {
       const shift = view.worldLeft * PARALLAX[which];
-      const first = Math.floor(shift / BACKDROP_WIDTH_U);
+      const first = Math.floor(shift / width);
       if (which === 'mid' && alpha > 0)
-        this.#midOffsetU = first * BACKDROP_WIDTH_U - shift;
+        this.#midOffsetU = first * width - shift;
       this.#tiles(layer, which, count).forEach((image, i) => {
-        const x = view.left + (first + i) * BACKDROP_WIDTH_U - shift;
+        const x = view.left + (first + i) * width - shift;
         image
           .setVisible(true)
           .setAlpha(alpha)
           .setScale(
-            (1 + TILE_OVERLAP_U / BACKDROP_WIDTH_U) / this.#pxPerU,
+            (1 + TILE_OVERLAP_U / width) / this.#pxPerU,
             1 / this.#pxPerU,
           )
           .setPosition(x, horizonY - base);

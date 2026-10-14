@@ -251,14 +251,14 @@ describe('vehicle art atlas', () => {
     const backdrops = Object.fromEntries(
       Object.entries(worldParts).filter(([key]) => isBackdropPart(key)),
     );
-    expect(Object.keys(backdrops).length).toBe(15);
+    expect(Object.keys(backdrops).length).toBe(23);
     const items = artAtlasItems(backdrops, BACKDROP_MAX_PX_PER_U);
     expect(
       packAtlas(items, {
         maxSize: MAX_ATLAS_EDGE_PX,
         paddingPx: ATLAS_PADDING_PX,
       }).frames.size,
-    ).toBe(15);
+    ).toBe(Object.keys(backdrops).length);
   });
 
   it('gives every frame a transparent margin for smooth edges without MSAA (D-013)', () => {

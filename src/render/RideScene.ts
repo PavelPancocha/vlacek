@@ -697,6 +697,9 @@ export class RideScene extends Phaser.Scene {
    * vehicle: always 0 (doc 14 §5: the scenery never covers the train).
    * Diagnostics and E2E.
    */
+  farmForestCheck() {
+    return [...this.#chunks.values()].flatMap((chunk) => chunk.farmDiagnostics);
+  }
   nearPropCheck(): { inView: number; overTrain: number; overlaps: string[] } {
     const view = this.cameras.main.worldView;
     const train = this.#slots
@@ -1049,6 +1052,12 @@ export class RideScene extends Phaser.Scene {
             nearProps: DEPTH.nearProps,
           },
           ride.electrified,
+          this.#backdropArt?.textureKey && this.#backdropArt.info
+            ? {
+                texture: this.#backdropArt.textureKey,
+                pxPerU: this.#backdropArt.info.pxPerU,
+              }
+            : undefined,
         );
         this.#chunks.set(k, chunk);
         const site = secondarySiteOfChunk(ride.seed, k);
@@ -1067,6 +1076,10 @@ export class RideScene extends Phaser.Scene {
         }
       }
       chunk.setX(k * CHUNK_WIDTH_U - this.#originX);
+      chunk.setVisibleRange(
+        leftX - k * CHUNK_WIDTH_U,
+        rightX - k * CHUNK_WIDTH_U,
+      );
       for (const foot of this.#portalFeet.get(k) ?? [])
         foot.setX(-this.#originX);
       const site = this.#sceneryOf(ride.seed, k).crossing;

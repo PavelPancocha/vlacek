@@ -1,5 +1,9 @@
+import { workRoadSupports } from './WorkGeometry.ts';
+import { streamBendU, streamHalfWidthU } from './StreamGeometry.ts';
+import { propScale, propFootU } from './SceneryGeometry.ts';
 import { gameConfig } from '../../config/gameConfig.ts';
 import { catenaryPoleXs, catenarySupport } from './Catenary.ts';
+import { templateById } from './WorldPlan.ts';
 import { contextAt } from './WorldPlan.ts';
 import { transitionAt } from './Regions.ts';
 import {
@@ -113,12 +117,97 @@ export function validateChunkScenery(
       p.relations,
     );
     if (conflict) fail(`collision ${p.id} with ${conflict}`);
+    if (
+      p.work &&
+      p.work !== 'farmer' &&
+      !sc.roads.some(
+        (r) =>
+          r.surface === 'dirt' &&
+          (r.layer ?? 'back') === p.layer &&
+          p.dependencies?.includes(r.id),
+      )
+    )
+      fail(`dependency machine ${p.id} has no work road`);
+    if (p.work && p.work !== 'farmer') {
+      const road = sc.roads.find(
+        (r) => p.dependencies?.includes(r.id) && r.surface === 'dirt',
+      );
+      const part = catalog[p.kind];
+      if (
+        !road ||
+        !part ||
+        !workRoadSupports(seed, sc.chunkIndex, p, part, road)
+      )
+        fail(`work-support ${p.id}`);
+    }
+    if (
+      (p.kind === 'animal.woodpecker' || p.kind === 'animal.owl') &&
+      !sc.props.some(
+        (tree) =>
+          tree.kind.startsWith('tree.') &&
+          tree.layer === 'back' &&
+          p.dependencies?.includes(tree.id),
+      )
+    )
+      fail(`dependency bird ${p.id} has no tree`);
+    if (
+      p.kind === 'back.footbridge' &&
+      (!sc.bridge ||
+        !p.dependencies?.includes(sc.bridge.id) ||
+        Math.abs(
+          p.xU - sc.bridge.localXU - streamBendU(sc.chunkIndex, -p.depth * 220),
+        ) > 1e-6)
+    )
+      fail(`dependency footbridge ${p.id} has no stream`);
+    if (p.kind === 'back.footbridge' && sc.bridge) {
+      const part = catalog[p.kind];
+      if (part) {
+        const foot = propFootU(
+          p,
+          sc.chunkIndex * 1024 + p.xU,
+          railYUpU(seed, sc.chunkIndex * 1024 + p.xU),
+          0,
+        );
+        if (part.bankAnchorsU?.length !== 2)
+          fail(`footbridge-bank anchors missing ${p.id}`);
+        for (const anchor of part.bankAnchorsU ?? []) {
+          const y = foot.yU + anchor.yU * propScale(p),
+            roadU =
+              y + railYUpU(seed, sc.chunkIndex * 1024 + sc.bridge.localXU);
+          const centre =
+            sc.chunkIndex * 1024 +
+            sc.bridge.localXU +
+            streamBendU(sc.chunkIndex, roadU);
+          if (
+            Math.abs(foot.xU + anchor.xU * propScale(p) - centre) <=
+            streamHalfWidthU(roadU) + 3
+          )
+            fail(`footbridge-bank ${p.id}`);
+        }
+      }
+    }
     const supporting = sc.reservations.find(
       (r) =>
         (r.purpose === 'field' || r.purpose === 'forest-floor') &&
         p.dependencies?.includes(r.ownerId),
     );
-    if (supporting) {
+    if (supporting && p.clip) {
+      const min = Math.min(...p.clip.map((v) => v.xU)),
+        max = Math.max(...p.clip.map((v) => v.xU));
+      const expected = clipPolygonX(supporting.polygon, min, max);
+      if (
+        expected.length !== p.clip.length ||
+        expected.some(
+          (v, i) =>
+            Math.hypot(
+              v.xU - (p.clip?.[i]?.xU ?? Infinity),
+              v.yU - (p.clip?.[i]?.yU ?? Infinity),
+            ) > 1e-5,
+        )
+      )
+        fail(`surface-clip ${p.id}`);
+    }
+    if (supporting && !p.clip) {
       const part = catalog[p.kind];
       if (
         part &&
@@ -407,6 +496,18 @@ export function worldMotifCoverage(
       'coastal-station',
       'coastal-neighbours',
       'pier-water',
+      'farm-tractor',
+      'farm-combine',
+      'farm-crops',
+      'farm-farmer',
+      'forest-edge',
+      'forest-harvester',
+      'forest-forwarder',
+      'forest-truck',
+      'forest-footbridge',
+      'forest-feeding-rack',
+      'forest-woodpecker',
+      'forest-owl',
     ].map((k) => [k, 0]),
   );
   const chunks = new Map(
@@ -414,6 +515,33 @@ export function worldMotifCoverage(
   );
   for (const { seed, scenery: sc } of cases) {
     for (const p of sc.props) {
+      const motif =
+        p.kind === 'back.tractor-work' && p.layer === 'near'
+          ? 'farm-tractor'
+          : p.kind === 'back.combine'
+            ? 'farm-combine'
+            : p.kind.includes('crop-rows')
+              ? 'farm-crops'
+              : p.kind === 'back.farmer-work'
+                ? 'farm-farmer'
+                : p.kind.startsWith('near.forest-edge-')
+                  ? 'forest-edge'
+                  : p.kind === 'back.harvester'
+                    ? 'forest-harvester'
+                    : p.kind === 'back.forwarder'
+                      ? 'forest-forwarder'
+                      : p.kind === 'back.log-truck'
+                        ? 'forest-truck'
+                        : p.kind === 'back.footbridge'
+                          ? 'forest-footbridge'
+                          : p.kind === 'back.feeding-rack'
+                            ? 'forest-feeding-rack'
+                            : p.kind === 'animal.woodpecker'
+                              ? 'forest-woodpecker'
+                              : p.kind === 'animal.owl'
+                                ? 'forest-owl'
+                                : undefined;
+      if (motif) counts[motif] = (counts[motif] ?? 0) + 1;
       if (
         p.kind.includes('boat') &&
         sc.water.some((w) => p.dependencies?.includes(w.id))
@@ -486,4 +614,108 @@ export function validateTrackProfile(
       );
   }
   return failures;
+}
+
+/** Region guarantees concern surviving compositions, including station replacement. */
+export function validateFarmForestRegions(
+  cases: readonly { seed: number; scenery: ChunkScenery }[],
+): string[] {
+  const regions = new Map<string, { seed: number; chunks: ChunkScenery[] }>(),
+    errors: string[] = [];
+  for (const c of cases) {
+    if (!['countryside', 'forest'].includes(c.scenery.region.landscape))
+      continue;
+    const key = `${c.seed}/${c.scenery.region.id}`,
+      r = regions.get(key) ?? { seed: c.seed, chunks: [] };
+    r.chunks.push(c.scenery);
+    regions.set(key, r);
+  }
+  for (const [id, { chunks }] of regions) {
+    const region = chunks[0]?.region;
+    if (!region) continue;
+    const ordered = [
+      ...new Map(chunks.map((c) => [c.chunkIndex, c])).values(),
+    ].sort((a, b) => a.chunkIndex - b.chunkIndex);
+    if (
+      ordered.length !== (region.toXU - region.fromXU) / 1024 ||
+      ordered[0]?.chunkIndex !== region.fromXU / 1024 ||
+      ordered.at(-1)?.chunkIndex !== region.toXU / 1024 - 1
+    )
+      continue;
+    const fail = (why: string) => errors.push(`region ${id} ${why}`),
+      ids = new Set(ordered.map((c) => c.locality));
+    if (
+      !ordered.some(
+        (c) =>
+          templateById(c.locality).calm &&
+          !c.props.some((p) => p.work && p.work !== 'farmer'),
+      )
+    )
+      fail('quiet-interval');
+    if (region.landscape === 'countryside') {
+      const work = {
+        spring: 'sow',
+        summer: 'bale',
+        autumn: 'plough',
+        winter: 'snow-clear',
+      }[region.season];
+      if (
+        !ordered.some(
+          (c) =>
+            c.chunkIndex * 1024 - region.fromXU < 12288 &&
+            c.props.some(
+              (p) =>
+                p.kind === 'back.tractor-work' &&
+                p.layer === 'near' &&
+                p.work === work,
+            ),
+        )
+      )
+        fail('tractor-season');
+      if (
+        ['orchard', 'farm', 'pasture', 'farm-forest-pasture'].filter((i) =>
+          ids.has(i),
+        ).length < 2
+      )
+        fail('country-variety');
+    } else {
+      if (
+        !ordered.some(
+          (c, i) =>
+            c.locality === 'farm-forest-dense' &&
+            ordered[i + 1]?.locality === 'farm-forest-dense',
+        )
+      )
+        fail('dense-core-2048');
+      if (
+        [
+          'forest',
+          'clearing',
+          'forest-work',
+          'farm-forest-work',
+          'lodge',
+          'farm-forest-lodge',
+        ].filter((i) => ids.has(i)).length < 2
+      )
+        fail('forest-variety');
+      for (const c of ordered.filter(
+        (c) => c.locality === 'farm-forest-dense',
+      )) {
+        const trees = c.props.filter((p) => p.kind.startsWith('tree.')).length;
+        if (
+          trees < 12 ||
+          trees > 20 ||
+          new Set(
+            c.props
+              .filter((p) => p.kind.startsWith('backdrop.forest-dense-'))
+              .map((p) => p.depth),
+          ).size < 2 ||
+          c.props.filter((p) => p.kind.startsWith('near.forest-edge-')).length <
+            3
+        )
+          fail(`dense-layers chunk=${c.chunkIndex}`);
+      }
+    }
+  }
+  return errors;
 }

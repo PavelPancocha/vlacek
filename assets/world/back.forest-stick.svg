@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="12" viewBox="0 0 30 12">
+  <!-- Vláček, art-farm-forest-1: Druhý kloub lesního ramene. -->
+  <defs><linearGradient id="ochre" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#dbbd65"/><stop offset="1" stop-color="#a28a3f"/></linearGradient></defs>
+  <path d="M3 2 H27 V8 L4 11 Z" fill="url(#ochre)" stroke="#1d2a14" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 4 H24" fill="none" stroke="#f0d78d" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 8 H23" fill="none" stroke="#6f776d" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="4" cy="5" rx="2" ry="2" fill="#737b65" stroke="#1d2a14" stroke-width=".6"/><ellipse cx="26" cy="5" rx="2" ry="2" fill="#737b65" stroke="#1d2a14" stroke-width=".6"/>
+</svg>

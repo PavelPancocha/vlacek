@@ -1,3 +1,6 @@
+import { farmForestComposition } from './FarmForestComposition.ts';
+import { workRoadSupports } from './WorkGeometry.ts';
+import { streamBendU } from './StreamGeometry.ts';
 import type { PlacementTraceEntry } from './PlacementTrace.ts';
 import { secondarySite } from './SecondaryTrack.ts';
 import { gameConfig } from '../../config/gameConfig.ts';
@@ -18,6 +21,7 @@ import {
   type GroundSpan,
   type NearGround,
   type PatrolMotion,
+  type PropRule,
 } from './sceneryTemplates.ts';
 import { generateTrackProfile, profileGrade } from './TrackProfile.ts';
 import {
@@ -109,6 +113,11 @@ export interface SceneryProp {
   motion?: PatrolMotion;
   /** Phase of the motion, 0 … 1. */
   phase: number;
+  work?: PropRule['work'];
+  offsetYU?: number;
+  clip?: readonly import('./SceneryGeometry.ts').PointU[];
+  /** Real composition ends in world u; chunk cuts never introduce a fade. */
+  fadeX?: { fromU: number; toU: number; widthU: number };
   dependencies?: readonly string[];
   relations?: readonly PlacementRelation[];
 }
@@ -306,6 +315,7 @@ export function chunkScenery(
     unitRandom(seed, 'placement-v2', chunkIndex, ...parts);
   const animalX = chunkObjects(seed, chunkIndex)[0]?.localXU ?? 512;
   const flat =
+    scene.templateId !== 'farm-forest-dense' &&
     place.slot === stationSlot(seed, place.block)
       ? stationFlat(seed, chunkIndex)
       : undefined;
@@ -480,6 +490,69 @@ export function chunkScenery(
         farDepth: Math.max(secondary ? 0.7 : 0, ground.water.depth[1]),
       });
   }
+  if (!flat)
+    for (const [i, path] of (own.paths ?? []).entries()) {
+      const fromXU = Math.max(x0 + (path.x?.[0] ?? 0), scene.fromXU + 170),
+        toXU = Math.min(x0 + (path.x?.[1] ?? 1024), scene.toXU - 170);
+      const points = [];
+      for (let x = fromXU; x <= toXU; x = Math.min(toXU, x + 16)) {
+        const foot = propFootU(
+          {
+            kind: 'path',
+            layer: path.layer,
+            xU: x,
+            depth: path.depth,
+            scale: 1,
+            flip: false,
+          },
+          x,
+          railYUpU(seed, x),
+          bankHeightU(seed, x),
+        );
+        points.push({
+          ...foot,
+          halfWidthU:
+            (path.widthU / 2) *
+            Math.min(
+              1,
+              (x - (path.x ? fromXU : scene.fromXU + 170)) / 48,
+              ((path.x ? toXU : scene.toXU - 170) - x) / 48,
+            ),
+        });
+        if (x === toXU) break;
+      }
+      const id = `${scene.id}:path:${i}${path.x ? `:chunk:${chunkIndex}` : ''}`;
+      const road: RoadPath = {
+        id,
+        ownerId: id,
+        fromXU,
+        toXU,
+        points,
+        layer: path.layer,
+        surface: 'dirt',
+      };
+      const reserve = roadReservation(road);
+      if (
+        reservations.some(
+          (r) =>
+            r.purpose !== 'field' &&
+            r.purpose !== 'forest-floor' &&
+            (r.layer === 'both' || r.layer === path.layer) &&
+            polygonsHit(reserve.polygon, r.polygon),
+        )
+      )
+        continue;
+      roads.push(road);
+      reservations.push(reserve);
+      features.push({
+        id,
+        ownerId: scene.id,
+        kind: 'work-road',
+        fromXU: path.x ? fromXU : scene.fromXU + 170,
+        toXU: path.x ? toXU : scene.toXU - 170,
+        dependencies: [],
+      });
+    }
   const atId = (role: string, i: number) =>
     `g2:chunk:${chunkIndex}:prop:${role}:candidate:${i}`;
   const accept = (
@@ -573,7 +646,12 @@ export function chunkScenery(
     : own.rules;
   const rules =
     region.season === 'winter'
-      ? [...sourceRules.filter((r) => r.layer === 'back'), ...snowField]
+      ? [
+          ...sourceRules.filter(
+            (r) => r.layer === 'back' || r.seasons?.includes('winter'),
+          ),
+          ...snowField,
+        ]
       : sourceRules;
   const hasHouseRules = rules.some((rule) =>
     rule.kinds.some((kind) => kind.startsWith('back.house-')),
@@ -599,6 +677,12 @@ export function chunkScenery(
         Number(a.rule.kinds.includes('back.car')),
     );
   for (const { rule, index } of ordered) {
+    if (rule.layout) continue;
+    if (
+      rule.seasons &&
+      !rule.seasons.includes(contextAt(seed, x0 + 512).season)
+    )
+      continue;
     if (rule.kinds.some((kind) => kind.startsWith('fence.'))) continue;
     if (
       rule.kinds.some(
@@ -712,6 +796,7 @@ export function chunkScenery(
           flip: rule.flip === true && r('flip') < 0.5,
           phase: r('phase'),
           ...(rule.motion ? { motion: rule.motion } : {}),
+          ...(rule.work ? { work: rule.work } : {}),
         };
         const event: PlacementTraceEntry | undefined = trace
           ? {
@@ -744,6 +829,13 @@ export function chunkScenery(
           p.depth = (-railYUpU(seed, x0 + p.xU) - footY) / 220;
         }
         const bounds = projectedBounds(seed, chunkIndex, p, part);
+        if (
+          rule.seasons &&
+          [bounds.leftU, bounds.rightU].some(
+            (x) => !rule.seasons?.includes(contextAt(seed, x).season),
+          )
+        )
+          continue;
         if (bounds.leftU < x0 || bounds.rightU > x0 + 1024) continue;
         if (event) event.rejectionCode = 'missing-dependency';
         if (rule.surface) {
@@ -847,6 +939,26 @@ export function chunkScenery(
           p.dependencies = [pond.id];
         }
         if (event) event.missingDependency = undefined;
+        if (p.work && p.work !== 'farmer') {
+          const path = roads.find(
+            (r) =>
+              r.surface === 'dirt' &&
+              (r.layer ?? 'back') === p.layer &&
+              workRoadSupports(seed, chunkIndex, p, part, r),
+          );
+          if (!path) {
+            if (event) event.missingDependency = 'work-road';
+            continue;
+          }
+          p.dependencies = [...(p.dependencies ?? []), path.id];
+          p.relations = [
+            ...(p.relations ?? []),
+            {
+              reservationId: roadReservation(path).id,
+              relation: 'vehicle-on-road',
+            },
+          ];
+        }
         if (kind === 'back.car') {
           if (!accept(p, event, bounds)) continue;
           const road = villageRoad(seed, chunkIndex, p, p.id);
@@ -992,6 +1104,67 @@ export function chunkScenery(
         dependencies: [],
       });
     }
+  const acceptForestChild = (p: SceneryProp) => {
+    const event: PlacementTraceEntry = {
+      candidate: {
+        id: p.id,
+        kind: p.kind,
+        worldXU: x0 + p.xU,
+        layer: p.layer,
+        depth: p.depth,
+        attempt: 0,
+      },
+      admissible: [p.kind],
+      rejectionCode: 'context',
+      conflictingReservation: undefined,
+      missingDependency: undefined,
+    };
+    trace?.push(event);
+    if (accept(p, event)) props.push(p);
+  };
+  props.push(
+    ...farmForestComposition(seed, chunkIndex, own, catalog, reservations),
+  );
+  if (region.landscape === 'forest') {
+    const tree = props.find(
+      (p) => p.kind.startsWith('tree.') && p.layer === 'back' && p.depth > 0.1,
+    );
+    if (tree)
+      for (const [i, kind] of ['animal.woodpecker', 'animal.owl'].entries()) {
+        const p: SceneryProp = {
+          ...tree,
+          id: atId('perch', i),
+          kind,
+          xU: tree.xU + (i === 0 ? 4 : -6),
+          offsetYU: -(i === 0 ? 36 : 54) * propScale(tree),
+          flip: false,
+          dependencies: [tree.id],
+        };
+        acceptForestChild(p);
+      }
+    if (bridge) {
+      const p: SceneryProp = {
+        id: atId('footbridge', 0),
+        kind: 'back.footbridge',
+        layer: 'back',
+        xU: bridge.localXU + streamBendU(chunkIndex, -0.62 * 220),
+        depth: 0.62,
+        scale: 1,
+        flip: false,
+        phase: roll('footbridge'),
+        offsetYU:
+          railYUpU(
+            seed,
+            x0 + bridge.localXU + streamBendU(chunkIndex, -0.62 * 220),
+          ) - railYUpU(seed, x0 + bridge.localXU),
+        dependencies: [bridge.id],
+        relations: reservations
+          .filter((r) => r.purpose === 'river')
+          .map((r) => ({ reservationId: r.id, relation: 'bridge-over-river' })),
+      };
+      acceptForestChild(p);
+    }
+  }
   const species = own.animals.filter(
     (kind) => kind !== 'duck' || props.some((p) => p.kind === 'near.pond'),
   );

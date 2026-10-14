@@ -394,7 +394,7 @@ it.each([48, 51, 52, 55, 56])(
   },
 );
 it.each([4, 5, 60, 61])(
-  'SCN-G06: rendered foreground has tapered scene endpoints at chunk %i',
+  'SCN-G06: fallback field strips stay on their shared support; forest endpoints taper at chunk %i',
   (k) => {
     const sc = chunkScenery(1, k, worldPlacementCatalog),
       drawn = drawingScene();
@@ -420,7 +420,19 @@ it.each([4, 5, 60, 61])(
       k % 2 === 0
         ? polygon.points.at(-1)
         : polygon.points[polygon.points.length / 2];
-    expect(a).toEqual(b);
+    if (k < 10) {
+      const support = sc.reservations.find((r) => r.purpose === 'field');
+      if (!support) throw new Error('missing field support');
+      expect(
+        polygon.points.every((p) =>
+          // Ray casting excludes a right seam; either inward epsilon includes its boundary.
+          [-1e-6, 1e-6].some((dx) =>
+            pointInside({ xU: k * 1024 + p.x + dx, yU: p.y }, support.polygon),
+          ),
+        ),
+      ).toBe(true);
+      expect(a).not.toEqual(b);
+    } else expect(a).toEqual(b);
     if (k >= 60) {
       const edge = drawn.polygons.find((p) => p.color === 0x4b7436);
       if (!edge) throw new Error('forest silhouette missing');
@@ -437,11 +449,11 @@ it.each([4, 5, 60, 61])(
 );
 
 it('GEN-23: renderer retains authored field rows while their transition begins', () => {
-  const sc = chunkScenery(1, 48, worldPlacementCatalog),
+  const sc = chunkScenery(15, 16, worldPlacementCatalog),
     drawn = drawingScene();
   expect(sc.back.some((s) => s.style === 'wheat')).toBe(true);
-  const table = buildArcLengthTable(generateTrackProfile(1, 48), 48, 1024, 8);
-  const view = new ChunkView(drawn.scene, table, 1, sc, undefined, {
+  const table = buildArcLengthTable(generateTrackProfile(15, 16), 16, 1024, 8);
+  const view = new ChunkView(drawn.scene, table, 15, sc, undefined, {
     backGround: 0,
     backProps: 1,
     ground: 2,
@@ -450,7 +462,7 @@ it('GEN-23: renderer retains authored field rows while their transition begins',
     wires: 5,
     nearProps: 6,
   });
-  const rowColor = spatialBackPalette(1, 49152 + 512, 'wheat').rows;
+  const rowColor = spatialBackPalette(15, 16384 + 512, 'wheat').rows;
   expect(rowColor).toBeDefined();
   expect(
     drawn.strokes.some(

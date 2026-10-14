@@ -1,3 +1,8 @@
+import { animalParts } from '../../../src/content/worldArt.ts';
+import {
+  polygonsHit,
+  projectedBounds,
+} from '../../../src/domain/world/SceneryGeometry.ts';
 import { sceneAt } from '../../../src/domain/world/WorldPlan.ts';
 import { snowField } from '../../../src/domain/world/scenes/rules.ts';
 import { worldPlacementCatalog } from '../../../src/content/worldPlacementCatalog.ts';
@@ -58,7 +63,7 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
         for (const prop of scenery.props) {
           expect(prop.id).toMatch(
             new RegExp(
-              `^g\\d+:chunk:${scenery.chunkIndex}:prop:(rule:\\d+|station):candidate:\\d+$`,
+              `^g\\d+:chunk:${scenery.chunkIndex}:prop:(rule:\\d+|station|perch|footbridge):candidate:\\d+$`,
             ),
           );
           const key = `${seed}/${prop.id}`;
@@ -88,10 +93,26 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
       const kinds = kindsOf(scenery.locality);
       if (scenery.region.season === 'winter')
         for (const kind of snowField.flatMap((r) => r.kinds)) kinds.add(kind);
-      for (const prop of scenery.props)
+      for (const prop of scenery.props) {
+        if (prop.kind === 'animal.woodpecker' || prop.kind === 'animal.owl') {
+          expect(prop.layer).toBe('back');
+          expect(
+            scenery.props.some(
+              (tree) =>
+                tree.kind.startsWith('tree.') &&
+                prop.dependencies?.includes(tree.id),
+            ),
+          ).toBe(true);
+          continue;
+        }
+        if (prop.kind === 'back.footbridge') {
+          expect(prop.dependencies).toEqual([scenery.bridge?.id]);
+          continue;
+        }
         expect(kinds.has(prop.kind), `${scenery.locality}: ${prop.kind}`).toBe(
           true,
         );
+      }
     });
     for (const locality of LOCALITIES) {
       const kinds = [...kindsOf(locality.id)];
@@ -209,13 +230,56 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
       );
       for (const prop of near) {
         if (around.has(prop.kind)) continue;
+        if (prop.clip) {
+          const part = worldPlacementCatalog[prop.kind];
+          const animalPart =
+            worldPlacementCatalog[animalParts[scenery.animal.kind]];
+          if (!part || !animalPart) throw new Error('missing numerical art');
+          const b = projectedBounds(seed, scenery.chunkIndex, prop, part);
+          const a = projectedBounds(
+            seed,
+            scenery.chunkIndex,
+            {
+              kind: animalParts[scenery.animal.kind],
+              layer: 'near',
+              xU: animalX,
+              depth: scenery.animal.depth,
+              scale: 2,
+              flip: false,
+            },
+            animalPart,
+          );
+          // A coherent clipped row/edge is judged by its visible 2D body, not its tile pivot.
+          expect(
+            b.rightU <= a.leftU ||
+              b.leftU >= a.rightU ||
+              b.bottomU <= a.topU ||
+              b.topU >= a.bottomU,
+            `${seed}/${scenery.chunkIndex}/${prop.id} animal body`,
+          ).toBe(true);
+          continue;
+        }
         expect(Math.abs(prop.xU - animalX), prop.kind).toBeGreaterThanOrEqual(
           60,
         );
       }
       for (const prop of scenery.props) {
-        expect(prop.xU).toBeGreaterThanOrEqual(0);
-        expect(prop.xU).toBeLessThanOrEqual(chunkWidthU);
+        if (prop.clip) {
+          // A continuous group's anchor can precede this chunk, but all visible pixels belong to it.
+          const part = worldPlacementCatalog[prop.kind];
+          if (!part) throw new Error('missing composition art');
+          const b = projectedBounds(seed, scenery.chunkIndex, prop, part);
+          expect(b.leftU).toBeGreaterThanOrEqual(
+            scenery.chunkIndex * chunkWidthU,
+          );
+          expect(b.rightU).toBeLessThanOrEqual(
+            (scenery.chunkIndex + 1) * chunkWidthU,
+          );
+          expect(b.rightU).toBeGreaterThan(b.leftU);
+        } else {
+          expect(prop.xU).toBeGreaterThanOrEqual(0);
+          expect(prop.xU).toBeLessThanOrEqual(chunkWidthU);
+        }
         expect(prop.depth).toBeGreaterThanOrEqual(0);
         expect(prop.depth).toBeLessThanOrEqual(1);
       }
@@ -275,6 +339,21 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
       bridges += 1;
       const c = site.localXU;
       for (const prop of scenery.props) {
+        if (prop.kind === 'back.footbridge') {
+          expect(prop.layer).toBe('back');
+          expect(prop.dependencies).toContain(site.id);
+          expect(
+            prop.relations?.some((r) => r.relation === 'bridge-over-river'),
+          ).toBe(true);
+          continue;
+        }
+        if (prop.clip) {
+          for (const river of scenery.reservations.filter(
+            (r) => r.purpose === 'river',
+          ))
+            expect(polygonsHit(prop.clip, river.polygon), prop.id).toBe(false);
+          continue;
+        }
         const reach = (prop.motion?.rangeU ?? 0) / 2;
         // The stream widens towards the viewer like the near props grow.
         const keep =

@@ -12,6 +12,8 @@ const titles = {
   dunes: 'Duny',
   mountains: 'Hory',
   'forest-work': 'Lesní práce',
+  fields: 'Pole se stroji',
+  'forest-dense': 'Hustý les',
 } as const;
 /** Separate world sections so HUD/restart changes can merge independently. */
 export function worldDeveloperSections(): HTMLElement {

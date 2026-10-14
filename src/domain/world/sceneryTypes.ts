@@ -37,6 +37,19 @@ export interface PatrolMotion {
  */
 export interface PropRule {
   kinds: readonly string[];
+  layout?: 'rows' | 'forest-band' | 'forest-edge' | 'forest-trees';
+  seasons?: readonly Season[];
+  work?:
+    | 'sow'
+    | 'bale'
+    | 'plough'
+    | 'snow-clear'
+    | 'harvest'
+    | 'seasonal'
+    | 'farmer'
+    | 'harvester'
+    | 'forwarder'
+    | 'truck';
   /** Named near scene support, accepted before dependent props. */
   surface?: 'field' | 'forest-floor';
   layer: 'back' | 'near';
@@ -87,10 +100,19 @@ export interface LocalityTemplate {
   back: BackGround;
   backSpans?: readonly GroundSpan<BackGround>[];
   water?: WaterBody;
+  paths?: readonly {
+    layer: 'near' | 'back';
+    depth: number;
+    widthU: number;
+    /** A short access hidden at both ends by the forest, chunk-local u. */
+    x?: readonly [number, number];
+  }[];
   rules: readonly PropRule[];
   animals: readonly AnimalKind[];
   /** Where the animal stands in the near meadow (depth). */
   animalDepth?: readonly [number, number];
+  /** Chunk-local safe animal pocket, separate from authored work envelopes. */
+  animalX?: readonly [number, number];
   /** Calm locality used for slot 0 and the transition slot. */
   calm?: boolean;
   /** Needs a flat track (stations, doc 04 §6). */

@@ -16,7 +16,7 @@ it.each(Array.from({ length: 50 }, (_, seed) => seed))(
     for (let k = 0; k < 12; k++)
       near.push(
         ...chunkScenery(seed, k, worldPlacementCatalog).props.filter(
-          (p) => p.kind === 'back.tractor' && p.layer === 'near',
+          (p) => p.kind === 'back.tractor-work' && p.layer === 'near',
         ),
       );
     expect(near.length, `${seed}/${r.id}`).toBeGreaterThan(0);
@@ -58,10 +58,12 @@ it('SCN-FO03/G07: forest work has near logs and a low edge, on their surface and
 });
 it('SCN-G06/CR03: validator rejects a tractor whose full patrol leaves its supporting field', () => {
   let sc = chunkScenery(1, 4, worldPlacementCatalog);
-  if (!sc.props.some((p) => p.kind === 'back.tractor' && p.layer === 'near'))
+  if (
+    !sc.props.some((p) => p.kind === 'back.tractor-work' && p.layer === 'near')
+  )
     sc = chunkScenery(1, 5, worldPlacementCatalog);
   const index = sc.props.findIndex(
-      (p) => p.kind === 'back.tractor' && p.layer === 'near',
+      (p) => p.kind === 'back.tractor-work' && p.layer === 'near',
     ),
     p = sc.props[index];
   if (!p) throw new Error('missing tractor mutation');
@@ -72,7 +74,7 @@ it('SCN-G06/CR03: validator rejects a tractor whose full patrol leaves its suppo
     ),
   ).toBe(true);
 });
-it('SCN-CR06/G06: warm foreground surfaces do not replace winter snow or cross into an incoming winter preset', () => {
+it('SCN-CR06/G06: winter foreground keeps snow and only winter artwork', () => {
   let found: { seed: number; k: number } | undefined;
   for (let seed = 0; seed < 100 && !found; seed++) {
     let r = regionAt(seed, 0);
@@ -87,13 +89,18 @@ it('SCN-CR06/G06: warm foreground surfaces do not replace winter snow or cross i
   const sc = chunkScenery(found.seed, found.k, worldPlacementCatalog);
   expect(sc.near[0]?.style).toBe('snow');
   expect(
-    sc.reservations.some(
-      (r) => r.purpose === 'forest-floor' || r.purpose === 'field',
+    sc.props.some(
+      (p) => p.kind === 'back.combine' || p.kind.includes('crop-rows'),
     ),
   ).toBe(false);
+  expect(
+    sc.props
+      .filter((p) => p.kind.startsWith('near.forest-edge-'))
+      .every((p) => p.kind.endsWith('-winter')),
+  ).toBe(true);
 });
 import { sceneAt, templateById } from '../../../src/domain/world/WorldPlan.ts';
-it('SCN-G06: a warm support is not emitted in the winter half of an incoming transition', () => {
+it('SCN-G06: warm artwork is not emitted in the winter half of an incoming transition', () => {
   let cases = 0;
   for (let seed = 0; seed < 500; seed++) {
     let r = regionAt(seed, 0);
@@ -105,8 +112,11 @@ it('SCN-G06: a warm support is not emitted in the winter half of an incoming tra
         continue;
       cases++;
       expect(
-        chunkScenery(seed, k, worldPlacementCatalog).reservations.some(
-          (r) => r.purpose === 'field' || r.purpose === 'forest-floor',
+        chunkScenery(seed, k, worldPlacementCatalog).props.some(
+          (p) =>
+            p.kind === 'back.combine' ||
+            p.kind.includes('crop-rows') ||
+            p.kind === 'near.stubble',
         ),
         `${seed}/${k}`,
       ).toBe(false);
@@ -156,7 +166,7 @@ it('SCN-G06 review2 adjacent supported fields retain a grass headland gap', () =
     const sc = chunkScenery(1, k, worldPlacementCatalog);
     for (const f of sc.features) if (f.kind === 'field') fields.set(f.id, f);
     tractors += sc.props.filter(
-      (p) => p.kind === 'back.tractor' && p.layer === 'near',
+      (p) => p.kind === 'back.tractor-work' && p.layer === 'near',
     ).length;
     expect(validateChunkScenery(1, sc, worldPlacementCatalog)).toEqual([]);
   }

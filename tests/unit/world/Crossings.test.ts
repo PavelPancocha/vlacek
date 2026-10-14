@@ -1,3 +1,4 @@
+import { polygonsHit } from '../../../src/domain/world/SceneryGeometry.ts';
 import { worldPlacementCatalog } from '../../../src/content/worldPlacementCatalog.ts';
 import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
@@ -71,11 +72,19 @@ describe('crossingSite: one level crossing per block (doc 04 §6, doc 05 §4)', 
             basin.toX <= site.localXU - CROSSING_RESERVE_U ||
               basin.fromX >= site.localXU + CROSSING_RESERVE_U,
           ).toBe(true);
-        for (const prop of scenery.props)
+        for (const prop of scenery.props) {
+          if (prop.clip) {
+            for (const road of scenery.reservations.filter(
+              (r) => r.purpose === 'crossing-road',
+            ))
+              expect(polygonsHit(prop.clip, road.polygon), prop.id).toBe(false);
+            continue;
+          }
           expect(
             Math.abs(prop.xU - site.localXU),
             `${scenery.locality}: ${prop.kind}`,
           ).toBeGreaterThanOrEqual(CROSSING_RESERVE_U);
+        }
         checked += 1;
       }
     expect(checked).toBeGreaterThan(50);

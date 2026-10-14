@@ -643,6 +643,7 @@ export class AppController {
       scenery: {
         biome: this.#scene.stats.biome,
         localities: [...this.#scene.stats.localities],
+        work: this.#scene.farmForestCheck(),
         ...this.#nearPropCheck(),
         crossingViews: this.#scene.stats.crossingViews,
         secondaryTrackViews: this.#scene.stats.secondaryTrackViews,

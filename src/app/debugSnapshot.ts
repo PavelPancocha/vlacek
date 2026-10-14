@@ -1,3 +1,4 @@
+import type { FarmForestDiagnostic } from '../render/farmForestMotion.ts';
 import type { TestSceneLocation } from '../domain/world/TestScenes.ts';
 import type { WorldOverlayOptions } from '../domain/world/WorldDebugGeometry.ts';
 import type { WorldDiagnostics } from '../domain/world/WorldValidation.ts';
@@ -70,6 +71,7 @@ export interface DebugSnapshot {
     biome: string | undefined;
     /** Localities of the chunks in view, left to right. */
     localities: string[];
+    work: readonly (FarmForestDiagnostic & { layer: 'near' | 'back' })[];
     /** Near-meadow props in view. */
     nearProps: number;
     /** Near-meadow props overlapping a drawn vehicle; always 0. */

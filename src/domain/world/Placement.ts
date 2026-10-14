@@ -1,6 +1,7 @@
 import {
   boundsHitPolygon,
   projectedBounds,
+  polygonsHit,
   nearDepthScale,
   type BoundsU,
   type PlacementCatalog,
@@ -20,6 +21,11 @@ export function admissibleKind(
   layer: 'back' | 'near' = 'near',
 ): boolean {
   const context = contextAt(seed, worldXU, layer);
+  const seasonal = /-(spring|summer|autumn|winter)$/.exec(kind)?.[1];
+  if (seasonal && seasonal !== context.season) return false;
+  if (kind === 'near.stubble' && !['summer', 'autumn'].includes(context.season))
+    return false;
+  if (kind === 'back.combine' && context.season !== 'summer') return false;
   if (kind === 'near.pond' && context.surface === 'sand') return false;
   if (context.season !== 'winter' && kind.includes('snow')) return false;
   if (
@@ -53,6 +59,11 @@ export function placementConflict(
   if (!part) throw new Error(`missing footprint ${prop.kind}`);
   const contact = projectedBounds(seed, k, prop, part, true);
   const bounds = body ?? projectedBounds(seed, k, prop, part);
+  if (
+    prop.clip &&
+    (contact.leftU >= contact.rightU || contact.topU >= contact.bottomU)
+  )
+    return undefined;
   for (const r of reservations) {
     if (r.layer !== 'both' && r.layer !== prop.layer) continue;
     if (r.purpose === 'catenary' && prop.depth > 0.1) continue;
@@ -82,7 +93,14 @@ export function placementConflict(
       )
         return r.id;
     }
-    if (boundsHitPolygon(shape, r.polygon)) return r.id;
+    if (
+      prop.clip &&
+      prop.kind.startsWith('backdrop.forest-') &&
+      r.purpose === 'track' &&
+      prop.layer === 'back'
+    ) {
+      if (polygonsHit(prop.clip, r.polygon)) return r.id;
+    } else if (boundsHitPolygon(shape, r.polygon)) return r.id;
   }
   return undefined;
 }

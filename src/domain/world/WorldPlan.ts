@@ -67,10 +67,19 @@ export function sceneAt(seed: number, worldXU: number): ScenePlan {
       break;
     }
   }
-  if (r.landscape === 'countryside' && index === 2 && r.season !== 'winter')
+  if (r.landscape === 'countryside' && index === 2)
     chosen = templateById('near-field');
   if (r.landscape === 'forest' && index === 2)
     chosen = templateById('forest-work');
+  if (r.landscape === 'countryside' && index === 4)
+    chosen = templateById('orchard');
+  if (r.landscape === 'countryside' && index === 6)
+    chosen = templateById('farm');
+  if (r.landscape === 'forest' && index === 0) chosen = templateById('forest');
+  if (r.landscape === 'forest' && index === 6)
+    chosen = templateById('clearing');
+  if (r.landscape === 'forest' && index === 4)
+    chosen = templateById('farm-forest-dense');
   if (r.landscape === 'lakes' && index === millSlot)
     chosen = templateById('mill');
   if (!chosen) throw new Error(`no scene for ${r.landscape}/${r.season}`);

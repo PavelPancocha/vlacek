@@ -34,10 +34,13 @@ it('GEN-15/18: a coast transition establishes its connected sea before the regio
   ).toBe(true);
 });
 
-import { sceneAt } from '../../../src/domain/world/WorldPlan.ts';
 it('GEN-15: authored clearing ground remains a local glade inside its forest scene', () => {
   let k = 0;
-  while (k < 480 && sceneAt(1, k * 1024).templateId !== 'clearing') k++;
+  while (
+    k < 480 &&
+    chunkScenery(1, k, worldPlacementCatalog).locality !== 'clearing'
+  )
+    k++;
   const sc = chunkScenery(1, k, worldPlacementCatalog);
   expect(sc.region.season).not.toBe('winter');
   expect(

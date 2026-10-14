@@ -84,7 +84,7 @@ it('DEV-04: rejected spacing and protected-animal candidates remain visible in t
   ).toBe(true);
 });
 it('DEV-04: a collision does not report an already satisfied dependency as missing', () => {
-  const trace = traceChunkPlacement(1, 30, worldPlacementCatalog);
+  const trace = traceChunkPlacement(1, 3, worldPlacementCatalog);
   const collisions = trace.filter((t) => t.rejectionCode === 'collision');
   expect(collisions.length).toBeGreaterThan(0);
   expect(collisions.every((t) => t.missingDependency === undefined)).toBe(true);

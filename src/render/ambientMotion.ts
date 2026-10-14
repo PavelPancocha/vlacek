@@ -16,6 +16,7 @@ const SWAYING: readonly (readonly [string, number])[] = [
   ['near.fern', 0.03],
   ['back.reeds', 0.03],
   ['tree.', 0.012],
+  ['animal.woodpecker', 0.025],
 ];
 
 /** How far a scenery part sways (rad); 0 for anything rigid. */

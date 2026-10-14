@@ -15,6 +15,7 @@ import {
 } from '../src/domain/world/Regions.ts';
 import {
   validateChunkScenery,
+  validateFarmForestRegions,
   validateInfrastructureSurfaces,
   validateWorld,
   prominentMotifs,
@@ -63,7 +64,11 @@ for (const seed of seeds) {
       const slot = stationSlot(seed, b);
       if (slot !== undefined) chunks.add(b * 8 + slot);
     }
-    for (let x = r.fromXU; x < r.toXU; x += 2048)
+    for (
+      let x = r.fromXU;
+      x < r.toXU;
+      x += ['forest', 'countryside'].includes(r.landscape) ? 1024 : 2048
+    )
       chunks.add(Math.floor(x / 1024));
     r = regionAt(seed, r.toXU);
   }
@@ -84,6 +89,7 @@ for (const seed of seeds) {
     cases++;
     fingerprints.set(k, JSON.stringify(scenery));
   }
+  errors.push(...validateFarmForestRegions(coverageCases));
   for (const [motif, count] of Object.entries(
     worldMotifCoverage(coverageCases, worldPlacementCatalog),
   ))

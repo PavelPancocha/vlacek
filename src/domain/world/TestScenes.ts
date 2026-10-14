@@ -19,6 +19,8 @@ export const TEST_SCENES = [
   'dunes',
   'mountains',
   'forest-work',
+  'fields',
+  'forest-dense',
 ] as const;
 export type TestSceneKind = (typeof TEST_SCENES)[number];
 export interface TestSceneLocation {
@@ -61,11 +63,16 @@ export function locateTestScene(
           ? context.season === kind
           : kind === 'fishponds'
             ? context.scene.templateId === 'pond'
-            : kind === 'forest-work'
-              ? context.region.landscape === 'forest' &&
-                context.scene.templateId === 'forest-work' &&
-                context.season !== 'winter'
-              : context.region.landscape === kind;
+            : kind === 'fields'
+              ? context.region.landscape === 'countryside' &&
+                context.scene.templateId === 'near-field'
+              : kind === 'forest-dense'
+                ? context.scene.templateId === 'farm-forest-dense'
+                : kind === 'forest-work'
+                  ? context.region.landscape === 'forest' &&
+                    context.scene.templateId === 'forest-work' &&
+                    context.season !== 'winter'
+                  : context.region.landscape === kind;
       if (!matches) continue;
       if (kind === 'fishponds') {
         if (k % 8 === stationSlot(seed, Math.floor(k / 8)) || k % 2 !== 0)
@@ -82,11 +89,25 @@ export function locateTestScene(
       if (
         kind === 'forest-work' &&
         !chunkScenery(seed, k, catalog).props.some(
-          (p) => p.layer === 'near' && p.kind === 'back.logs',
+          (p) => p.layer === 'near' && p.kind === 'back.harvester',
         )
       )
         continue;
     }
+    if (
+      kind === 'fields' &&
+      !chunkScenery(seed, k, catalog).props.some(
+        (p) => p.kind === 'back.tractor-work' && p.layer === 'near',
+      )
+    )
+      continue;
+    if (
+      kind === 'forest-dense' &&
+      !chunkScenery(seed, k, catalog).props.some((p) =>
+        p.kind.startsWith('near.forest-edge-'),
+      )
+    )
+      continue;
     const start = x - 640,
       chunkIndex = Math.floor(start / 1024);
     const table = buildArcLengthTable(

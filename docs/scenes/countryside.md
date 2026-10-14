@@ -132,3 +132,30 @@ NEW: kombajn 110 × 60 u; nízká boční silueta s oddělenými koly a žacím 
 NEW: zemědělec 16 × 36 u v pracovní a mávací póze; napajedlo 60 × 20 u s viditelnou vodou.
 NEW: řádky plodin 128 × 22 u a strniště 100 × 18 u; krátké opakovatelné skupiny.
 Ploty, prach a sezónní varianty sdílí katalog v README; stroje nepotřebují novou kresbu pro každý barevný lán.
+
+## Implementovaný řez farm-forest-1 (CR-01)
+
+Přední pole má dvě nízké řady plodin a vlastní suchý pracovní pruh. Celá patrola traktoru
+s nářadím zůstává uvnitř podpory; na druhém poli za tratí pracuje další stroj.
+Na jaře podle vlastní seedované fáze střídá traktor pluh a setí do připravených brázd (bez nového výtvarného dílu secího stroje).
+V létě zůstává přední traktor s lisem, za tratí pracuje kombajn; balíky leží na strništi.
+Na podzim je strniště a pluh. V zimě má traktor radlici a jede po suchém polním příjezdu
+v zasněženém poli. Nářadí se připojuje spojovacími kotvami, nikoli středy kreseb.
+Pracovní průjezdy trvají přibližně 20–40 s tam a zpět. Zemědělec pracuje u okraje,
+občas se otočí do mávací pózy. Drobný ježek zůstává na suchém okraji
+x = 128 u chunku, mimo plnou dráhu stroje i nářadí. Kola se odvíjejí od dráhy, při pauze stojí celý svět.
+Sezónní kresba i přípustnost celého stroje vycházejí z efektivního klimatu místa.
+
+## Opravy farm-forest-2
+
+Plodiny tvoří dvě souvislé opakované řady na téže numerické podpoře jako pole,
+s volným pracovním pruhem u polní cesty a souvratí na koncích. Skupiny na okraji
+jsou oříznuty podporou; řádky a příčné brázdy k cestě nepotřebují konkrétní tvar
+zakončení sdílené plochy. Každý stroj má ověřeny kontakty kol i nářadí po celé
+patrole, v zimě proti skutečné geometrii příjezdu. Regionové garance se ověřují
+nad výslednými chunky včetně případného nahrazení stanicí.
+
+Řady plodin se při sestavení chunku zapečou do statických vrstev oříznutých přesně
+podle podpory pole. Ořez funguje shodně v Canvas a WebGL; za oblé souvratě, do
+potoka ani přejezdu se kresba nevylije. Rozlišení je nejvýše 1 px/u a textury vlastní
+chunk. Stroj, kola, nářadí a zemědělec zůstávají samostatně animované.

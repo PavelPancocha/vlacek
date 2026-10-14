@@ -24,6 +24,9 @@ export interface PlacementPart {
   pivotU: PointU;
   /** Ground occupation width as fraction of the art; crowns may overlap. */
   contactWidth: number;
+  workBoundsU?: BoundsU;
+  workContactsU?: readonly PointU[];
+  bankAnchorsU?: readonly PointU[];
   swayRad?: number;
 }
 export type PlacementCatalog = Readonly<Record<string, PlacementPart>>;
@@ -36,6 +39,8 @@ export interface ProjectedProp {
   flip: boolean;
   motion?: { rangeU: number };
   rotationRad?: number;
+  offsetYU?: number;
+  clip?: readonly PointU[];
 }
 export function nearDepthScale(depth: number): number {
   return 1 + 0.5 * depth;
@@ -51,18 +56,19 @@ export function propFootU(
   xU: number,
   railYUpU: number,
   bankU: number,
+  target: PointU = { xU: 0, yU: 0 },
 ): PointU {
-  return {
-    xU,
-    yU:
-      prop.layer === 'back'
-        ? -railYUpU - prop.depth * BACK_PLANE_U
-        : -railYUpU +
-          TRACK_BED_DEPTH_U +
-          bankU +
-          NEAR_FOOT_OFFSET_U +
-          prop.depth * NEAR_DEPTH_RANGE_U,
-  };
+  target.xU = xU;
+  target.yU =
+    (prop.offsetYU ?? 0) +
+    (prop.layer === 'back'
+      ? -railYUpU - prop.depth * BACK_PLANE_U
+      : -railYUpU +
+        TRACK_BED_DEPTH_U +
+        bankU +
+        NEAR_FOOT_OFFSET_U +
+        prop.depth * NEAR_DEPTH_RANGE_U);
+  return target;
 }
 const heightCache = new Map<string, Float64Array>();
 /** Matches the renderer's 8-u LUT chords instead of approximating track height twice. */
@@ -104,10 +110,32 @@ export function projectedBounds(
   );
   const pivotX = prop.flip ? part.widthU - part.pivotU.xU : part.pivotU.xU;
   const shrink = contact ? ((1 - part.contactWidth) * part.widthU) / 2 : 0;
-  const left = (-pivotX + shrink) * scale,
-    right = (part.widthU - pivotX - shrink) * scale;
-  const bottom = (part.heightU - part.pivotU.yU) * scale;
-  const top = contact ? bottom - 0.5 : -part.pivotU.yU * scale;
+  const envelope = part.workBoundsU;
+  const facingLeft = envelope
+    ? prop.flip
+      ? -envelope.rightU
+      : envelope.leftU
+    : -pivotX;
+  const facingRight = envelope
+    ? prop.flip
+      ? -envelope.leftU
+      : envelope.rightU
+    : part.widthU - pivotX;
+  // A patrol reverses the whole compound; include both mirrored end poses.
+  const patrol = (prop.motion?.rangeU ?? 0) > 0;
+  const left =
+      ((patrol ? Math.min(facingLeft, -facingRight) : facingLeft) + shrink) *
+      scale,
+    right =
+      ((patrol ? Math.max(facingRight, -facingLeft) : facingRight) - shrink) *
+      scale;
+  const bottom =
+    (contact
+      ? part.heightU - part.pivotU.yU
+      : (envelope?.bottomU ?? part.heightU - part.pivotU.yU)) * scale;
+  const top = contact
+    ? bottom - 0.5
+    : (envelope?.topU ?? -part.pivotU.yU) * scale;
   const rotation = prop.rotationRad ?? 0,
     cos = Math.cos(rotation),
     sin = Math.sin(rotation);
@@ -134,10 +162,22 @@ export function projectedBounds(
     : (part.swayRad ?? 0) * Math.hypot(part.widthU, part.heightU) * scale;
   const motionY = motionYRange(seed, prop, wx, reach, foot.yU);
   return {
-    leftU: minX - reach - sway,
-    rightU: maxX + reach + sway,
-    topU: minY - sway + motionY[0],
-    bottomU: maxY + sway + motionY[1],
+    leftU: Math.max(
+      minX - reach - sway,
+      prop.clip ? Math.min(...prop.clip.map((p) => p.xU)) : -Infinity,
+    ),
+    rightU: Math.min(
+      maxX + reach + sway,
+      prop.clip ? Math.max(...prop.clip.map((p) => p.xU)) : Infinity,
+    ),
+    topU: Math.max(
+      minY - sway + motionY[0],
+      prop.clip ? Math.min(...prop.clip.map((p) => p.yU)) : -Infinity,
+    ),
+    bottomU: Math.min(
+      maxY + sway + motionY[1],
+      prop.clip ? Math.max(...prop.clip.map((p) => p.yU)) : Infinity,
+    ),
   };
 }
 /** Patrol feet follow the rail/terrain over the entire authored motion envelope. */
@@ -291,6 +331,8 @@ export interface RoadPointU extends PointU {
 export interface RoadPath {
   id: string;
   ownerId: string;
+  layer?: 'near' | 'back';
+  surface?: 'dirt';
   fromXU: number;
   toXU: number;
   points: readonly RoadPointU[];

@@ -14,6 +14,7 @@ import {
 } from './SceneryGeometry.ts';
 
 export type ReservationPurpose =
+  | 'work-road'
   | 'field'
   | 'forest-floor'
   | 'track'
@@ -70,7 +71,7 @@ export function relationAllows(
     case 'platform-beside-track':
       return purpose === 'track' || purpose === 'platform';
     case 'vehicle-on-road':
-      return purpose === 'village-road';
+      return purpose === 'village-road' || purpose === 'work-road';
     case 'boat-on-water':
     case 'reeds-at-water':
     case 'pier-at-water':
@@ -241,9 +242,9 @@ export function roadReservation(road: RoadPath): Reservation {
   return {
     id: `${road.id}:reserve:village-road`,
     ownerId: road.ownerId,
-    purpose: 'village-road',
+    purpose: road.surface === 'dirt' ? 'work-road' : 'village-road',
     polygon: roadPolygon(road, 4),
-    layer: 'back',
+    layer: road.layer ?? 'back',
   };
 }
 export function waterReservation(

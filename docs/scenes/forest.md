@@ -118,3 +118,52 @@ NEW: pracovní kmen 24 × 100 u s jasným úchopem; jeho celý otočný obal pat
 NEW: nákladní auto s kládami 110 × 48 u; náklad s klanicemi a viditelným zajištěním.
 NEW: lávka 100 × 35 u, krmelec 60 × 50 u, datel 18 × 24 u a sova 24 × 28 u.
 Sdílet existující klády, pařezy, mladé smrčky, kapradí a zvířata; nevytvářet druhou sadu stejné lesní půdy.
+
+## Implementovaný řez farm-forest-1
+
+FO-02 používá dva souvislé, sezónní atlasové pásy korun a jednotlivé dospělé stromy
+pouze za kolejí. Přední okraj tvoří kreslený nízký pás na lesní půdě, nikoli geometrická
+silueta. Všechny čtyři sezóny zachovávají velikost a pivot. Podzim mění listnáče,
+jehličnany zůstávají zelené; zima přidává sníh.
+
+FO-04 má za tratí pracovní cestu, auto s kládami a skládku. Harvester a vyvážečka
+pracují v oddělených kapsách před kolejí; vyvážečka pomalu převáží klády mezi svým
+ložem a skládáním. Kmen je při přesunu vždy v uchopovači, při uvolnění leží na
+připraveném loži. Klády na loži přibývají po položení a ubývají při naložení;
+nevzniká volný pád. Lože jsou pevné sourozenecké kontejnery na obou koncích
+patroly, nepohybují se společně s vyvážečkou. Vyvážečka při úchopu a položení
+stojí, převoz drží kmen vodorovně a kola v době stání neotáčí. Rozsah ramen, kmene, nářadí a celé patroly je součást numerické
+obálky stroje. Přední cesta spojuje pracovní kapsy, zadní příjezd vede kolem skládky,
+žádná pracovní cesta nekříží kolej. Lidé a zvířata nemají dráhu v dosahu strojů. V pracovním řezu je drobný ježek
+v dolním suchém pásu na x = 128 u chunku, mimo oba pracovní obaly i po
+přizpůsobení zvířete malému displeji.
+
+FO-05 přidává krmelec na suchém místě a lávku jen nad skutečným tekoucím potokem
+společného mostního slotu; bez potoka se lávka negeneruje. Datel i sova patří ke
+konkrétnímu zadnímu stromu, nejsou samostatně položené na zem. Datel se jemně naklání;
+sova je klidný detail. Večerní zobrazení sovy doplní systém den/noc, který tento řez nemění.
+
+## Opravy farm-forest-2
+
+Husté jádro má souvislé překrývající se skupiny těsně za čistým koridorem, ve dvou
+bližších hloubkách nad rámec far/mid paralaxy. Šestnáct kmenů ve skupinách doplňuje
+míšenou hmotu; jejich koruny se překrývají. Nízký přední okraj navazuje přes chunky
+a sleduje bezpečný obal; pracovní prostor je vymezená menší paseka uvnitř lesa.
+Vyvážečka má jedinou 32s trajektorii: stojí při úchopu i odložení, při stání drží
+poslední směr, kola odpovídají skutečně ujeté dráze. Úchop a pevná lože na sebe
+navazují v souřadnicích světa včetně výšky terénu. Lávka používá skutečný meandr
+a její dvě výtvarné kotvy stojí na suchých březích. Zimní nízký okraj tvoří
+nepravidelné zasněžené mladé jehličnany, keře a klády. Zimní listnáče a jejich
+výběr vlastní seasons-life; celý zimní les vyžaduje společný snímek po integraci.
+
+## Ořez a návaznost skupin (farm-forest-3)
+
+Husté koruny a nízký přední okraj se opakují v pevné světové mřížce. Krok vychází
+z promítnuté šířky kresby a překrývá oba 5% průhledné boky; technický řez chunku
+nemění fázi ani výšku dlaždice. Fragment přes hranici sdílí stejnou světovou kotvu.
+Skutečný vstup/výstup porostu a okraj pracovní kapsy se zjemní postupným průhledným
+lemem, nikdy až na technickém řezu uvnitř porostu. Potoky, přejezdy a kopce tunelů
+zůstávají mimo kresbu korun i popředí podle společných ořezových polygonů.
+Statické skupiny každé potřebné hloubky se jednou složí do textury nejvýše 1 px/u;
+blízké kmeny a stroje zůstávají samostatné. Stejná textura funguje v Canvas i WebGL,
+při odchodu chunku se uvolní a mimo záběr se dekorativní skupiny nekreslí.

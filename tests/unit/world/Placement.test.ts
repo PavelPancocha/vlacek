@@ -130,8 +130,8 @@ describe('GEN-14 footprints, dependencies and fence ownership', () => {
 });
 
 it('GEN-17: neighbouring houses avoid the last two facades across a chunk seam', () => {
-  // CR-01 owns former village chunks 4/5; 30/31 is the v2 village seam.
-  const houses = [30, 31]
+  // Content selection v2: seed 1 has a populated village seam at 32/33.
+  const houses = [32, 33]
     .flatMap((k) =>
       chunkScenery(1, k, catalog)
         .props.filter((p) => p.kind.startsWith('back.house-'))
