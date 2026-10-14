@@ -38,26 +38,67 @@ function setup() {
       },
     };
   }
-  const param = () => ({
-    value: 0,
-    setValueAtTime: vi.fn(),
-    setTargetAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-  });
-  const node = () => ({
-    gain: param(),
-    frequency: param(),
-    delayTime: param(),
-    type: 'lowpass',
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-  });
+  let nowSec = 10;
+  const param = () => {
+    let value = 0;
+    let target:
+      { value: number; from: number; at: number; constant: number } | undefined;
+    const sample = (at: number) =>
+      target
+        ? target.value +
+          (target.from - target.value) *
+            Math.exp(-Math.max(0, at - target.at) / target.constant)
+        : value;
+    return {
+      get value() {
+        return sample(nowSec);
+      },
+      set value(next: number) {
+        value = next;
+        target = undefined;
+      },
+      setValueAtTime: vi.fn((next: number) => {
+        value = next;
+        target = undefined;
+      }),
+      cancelScheduledValues: vi.fn((at: number) => {
+        value = sample(at);
+        target = undefined;
+      }),
+      setTargetAtTime: vi.fn((next: number, at: number, constant: number) => {
+        target = { value: next, from: sample(at), at, constant };
+      }),
+      linearRampToValueAtTime: vi.fn(),
+    };
+  };
+  const node = () => {
+    const connections = new Set<object>();
+    return {
+      connections,
+      bufferedSample: 0,
+      gain: param(),
+      frequency: param(),
+      delayTime: param(),
+      type: 'lowpass',
+      connect: vi.fn((target: object) => connections.add(target)),
+      disconnect: vi.fn((target?: object) => {
+        if (target) connections.delete(target);
+        else connections.clear();
+      }),
+    };
+  };
   const filter = node();
   const delay = node();
+  const delays: ReturnType<typeof node>[] = [];
   const gains: ReturnType<typeof node>[] = [];
   const context = {
     state: 'running',
-    currentTime: 10,
+    get currentTime() {
+      return nowSec;
+    },
+    set currentTime(next: number) {
+      nowSec = next;
+    },
     destination: {},
     createGain: vi.fn(() => {
       const gain = node();
@@ -65,7 +106,11 @@ function setup() {
       return gain;
     }),
     createBiquadFilter: vi.fn(() => filter),
-    createDelay: vi.fn(() => delay),
+    createDelay: vi.fn(() => {
+      const next = delays.length === 0 ? delay : node();
+      delays.push(next);
+      return next;
+    }),
     createBufferSource: vi.fn(() => {
       const voice = source();
       voices.push(voice);
@@ -99,12 +144,78 @@ function setup() {
     fetch,
     filter,
     delay,
+    delays,
     gains,
   };
 }
 
 afterEach(() => vi.unstubAllGlobals());
 describe('recorded sounds / H1', () => {
+  it.each(['running', 'suspended'] as const)(
+    'stopAll removes buffered tunnel echo while %s and retains context and decoded cache',
+    async (state) => {
+      const { audio, context, filter, delay, delays, gains, fetch, voices } =
+        setup();
+      audio.unlock();
+      const layers = [
+        { key: 'wheels', id: 'wheels', gain: 1, rate: 1, priority: 60 },
+      ];
+      audio.setLayers(layers);
+      await vi.waitFor(() => expect(voices).toHaveLength(1));
+      audio.setCovered(1);
+      context.currentTime += 1;
+      const echo = gains[0];
+      if (!echo) throw new Error('echo node missing');
+      // A stopped source can leave this pulse in the shared 90ms DSP buffer.
+      delay.bufferedSample = 1;
+      const output = () =>
+        delays.reduce(
+          (sum, node) =>
+            sum +
+            (node.connections.has(echo) &&
+            echo.connections.has(context.destination)
+              ? node.bufferedSample * echo.gain.value
+              : 0),
+          0,
+        );
+      expect(output()).toBeGreaterThan(0);
+      if (state === 'suspended') audio.suspend();
+      audio.stopAll();
+      expect(output()).toBe(0);
+      expect(echo.gain.value).toBe(0);
+      expect(echo.gain.cancelScheduledValues).toHaveBeenLastCalledWith(
+        context.currentTime,
+      );
+      expect(echo.gain.setValueAtTime).toHaveBeenLastCalledWith(
+        0,
+        context.currentTime,
+      );
+      expect(delay.connections.size).toBe(0);
+      expect(filter.connections.has(delay)).toBe(false);
+      const fresh = delays[1];
+      if (!fresh) throw new Error('fresh delay missing');
+      expect(fresh).not.toBe(delay);
+      expect(fresh.delayTime.value).toBe(0.09);
+      expect(filter.connections.has(context.destination)).toBe(true);
+      expect(filter.connections.has(fresh)).toBe(true);
+      expect(fresh.connections.has(echo)).toBe(true);
+      expect(audio.state).toBe(state);
+      expect(context.close).not.toHaveBeenCalled();
+      audio.unlock();
+      // Even renewed tunnel gain cannot expose the previous journey's buffered pulse.
+      audio.setCovered(1);
+      context.currentTime += 1;
+      expect(echo.gain.value).toBeGreaterThan(0);
+      expect(output()).toBe(0);
+      audio.setLayers(layers);
+      await vi.waitFor(() => expect(voices).toHaveLength(2));
+      expect(fetch).toHaveBeenCalledOnce();
+      expect(context.decodeAudioData).toHaveBeenCalledOnce();
+      expect(context.createBiquadFilter).toHaveBeenCalledOnce();
+      audio.dispose();
+    },
+  );
+
   it('stopAll stops loops, fading beds, scheduled chuffs and shots exactly once and remains reusable', async () => {
     const { audio, context, voices, gains } = setup();
     audio.unlock();

@@ -134,6 +134,18 @@ export class AudioManager {
     this.#pendingLayers.clear();
     for (const voice of [...this.#voices.values()]) this.#stop(voice);
     this.setCovered(0);
+    const context = this.#context;
+    if (context && this.#filter && this.#delay && this.#echo) {
+      // Suspension preserves buffered samples; a new journey needs an empty DSP path.
+      this.#echo.gain.cancelScheduledValues(context.currentTime);
+      this.#echo.gain.setValueAtTime(0, context.currentTime);
+      this.#filter.disconnect(this.#delay);
+      this.#delay.disconnect();
+      this.#delay = context.createDelay(0.2);
+      this.#delay.delayTime.value = 0.09;
+      this.#filter.connect(this.#delay);
+      this.#delay.connect(this.#echo);
+    }
   }
 
   #clip(id: string): SoundClip | undefined {
