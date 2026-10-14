@@ -431,8 +431,13 @@ test('developer menu targets fit a small landscape phone and stay accessible aft
   await paused(page);
   await openMenu(page);
   // Every expandable parent section is opened before measuring its controls.
-  for (const summary of await page.locator('.dev-menu details > summary').all())
-    await summary.click();
+  for (const summary of await page
+    .locator('.dev-menu details > summary')
+    .all()) {
+    const section = summary.locator('..');
+    if ((await section.getAttribute('open')) === null) await summary.click();
+    await expect(section).toHaveJSProperty('open', true);
+  }
   for (const control of await page
     .locator('.dev-menu select, .dev-menu input, .dev-menu button')
     .all()) {
