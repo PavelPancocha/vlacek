@@ -114,7 +114,7 @@ jobs:
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
       - name: Install the Chromium build pinned by Playwright
         run: npx playwright install --with-deps chromium
-      - name: Smoke test the live site
+      - name: Smoke test the live site and offline reload
         run: npx playwright test -c tests/e2e/playwright.config.ts smoke --project=desktop
         env:
           E2E_BASE_URL: ${{ steps.deployment.outputs.page_url }}

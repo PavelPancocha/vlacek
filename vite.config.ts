@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
+import { pwaPlugin } from './scripts/pwa/plugin.ts';
 import { formatBuildId, normalizeBasePath } from './scripts/build-info.ts';
 
 function git(args: string[]): string | undefined {
@@ -36,8 +37,10 @@ const buildId = formatBuildId(
   { dirty: ciCommit === undefined && Boolean(git(['status', '--porcelain'])) },
 );
 
+const base = normalizeBasePath(process.env['VLACEK_BASE']);
+
 export default defineConfig({
-  base: normalizeBasePath(process.env['VLACEK_BASE']),
+  base,
   // No SPA fallback: a missing asset must be a 404, never index.html (PWA-10).
   appType: 'mpa',
   build: {
@@ -55,6 +58,7 @@ export default defineConfig({
   },
   define: { __APP_BUILD_ID__: JSON.stringify(buildId) },
   plugins: [
+    pwaPlugin(base, buildId),
     {
       name: 'vlacek-build-meta',
       transformIndexHtml: () => [

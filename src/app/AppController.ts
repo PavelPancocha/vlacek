@@ -1,3 +1,4 @@
+import { PwaController } from '../platform/PwaController.ts';
 import { gameConfig } from '../config/gameConfig.ts';
 import type { ShapedVehicle } from '../content/placeholderShapes.ts';
 import { locomotives, wagons } from '../content/vehicles.ts';
@@ -57,6 +58,7 @@ export class AppController {
   readonly #uiRoot: HTMLElement;
   readonly #curtain: HTMLElement;
   readonly #ui: UiLayer;
+  readonly #pwa: PwaController;
   readonly #audio = new AudioManager();
   readonly #frames = new FrameStats(600);
   /** Every crossing phase of the ride, recorded each frame (debug only). */
@@ -91,6 +93,12 @@ export class AppController {
     app.append(this.#curtain);
     app.append(this.#uiRoot);
     this.#ui = new UiLayer(this.#uiRoot);
+    this.#pwa = new PwaController(
+      import.meta.env.PROD,
+      import.meta.env.BASE_URL,
+      options.buildId,
+      (state) => this.#ui.updatePwa(state),
+    );
     if (options.debug) {
       this.#diagnostics = document.createElement('pre');
       this.#diagnostics.id = 'diagnostics';
@@ -146,6 +154,7 @@ export class AppController {
       onReady: (renderer) => {
         this.#renderer = renderer;
         gameRoot.dataset['renderer'] = renderer;
+        this.#pwa.afterFirstFrame();
       },
     });
     session.setWorldHitTest(
@@ -169,6 +178,7 @@ export class AppController {
         });
       if (action === 'dev-close') this.#ui.closeDeveloperMenu();
       if (this.#ui.developerMenuOpen) {
+        if (action === 'pwa-install') void this.#pwa.install();
         if (action === 'dev-details') this.#ui.openDiagnostics(this.snapshot());
         if (action === 'dev-details-close') this.#ui.closeDiagnostics();
         if (action === 'dev-copy-json' || action === 'dev-copy-seed')
@@ -535,6 +545,7 @@ export class AppController {
   }
 
   dispose(): void {
+    this.#pwa.dispose();
     this.#input.dispose();
     this.#fullscreen.dispose();
     this.#host.destroy();

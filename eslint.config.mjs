@@ -12,7 +12,15 @@ const injectedByPlatform =
   'Pure code must not read platform state; pass time, randomness and storage in explicitly.';
 
 export default defineConfig(
-  globalIgnores(['node_modules/', 'dist/', 'coverage/', '.idea/', '.jbeval/']),
+  globalIgnores([
+    'node_modules/',
+    'dist/',
+    'coverage/',
+    'test-results/',
+    'playwright-report/',
+    '.idea/',
+    '.jbeval/',
+  ]),
   js.configs.recommended,
   tseslint.configs.recommended,
   {

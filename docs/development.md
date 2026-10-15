@@ -2,7 +2,7 @@
 
 ## Stav
 
-Repozitář obsahuje specifikace, vývojové nástroje a průběžnou verzi 0.1 hry (M0 + M1): doménu (vstupy, pohyb, trať, souprava, depo), ukládání, GameSession, Phaser renderer a DOM obrazovky, nasazované na GitHub Pages. Úplný katalog, biomy, scénky a PWA zatím nejsou implementované. Jejich kontroly přidávej spolu s funkcemi podle AGENTS.md; úspěch tohoto CI není akceptace hry.
+Repozitář obsahuje specifikace, vývojové nástroje a průběžnou verzi 0.1 hry; aktuální stav milníků shrnuje [roadmapa](roadmap.md). Produkční build obsahuje volitelnou instalovatelnou PWA a úplný offline balík ([D-031](decisions/031-installable-offline-pwa.md)). Úspěch lokálního CI nenahrazuje akceptaci hry ani fyzická zařízení.
 
 Výsledky prvního lokálního ověření včetně red/green a negativních kontrol jsou v [protokolu z 2026-10-09](validation/2026-10-09-toolchain.md); průběžné ověření verze 0.1 je v [protokolu v0.1](validation/2026-10-09-v0.1.md).
 
@@ -116,9 +116,38 @@ GitHub workflow už běží po pushi; první úspěšný běh je zaznamenaný v 
 
 ## Nasazení na GitHub Pages
 
-Job **Deploy to GitHub Pages** běží jen pro push nebo ruční spuštění na `master` a až po úspěšných jobech **Quality checks** a **E2E**. Jen tento job má oprávnění `pages: write` a `id-token: write`. Po čisté instalaci zjistí `actions/configure-pages` cestu webu (`/vlacek`), build ji dostane přes `VLACEK_BASE` a `actions/upload-pages-artifact` + `actions/deploy-pages` nahrají obsah `dist/`. Do repozitáře se žádný build necommituje. Po nasazení job nainstaluje Chromium a spustí `smoke.spec.ts` proti skutečné adrese (`E2E_BASE_URL`); test čeká, až CDN vrací `<meta name="vlacek-build">` s commitem běhu (`E2E_EXPECT_COMMIT`), a ověří start rendereru bez externích požadavků.
+Job **Deploy to GitHub Pages** běží jen pro push nebo ruční spuštění na `master` a až po úspěšných jobech **Quality checks** a **E2E**. Jen tento job má oprávnění `pages: write` a `id-token: write`. Po čisté instalaci zjistí `actions/configure-pages` cestu webu (`/vlacek`), build ji dostane přes `VLACEK_BASE` a `actions/upload-pages-artifact` + `actions/deploy-pages` nahrají obsah `dist/`. Do repozitáře se žádný build necommituje. Po nasazení job nainstaluje Chromium a spustí `smoke.spec.ts` proti skutečné adrese (`E2E_BASE_URL`); test čeká, až CDN vrací `<meta name="vlacek-build">` s commitem běhu (`E2E_EXPECT_COMMIT`), a ověří start rendereru bez externích požadavků. Smoke test čeká na očekávaný commit přes přímý HTTP požadavek před otevřením řízené karty, aby starý aktivní worker nepřipnul staré HTML během čekání na CDN. Součástí `smoke.spec.ts` je i kontrola úplného aktivního balíku a offline reload po prvním online načtení. Lokální preview není důkaz provedeného deploy jobu ani instalace na zařízení.
 
 V nastavení repozitáře musí být **Settings → Pages → Source: GitHub Actions**. Prostředí `github-pages` standardně povoluje nasazení jen z výchozí větve; pracovní větve proto web nemění. Adresa je <https://pavelpancocha.github.io/vlacek/>. Nasazený obsah ověř podle `<meta name="vlacek-build">`, který musí odpovídat commitu běhu. Workflow ověř lokálně pomocí actionlint podle [protokolu nástrojů](validation/2026-10-09-toolchain.md); ověření nasazení je v [protokolu zástupné stránky](validation/2026-10-09-pages-skeleton.md). Volbu popisuje [rozhodnutí D-002](decisions/002-github-pages.md).
+
+## PWA a offline na preview
+
+`volta run npm run build` vytvoří manifest, kredity, `precache.json` a `sw.js`. Vite plugin `scripts/pwa/plugin.ts` sestaví inventář ze skutečného `dist/` včetně emitovaných SVG/PNG, všech MP3, JS/CSS, HTML a ikon. Každý soubor má SHA-256; identita balíku zahrnuje build ID, base, soubory a zdroj workeru. Zdroj workeru má vlastní strict WebWorker projekt `src/service-worker/tsconfig.json`, který je součástí `npm run typecheck`. Nepřidává se závislost. ESLint vynechává generované `test-results/` a `playwright-report/`; nejde o zdrojový kód.
+
+Offline testuj na localhostu nebo HTTPS, nad produkčním buildem:
+
+```bash
+volta run npm ci --prefer-offline
+VLACEK_BASE=/vlacek/ volta run npm run build
+VLACEK_BASE=/vlacek/ volta run npm run preview -- --port 4201 --strictPort
+```
+
+Otevři `http://localhost:4201/vlacek/` online. Vyjeď, v pauze pětkrát během 3 s aktivuj Build a v „Aplikace a offline“ počkej na „offline připraveno“ s ID balíku. V browserových DevTools přepni Network na Offline a obnov stránku: musí fungovat výběr mašinky, depo, jízda i uložené audio. Vypnutí samotné HTTP cache nenahrazuje vypnutí sítě. `dev` worker neregistruje; LAN HTTP z jiného zařízení není bezpečný localhost tohoto zařízení.
+
+Připravovaná nová verze nevyvolá reload. Zavři všechna okna/karty této hry a znovu ji otevři, aby se čekající worker aktivoval. První aktivace záměrně nepřebírá již otevřenou kartu; následující načtení už obslouží worker. Starý worker nepoužije HTML jiného buildu. Cache zachovává aktuální a jednu předchozí úplnou verzi. Pokud se vydání změní mezi HTML a registrací, ID cache se ukáže, ale odlišný build neoznačí starou stránku za offline připravenou.
+
+Pro čistý test v DevTools → Application → Service Workers zvol u registrace tohoto scope **Unregister**, v Cache Storage smaž jen cache s prefixem `vlacek:/vlacek/:` (pro root `vlacek:/:`) a zavři všechny jeho karty. Pak začni novou online návštěvou. Nemaž místní úložiště, pokud chceš zachovat save; nepoužívej plošné „Clear site data“ jako běžný reset workeru. Při změně base/portu si ověř správný origin a scope. Vymazání cache za běhu se po návratu stránky projeví jako „offline není dostupné“.
+
+Automatické ověření v prostředí se sdílenými lane:
+
+```bash
+VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/pwa tests/unit/platform/SaveRepository.test.ts
+flock /tmp/vlacek-playwright.lock volta run npm run test:e2e -- tests/e2e/pwa.spec.ts tests/e2e/smoke.spec.ts --workers=2
+```
+
+E2E používá produkční build a existující Playwright preview na portu 4173. Aktualizační fixture obsluhuje reálné soubory buildu a mění identitu HTML/JS; nevydává nic na Pages. Headless Chromium neprokazuje skutečnou instalaci OS. Instalace a offline na fyzickém Androidu, iOS a Tesle jsou **NEOVĚŘENO**.
+
+Při rollbacku se již úplná cache téhož vydání znovu použije po kontrole všech hashů; selhání reinstalace nesmaže aktivní ani čekající balík. Regrese A → B → rollback A a úklid A → B → C pokrývá `tests/e2e/pwa.spec.ts`.
 
 ## Diagnostika
 
