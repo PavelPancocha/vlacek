@@ -77,6 +77,7 @@ async function observeReveal(
           covered,
           drawn: state.rideFramesDrawn,
         });
+        return state.rideFramesDrawn;
       };
       if (action) {
         const button = document.querySelector<HTMLButtonElement>(
@@ -94,9 +95,10 @@ async function observeReveal(
       let observationFrames = 0;
       while (observationFrames < 30) {
         await new Promise(requestAnimationFrame);
-        record();
+        const drawn = record();
         if (innerWidth >= innerHeight) landscapeObserved = true;
-        if (landscapeObserved) observationFrames++;
+        // Keep cold-start samples; count the window from the first world draw.
+        if (landscapeObserved && (before > 0 || drawn > 0)) observationFrames++;
       }
       return { before, samples };
     },
@@ -120,6 +122,14 @@ function expectReady(
       'an opaque cover must remain until the returning world draws',
     ).toBeGreaterThan(result.before);
   }
+}
+
+/** Only returning from opaque UI needs a fresh draw; pause is translucent. */
+async function startPausedRide(page: Page): Promise<void> {
+  await page.goto('./?debug=1');
+  await tapAction(page, 'to-depot');
+  expectReady(await observeReveal(page, 'depart'), 'RIDING');
+  await tapAction(page, 'pause');
 }
 
 async function openDeveloperPanel(page: Page): Promise<void> {
@@ -155,9 +165,7 @@ for (const quality of ['standard', 'low'] as const) {
     test('developer panel hides the ride and close draws before uncovering pause', async ({
       page,
     }) => {
-      await startRide(page, []);
-      await tapAction(page, 'pause');
-      expectReady(await observeReveal(page), 'PAUSED');
+      await startPausedRide(page);
       await openDeveloperPanel(page);
       await expectPanelHidden(page);
       expectReady(await observeReveal(page, 'dev-close'), 'PAUSED');
@@ -167,9 +175,7 @@ for (const quality of ['standard', 'low'] as const) {
       test(`developer panel stays hidden through rotation, close in ${closeInPortrait ? 'portrait' : 'landscape'}`, async ({
         page,
       }) => {
-        await startRide(page, []);
-        await tapAction(page, 'pause');
-        expectReady(await observeReveal(page), 'PAUSED');
+        await startPausedRide(page);
         await openDeveloperPanel(page);
         const landscape = page.viewportSize();
         if (!landscape) throw new Error('viewport missing');
@@ -203,9 +209,7 @@ for (const quality of ['standard', 'low'] as const) {
     test('developer panel stays hidden after failed apply and close reveals a fresh pause frame', async ({
       page,
     }) => {
-      await startRide(page, []);
-      await tapAction(page, 'pause');
-      expectReady(await observeReveal(page), 'PAUSED');
+      await startPausedRide(page);
       await openDeveloperPanel(page);
       await page.evaluate(() => {
         Object.defineProperty(Storage.prototype, 'setItem', {
