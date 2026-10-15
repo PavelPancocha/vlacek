@@ -12,6 +12,14 @@ import { parts as settlementArt } from '../content/world-modules/settlements.art
 import { frameTexture } from './frameTexture.ts';
 import { effectiveClimateAt, windAt } from '../domain/world/Seasons.ts';
 import { SeasonalSceneryView } from './SeasonalSceneryView.ts';
+import type { RoadVehicleSnapshot } from './roadVehicleSnapshot.ts';
+import {
+  vehicleHeading,
+  type VehicleHeading,
+} from '../domain/interaction/VehicleHeading.ts';
+import { roadVehicleArt } from '../content/roadVehicleArt.ts';
+import { RoadVehicleMotion } from './RoadVehicleMotion.ts';
+import { roadPositionAt } from '../domain/world/SceneryGeometry.ts';
 import { transitionAt } from '../domain/world/Regions.ts';
 import { ROAD_BRIDGE_EDGE_U } from '../domain/world/SettlementScenery.ts';
 import { nearGroundRuns, nearGroundTailStrips } from './groundLayout.ts';
@@ -20,6 +28,8 @@ import {
   propFootU,
   propScale,
   roadSide,
+  roadPolygon,
+  pointInside,
   waterSectionU,
   waterLevelU,
   type PointU,
@@ -131,6 +141,56 @@ const ROAD_DASH_EVERY_U = 20;
 const ROAD_NEAR_FROM_U = ROAD_CONFLICT_U - 8;
 /** Below the painted meadow the road's lines go on this far. */
 const ROAD_TAIL_DASHES_U = 600;
+
+/** Cut markings at exact polygon intersections, leaving junction mouths open. */
+function strokeOutside(
+  g: Phaser.GameObjects.Graphics,
+  points: readonly { x: number; y: number }[],
+  mouths: readonly (readonly PointU[])[],
+): void {
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1],
+      b = points[i];
+    if (!a || !b) continue;
+    const dx = b.x - a.x,
+      dy = b.y - a.y;
+    const cuts = [0, 1];
+    for (const polygon of mouths)
+      for (let j = 0; j < polygon.length; j++) {
+        const c = polygon[j],
+          d = polygon[(j + 1) % polygon.length];
+        if (!c || !d) continue;
+        const ex = d.xU - c.xU,
+          ey = d.yU - c.yU,
+          det = dx * ey - dy * ex;
+        if (Math.abs(det) < 1e-9) continue;
+        const cx = c.xU - a.x,
+          cy = c.yU - a.y,
+          t = (cx * ey - cy * ex) / det,
+          u = (cx * dy - cy * dx) / det;
+        if (t > 0 && t < 1 && u >= 0 && u <= 1) cuts.push(t);
+      }
+    cuts.sort((a, b) => a - b);
+    for (let j = 1; j < cuts.length; j++) {
+      const from = cuts[j - 1],
+        to = cuts[j];
+      if (from === undefined || to === undefined || to - from < 1e-9) continue;
+      const middle = (from + to) / 2;
+      if (
+        mouths.some((p) =>
+          pointInside({ xU: a.x + middle * dx, yU: a.y + middle * dy }, p),
+        )
+      )
+        continue;
+      g.lineBetween(
+        a.x + from * dx,
+        a.y + from * dy,
+        a.x + to * dx,
+        a.y + to * dy,
+      );
+    }
+  }
+}
 /** Flashing glints on each water basin. */
 const GLINTS_PER_BASIN = 6;
 /** A road bends away to the horizon over this many u at each end. */
@@ -187,6 +247,10 @@ export interface ChunkDepths {
 interface MovingProp {
   image: Phaser.GameObjects.Image;
   prop: SceneryProp;
+  heading: VehicleHeading;
+  visual: RoadVehicleMotion | undefined;
+  velocityXUPerSec: number;
+  velocityYUPerSec: number;
 }
 
 /** Half the width of the fade where the near ground changes style, u. */
@@ -234,6 +298,7 @@ function blendStrips(x: number): { fromX: number; toX: number; t: number }[] {
  */
 export class ChunkView {
   readonly #table: ArcLengthTable;
+  readonly #scenery: ChunkScenery;
   readonly #seed: number;
   readonly fragmentIds: readonly string[];
   readonly #pxPerU: number;
@@ -266,6 +331,9 @@ export class ChunkView {
   #lastDecorationSec: number | undefined;
   readonly #animationTimes = new WeakMap<Phaser.GameObjects.Image, number>();
   #animatedLastFrame = 0;
+  readonly #roadSample = { xU: 0, yU: 0, tangentX: 0, tangentY: 0 };
+  readonly #roadBefore = { xU: 0, yU: 0, tangentX: 0, tangentY: 0 };
+  readonly #roadAfter = { xU: 0, yU: 0, tangentX: 0, tangentY: 0 };
   readonly #near: Phaser.GameObjects.Image[] = [];
   /** Plants and trees that sway in the wind, with their phase. */
   readonly #swaying: {
@@ -303,6 +371,7 @@ export class ChunkView {
   ) {
     this.#scene = scene;
     this.#table = table;
+    this.#scenery = scenery;
     this.#seed = seed;
     this.fragmentIds = scenery.features.map(
       (feature) => `${feature.id}:fragment:${table.chunkIndex}`,
@@ -362,9 +431,12 @@ export class ChunkView {
         }
         // Cars drive on a road (doc 04 §6: a car gets a road).
         for (const road of scenery.roads.filter((r) => r.layer !== 'near'))
-          this.#paintRoad(g, road);
+          this.#paintRoad(g, road, true);
         if (scenery.crossing)
           this.#paintCrossingRoad(g, scenery.crossing.localXU, 'back', 0);
+        // Local asphalt covers the crossing's shoulder inside the junction mouths.
+        for (const road of scenery.roads.filter((r) => r.layer !== 'near'))
+          this.#paintRoad(g, road, false);
         if (scenery.bridge)
           this.#paintStream(g, scenery.bridge.localXU, 'back', 0);
         // A street keeps its asphalt over the stream on a small road bridge.
@@ -437,7 +509,9 @@ export class ChunkView {
             scenery.features.find((f) => f.id === surface.ownerId),
           );
         for (const road of scenery.roads.filter((r) => r.layer === 'near'))
-          this.#paintRoad(g, road);
+          this.#paintRoad(g, road, true);
+        for (const road of scenery.roads.filter((r) => r.layer === 'near'))
+          this.#paintRoad(g, road, false);
         for (const span of scenery.near) this.#paintNearShade(g, span);
         if (scenery.crossing)
           this.#paintCrossingRoad(
@@ -842,8 +916,23 @@ export class ChunkView {
         prop.layer === 'back' ? depths.backProps : depths.nearProps,
       );
       if (prop.layer === 'near') this.#near.push(image);
-      if (prop.motion) this.#moving.push({ image, prop });
-      else if (swayAmplitudeRad(prop.kind) > 0)
+      if (prop.motion) {
+        const visual = roadVehicleArt[prop.kind]
+          ? new RoadVehicleMotion(scene)
+          : undefined;
+        if (visual) {
+          visual.graphics.setDepth(image.depth + 0.001);
+          (prop.layer === 'back' ? backProps : nearProps).add(visual.graphics);
+        }
+        this.#moving.push({
+          image,
+          prop,
+          visual,
+          heading: { rotationRad: 0, flipX: prop.flip },
+          velocityXUPerSec: 0,
+          velocityYUPerSec: 0,
+        });
+      } else if (swayAmplitudeRad(prop.kind) > 0)
         this.#swaying.push({
           image,
           kind: prop.kind,
@@ -1180,12 +1269,15 @@ export class ChunkView {
     stage: 'all' | 'life' | 'decoration' = 'all',
     headXU = frontXU,
     speedUPerSec = 0,
+    arrows = false,
   ): number {
     let remaining = Math.max(0, animationBudget);
     const before = stage === 'decoration' ? this.#animatedLastFrame : 0;
     if (stage !== 'decoration') {
       this.#animatedLastFrame = 0;
-      this.#crossing?.update(crossing, timeSec);
+      if (this.#crossing instanceof CrossingView)
+        this.#crossing.update(crossing, timeSec, motion, arrows);
+      else this.#crossing?.update(crossing, timeSec);
       const life =
         this.#seasonal?.update(timeSec, motion, frontXU, remaining, view) ?? 0;
       this.#animatedLastFrame += life;
@@ -1204,23 +1296,79 @@ export class ChunkView {
       this.#animationTimes.set(image, t);
       return t;
     };
-    for (const { image, prop } of this.#moving) {
+    for (const moving of this.#moving) {
+      const { image, prop, visual, heading } = moving;
       if (!visible(image)) continue;
       if (remaining-- <= 0) break;
       this.#animatedLastFrame++;
       const localTime = clock(image);
-      const motion = prop.motion;
-      if (!motion) continue;
+      const patrol = prop.motion;
+      if (!patrol) continue;
       // Triangle wave over the patrol range, one leg per range length.
       const legs =
-        (localTime * motion.speedUPerSec) / motion.rangeU + 2 * prop.phase;
+        ((prop.roadPath ? timeSec : localTime) * patrol.speedUPerSec) /
+          patrol.rangeU +
+        2 * prop.phase;
       const t = legs - 2 * Math.floor(legs / 2);
       const forward = t < 1;
-      const offset = (forward ? t : 2 - t) * motion.rangeU - motion.rangeU / 2;
+      const offset = (forward ? t : 2 - t) * patrol.rangeU - patrol.rangeU / 2;
       const x = Math.max(0, Math.min(CHUNK_WIDTH_U, prop.xU + offset));
       this.#placeProp(image, prop, x);
-      // The art faces right; it turns round on the way back.
-      image.setFlipX(!forward);
+      const speed = (forward ? 1 : -1) * patrol.speedUPerSec;
+      const asset = roadVehicleArt[prop.kind];
+      if (!asset) {
+        image.setFlipX(!forward);
+        continue;
+      }
+      let tangentX = 1;
+      let tangentY: number;
+      if (prop.roadPath) {
+        const wx = this.#table.chunkIndex * CHUNK_WIDTH_U + x;
+        roadPositionAt(
+          prop.roadPath,
+          wx - 1,
+          prop.laneDirection ?? 1,
+          this.#roadBefore,
+        );
+        roadPositionAt(
+          prop.roadPath,
+          wx + 1,
+          prop.laneDirection ?? 1,
+          this.#roadAfter,
+        );
+        tangentX = (this.#roadAfter.xU - this.#roadBefore.xU) / 2;
+        tangentY = (this.#roadAfter.yU - this.#roadBefore.yU) / 2;
+      } else {
+        const wx = this.#table.chunkIndex * CHUNK_WIDTH_U;
+        tangentY = (this.#railAt(x - 1) - this.#railAt(x + 1)) / 2;
+        if (prop.layer === 'near')
+          tangentY +=
+            (bankHeightU(this.#seed, wx + x + 1) -
+              bankHeightU(this.#seed, wx + x - 1)) /
+            2;
+      }
+      moving.velocityXUPerSec = speed * tangentX;
+      moving.velocityYUPerSec = speed * tangentY;
+      vehicleHeading(
+        asset.front,
+        moving.velocityXUPerSec,
+        moving.velocityYUPerSec,
+        heading,
+      );
+      image.setFlipX(heading.flipX).setRotation(heading.rotationRad);
+      const part = parts[prop.kind];
+      if (visual && part)
+        visual.update(
+          image,
+          part,
+          asset,
+          moving.velocityXUPerSec,
+          moving.velocityYUPerSec,
+          timeSec,
+          motion,
+          arrows,
+          this.#pxPerU,
+        );
     }
     for (const farm of this.#farm) {
       const { view: machine, prop, foot: target } = farm;
@@ -1288,6 +1436,41 @@ export class ChunkView {
       image.setAlpha(glintAlpha(clock(image), phase, motion));
     }
     return this.#animatedLastFrame - before;
+  }
+
+  get roadVehicles(): RoadVehicleSnapshot[] {
+    const x0 = this.#table.chunkIndex * CHUNK_WIDTH_U;
+    const result = this.#moving.flatMap(
+      ({ image, prop, visual, velocityXUPerSec, velocityYUPerSec }) =>
+        visual
+          ? [
+              {
+                id: prop.id,
+                kind: prop.kind,
+                roadKind: prop.roadPath?.id.includes(':highway')
+                  ? 'highway'
+                  : prop.roadPath
+                    ? 'parallel-road'
+                    : prop.kind === 'back.car'
+                      ? 'village-road'
+                      : 'scenery',
+                worldXU: x0 + image.x,
+                worldYU: image.y,
+                velocityXUPerSec,
+                velocityYUPerSec,
+                frontX: visual.frontX,
+                frontY: visual.frontY,
+                parentScaleX: image.parentContainer?.scaleX ?? 1,
+                wheelAngleRad: visual.wheelAngleRad,
+                exhaust: visual.exhaust,
+                arrows: visual.arrows,
+              },
+            ]
+          : [],
+    );
+    if (this.#crossing instanceof CrossingView)
+      result.push(...this.#crossing.roadVehicles(x0));
+    return result;
   }
 
   destroy(): void {
@@ -1411,6 +1594,19 @@ export class ChunkView {
     x: number,
     pxPerU = this.#pxPerU,
   ): void {
+    if (prop.roadPath) {
+      const x0 = this.#table.chunkIndex * CHUNK_WIDTH_U;
+      roadPositionAt(
+        prop.roadPath,
+        x0 + x,
+        prop.laneDirection ?? 1,
+        this.#roadSample,
+      );
+      image
+        .setPosition(this.#roadSample.xU - x0, this.#roadSample.yU)
+        .setScale(propScale(prop) / this.#pxPerU);
+      return;
+    }
     const foot = propFootU(
       prop,
       x,
@@ -1827,41 +2023,125 @@ export class ChunkView {
    * car's depth, curving away to the horizon at both ends and narrower
    * with distance; asphalt with a dashed middle line.
    */
-  #paintRoad(g: Phaser.GameObjects.Graphics, road: RoadPath): void {
+  #paintRoad(
+    g: Phaser.GameObjects.Graphics,
+    road: RoadPath,
+    shoulderOnly: boolean,
+  ): void {
     const x0 = this.#table.chunkIndex * CHUNK_WIDTH_U;
     const from = road.fromXU - x0,
       to = road.toXU - x0;
     const points = road.points.map((p) => ({ x: p.xU - x0, y: p.yU }));
+    const mouths: PointU[][] = [];
+    const crossing = this.#scenery.crossing;
+    if (crossing) {
+      const x = crossing.localXU,
+        frame = this.#crossingRoadFrame(x);
+      const edge = (sign: number) =>
+        [ROAD_FAR_END_U, -ROAD_CONFLICT_U, 0].map((r) => ({
+          xU: x + sign * roadHalfWidthU(r),
+          yU: roadPointY(frame, r, sign * roadHalfWidthU(r)),
+        }));
+      mouths.push([...edge(-1), ...edge(1).reverse()]);
+    }
     const side = (sign: number, grow = 0) =>
       roadSide(road, sign, grow).map(
         (p) => new Phaser.Math.Vector2(p.xU - x0, p.yU),
       );
-    const strip = (grow: number) => [
-      ...side(-1, grow),
-      ...side(1, grow).reverse(),
-    ];
-    g.fillStyle(0x6f8f52, 0.45);
-    g.fillPoints(strip(1.6), true);
-    g.fillStyle(road.surface === 'dirt' ? 0xa69770 : 0x8e8d88, 1);
-    g.fillPoints(strip(0), true);
+    const groundDistanceU = (p: { x: number; y: number }) =>
+      p.y + this.#railAt(p.x) + BACK_PLANE_U;
+    // Clip to the local terrain horizon, not the baked texture's rectangular top.
+    const clip = (polygon: Phaser.Math.Vector2[]) => {
+      const visible: Phaser.Math.Vector2[] = [];
+      for (let i = 0; i < polygon.length; i++) {
+        const a = polygon[i],
+          b = polygon[(i + 1) % polygon.length];
+        if (!a || !b) continue;
+        const da = groundDistanceU(a),
+          db = groundDistanceU(b);
+        if (da >= 0) visible.push(a);
+        if (da >= 0 !== db >= 0) {
+          const t = da / (da - db),
+            x = a.x + t * (b.x - a.x);
+          visible.push(
+            new Phaser.Math.Vector2(x, -this.#railAt(x) - BACK_PLANE_U),
+          );
+        }
+      }
+      return visible;
+    };
+    const strip = (grow: number) =>
+      clip([...side(-1, grow), ...side(1, grow).reverse()]);
+    if (shoulderOnly) {
+      const shoulder = strip(road.medianHalfWidthU ? 5 : 1.6);
+      g.fillStyle(0x6f8f52, 0.45);
+      if (shoulder.length >= 3) g.fillPoints(shoulder, true);
+      return;
+    }
+    const asphalt = strip(0);
+    const median = road.medianHalfWidthU;
+    if (median) {
+      const innerGrow = median - (road.points[0]?.halfWidthU ?? 28);
+      g.fillStyle(0x6f8f52, 1);
+      const center = strip(innerGrow);
+      if (center.length >= 3) g.fillPoints(center, true);
+      g.fillStyle(0x777a7b, 1);
+      for (const sign of [-1, 1]) {
+        const carriageway = clip([
+          ...side(sign),
+          ...side(sign, innerGrow).reverse(),
+        ]);
+        if (carriageway.length >= 3) g.fillPoints(carriageway, true);
+      }
+    } else {
+      g.fillStyle(
+        road.surface === 'dirt' ? 0xa69770 : crossing ? ROAD_ASPHALT : 0x8e8d88,
+        1,
+      );
+      if (asphalt.length >= 3) g.fillPoints(asphalt, true);
+    }
+    const near = side(1).filter((p) => groundDistanceU(p) >= 0),
+      far = side(-1).filter((p) => groundDistanceU(p) >= 0);
     g.lineStyle(1, 0x6c6b66, 1);
-    g.strokePoints(side(1), false, false);
+    if (near.length >= 2) strokeOutside(g, near, mouths);
     g.lineStyle(0.8, 0xb5b3ad, 1);
-    g.strokePoints(side(-1), false, false);
+    if (far.length >= 2) strokeOutside(g, far, mouths);
+    if (median) {
+      g.lineStyle(1, ROAD_LINE, 0.9);
+      for (const sign of [-1, 1]) {
+        const inner = side(
+          sign,
+          median - (road.points[0]?.halfWidthU ?? 28),
+        ).filter((p) => groundDistanceU(p) >= 0);
+        if (inner.length >= 2) g.strokePoints(inner, false, false);
+      }
+    }
     if (road.surface === 'dirt' || road.style) return;
     // Dashed middle line along the straight part.
     g.lineStyle(1.2, 0xf4f1e6, 0.9);
-    const straight = points.filter((point) => point.x >= from && point.x <= to);
-    for (let i = 0; i + 1 < straight.length; i++) {
-      const a = straight[i];
-      const b = straight[i + 1];
-      if (!a || !b || a.x === b.x) continue;
-      g.lineBetween(
-        a.x + 6,
-        a.y + ((b.y - a.y) * 6) / 32,
-        a.x + 18,
-        a.y + ((b.y - a.y) * 18) / 32,
+    const lanes = median
+      ? [-1, 1].map((sign) =>
+          side(sign, -(road.points[0]?.halfWidthU ?? 28) / 2 + median / 2),
+        )
+      : [points];
+    for (const lane of lanes) {
+      const straight = lane.filter(
+        (point) =>
+          point.x >= from && point.x <= to && groundDistanceU(point) >= 0,
       );
+      for (let i = 0; i + 1 < straight.length; i++) {
+        const a = straight[i];
+        const b = straight[i + 1];
+        if (!a || !b) continue;
+        strokeOutside(
+          g,
+          [
+            { x: a.x + 6, y: a.y + ((b.y - a.y) * 6) / 32 },
+            { x: a.x + 18, y: a.y + ((b.y - a.y) * 18) / 32 },
+          ],
+          mouths,
+        );
+      }
     }
   }
 
@@ -1993,13 +2273,27 @@ export class ChunkView {
     g.fillPoints(strip(4), true);
     g.fillStyle(ROAD_ASPHALT, 1);
     g.fillPoints(strip(0), true);
+    const x0 = this.#table.chunkIndex * CHUNK_WIDTH_U;
+    const mouths =
+      part === 'back'
+        ? this.#scenery.roads.map((road) =>
+            roadPolygon(road).map((p) => ({ xU: p.xU - x0, yU: p.yU })),
+          )
+        : [];
     g.lineStyle(1.2, ROAD_LINE, 0.9);
-    g.strokePoints(edge(-1, -2), false, false);
-    g.strokePoints(edge(1, -2), false, false);
+    strokeOutside(g, edge(-1, -2), mouths);
+    strokeOutside(g, edge(1, -2), mouths);
     // Dashed middle line.
     g.lineStyle(1.4, ROAD_DASH, 0.95);
     for (let r = from; r + 8 < to; r += ROAD_DASH_EVERY_U)
-      g.lineBetween(x, roadPointY(frame, r), x, roadPointY(frame, r + 8));
+      strokeOutside(
+        g,
+        [
+          { x, y: roadPointY(frame, r) },
+          { x, y: roadPointY(frame, r + 8) },
+        ],
+        mouths,
+      );
     // Stop line across the lane that comes up to the track on this side.
     const stopU = part === 'back' ? -FAR_STOP_LINE_U : NEAR_STOP_LINE_U;
     const half = roadHalfWidthU(stopU);

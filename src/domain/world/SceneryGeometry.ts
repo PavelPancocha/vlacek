@@ -43,6 +43,8 @@ export interface ProjectedProp {
   rotationRad?: number;
   offsetYU?: number;
   clip?: readonly PointU[];
+  roadPath?: RoadPath;
+  laneDirection?: 1 | -1;
 }
 export function nearDepthScale(depth: number): number {
   return 1 + 0.5 * depth;
@@ -60,6 +62,11 @@ export function propFootU(
   bankU: number,
   target: PointU = { xU: 0, yU: 0 },
 ): PointU {
+  if (prop.roadPath) {
+    const at = { xU: 0, yU: 0, tangentX: 0, tangentY: 0 };
+    roadPositionAt(prop.roadPath, xU, prop.laneDirection ?? 1, at);
+    return at;
+  }
   target.xU = xU;
   target.yU =
     (prop.offsetYU ?? 0) +
@@ -102,6 +109,44 @@ export function projectedBounds(
   part: PlacementPart,
   contact = false,
 ): BoundsU {
+  const reachU = prop.motion?.rangeU ?? 0;
+  if (prop.roadPath && reachU > 0) {
+    let leftU = Infinity,
+      rightU = -Infinity,
+      topU = Infinity,
+      bottomU = -Infinity;
+    for (
+      let offset = -reachU / 2;
+      ;
+      offset = Math.min(reachU / 2, offset + 8)
+    ) {
+      const at = { xU: 0, yU: 0, tangentX: 0, tangentY: 0 };
+      roadPositionAt(
+        prop.roadPath,
+        k * 1024 + prop.xU + offset,
+        prop.laneDirection ?? 1,
+        at,
+      );
+      const b = projectedBounds(
+        seed,
+        k,
+        {
+          ...prop,
+          xU: prop.xU + offset,
+          motion: { rangeU: 0 },
+          rotationRad: Math.atan2(at.tangentY, at.tangentX),
+        },
+        part,
+        contact,
+      );
+      leftU = Math.min(leftU, b.leftU);
+      rightU = Math.max(rightU, b.rightU);
+      topU = Math.min(topU, b.topU);
+      bottomU = Math.max(bottomU, b.bottomU);
+      if (offset === reachU / 2) break;
+    }
+    return { leftU, rightU, topU, bottomU };
+  }
   const scale = propScale(prop),
     wx = k * 1024 + prop.xU;
   const foot = propFootU(
@@ -340,6 +385,32 @@ export interface RoadPath {
   toXU: number;
   points: readonly RoadPointU[];
   style?: 'path' | 'service';
+  /** Separated carriageways; absent on local roads. */
+  medianHalfWidthU?: number;
+}
+/** Caller-owned sample, projected world u; right-hand lane, independent of camera. */
+export function roadPositionAt(
+  road: RoadPath,
+  worldXU: number,
+  direction: 1 | -1,
+  out: PointU & { tangentX: number; tangentY: number },
+): void {
+  for (let i = 1; i < road.points.length; i++) {
+    const a = road.points[i - 1],
+      b = road.points[i];
+    if (!a || !b || (worldXU > b.xU && i < road.points.length - 1)) continue;
+    const dx = b.xU - a.xU,
+      dy = b.yU - a.yU;
+    const length = Math.hypot(dx, dy) || 1,
+      t = Math.max(0, Math.min(1, (worldXU - a.xU) / (dx || 1)));
+    const lane =
+      (direction * (a.halfWidthU + t * (b.halfWidthU - a.halfWidthU))) / 2;
+    out.xU = a.xU + t * dx - (dy / length) * lane;
+    out.yU = a.yU + t * dy + (dx / length) * lane;
+    out.tangentX = dx / length;
+    out.tangentY = dy / length;
+    return;
+  }
 }
 export function roadSide(path: RoadPath, sign: number, growU = 0): PointU[] {
   return path.points.map((p, i) => {

@@ -710,6 +710,10 @@ export class RideScene extends Phaser.Scene {
     return box;
   }
 
+  get roadVehicles() {
+    return [...this.#chunks.values()].flatMap((chunk) => chunk.roadVehicles);
+  }
+
   get worldOverlayCount(): number {
     return this.#worldOverlay?.count ?? 0;
   }
@@ -1217,6 +1221,7 @@ export class RideScene extends Phaser.Scene {
           stage,
           trainSpan.maxX - ride.layout.frontOffsetU,
           ride.speedUPerSec,
+          this.#host.worldOverlays?.().roads ?? false,
         );
       }
     this.#animationBudgetRemaining = Math.max(0, animationBudget) + 8;

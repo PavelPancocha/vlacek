@@ -20,6 +20,9 @@ const titles = {
   'forest-work': 'Lesní práce',
   fields: 'Pole se stroji',
   'forest-dense': 'Hustý les',
+  'parallel-road': 'Okreska u přejezdu',
+  highway: 'Dálnice',
+  'road-ends': 'Konce silnic',
 } as const;
 /** Separate world sections so HUD/restart changes can merge independently. */
 export function worldDeveloperSections(): HTMLElement {
@@ -47,8 +50,8 @@ export function worldDeveloperSections(): HTMLElement {
         ),
         actionButton(
           'dev-world-overlay:roads',
-          'Tečny silnic',
-          ['Tečny silnic'],
+          'Silnice — tečny, rychlost a předek',
+          ['Silnice — tečny, rychlost a předek'],
           { pressed: false },
         ),
       ),

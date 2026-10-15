@@ -1,3 +1,4 @@
+import { roadStretchesInChunk } from './RoadStretches.ts';
 import { unitRandom, hash32 } from './Hash.ts';
 import { infrastructureReservations } from './Reservations.ts';
 import { crossingSite } from './Crossings.ts';
@@ -108,6 +109,13 @@ function planFenceAt(seed: number, sceneXU: number): FenceFeature | undefined {
         break;
       }
     }
+    for (
+      let k = Math.floor(fromXU / 1024);
+      k <= Math.floor(limitXU / 1024);
+      k++
+    )
+      for (const road of roadStretchesInChunk(seed, k))
+        if (boundsHitPolygon(bounds, roadPolygon(road, 4))) collision = true;
     // Reserve every bounded car candidate in both scene chunks. A fragment may
     // never accept a path that its neighbouring fragment would reject.
     const carRule = templateById(s.templateId).rules.findIndex((rule) =>

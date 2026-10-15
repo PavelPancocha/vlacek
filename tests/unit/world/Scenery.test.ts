@@ -65,7 +65,7 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
         for (const prop of scenery.props) {
           expect(prop.id).toMatch(
             new RegExp(
-              `^g\\d+:chunk:${scenery.chunkIndex}:prop:(rule:\\d+|station|perch|footbridge|settlement):candidate:\\d+$`,
+              `^g\\d+:chunk:${scenery.chunkIndex}:prop:(rule:\\d+|station|perch|footbridge|settlement|road:parallel-road|road:highway):candidate:\\d+$`,
             ),
           );
           const key = `${seed}/${prop.id}`;
@@ -98,6 +98,17 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
       if (scenery.region.season === 'winter')
         for (const kind of snowField.flatMap((r) => r.kinds)) kinds.add(kind);
       for (const prop of scenery.props) {
+        if (prop.roadPath) {
+          expect(prop.kind).toBe('back.car');
+          expect(
+            scenery.roads.some(
+              (road) =>
+                road.id === prop.roadPath?.id &&
+                prop.dependencies?.includes(road.id),
+            ),
+          ).toBe(true);
+          continue;
+        }
         if (prop.kind === 'animal.woodpecker' || prop.kind === 'animal.owl') {
           expect(prop.layer).toBe('back');
           expect(

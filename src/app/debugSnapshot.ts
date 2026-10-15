@@ -1,4 +1,5 @@
 import type { FarmForestDiagnostic } from '../render/farmForestMotion.ts';
+import type { RoadVehicleSnapshot } from '../render/roadVehicleSnapshot.ts';
 import type { TestSceneLocation } from '../domain/world/TestScenes.ts';
 import type { WorldOverlayOptions } from '../domain/world/WorldDebugGeometry.ts';
 import type { WorldDiagnostics } from '../domain/world/WorldValidation.ts';
@@ -7,6 +8,7 @@ import type { Settings } from '../platform/SaveValidation.ts';
 
 /** Read-only diagnostics via `?debug=1` or the hidden parent developer menu. */
 export interface DebugSnapshot {
+  roadVehicles: RoadVehicleSnapshot[];
   worldDebug: {
     temporaryRide: boolean;
     location: TestSceneLocation | undefined;

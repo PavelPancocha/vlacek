@@ -221,3 +221,14 @@ Zdrojové assety `assets/world/fx.contact-spark.svg` a
 `assets/world/fx.contact-glow.svg` jsou vlastní vektorové kresby vytvořené
 pro tento projekt 2026-10-14, bez externích zdrojů; stejné podmínky jako
 ostatní vlastní SVG světa. Jsou součástí atlasu a webového buildu.
+
+### Předek silničních a vodních assetů (D-029)
+
+`src/content/roadVehicleArt.ts` doplňuje ke stávajícím world art klíčům
+vektor `front` v souřadnicích SVG (x doprava/y dolů), kotvy kol a výfuku.
+Boční auto a traktor mají předek +x; čelní přejezdové varianty +y a zadní −y.
+Příď `back.rowboat`, `back.sailboat` a `back.fishing-boat` je explicitně konec
++x SVG, i když je jejich trup symetrický. Renderer aplikuje právě jednu
+orientační transformaci z vlastního pohybu. Diagnostika silnic ukazuje
+azurovou světovou rychlost a oranžový skutečný předek; není v běžném dětském
+pohledu. Pohybové detaily jsou malé vektorové kresby, bez nové atlasové plochy.

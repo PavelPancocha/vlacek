@@ -1,3 +1,4 @@
+import { roadStretchesInChunk } from '../src/domain/world/RoadStretches.ts';
 import { sceneAt, templateById } from '../src/domain/world/WorldPlan.ts';
 import assert from 'node:assert/strict';
 import { worldPlacementCatalog } from '../src/content/worldPlacementCatalog.ts';
@@ -125,6 +126,7 @@ for (let seed = 0; seed < 100; seed++) {
   for (let k = 0; k < 480; k++) {
     const t = templateById(sceneAt(seed, k * 1024).templateId);
     if (
+      roadStretchesInChunk(seed, k).length === 0 &&
       !t.water &&
       !t.id.startsWith('settlements-') &&
       t.biome !== 'coast' &&
@@ -163,7 +165,16 @@ for (const mutation of ['collision', 'dependency', 'duplicate']) {
     p = sc.props[0];
   assert(p && sc.crossing, 'empty self-check');
   if (mutation === 'collision')
-    sc.props[0] = { ...p, kind: 'back.house-a', xU: sc.crossing.localXU };
+    sc.props[0] = {
+      id: p.id,
+      phase: 0,
+      flip: false,
+      scale: 1,
+      layer: 'back',
+      depth: 0,
+      kind: 'back.house-a',
+      xU: sc.crossing.localXU,
+    };
   if (mutation === 'dependency')
     sc.props[0] = { ...p, dependencies: ['missing-support'] };
   if (mutation === 'duplicate') sc.props.push({ ...p });

@@ -176,3 +176,16 @@ Po stání několik minut se nemá nahromadit fronta všech „zmeškaných“ a
 Uložit jen relevantní runtime záznamy aktuálně zachovaných scén: stav balónků, cooldowny, stavy aktivních aktérů a ovladačů přejezdů. Zvukové přehrávače, DOM elementy a částice do save nepatří.
 
 Dlouho neviditelná zvířata lze přestat animovat; jejich počáteční layout zůstává reprodukovatelný. Bezpečnostní automat přejezdu pod dlouhou soupravou se naopak nesmí vypnout podle viditelnosti kamery.
+
+### Světový směr okolních vozidel (D-029)
+
+Auta, pracovní stroje a lodě určují čelo ze své nenulové světové rychlosti,
+případně tečny se znaménkem postupu. Při zastavení zachovají poslední platný
+směr a při rozjezdu znovu vedou předkem. Kamera se orientace neúčastní.
+Exportovanou funkci `vehicleHeading` sdílí boční patrola i přejezdové pohledy;
+metadata každého assetu určují jeho výchozí předek. Kola aut a drobný výfuk
+prozrazují vlastní pohyb; pauza zastaví jejich simulační čas.
+[Silniční scénky](../docs/scenes/roads.md) rozšiřují stávající deskriptory patroly
+a dopravu přejezdu. Nezavádějí druhou simulaci ani navigaci. Okreska má auta
+v obou pruzích/směrech, dálnice lehký vzdálený provoz. Přejezd dál respektuje
+stopčáry, poslední vůz a všechny relevantní vlaky podle D-021.

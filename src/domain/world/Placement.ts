@@ -74,6 +74,13 @@ export function placementConflict(
     if (r.layer !== 'both' && r.layer !== prop.layer) continue;
     if (r.purpose === 'catenary' && prop.depth > 0.1) continue;
     if (
+      r.purpose === 'highway-setback' &&
+      !prop.kind.includes('house') &&
+      !prop.kind.startsWith('back.barn') &&
+      prop.kind !== 'back.farmstead'
+    )
+      continue;
+    if (
       relations.some(
         (link) =>
           link.reservationId === r.id &&
@@ -82,7 +89,8 @@ export function placementConflict(
     )
       continue;
     const shape =
-      r.purpose === 'track' && prop.layer === 'near'
+      r.purpose === 'highway-setback' ||
+      (r.purpose === 'track' && prop.layer === 'near')
         ? bounds
         : ['crossing-road', 'river'].includes(r.purpose)
           ? { ...contact, leftU: bounds.leftU, rightU: bounds.rightU }

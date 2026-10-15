@@ -20,6 +20,7 @@ export type ReservationPurpose =
   | 'track'
   | 'crossing-road'
   | 'village-road'
+  | 'highway-setback'
   | 'river'
   | 'water'
   | 'tunnel-hill'

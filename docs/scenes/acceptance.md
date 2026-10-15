@@ -250,3 +250,16 @@ Regrese společného registru SEA-01 (integrate-3): zimní městský horizont
 seed 4 / chunk 998 zachová siluety a zasněží střechy i podklad; keře stanice
 seed 2 / chunk 489 a ulice seed 4 / chunk 994 nemají letní květy.
 Rozměry a pivoty všech nových sezonních variant zůstávají shodné s originály.
+
+## Silnice
+
+| ID       | Očekávaný výsledek                                                                                                                                                                                             |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SCN-RD01 | Okreska sleduje profil s plynule měnícím se odstupem; vozovka ani auta nezasahují kolej mimo plánovaný přejezd ve velkém seedovém průchodu.                                                                    |
+| SCN-RD02 | Předek každé varianty auta vede nezávisle měřený rozdíl světových poloh téhož ID, v obou směrech/pruzích a na svazích, při stojící i pohybující se kameře; otočení vstupu čela regresi shodí.                  |
+| SCN-RD03 | Ve stání předek drží poslední platný směr, kola a výfuk stojí; po čekání u závory předek vede změřený rozjezd. Interval přes obrat je označen a ověřen kroky před i po něm.                                    |
+| SCN-RD04 | Okreska navazuje společným asfaltem na zadní rameno přejezdu, bez krajnic a okrajových čar přes ústí; stopčáry, čekání a poslední vagon i více vlaků zůstávají podle D-021.                                    |
+| SCN-RD05 | Řez chunku má shodnou geometrii a identitu; skutečné konce okresky i dálnice zmizí za terénem nebo mimo záběr, bez slepých odboček.                                                                            |
+| SCN-RD06 | Vzácnější vzdálená dálnice má dvě oddělené dvoupruhové vozovky, viditelný zelený střed a odstup celých domů 20 u; nesplňuje místní přístup vesnice. Nejvýše jeden úsek v regionu, nenuloví svědci obou motivů. |
+| SCN-RD07 | Pauza zastaví aktivity, opakovaný vstup a odchod uvolní auta i jejich detaily; krátká a maximální souprava zůstává čitelná v Canvas i WebGL.                                                                   |
+| SCN-RD08 | Okreska/dálnice ani celé rezervace nevstoupí do plánové osady či staničního span; oba přilehlé oblouky jsou za terénem vně hranice. Pojmenované settlementConnections umožní následné napojení hlavní ulice.   |

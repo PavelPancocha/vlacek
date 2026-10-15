@@ -1,3 +1,4 @@
+import { roadVehicleArt } from '../content/roadVehicleArt.ts';
 import { hash32 } from '../domain/world/Hash.ts';
 import { pointInside, waterSectionU } from '../domain/world/SceneryGeometry.ts';
 import type Phaser from 'phaser';
@@ -9,11 +10,17 @@ import { regionAt, transitionAt } from '../domain/world/Regions.ts';
 import { contextAt } from '../domain/world/WorldPlan.ts';
 import { sceneAt } from '../domain/world/WorldPlan.ts';
 import { ChunkView } from './ChunkView.ts';
+import { CrossingView } from './CrossingView.ts';
 import { chunkScenery } from '../domain/world/Scenery.ts';
 import { worldPlacementCatalog } from '../content/worldPlacementCatalog.ts';
 import { generateTrackProfile } from '../domain/world/TrackProfile.ts';
-import { buildArcLengthTable } from '../domain/world/ArcLengthTable.ts';
+import {
+  buildArcLengthTable,
+  heightAtX,
+} from '../domain/world/ArcLengthTable.ts';
 import { NEAR_POST_ROAD_U } from './crossingLayout.ts';
+import { roadHalfWidthU } from './crossingLayout.ts';
+import { roadPolygon } from '../domain/world/SceneryGeometry.ts';
 import {
   NEAR_PALETTE,
   BACK_PALETTE,
@@ -37,9 +44,44 @@ vi.mock('phaser', () => ({
 
 type Point = { x: number; y: number };
 
+it('SCN-RD06: seed 1/x 16896 draws separated motorway carriageways around a green median', () => {
+  const sc = chunkScenery(1, 16, worldPlacementCatalog),
+    drawn = drawingScene();
+  const table = buildArcLengthTable(generateTrackProfile(1, 16), 16, 1024, 8);
+  const view = new ChunkView(drawn.scene, table, 1, sc, undefined, {
+    backGround: 0,
+    backProps: 1,
+    ground: 2,
+    track: 3,
+    train: 4,
+    wires: 5,
+    nearProps: 6,
+  });
+  const road = sc.roads.find((r) => r.id.includes(':highway')),
+    p = road?.points.find((p) => p.xU === 16896);
+  if (!p) throw new Error('highway sample missing');
+  const motorway = drawn.polygons.filter((p) => p.color === 0x777a7b);
+  expect(motorway).toHaveLength(2);
+  for (const offset of [-16, 0, 16]) {
+    const hit = motorway.some((v) =>
+      pointInside(
+        { xU: 512, yU: p.yU + offset },
+        v.points.map((a) => ({ xU: a.x, yU: a.y })),
+      ),
+    );
+    expect(hit, `carriageway/median at ${offset}`).toBe(offset !== 0);
+  }
+  view.destroy();
+});
+
 /** Record drawing output; Phaser's browser/texture boundary is the only fake. */
 function drawingScene() {
-  const images: { key: string | undefined; x: number; y: number }[] = [];
+  const images: {
+    key: string | undefined;
+    x: number;
+    y: number;
+    flipX: boolean;
+  }[] = [];
   const polygons: { color: number; points: Point[] }[] = [];
   const strokes: { color: number; alpha: number; points: Point[] }[] = [];
   const rectangles: {
@@ -71,6 +113,9 @@ function drawingScene() {
       scaleX: 1,
       scaleY: 1,
       rotation: 0,
+      flipX: false,
+      depth: 0,
+      alpha: 1,
       frame: { width: 128, height: 128 },
     };
     const proxy = new Proxy(target, {
@@ -101,6 +146,37 @@ function drawingScene() {
             target.y = y;
             return proxy;
           };
+        if (property === 'setX')
+          return (x: number) => {
+            target.x = x;
+            return proxy;
+          };
+        if (property === 'setScale')
+          return (x: number, y = x) => {
+            target.scaleX = x;
+            target.scaleY = y;
+            return proxy;
+          };
+        if (property === 'setRotation')
+          return (r: number) => {
+            target.rotation = r;
+            return proxy;
+          };
+        if (property === 'setFlipX')
+          return (flip: boolean) => {
+            target.flipX = flip;
+            return proxy;
+          };
+        if (property === 'setDepth')
+          return (depth: number) => {
+            target.depth = depth;
+            return proxy;
+          };
+        if (property === 'setAlpha')
+          return (alpha: number) => {
+            target.alpha = alpha;
+            return proxy;
+          };
         if (property === 'translateCanvas')
           return (x: number, y: number) => {
             translateX = x;
@@ -126,6 +202,18 @@ function drawingScene() {
         if (property === 'strokePoints')
           return (points: Point[]) => {
             strokes.push({ color: strokeColor, alpha: strokeAlpha, points });
+            return proxy;
+          };
+        if (property === 'lineBetween')
+          return (x1: number, y1: number, x2: number, y2: number) => {
+            strokes.push({
+              color: strokeColor,
+              alpha: strokeAlpha,
+              points: [
+                { x: x1, y: y1 },
+                { x: x2, y: y2 },
+              ],
+            });
             return proxy;
           };
         if (property === 'fillPoints')
@@ -179,6 +267,156 @@ function drawingScene() {
     tailFills,
   };
 }
+
+it.each([-0.08, 0, 0.08])(
+  'SCN-RD02/03: every crossing car front follows measured motion, wait/restart and origin shift, slope %f',
+  (slope) => {
+    const drawn = drawingScene(),
+      view = new CrossingView(
+        drawn.scene,
+        { texture: 'world', pxPerU: 1 },
+        256,
+        { railY: -100, meadowY: -80, railSlope: slope },
+        { back: 1, deck: 3, near: 6 },
+      );
+    const colours = [0, 1].map((colour) => {
+      const id = Array.from({ length: 100 }, (_, i) => `car-${i}`).find(
+        (id) => hash32('car-colour', id) % 2 === colour,
+      );
+      if (!id) throw new Error('car colour witness missing');
+      return id;
+    });
+    for (const direction of [-1, 1] as const)
+      for (const id of colours) {
+        const stop = direction === 1 ? -40 : 56;
+        const actor = (roadU: number, waiting = false) => ({
+          id,
+          kind: 'car' as const,
+          direction,
+          roadU,
+          waiting,
+        });
+        view.update(
+          { barrier: 0, warning: false, actors: [actor(stop - direction * 4)] },
+          0,
+          1,
+          true,
+        );
+        const first = view.roadVehicles(3072)[0];
+        view.update(
+          { barrier: 1, warning: true, actors: [actor(stop)] },
+          1,
+          1,
+          true,
+        );
+        const arrived = view.roadVehicles(3072)[0];
+        if (!first || !arrived) throw new Error('car missing');
+        expect(arrived.kind).toBe(
+          `road.car-${hash32('car-colour', id) % 2 === 0 ? 'a' : 'b'}-${direction === 1 ? 'front' : 'back'}`,
+        );
+        expect(
+          (arrived.worldXU - first.worldXU) * arrived.frontX +
+            (arrived.worldYU - first.worldYU) * arrived.frontY,
+        ).toBeGreaterThan(0);
+        view.update(
+          { barrier: 1, warning: true, actors: [actor(stop, true)] },
+          2,
+          1,
+          true,
+        );
+        const waiting = view.roadVehicles(3072)[0];
+        expect(waiting?.frontX).toBe(arrived.frontX);
+        expect(waiting?.frontY).toBe(arrived.frontY);
+        expect(waiting?.worldXU).toBe(arrived.worldXU);
+        expect(waiting?.worldYU).toBe(arrived.worldYU);
+        view.setX(-400);
+        expect(view.roadVehicles(3072)[0]).toEqual(waiting);
+        view.update(
+          { barrier: 0, warning: false, actors: [actor(stop + direction * 4)] },
+          3,
+          1,
+          true,
+        );
+        const restart = view.roadVehicles(3072)[0];
+        if (!restart || !waiting) throw new Error('restart missing');
+        expect(
+          (restart.worldXU - waiting.worldXU) * restart.frontX +
+            (restart.worldYU - waiting.worldYU) * restart.frontY,
+        ).toBeGreaterThan(0);
+      }
+    view.destroy();
+  },
+);
+
+it('SCN-RD04: seed 123/chunk 3 junction has asphalt mouths without crossing shoulders or edge lines', () => {
+  const sc = chunkScenery(123, 3, worldPlacementCatalog),
+    drawn = drawingScene();
+  const table = buildArcLengthTable(generateTrackProfile(123, 3), 3, 1024, 8);
+  const view = new ChunkView(drawn.scene, table, 123, sc, undefined, {
+    backGround: 0,
+    backProps: 1,
+    ground: 2,
+    track: 3,
+    train: 4,
+    wires: 5,
+    nearProps: 6,
+  });
+  const road = sc.roads.find((r) => r.id.includes(':parallel-road')),
+    p = road?.points.find((p) => p.xU === 3328);
+  if (!road || !p || !sc.crossing) throw new Error('junction witness missing');
+  const r = p.yU + heightAtX(table, p.xU);
+  for (const side of [-1, 1]) {
+    const sample = { xU: 256, yU: p.yU + side * (p.halfWidthU + 0.8) };
+    const last = drawn.polygons.findLast(
+      (v) =>
+        [0x8e8d88, 0x7d7b77, 0xb8a682, 0x6f8f52].includes(v.color) &&
+        pointInside(
+          sample,
+          v.points.map((a) => ({ xU: a.x, yU: a.y })),
+        ),
+    );
+    expect(
+      last?.color,
+      'local shoulder must not stripe the crossing asphalt',
+    ).toBe(0x7d7b77);
+  }
+  for (const side of [-1, 1]) {
+    const sample = { xU: 256 + side * (roadHalfWidthU(r) + 2), yU: p.yU };
+    const lastRoadFill = drawn.polygons.findLast(
+      (v) =>
+        [0x8e8d88, 0x7d7b77, 0xb8a682].includes(v.color) &&
+        pointInside(
+          sample,
+          v.points.map((a) => ({ xU: a.x, yU: a.y })),
+        ),
+    );
+    expect(lastRoadFill?.color, `mouth side ${side}`).not.toBe(0xb8a682);
+    expect(lastRoadFill).toBeDefined();
+  }
+  const mouth = roadPolygon(road, -1).map((p) => ({
+    xU: p.xU - 3072,
+    yU: p.yU,
+  }));
+  for (const stroke of drawn.strokes.filter((s) => s.color === 0xe9e6dc))
+    for (let i = 1; i < stroke.points.length; i++) {
+      const a = stroke.points[i - 1],
+        b = stroke.points[i];
+      if (!a || !b) throw new Error('edge segment missing');
+      for (let j = 0; j <= 8; j++)
+        expect(
+          pointInside(
+            {
+              xU: a.x + ((b.x - a.x) * j) / 8,
+              yU: a.y + ((b.y - a.y) * j) / 8,
+            },
+            mouth,
+          ),
+          'edge line across junction mouth',
+        ).toBe(false);
+    }
+  expect(drawn.strokes.filter((s) => s.color === 0xffffff)).toHaveLength(2);
+  view.destroy();
+});
 
 describe('ChunkView crossing geometry wiring', () => {
   for (const art of [true, false])
@@ -851,5 +1089,94 @@ it('SEA-01 integration: the attached station canopy roof receives its authored s
   expect(drawn.polygons.some((polygon) => polygon.color === 0xf4f9fc)).toBe(
     true,
   );
+  view.destroy();
+});
+
+it('SCN-RD05: road ends recede behind the actual terrain horizon, never a texture rectangle', () => {
+  const seed = 123,
+    k = 2,
+    sc = chunkScenery(seed, k, worldPlacementCatalog),
+    drawn = drawingScene();
+  const table = buildArcLengthTable(generateTrackProfile(seed, k), k, 1024, 8);
+  const view = new ChunkView(drawn.scene, table, seed, sc, undefined, {
+    backGround: 0,
+    backProps: 1,
+    ground: 2,
+    track: 3,
+    train: 4,
+    wires: 5,
+    nearProps: 6,
+  });
+  const roads = drawn.polygons.filter((p) => p.color === 0x8e8d88);
+  expect(roads.length).toBeGreaterThan(0);
+  for (const road of roads)
+    for (const p of road.points)
+      expect(
+        p.y + heightAtX(table, k * 1024 + p.x) + 220,
+      ).toBeGreaterThanOrEqual(-0.01);
+  view.destroy();
+});
+
+it('SEA-01 / roads-6: a metadata-free sled faces its measured displacement on both patrol legs', () => {
+  const seed = 1,
+    k = 102;
+  const scenery = chunkScenery(seed, k, worldPlacementCatalog);
+  const sled = scenery.props.find(
+    (p) => p.id === 'g2:chunk:102:prop:rule:0:candidate:0',
+  );
+  if (!sled) throw new Error('sled witness missing');
+  expect(sled.kind).toBe('back.sled-child');
+  expect(roadVehicleArt[sled.kind]).toBeUndefined();
+  expect(sled.motion).toEqual({ rangeU: 48, speedUPerSec: 6 });
+  scenery.props = [sled];
+  const drawn = drawingScene();
+  const table = buildArcLengthTable(generateTrackProfile(seed, k), k, 1024, 8);
+  const view = new ChunkView(
+    drawn.scene,
+    table,
+    seed,
+    scenery,
+    { texture: 'world', pxPerU: 1 },
+    {
+      backGround: 0,
+      backProps: 1,
+      ground: 2,
+      track: 3,
+      train: 4,
+      wires: 5,
+      nearProps: 6,
+    },
+  );
+  const image = drawn.images.find((p) => p.key === sled.kind);
+  if (!image) throw new Error('sled image missing');
+  view.update(0);
+  let previousX = image.x,
+    previousDirection = 0,
+    previousFlip = image.flipX,
+    moving = 0;
+  const directions = new Set<number>();
+  for (let tick = 1; tick <= 200; tick++) {
+    view.update(tick / 20);
+    const dx = image.x - previousX;
+    const direction = Math.sign(dx);
+    // A chord straddling a reversal does not establish the new leg's direction.
+    if (
+      direction !== 0 &&
+      direction === previousDirection &&
+      image.flipX === previousFlip
+    ) {
+      expect(
+        dx * (image.flipX ? -1 : 1),
+        `sled front versus displacement at ${tick / 20}s`,
+      ).toBeGreaterThan(0);
+      directions.add(direction);
+      moving++;
+    }
+    previousX = image.x;
+    previousDirection = direction;
+    previousFlip = image.flipX;
+  }
+  expect([...directions].sort()).toEqual([-1, 1]);
+  expect(moving).toBeGreaterThan(190);
   view.destroy();
 });

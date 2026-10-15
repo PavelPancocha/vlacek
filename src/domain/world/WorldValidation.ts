@@ -11,6 +11,7 @@ import {
   settlementFootpathChunk,
   settlementStreetPlan,
 } from './SettlementScenery.ts';
+import { settlementSpanAt } from './RoadStretches.ts';
 import { transitionAt } from './Regions.ts';
 import {
   TRACK_GENERATOR_VERSION,
@@ -123,6 +124,23 @@ export function validateInfrastructureSurfaces(
       `seed=${seed} generator=${TRACK_GENERATOR_VERSION} region=${sc.region.id} scene=${sc.scene.id} chunk=${sc.chunkIndex} ${message}`,
     );
   const x0 = sc.chunkIndex * 1024;
+  const ownedRoad = (id: string) =>
+    id.includes(':parallel-road') || id.includes(':highway');
+  const roadShapes = [
+    ...sc.roads
+      .filter((road) => ownedRoad(road.id))
+      .map((road) => ({ id: road.id, polygon: roadPolygon(road) })),
+    ...sc.reservations.filter((r) => ownedRoad(r.id)),
+  ];
+  for (const shape of roadShapes) {
+    const from = Math.min(...shape.polygon.map((p) => p.xU)),
+      to = Math.max(...shape.polygon.map((p) => p.xU));
+    for (let k = Math.floor(from / 1024); k <= Math.floor(to / 1024); k++) {
+      const span = settlementSpanAt(seed, k);
+      if (span && from < span.toXU && to > span.fromXU)
+        fail(`settlement-road ${shape.id} enters ${span.id}`);
+    }
+  }
   const waters = sc.water.map((w) => ({
     id: w.id,
     polygon: waterPolygon(seed, sc.chunkIndex, w),
@@ -580,6 +598,18 @@ export function validateChunkScenery(
   for (const p of sc.props)
     for (const id of p.dependencies ?? [])
       if (!supports.has(id)) fail(`dependency ${p.id} missing ${id}`);
+  if (
+    sc.locality === 'village' ||
+    sc.locality === 'town-village' ||
+    sc.scene.templateId.startsWith('settlements-')
+  )
+    for (const p of sc.props.filter((p) => p.kind.startsWith('back.house-')))
+      if (
+        !sc.roads.some(
+          (road) => !road.medianHalfWidthU && p.dependencies?.includes(road.id),
+        )
+      )
+        fail(`house-access ${p.id} has no local road`);
   for (const f of sc.features)
     for (const id of f.dependencies)
       if (!supports.has(id)) fail(`dependency ${f.id} missing ${id}`);
@@ -879,6 +909,8 @@ export function worldMotifCoverage(
       'station-halt',
       'station-medium',
       'station-big',
+      'parallel-road',
+      'highway',
     ].map((k) => [k, 0]),
   );
   const chunks = new Map(
@@ -929,6 +961,9 @@ export function worldMotifCoverage(
             : 'station-big';
       counts[motif] = (counts[motif] ?? 0) + 1;
     }
+    for (const feature of sc.features)
+      if (feature.kind === 'parallel-road' || feature.kind === 'highway')
+        counts[feature.kind] = (counts[feature.kind] ?? 0) + 1;
     for (const p of sc.props) {
       const motif =
         p.kind === 'back.tractor-work' && p.layer === 'near'

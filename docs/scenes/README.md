@@ -7,20 +7,21 @@ Pro svět V2 platí schválená výjimka: skutečný tunel vlak zakrývá neprů
 
 ## Soubory a jejich význam
 
-| Soubor                                   | Co vlastní                                         |
-| ---------------------------------------- | -------------------------------------------------- |
-| [countryside.md](countryside.md)         | Pole, sad, remízek, statek, pastvina a polní cesta |
-| [village.md](village.md)                 | Velká vesnice vložená do venkova nebo podhůří      |
-| [town.md](town.md)                       | Předměstí, české město, park a průmyslový okraj    |
-| [forest.md](forest.md)                   | Lesní okraj, hustý les, paseka, práce a potok      |
-| [lakes.md](lakes.md)                     | Rybníkářsko, řeka, mlýn a sladkovodní pláž         |
-| [foothills.md](foothills.md)             | Vysočina, podhorské louky, osady a zářezy          |
-| [mountains.md](mountains.md)             | Výrazná stoupání, hřebeny a hlubší údolí           |
-| [coast.md](coast.md)                     | Souvislé moře, pláž, přístav a pobřežní cesta      |
-| [dunes.md](dunes.md)                     | Suché písečné duny s borovicemi a vřesem           |
-| [station.md](station.md)                 | Malá zastávka, střední stanice a velké nádraží     |
-| [tunnels-bridges.md](tunnels-bridges.md) | Společné kompozice mostů a tunelů                  |
-| [acceptance.md](acceptance.md)           | Testovatelné podmínky a obrazové kontroly          |
+| Soubor                                   | Co vlastní                                                |
+| ---------------------------------------- | --------------------------------------------------------- |
+| [countryside.md](countryside.md)         | Pole, sad, remízek, statek, pastvina a polní cesta        |
+| [village.md](village.md)                 | Velká vesnice vložená do venkova nebo podhůří             |
+| [town.md](town.md)                       | Předměstí, české město, park a průmyslový okraj           |
+| [forest.md](forest.md)                   | Lesní okraj, hustý les, paseka, práce a potok             |
+| [lakes.md](lakes.md)                     | Rybníkářsko, řeka, mlýn a sladkovodní pláž                |
+| [foothills.md](foothills.md)             | Vysočina, podhorské louky, osady a zářezy                 |
+| [mountains.md](mountains.md)             | Výrazná stoupání, hřebeny a hlubší údolí                  |
+| [coast.md](coast.md)                     | Souvislé moře, pláž, přístav a pobřežní cesta             |
+| [dunes.md](dunes.md)                     | Suché písečné duny s borovicemi a vřesem                  |
+| [station.md](station.md)                 | Malá zastávka, střední stanice a velké nádraží            |
+| [tunnels-bridges.md](tunnels-bridges.md) | Společné kompozice mostů a tunelů                         |
+| [roads.md](roads.md)                     | Souběžné silnice, přejezdy, vzácná dálnice a čelo dopravy |
+| [acceptance.md](acceptance.md)           | Testovatelné podmínky a obrazové kontroly                 |
 
 Krajinné typy jsou `countryside`, `forest`, `lakes`, `foothills`, `mountains`, `coast`, `dunes` a `town`.
 Velká vesnice a hustý les jsou místní scény; stanice, mosty a tunely jsou vložené stavby.

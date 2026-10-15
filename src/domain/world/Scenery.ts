@@ -4,13 +4,14 @@ import { streamBendU } from './StreamGeometry.ts';
 import { settlementScenery } from './SettlementScenery.ts';
 import { longStation, type StationExtent } from './SettlementPlan.ts';
 import { stationScenery } from './StationScenery.ts';
+import { roadStretchesInChunk, roadStretchCars } from './RoadStretches.ts';
 import type { PlacementTraceEntry } from './PlacementTrace.ts';
 import { secondarySite } from './SecondaryTrack.ts';
 import { gameConfig } from '../../config/gameConfig.ts';
 import { biomeAt, type Biome } from './Biomes.ts';
 import { chunkObjects } from './ChunkObjects.ts';
 import { crossingSite, type CrossingSite } from './Crossings.ts';
-import { hash32, unitRandom } from './Hash.ts';
+import { unitRandom } from './Hash.ts';
 import {
   bridgeSite,
   tunnelSite,
@@ -26,7 +27,8 @@ import {
   type PatrolMotion,
   type PropRule,
 } from './sceneryTemplates.ts';
-import { generateTrackProfile, profileGrade } from './TrackProfile.ts';
+import { stationFlat, stationSlot } from './Stations.ts';
+export { stationFlat, stationSlot } from './Stations.ts';
 import {
   regionAt,
   transitionAt,
@@ -56,6 +58,7 @@ import {
   pointInside,
   propFootU,
   railYUpU,
+  roadPolygon,
   polygonsHit,
   projectedBounds,
   boundsHitPolygon,
@@ -113,6 +116,8 @@ export interface SceneryProp {
   scale: number;
   flip: boolean;
   motion?: PatrolMotion;
+  roadPath?: RoadPath;
+  laneDirection?: 1 | -1;
   /** Phase of the motion, 0 … 1. */
   phase: number;
   work?: PropRule['work'];
@@ -158,49 +163,12 @@ export interface ChunkScenery {
   animal: { kind: AnimalKind; depth: number };
 }
 
-const { chunkWidthU, maxPlacementAttempts, chunksPerBiomeBlock } =
-  gameConfig.world;
+const { chunkWidthU, maxPlacementAttempts } = gameConfig.world;
 const EDGE_U = 16,
-  ANIMAL_CLEARANCE_U = 60,
-  STATION_FLAT_U = 480,
-  FLAT_STEP_U = 16;
+  ANIMAL_CLEARANCE_U = 60;
 type Roll = (...parts: (string | number)[]) => number;
 const lerp = (range: readonly [number, number], t: number) =>
   range[0] + (range[1] - range[0]) * t;
-/** Longest flat of a chunk's track, chunk-local, if long enough. */
-export function stationFlat(
-  seed: number,
-  chunkIndex: number,
-): readonly [number, number] | undefined {
-  const profile = generateTrackProfile(seed, chunkIndex);
-  let best: [number, number] | undefined;
-  let start: number | undefined;
-  for (let x = 0; x <= chunkWidthU; x += FLAT_STEP_U) {
-    const flat = Math.abs(profileGrade(profile, x)) < 1e-12;
-    if (flat && start === undefined) start = x;
-    const end = !flat ? x - FLAT_STEP_U : x === chunkWidthU ? x : undefined;
-    if (
-      start !== undefined &&
-      end !== undefined &&
-      (!flat || x === chunkWidthU)
-    ) {
-      if (!best || end - start > best[1] - best[0]) best = [start, end];
-      start = undefined;
-    }
-  }
-  return best && best[1] - best[0] >= STATION_FLAT_U ? best : undefined;
-}
-
-/** Slot of the block's station, if one of slots 1–2 has a long flat. */
-export function stationSlot(seed: number, block: number): number | undefined {
-  if (block === 0 || longStation(seed, block)) return 1;
-  const preferred = 1 + (hash32(seed, 1, 'station-slot', block) % 2);
-  for (const slot of [preferred, 3 - preferred]) {
-    if (stationFlat(seed, block * chunksPerBiomeBlock + slot)) return slot;
-  }
-  return undefined;
-}
-
 /** Prop kinds of a station; the people wait on the platform. */
 export const STATION_KINDS = [
   'back.station',
@@ -346,6 +314,44 @@ export function chunkScenery(
     roads: RoadPath[] = [],
     props: SceneryProp[] = [];
   const features: FeatureExtent[] = [];
+  for (const road of roadStretchesInChunk(seed, chunkIndex)) {
+    roads.push(road);
+    reservations.push(roadReservation(road));
+    if (road.kind === 'highway')
+      reservations.push({
+        id: `${road.id}:reserve:highway-setback`,
+        ownerId: road.id,
+        purpose: 'highway-setback',
+        polygon: roadPolygon(road, 20),
+        layer: 'back',
+      });
+    features.push({
+      id: road.id,
+      ownerId: road.ownerId,
+      kind: road.kind,
+      fromXU: road.startXU,
+      toXU: road.endXU,
+      dependencies: [],
+    });
+    for (const car of roadStretchCars(road, chunkIndex)) {
+      props.push(car);
+      trace?.push({
+        candidate: {
+          id: car.id,
+          kind: car.kind,
+          worldXU: x0 + car.xU,
+          layer: car.layer,
+          depth: car.depth,
+          attempt: 0,
+        },
+        admissible: [car.kind],
+        rejectionCode: 'accepted',
+        conflictingReservation: undefined,
+        missingDependency: undefined,
+      });
+    }
+  }
+
   const allowedSurfaceSeasons = own.nearSurface?.seasons;
   const surfaceClimateAllowed =
     !allowedSurfaceSeasons ||
@@ -943,8 +949,9 @@ export function chunkScenery(
           (kind.startsWith('back.house-') && own.id === 'town-village')
         ) {
           if (event) event.missingDependency = 'village-road';
-          if (roads.length === 0) continue;
-          p.dependencies = roads.map((road) => road.id);
+          const localRoads = roads.filter((road) => !road.medianHalfWidthU);
+          if (localRoads.length === 0) continue;
+          p.dependencies = localRoads.map((road) => road.id);
         }
         if (kind === 'near.reeds') {
           if (event) event.missingDependency = 'foreground-pond';
@@ -979,7 +986,7 @@ export function chunkScenery(
           const candidate = roadReservation(road);
           const roadConflict = reservations.find(
             (r) =>
-              r.purpose === 'track' &&
+              (r.purpose === 'track' || r.purpose === 'village-road') &&
               polygonsHit(candidate.polygon, r.polygon),
           );
           if (roadConflict) {

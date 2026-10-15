@@ -1,3 +1,4 @@
+import { roadStretchesInChunk } from './RoadStretches.ts';
 import { regionAt } from './Regions.ts';
 import { contextAt } from './WorldPlan.ts';
 import { tunnelSite } from './Structures.ts';
@@ -32,6 +33,9 @@ export const TEST_SCENES = [
   'forest-work',
   'fields',
   'forest-dense',
+  'parallel-road',
+  'highway',
+  'road-ends',
 ] as const;
 export type TestSceneKind = (typeof TEST_SCENES)[number];
 export interface TestSceneLocation {
@@ -53,7 +57,21 @@ export function locateTestScene(
     return undefined;
   for (let k = 0; k < maxChunks; k++) {
     let x = k * 1024 + 512;
-    if (kind === 'tunnel') {
+    if (
+      kind === 'parallel-road' ||
+      kind === 'highway' ||
+      kind === 'road-ends'
+    ) {
+      const road = roadStretchesInChunk(seed, k).find(
+        (r) => r.kind === (kind === 'highway' ? 'highway' : 'parallel-road'),
+      );
+      if (!road) continue;
+      if (kind === 'parallel-road') {
+        const c = crossingSite(seed, k);
+        if (!c) continue;
+        x = k * 1024 + c.localXU;
+      } else x = kind === 'road-ends' ? road.startXU + 160 : k * 1024 + 512;
+    } else if (kind === 'tunnel') {
       const t = tunnelSite(seed, k);
       if (!t) continue;
       x = k * 1024 + t.fromX;
@@ -159,9 +177,13 @@ export function locateTestScene(
     )
       continue;
     const start =
-        kind === 'halt' || kind === 'large-station' || kind === 'big-station'
-          ? x
-          : x - 640,
+        kind === 'highway'
+          ? x + 140
+          : kind === 'halt' ||
+              kind === 'large-station' ||
+              kind === 'big-station'
+            ? x
+            : x - 640,
       chunkIndex = Math.floor(start / 1024);
     const table = buildArcLengthTable(
       generateTrackProfile(seed, chunkIndex),

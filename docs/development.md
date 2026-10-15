@@ -156,6 +156,8 @@ Testovací scény nabízí také vesnici, autobus a hřiště, předměstí, mě
 
 `effects.costMs` měří CPU částic a `effects.animationCostMs` přidělení a animace scenérie a zvířat; ani jedno není čas GPU ani celého snímku. Low má 96 částic, 64 animací a 12 zdrojů, standard 240/160/32. Nejdřív se animuje viditelný život; kde rozpočet nestačí, lokální čas se pozastaví. Sněžení má vlastní stropy vrstev, kouř a víření se do nich nepočítají. Statické střešní plochy vznikají s chunkem a zanikají s ním. `seasonal-rendering.spec.ts` čte skutečný framebuffer: masky střech respektují průhledný okraj atlasu a sníh se měří při rozdílu aspoň 24 RGB úrovní. Lookupy framů, úchytů a animací jdou přes `frameTexture` ([D-027](decisions/027-seasons-and-life.md)).
 
+Překryv „Silnice — tečny, rychlost a předek“ doplňuje bílé tečny dvěma značkami u vozidel: azurová je vlastní světová rychlost, oranžová skutečný předek. Volby „Okreska u přejezdu“, „Dálnice“ a „Konce silnic“ používají dočasnou jízdu bez změny uložené cesty; dálniční svědek je seed 1 / x 16896. Sdílený `src/domain/interaction/VehicleHeading.ts` nepřebírá kameru ani Phaser a aktualizuje poslední čelo bez alokace. Regrese silničního a osadního plánu běží po jednom seedu (0–19 × chunky 0–479) a samostatná agregace z čistého plánu vyhodnotí výskyt a vzácnost dálnic i při filtrovaném spuštění ([D-029](decisions/029-roads-and-vehicle-heading.md)).
+
 ### Prostředí a nástroje
 
 - `EBADENGINE`: ověř `volta run node --version`, `volta run npm --version`, kořen projektu a Volta shims v PATH. Při zděděném jiném runtime použij explicitní `volta run npm ci`. Nepřepisuj `engine-strict` jen kvůli obejití chyby.

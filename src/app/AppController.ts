@@ -51,6 +51,7 @@ import { RideScene } from '../render/RideScene.ts';
 import { BRAKE_HIT_MARGIN_PX, UiLayer } from '../ui/UiLayer.ts';
 import { hudLines } from '../ui/diagnosticsFormat.ts';
 import type { DebugSnapshot } from './debugSnapshot.ts';
+import type { RoadMotionSnapshot } from '../render/roadVehicleSnapshot.ts';
 import { worldHidden } from './AppState.ts';
 import { PhaseLog } from './phaseLog.ts';
 import { renderProfile } from './renderProfile.ts';
@@ -126,7 +127,16 @@ export class AppController {
       this.#diagnostics = document.createElement('pre');
       this.#diagnostics.id = 'diagnostics';
       app.append(this.#diagnostics);
-      Object.assign(window, { __vlacek: { snapshot: () => this.snapshot() } });
+      Object.assign(window, {
+        __vlacek: {
+          snapshot: () => this.snapshot(),
+          // Build only renderer motion observations when explicitly queried.
+          roadMotion: (): RoadMotionSnapshot => ({
+            simulationTick: this.#session.ride?.simulationTick ?? 0,
+            cars: this.#scene.roadVehicles,
+          }),
+        },
+      });
     }
     this.#portrait = isPortrait();
 
@@ -616,6 +626,7 @@ export class AppController {
         overlays: { ...this.#worldOverlays },
         overlayPrimitives: this.#scene.worldOverlayCount,
       },
+      roadVehicles: this.#scene.roadVehicles,
       buildId: this.#options.buildId,
       renderer: this.#renderer,
       renderProfile: {

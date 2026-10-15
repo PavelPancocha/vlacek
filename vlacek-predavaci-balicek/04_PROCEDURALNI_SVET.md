@@ -175,3 +175,15 @@ Přední scény používají vlastní geometrické pole/lesní půdu, skutečné
 Skryté menu nabízí tři světové překryvy, stopu umístění podle ID/x a jedenáct cílených scén. Lokátor má mez čtyř cyklů; dočasná jízda nepřepíše běžnou cestu ani zálohu a při návratu ji obnoví v původní pauze. `snapshot().worldDebug` popisuje tento stav. Výplň země i spodní pokračování používají stejnou prostorovou paletu; hranice chunku nesmí vytvářet zelený obdélník. Podrobný postup rozšíření modulů a registrů vlastní [D-023](../docs/decisions/023-world-generator-v2.md).
 
 Revize generátoru v2: přechod zachovává autorské pole a brázdy, také spodní výplň se vzorkuje podle světového x. Přední pole/lesní půda mají zúžené nepravidelné konce a společnou geometrii podpory i kreslení. Přístavní lodě/mola se odvozují od skutečného břehu, včetně zužujícího se moře; molo musí mít geometrický kontakt s odkazovanou vodou. Přímý obrat sklonu přes 192 u má mez 0,098 pro kompaktní sběrač, současné plány oddělují opačné svahy rovinou. Podrobnosti a nenulové validační svědky popisuje [D-023](../docs/decisions/023-world-generator-v2.md).
+
+### Silniční úseky světa v2 (D-029)
+
+[RD-01 až RD-03](../docs/scenes/roads.md) doplňují souběžnou okresku a vzácný
+vzdálený dálniční úsek do existující krajiny. Celá cesta má identitu/rozsah;
+chunkové fragmenty sdílejí světové vzorky a rezervují skutečnou šířku před
+rekvizitami i ploty. Odstup od koleje se mění plynule, skutečné konce se stáčejí
+za zadní horizont; žádné viditelné příčné zakončení nebo slepé odbočky.
+Okreska se může spojit se zadním ramenem plánovaného přejezdu. Kolej protíná
+pouze jeho silnice; tento invariant prochází velkým seedovým průchodem.
+Dálnice je jeden motiv v regionu, ne nový biom. V2 není vydaná; doplnění
+nemění schéma save ani verzi katalogu, RNG používá `roads-v2:*`.
