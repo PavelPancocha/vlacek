@@ -400,9 +400,10 @@ export async function roofCoverage(page: Page) {
     const z = (scene.cameras.main.zoom * image.width) / scene.scale.width;
     const houses = scene.children.list
       .flatMap((o) => o.list ?? [])
-      .filter((o) => masks[String(o.frame?.name)]);
+      // Winter bodies retain the exact authored roof geometry and masks.
+      .filter((o) => masks[String(o.frame?.name).replace(/-winter$/, '')]);
     return houses.flatMap((o) => {
-      const key = String(o.frame?.name),
+      const key = String(o.frame?.name).replace(/-winter$/, ''),
         mask = masks[key],
         b = o.getBounds?.();
       if (!mask || !b) return [];

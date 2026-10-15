@@ -230,3 +230,41 @@ lesní pásy mají kresbu 512 u a překrývající se krok 480 u; ostatní sezó
 pásy drží vlastní autorskou šířku. `backdropTileStepU` tento rozdíl určuje
 před výpočtem počtu, světové fáze a pozic dlaždic. Čtyři sezónní regrese
 zachovávají původní krok lesa i šířku nového městského pásu.
+
+### Společný registr: město a drobná zeleň (2026-10-15, integrate-3)
+
+Svědek seed 4 / x 1 021 952 (chunk 998) odhalil chybějící zimní městské
+pozadí. Nové sparse/dense varianty pro podzim a zimu ponechávají původní
+siluety i 1024 × 180 u; zima má sněhové střechy a podklad. Existující
+`backdropFrames` je vybírá přes stejný sezonní suffix jako venkov.
+
+`near.bush` má zimní holou/zasněženou a podzimní okrovou kresbu bez květů,
+obě 64 × 42 u s pivotem (32, 42). `SeasonalSceneryView.frame` rozezná
+sezónní rodinu z metadat `atlasGroup.seasons` v plném registru, proto není
+nutná další výjimka v resolveru. Regrese používá skutečné staniční keře
+seed 2 / chunk 489 / kandidáti 26, 27, 29 a ulici seed 4 / chunk 994 /
+kandidáti 9, 10 včetně dalšího přirozeného keře v témže obrazu.
+
+Audit kombinovaných umístění navíc našel letní zelené trsy zabudované v
+`back.house-a/b/c`, `back.lodge` a `back.logs`. Jejich zimní varianty
+mění pouze trsy a drobný sněhový podklad; rozměry, pivoty a zbytek kresby
+zůstávají. Sněhové plochy střech dál vlastní původní hook, bez dvojího krytu.
+Květiny, kapradiny, bobulový keř a zelené trsy samostatného popředí se
+v zimě nevytvářejí; zahrady, řádky polí, lesní okraje a husté lesní pásy
+již mají sezónní pravidla. Zadní keře mají zimní varianty a jehličnany
+zůstávají zelené záměrně. Zelené okenice, nátěry strojů a uložené ovoce
+nejsou vegetační mezera. Nový modul `integration-seasons.art.ts` pouze
+rozšiřuje registr: nemění save, umístění, seed ani verzi generátoru.
+
+Pixelový roof probe mapuje zimní názvy domů a/b/c na stejné původní rodiny
+masek; sněhové varianty mají prokázanou shodnou geometrii. Nadále vyžaduje
+všechny tři rodiny a přes 65 % bílé v každém ze tří pásů. Regrese nad
+skutečným Canvas rendererem před opravou nalezla nula domů, po opravě
+stejné původní masky a prahy, bez rozšíření timeoutů či vypuštění střech.
+
+Plný browserový průchod po rozšíření probe odhalil u domu c spodní pás
+s 63,92 % bílé na Canvasu (seed 2 / chunk 504, krátký vlak), pod původní
+mezí 65 %. Sněhová plocha proto vede spodní střední hranu na y = 44,5–45 u
+místo 42–44 u; původní římsa je na y = 45,68 u. Horní tvar, rohy, komín
+a výřez vikýře zůstávají. Dva bodové testy zachycují nově pokrytou dolní
+část, pixelová brána ani maska se nemění. Barva a tloušťka obrysu zůstávají.

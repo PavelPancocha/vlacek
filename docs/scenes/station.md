@@ -112,3 +112,13 @@ Staniční ulice a vstupní pěšiny se rezervují před okolními parcelami a k
 Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
 a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
 koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.
+
+### Společná zimní kresba — integrate-3
+
+Městský horizont ponechává vlastní řídkou a hustou siluetu osady; v zimě
+má sníh na původních střechách a podkladu, na podzim tlumený okrový podklad.
+Nízké keře u nástupiště i uliční pěšiny mají v zimě holé větve se sněhem
+bez květů, na podzim okrové listy bez květů. Rozměry a patní pivoty drží
+původní části, výběr používá společný sezónní resolver. Zimní domy a klády
+navíc nahrazují zabudované zelené trsy suchými/sněžnými; sníh na střechách
+dál vlastní stávající kotevní hook. Geometrie a uložené cesty se nemění.

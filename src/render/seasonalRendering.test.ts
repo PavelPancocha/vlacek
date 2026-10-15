@@ -381,3 +381,93 @@ it.each([
     }
   },
 );
+
+import { chunkScenery } from '../domain/world/Scenery.ts';
+import { worldPlacementCatalog } from '../content/worldPlacementCatalog.ts';
+it.each([
+  { name: 'station', seed: 2, chunk: 489, candidates: [26, 27, 29] },
+  { name: 'street', seed: 4, chunk: 994, candidates: [9, 10] },
+])(
+  'i3: real combined $name composition draws winter shrubs without blossoms',
+  ({ seed, chunk, candidates }) => {
+    const scenery = chunkScenery(seed, chunk, worldPlacementCatalog);
+    const shrubs = scenery.props.filter((p) => p.kind === 'near.bush');
+    expect(shrubs.map((p) => Number(p.id.split(':').at(-1)))).toEqual(
+      expect.arrayContaining(candidates),
+    );
+    const r = renderer(seed, chunk * 1024);
+    for (const shrub of shrubs) {
+      const base = r.add(shrub.kind, shrub.xU, shrub.flip);
+      expect(base.key).toBe('near.bush-winter');
+    }
+  },
+);
+
+import { effectiveClimateAt } from '../domain/world/Seasons.ts';
+it.each([
+  { kind: 'back.house-a', seed: 4, chunk: 992 },
+  { kind: 'back.house-b', seed: 2, chunk: 488 },
+  { kind: 'back.house-c', seed: 2, chunk: 489 },
+  { kind: 'back.lodge', seed: 2, chunk: 543 },
+  { kind: 'back.logs', seed: 1, chunk: 1096 },
+])(
+  'i3 sweep: $kind replaces embedded summer grass in real winter compositions',
+  ({ kind, seed, chunk }) => {
+    const props = chunkScenery(seed, chunk, worldPlacementCatalog).props.filter(
+      (p) =>
+        p.kind === kind &&
+        effectiveClimateAt(seed, chunk * 1024 + p.xU).winter === 1,
+    );
+    expect(props.length).toBeGreaterThan(0);
+    const r = renderer(seed, chunk * 1024);
+    for (const prop of props)
+      expect(r.add(prop.kind, prop.xU, prop.flip).key).toBe(`${kind}-winter`);
+  },
+);
+
+it('i3: all new seasonal frames preserve original dimensions/pivots and autumn shrubs share the resolver', () => {
+  const parts: Readonly<Record<string, ArtPart>> = worldParts;
+  for (const base of [
+    'near.bush',
+    'back.house-a',
+    'back.house-b',
+    'back.house-c',
+    'back.lodge',
+    'back.logs',
+    'backdrop.town-sparse',
+    'backdrop.town-dense',
+  ]) {
+    const original = parts[base],
+      winter = parts[`${base}-winter`];
+    if (!original || !winter)
+      throw new Error(`missing seasonal family ${base}`);
+    expect([winter.widthU, winter.heightU, winter.pivotU]).toEqual([
+      original.widthU,
+      original.heightU,
+      original.pivotU,
+    ]);
+  }
+  const autumn = witness('autumn');
+  expect(renderer(autumn.seed, autumn.x).owner.frame('near.bush', 0)).toBe(
+    'near.bush-autumn',
+  );
+});
+
+it('i3: house-c snow reaches the lower roof band inside its original eave', () => {
+  const w = witness('winter'),
+    r = renderer(w.seed, w.x);
+  r.add('back.house-c');
+  for (const [x, y] of [
+    [40, 43.5],
+    [100, 43.5],
+  ] as const) {
+    expect(
+      r.snowPlanes.some((poly) =>
+        pointInside(
+          { xU: x, yU: y },
+          poly.map((p) => ({ xU: p.x + 60, yU: p.y + 104 })),
+        ),
+      ),
+    ).toBe(true);
+  }
+});

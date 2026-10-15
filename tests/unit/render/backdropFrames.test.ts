@@ -32,8 +32,13 @@ import {
   MAX_ATLAS_EDGE_PX,
 } from '../../../src/render/atlasPacking.ts';
 it('only the actual outgoing/incoming bands plus clouds reside in a 2048 backdrop page', () => {
-  for (const x of [5000, 493968, 1232896]) {
-    const keys = backdropWindowFrames(x === 493968 ? 2 : 1, x);
+  for (const [seed, x] of [
+    [1, 5000],
+    [2, 493968],
+    [1, 1232896],
+    [4, 1_021_952],
+  ] as const) {
+    const keys = backdropWindowFrames(seed, x);
     expect(keys.length).toBeLessThanOrEqual(7);
     const selected = Object.fromEntries(
       Object.entries(worldParts).filter(([k]) => keys.includes(k)),
@@ -83,5 +88,22 @@ it.each(['spring', 'summer', 'autumn', 'winter'] as const)(
       expect(backdropTileStepU(key, width)).toBe(480);
     }
     expect(backdropTileStepU('backdrop.town-dense', 1020)).toBe(1020);
+  },
+);
+
+import { effectiveClimateAt } from '../../../src/domain/world/Seasons.ts';
+it.each(['winter', 'autumn'] as const)(
+  'i3: combined town registry keeps the skyline in %s',
+  (season) => {
+    expect(effectiveClimateAt(4, 1_021_952).winter).toBe(1);
+    const frames = backdropFrames('town', season, (key) => key in worldParts);
+    expect(frames).toEqual({
+      far: `backdrop.town-sparse-${season}`,
+      mid: `backdrop.town-dense-${season}`,
+    });
+    if (season === 'winter') {
+      expect(backdropWindowFrames(4, 1_021_952)).toContain(frames.far);
+      expect(backdropWindowFrames(4, 1_021_952)).toContain(frames.mid);
+    }
   },
 );

@@ -245,3 +245,8 @@ SEA-01/02 čekají na lesní pásy farm-forest; SEA-07 na reálné swapy D-030.
 SEA-08 má znovupoužitou nahrávku, poslech a fyzická zařízení jsou NEOVĚŘENO.
 Pixelové regrese střech, sněhu, vedlejších portálů, listí a mlýna vlastní
 `seasonal-rendering.spec.ts`; rozsah konkrétního běhu a snímky uvádí handoff.
+
+Regrese společného registru SEA-01 (integrate-3): zimní městský horizont
+seed 4 / chunk 998 zachová siluety a zasněží střechy i podklad; keře stanice
+seed 2 / chunk 489 a ulice seed 4 / chunk 994 nemají letní květy.
+Rozměry a pivoty všech nových sezonních variant zůstávají shodné s originály.

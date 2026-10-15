@@ -416,3 +416,53 @@ for (const renderer of ['canvas', 'webgl'])
         .toBeGreaterThan(5);
     });
 import { tunnelSite, bridgeSite } from '../../src/domain/world/Structures.ts';
+
+for (const renderer of ['canvas', 'webgl'])
+  for (const witness of [
+    { name: 'town', seed: 4, chunk: 998, offset: 512 },
+    { name: 'station', seed: 2, chunk: 489, offset: 700 },
+    { name: 'street', seed: 4, chunk: 994, offset: 512 },
+  ])
+    test(`i3: combined winter ${witness.name} keeps its seasonal art (${renderer})`, async ({
+      page,
+    }, testInfo) => {
+      await page.setViewportSize({ width: 1140, height: 512 });
+      await probeScene(page);
+      await restore(
+        page,
+        renderer,
+        witness.chunk,
+        witness.offset,
+        [],
+        witness.seed,
+      );
+      expect((await snapshot(page)).artAtlas).toBeDefined();
+      await page.evaluate(() =>
+        window.__seasonalProbe.scene.sys.setActive(false),
+      );
+      await renderedFrame(page);
+      const frames = await page.evaluate(() => {
+        const result: string[] = [];
+        const walk = (
+          objects: typeof window.__seasonalProbe.scene.children.list,
+        ) => {
+          for (const object of objects) {
+            if (object.visible === false) continue;
+            if (object.frame) result.push(String(object.frame.name));
+            if (object.list) walk(object.list);
+          }
+        };
+        walk(window.__seasonalProbe.scene.children.list);
+        return result;
+      });
+      if (witness.name === 'town') {
+        expect(frames).toContain('backdrop.town-sparse-winter');
+        expect(frames).toContain('backdrop.town-dense-winter');
+      } else {
+        expect(frames).toContain('near.bush-winter');
+        expect(frames).not.toContain('near.bush');
+      }
+      await page.screenshot({
+        path: testInfo.outputPath(`i3-winter-${witness.name}-${renderer}.png`),
+      });
+    });
