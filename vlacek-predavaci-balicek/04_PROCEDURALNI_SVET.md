@@ -67,7 +67,7 @@ Generátor **v2** odděluje geometrické bloky od regionů. Blok zůstává osm 
 
 Krajiny: `countryside`, `forest`, `lakes`, `foothills`, `mountains`, `coast`, **`dunes`**, **`town`**. Duny inspirované Moravskou Saharou mají písek, borovice, dunovou trávu a kameny. Pobřeží zůstává samostatné. `town` dočasně používá vesnické skladby; odstranění omezení: **replaced by the settlements-stations lane in the same PR**.
 
-`RegionPlan` nese sezónu a počasí z explicitní tabulky podporovaných presetů. Sezóna i počasí drží skupiny 2–3 regionů; vybírá se společný podporovaný preset všech jejich krajin, i přes šev cyklu. Nová cesta má letní jasno. Existující sněhové šablony patří pouze k zimě. Jejich další kresbu a ambientní projevy doplní seasons-life v témže PR.
+`RegionPlan` nese sezónu a počasí z explicitní tabulky podporovaných presetů. Sezóna i počasí drží skupiny 2–3 regionů; vybírá se společný podporovaný preset všech jejich krajin, i přes šev cyklu. Nová cesta má letní jasno. Existující sněhové šablony patří pouze k zimě. Sezónní kresbu a ambientní projevy doplňuje [D-027](../docs/decisions/027-seasons-and-life.md): efektivní klima a jeho váhy jsou čistý dotaz podle x, animace používají herní sekundy.
 
 `WorldPlan` skládá uspořádané 2 048u scénky z explicitně importovaných modulů `src/domain/world/scenes/`. Infrastrukturní rezervace mají přednost. `contextAt(seed, worldXU)` určuje konkrétní podzónu, povrch a klima; přípustnost celého obrysu i patrolovacího rozsahu se kontroluje v jednotlivých místech, včetně hranic.
 
@@ -154,7 +154,7 @@ Jeden cyklus má výchozí délku 480 s. Nová cesta začíná v denní fázi. B
 
 Počasí používá oddělený seedový plán po 120 s simulačního času: převážně jasno, občas lehký déšť. V horách může srážkový stav znamenat sníh; změnu na hranici biomu jemně prolínat. Žádné bouřky, ostré blesky ani omezení přilnavosti. Výkonnostní profil snižuje počet vloček a kapek, ne zastavuje změnu atmosféry.
 
-V2 plánuje sezónu a mírné počasí prostorově v regionech podle §5. Nové sezonní vizuály a ambientní počasí vlastní seasons-life v témže PR; simulační čas ovládá pohyb, nikoli změnu krajiny při stání.
+V2 plánuje sezónu a mírné počasí prostorově v regionech podle §5. Sezónní vzhled, lokální listí, třívrstvé sněžení a lehký déšť používají váhy `effectiveClimateAt(seed, worldXU)` ze stejného přechodu jako svět. Simulační čas ovládá pohyb, nikoli změnu krajiny při stání; podrobnosti vlastní [D-027](../docs/decisions/027-seasons-and-life.md).
 
 ## 11. Diagnostika
 

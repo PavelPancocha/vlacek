@@ -2,9 +2,11 @@
 import type { LocalityTemplate } from '../sceneryTypes.ts';
 import { scenes as scene0 } from './farm-forest.scenes.ts';
 import { scenes as scene1 } from './foreground.scenes.ts';
-import { scenes as scene2 } from './settlements.scenes.ts';
+import { scenes as scene2 } from './seasons-life.scenes.ts';
+import { scenes as scene3 } from './settlements.scenes.ts';
 export const additionalScenes: readonly LocalityTemplate[] = [
   ...scene0,
   ...scene1,
   ...scene2,
+  ...scene3,
 ];

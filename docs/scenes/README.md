@@ -120,9 +120,9 @@ Běžný dotyk zvířete zachovává vlastní reakci a cooldown 1,5 s; nerestart
 Žádný pozemní aktér nevstupuje do koleje mimo řízený přejezd a žádná scénka nepodmiňuje další jízdu.
 
 V jednom výřezu běží nejvýše jedna výrazná scénická akce; ostatní život je drobný a klidný.
-Počáteční limity jsou 80 samostatných dekorací/chunk, z toho 48 `near`, a 32/12 viditelných animovaných objektů standard/low.
+Počáteční limity jsou 80 samostatných dekorací/chunk, z toho 48 `near`, a 160/64 viditelných animovaných objektů standard/low (včetně drobného kývání a zvířat, D-027).
 Hustotu tvoří zejména skupinová grafika; její členění nesmí sloužit k obcházení měření skutečných nákladů.
-Lokálních zdrojů je nejvýše 16/8; audio současně dodržuje osm hlasů, tři smyčky a pět jednorázových zvuků.
+Lokálních zdrojů je nejvýše 32/12 (standard/low, D-027); audio současně dodržuje osm hlasů, tři smyčky a pět jednorázových zvuků.
 Nové zvuky uvedené v souborech jsou požadavky na audio, nikoli tvrzení, že již existují.
 
 ## Společné výtvarné doplnění
@@ -132,3 +132,47 @@ Nové zvuky uvedené v souborech jsou požadavky na audio, nikoli tvrzení, že 
 **NEW:** sněhové kryty střech v modulech přibližně 64/128 × 20 u s kotevními body konkrétních budov.
 **NEW:** listová půda 100 × 15 u a jemný prach 16 × 12 u; omezené, měkké kresby bez zakrývání vlaku.
 Vše má podobu současné ilustrované knihy: přirozené materiály, měkký stín, střídmé kontury a žádné obličeje na strojích.
+
+## Sezónní vzhled a život — D-027
+
+Klima místa čte `effectiveClimateAt(seed, worldXU)` ze stejného přechodu jako region.
+Palety, koruny a intenzita počasí používají jeho váhy; budovy se neprolínají.
+Jarní okvětní lístky vznikají jen u jabloní a švestek. Podzim má pět tvarů
+listů u listnatých korun a nízké listí pod nimi; jehličnany zůstávají zelené.
+Zimní holé a zasněžené větve mají původní pivot. Sníh střech sleduje jednotlivé
+obrysy z art balíčku, včetně mezer pro komíny; již zasněžená chata nedostává druhý kryt.
+Tunelový kopec používá tutéž paletu, zimní čepici a bez květů; dunový kopec je písčitý.
+
+Sněžení má tři hloubky a pokračuje při stání. Víření u každého viditelného
+podvozku závisí na místním sněhu a rychlosti; za stojícím vlakem do 1,1 s dohasne.
+Listy se rodí jen u konkrétních korun/půdy, ne na moři nebo v tunelu.
+Jeden vítr řídí unášení, koruny, trávu a praporky; jednotlivé fáze se liší.
+Vzácný vzlet ptáka reaguje na vlak, pobřeží má racka. Motýli zůstávají
+u teplé louky, vážky u sladké vody; zima je neaktivuje. Kachny a vlnky
+zůstávají na své vodě. Zvířata se klidně pohybují uvnitř původního obalu,
+výpravčí má krátké zamávání, mlýnské kolo se otáčí u náhonu.
+
+Efekty používají herní sekundy, v pauze stojí a po návratu nedohánějí historii.
+Společný strop zůstává 240/96 částic; zdroje a animace mají menší strop
+v low profilu a opouštějí paměť s viditelným oknem. Audio používá existující
+les/louku/potok/moře, v zimě vítr a v letním venkově cvrčky, bez nové nahrávky.
+
+### Oprava obrazové akceptace D-027 (seasons-life-2)
+
+Vzdálené pásy venkova, vsi a podhůří mají samostatnou zimní kresbu polí,
+holých listnáčů a bílých střech, podzimní sklizená pole a barevné lesíky,
+jarní květové akcenty. Lesní pásy dodává farm-forest; společný renderer
+čte varianty z art mapy a jejich vlastní šířku. Pobřeží a duny zůstávají letní.
+Pevné rekvizity zůstávají neprůhledné: prostorový hash volí jedinou sezónní
+variantu podle váhy přechodu, se všemi pohyby na témže obrázku.
+Sníh na střeše vyplňuje ukotvenou střešní plochu; komín, vikýř a štít
+zůstávají odkryté. Vločky mají modrošedý stín čitelný i na bílé zemi.
+Víření u podvozků tvoří oddělená sněhová zrna a krátkou nízkou stopu za
+soupravou, odlišnou od stoupající komínové páry. Obrazová regrese měří
+kontrast a prostorové pokrytí zvlášť nad vlakem, u podvozků a za koncem
+soupravy ve třech následných snímcích, také v low s 2 000u vlakem.
+Sněžení má blízkou vrstvu před terénem, vzdálené vrstvy dopadají za něj;
+celý sprite se schová za oba vedlejší portály. Víření podvozků používá tutéž
+prostorovou sněhovou váhu jako paleta pevné země, s výjimkou písku a vody.
+Život ve viditelném výřezu má přednost před periferním kýváním; odebraná
+animace pozastaví svůj lokální čas a po návratu nepřeskočí.

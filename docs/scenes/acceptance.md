@@ -226,3 +226,22 @@ pasece, včetně zákazu varování nepodporované masky a kontroly uvolnění s
 textur při opakovaných lokátorech. Výkonová brána se posuzuje zvlášť pro standard
 (45 FPS) a low (medián 30 FPS, p95 nejvýše 50 ms), nikoli z nastavení auto.
 Otevřené části CR05/FO07/FO08, nové audio a večerní sova se tímto nerozšiřují.
+
+## Sezóny a život (D-027)
+
+| ID     | Očekávaný výsledek                                                                                                                                                                                          |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEA-01 | Čtyři sezóny v lese, vsi a venkově; stabilní klima bez hodin, duny a pobřeží pouze léto. Sníh pokrývá horní/střední/spodní rovinu střech, zachová komín a vikýř.                                            |
+| SEA-02 | Plynulé váhy palet, korun a efektů podle světového x, včetně zima → podzim.                                                                                                                                 |
+| SEA-03 | Listy u listnáčů/listí, ne u jehličnanů, uvnitř tunelu nebo nad mořem; jarní lístky jen u kvetoucího sadu.                                                                                                  |
+| SEA-04 | Tři kontrastní hloubky sněžení při stání; zrnité víření podvozků a krátká stopa za vlakem pouze při jízdě nad sněhem. Čitelné i v low s 2000u soupravou ve třech sousedních snímcích; po zastavení dohasne. |
+| SEA-05 | Zimní kopec/portál bez zelených květů; kryt zakrývá částice a venku sněží dál.                                                                                                                              |
+| SEA-06 | Motýli, vážky u sladké vody, kachny a vlnky, pobřežní pták, vzlet u stromu; zimní scéna nemá letní hmyz.                                                                                                    |
+| SEA-07 | Sdílený vítr, různé fáze, omezené zdroje/animace a cleanup bez růstu po odjezdu.                                                                                                                            |
+| SEA-08 | Zimní vítr a letní cvrčci používají existující nahrávky; řízení a priorita brzdy se nemění.                                                                                                                 |
+
+SEA-01–08: **částečné lokální ověření, nikoli finální integrační akceptace**.
+SEA-01/02 čekají na lesní pásy farm-forest; SEA-07 na reálné swapy D-030.
+SEA-08 má znovupoužitou nahrávku, poslech a fyzická zařízení jsou NEOVĚŘENO.
+Pixelové regrese střech, sněhu, vedlejších portálů, listí a mlýna vlastní
+`seasonal-rendering.spec.ts`; rozsah konkrétního běhu a snímky uvádí handoff.

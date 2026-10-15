@@ -11,6 +11,7 @@ export interface AmbientInput {
   /** A flowery meadow is in view (butterflies may come). */
   meadow: boolean;
   rateScale: number;
+  coast?: boolean;
 }
 
 export type AmbientEvent = 'birds' | 'butterflies';
@@ -69,7 +70,7 @@ export class AmbientLife {
       const y = view.top + view.height * (0.12 + this.#random() * 0.15);
       for (let i = 0; i < count; i++)
         this.#field.emit(
-          kindIndex('bird'),
+          kindIndex(input.coast ? 'gull' : 'bird'),
           view.left + view.width + 30 + i * 26,
           y + (i % 2) * 14,
           1,

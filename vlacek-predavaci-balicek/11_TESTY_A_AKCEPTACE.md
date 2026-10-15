@@ -266,3 +266,22 @@ Revizní důkaz GEN-14/GEN-19/SCN-CO02 vyžaduje nenulové v2 svědky každého 
 - DATA / DEV-03: oba restarty během dočasné testovací jízdy nejprve ukončí diagnostický stav, uloží novou běžnou cestu s počáteční polohou/tickem a stejnou soupravou; následný návrat ani reload neobnoví starou rodičovskou cestu. Integrace `seedRestart.test.ts` a browser `world-diagnostics.spec.ts`.
 - UI-08: podrobnosti zahrnují kontext world v2, geometrii/fáze přejezdů, neprůhledné tunely, nahrané audio a trolejové vedení včetně `outOfRange`; kopie obsahuje plný snapshot. `diagnosticsFormat.test.ts`, `dev-menu.spec.ts` a `layout-sweep.spec.ts` kontrolují také nové skupiny a pevné akce při otevřených sbalených sekcích.
 - H1 / O5: `AudioManager.test.ts` ověřuje zastavení všech smyček, doznívání, výfuků a hlasů, zrušení čekajícího fetch/decode i reakce a nové přehrání po cleanupu. Pozdní `ended` nesmí podruhé uvolnit rozpočet a starý požadavek nesmí vymazat nový požadavek stejného klipu/vrstvy. Browserový restart používá skutečné nahrané buffer zdroje a ověřuje úspěch i odmítnutý zápis.
+
+### Sezóny a život v generátoru v2
+
+Normativní řádky SEA-01–08 a zimní sáňky SCN-FH06 vlastní
+[akceptace scén](../docs/scenes/acceptance.md). Testy ověřují nenulové
+sezónní svědky, váhy přechodů, lokální zdroje, tři hloubky počasí,
+víření všech podvozků, dohasnutí při stání, skutečný tunelový kryt,
+cleanup, pauzu a kontext teplého hmyzu. Cílený browserový průchod:
+`volta run npm run test:e2e -- tests/e2e/seasons-life.spec.ts`.
+Desktopová emulace Canvas/WebGL nepředstavuje fyzický test Tesly.
+
+D-027 / SEA-01 a SEA-04: `seasonal-rendering.spec.ts` kontroluje každou
+viditelnou střechu a/b/c v horní, střední a spodní masce mimo komín/vikýř
+(přes 65 % bílé plochy). Nezávislé pixelové oblasti sněžení, podvozků a
+stopy za vlakem vyžadují kontrast alespoň 24 RGB úrovní a prostorové pokrytí.
+Tři sousední simulační snímky běží přes skutečný host/reducer při 30 Hz,
+bez posunu během odečtu. Canvas/WebGL, krátký/2000u vlak, low/standard;
+po zastavení se ověřuje zánik víření. Unit regrese chrání rezervu blízkého
+sněhu před kouřem a souvislost stopy bez zvýšení emise či poolu.

@@ -219,3 +219,20 @@ Konečný svah může být delší, aby blok přesně dosáhl dalšího uzlu; z�
 Vzorek barvy země/spodní výplně: 16 u. Přední pole má hloubky 0,18–0,62, traktor 0,35–0,40 a patrolu 180 u při 26 u/s. Lesní práce mají podklad 0,15–0,90, klády 0,32–0,60 a mladé smrčky 0,25–0,70. Tyto hloubky jsou podmíněné úplnou bezpečnou stopou, nejsou povolením zasáhnout vlak. Suchý zadní vodní okraj má hloubku alespoň 0,12.
 
 Build branka: alespoň 44 CSS px, stále pět aktivací během 3000 ms. Lokátor: nejvýše 1920 chunků, start 640 u před cílem přes LUT. Překryvy mají jediný objekt a nejsou v save. Stopa se vytváří pouze na žádost, vstup se validuje před generováním. Scan silnic/vody: 100 celých itinerářů vedle hlavní deterministické matice a 20000 prvních bloků R3.
+
+### Sezóny a život — D-027
+
+Presety a délky regionů se nemění. Efekty mají 4 prostorové buňky počasí;
+sníh hloubky 3,5 / 4,15 / 7,55, rychlosti 22–35 / 40–65 / 65–95 u/s
+a nominální emise 3 / 4 / 5 vloček/s na buňku při výřezu 1400 u.
+Počasí nechává alespoň 35 % poolu pro lokální/vozidlové efekty. Listnatý
+zdroj má nejvýše 0,8 listu/s, jarní květy polovinu. Low násobí emise 0,5
+a omezuje aktivní zdroje na 12 (standard 32), animace na 64 (standard 160).
+Víření začíná nad 40 u/s, celkem nejvýše nominálních 70 vloček/s podle
+rychlosti a místního sněhu; 70 % stropu se dělí mezi viditelné podvozky,
+30 % patří poslednímu pro krátkou stopu i u 2000u soupravy.
+Vločky mají šířky 6 / 18 / 28 u a modrošedý spodní obrys; zrnité víření
+šířku 32–44 u násobenou 1,5, životnost 0,6–1,1 s. Blízká vrstva má při emisi
+přednost, každý limit počítá pouze svou vrstvu, nikoli kouř a víření.
+Sáňky mají rozsah 48 u při 6 u/s za tratí. Žádný parametr nemění rychlost
+ani ovládání vlaku. Podrobnosti: [D-027](../docs/decisions/027-seasons-and-life.md).

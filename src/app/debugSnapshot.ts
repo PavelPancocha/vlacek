@@ -55,6 +55,9 @@ export interface DebugSnapshot {
     /** Sum of particle positions; unchanged while the ride is paused. */
     checksum: number;
     bubblePops: number;
+    seasonalSources: number;
+    costMs: number;
+    animationCostMs: number;
   };
   /**
    * Loaded SVG sources still held as textures; 0 once the atlases are

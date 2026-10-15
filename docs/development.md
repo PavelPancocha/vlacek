@@ -154,6 +154,8 @@ Lokátor testovacích scén nabízí také Pole se stroji (`fields`), Hustý les
 
 Testovací scény nabízí také vesnici, autobus a hřiště, předměstí, město a tři velikosti stanic ([D-024](decisions/024-settlements-and-long-stations.md)); dočasná diagnostická jízda chrání běžný uložený postup.
 
+`effects.costMs` měří CPU částic a `effects.animationCostMs` přidělení a animace scenérie a zvířat; ani jedno není čas GPU ani celého snímku. Low má 96 částic, 64 animací a 12 zdrojů, standard 240/160/32. Nejdřív se animuje viditelný život; kde rozpočet nestačí, lokální čas se pozastaví. Sněžení má vlastní stropy vrstev, kouř a víření se do nich nepočítají. Statické střešní plochy vznikají s chunkem a zanikají s ním. `seasonal-rendering.spec.ts` čte skutečný framebuffer: masky střech respektují průhledný okraj atlasu a sníh se měří při rozdílu aspoň 24 RGB úrovní. Lookupy framů, úchytů a animací jdou přes `frameTexture` ([D-027](decisions/027-seasons-and-life.md)).
+
 ### Prostředí a nástroje
 
 - `EBADENGINE`: ověř `volta run node --version`, `volta run npm --version`, kořen projektu a Volta shims v PATH. Při zděděném jiném runtime použij explicitní `volta run npm ci`. Nepřepisuj `engine-strict` jen kvůli obejití chyby.

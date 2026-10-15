@@ -167,3 +167,9 @@ zůstávají mimo kresbu korun i popředí podle společných ořezových polygo
 Statické skupiny každé potřebné hloubky se jednou složí do textury nejvýše 1 px/u;
 blízké kmeny a stroje zůstávají samostatné. Stejná textura funguje v Canvas i WebGL,
 při odchodu chunku se uvolní a mimo záběr se dekorativní skupiny nekreslí.
+
+### Sezónní život D-027
+
+Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
+a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
+koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.

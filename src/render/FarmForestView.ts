@@ -1,3 +1,4 @@
+import { frameTexture } from './frameTexture.ts';
 import type Phaser from 'phaser';
 import type { SceneryProp } from '../domain/world/Scenery.ts';
 import type { Season } from '../domain/world/Regions.ts';
@@ -62,7 +63,7 @@ export class FarmForestView {
       const part = parts[key];
       if (!part || !pivot) throw new Error(`missing compound child ${key}`);
       const im = scene.add
-        .image(0, 0, texture, key)
+        .image(0, 0, frameTexture(key, texture), key)
         .setName(`${prop.id}:${key}`);
       const origin = frameOrigin(pivot, pxPerU, im.frame);
       im.setOrigin(origin.x, origin.y).setScale(1 / pxPerU);
@@ -236,7 +237,10 @@ export class FarmForestView {
     if (p.work === 'farmer') {
       const wave = (timeSec + p.phase * 24) % 24 > 21;
       this.#body.setTexture(
-        this.#texture,
+        frameTexture(
+          wave ? 'back.farmer-wave' : 'back.farmer-work',
+          this.#texture,
+        ),
         wave ? 'back.farmer-wave' : 'back.farmer-work',
       );
     }
@@ -273,7 +277,10 @@ export class FarmForestView {
     stick.setRotation(second);
     gripper.setRotation(angle - first - second);
     this.#gripper?.setTexture(
-      this.#texture,
+      frameTexture(
+        pose.open ? 'back.harvester-gripper-open' : 'back.harvester-gripper',
+        this.#texture,
+      ),
       pose.open ? 'back.harvester-gripper-open' : 'back.harvester-gripper',
     );
     this.#trunk?.setVisible(pose.holding);

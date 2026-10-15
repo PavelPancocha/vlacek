@@ -78,3 +78,76 @@ export function secondaryPortalCoversPoint(
   if (portal.mirrored ? x >= 0 : x <= 0) return true;
   return portalMasonryPoint(x, y, 64, 136, 36, 68);
 }
+
+/** Bounded secondary scenery silhouette; weather is not an NPC tail half-plane. */
+export function secondaryWeatherCoversPoint(
+  point: { x: number; y: number },
+  portal: { x: number; y: number; grade: number; mirrored: boolean },
+  radiusU = 0,
+): boolean {
+  const angle = -Math.atan(portal.grade),
+    cos = Math.cos(angle),
+    sin = Math.sin(angle);
+  const dx = point.x - portal.x,
+    dy = point.y - portal.y;
+  const x = (dx * cos + dy * sin) * (portal.mirrored ? -1 : 1),
+    y = -dx * sin + dy * cos;
+  if (
+    x < -380 - radiusU ||
+    x > 62 + radiusU ||
+    y < -175 - radiusU ||
+    y > 6 + radiusU
+  )
+    return false;
+  const archX = Math.abs(x) + radiusU;
+  const whollyInArch =
+    archX < 36 &&
+    y + radiusU <= 2 &&
+    y - radiusU >= -68 - Math.sqrt(36 ** 2 - archX ** 2);
+  if (whollyInArch) return false;
+  return pointInsideSecondary(x, y, radiusU);
+}
+
+const SECONDARY_HILL = [
+  [-380, 6],
+  [-367, -44],
+  [-337, -104],
+  [-291, -146],
+  [-230, -168],
+  [-177, -175],
+  [-129, -173],
+  [-88, -165],
+  [-54, -140],
+  [60, -136],
+  [62, -99],
+  [59, -49],
+  [60, 6],
+] as const;
+function pointInsideSecondary(x: number, y: number, radiusU: number): boolean {
+  let inside = false;
+  for (
+    let i = 0, j = SECONDARY_HILL.length - 1;
+    i < SECONDARY_HILL.length;
+    j = i++
+  ) {
+    const a = SECONDARY_HILL[i],
+      b = SECONDARY_HILL[j];
+    if (!a || !b) continue;
+    if (radiusU > 0) {
+      const dx = b[0] - a[0],
+        dy = b[1] - a[1];
+      const t = Math.max(
+        0,
+        Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy)),
+      );
+      if ((x - a[0] - t * dx) ** 2 + (y - a[1] - t * dy) ** 2 <= radiusU ** 2)
+        return true;
+    }
+    if (
+      a[1] > y !== b[1] > y &&
+      x < ((b[0] - a[0]) * (y - a[1])) / (b[1] - a[1]) + a[0]
+    )
+      inside = !inside;
+  }
+  return inside;
+}

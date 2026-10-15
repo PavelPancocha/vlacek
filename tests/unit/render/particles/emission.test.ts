@@ -89,3 +89,10 @@ describe('passEffectAt: leaves and snow only where they lie', () => {
     expect(passEffectAt(near, 950)).toBeUndefined();
   });
 });
+
+it('SEA-04: bogie clocks can start at distinct fractions instead of synchronized snow bursts', () => {
+  const first = new EmissionClock(0.9),
+    second = new EmissionClock(0.2);
+  expect(first.tick(1, 0.2)).toBe(1);
+  expect(second.tick(1, 0.2)).toBe(0);
+});

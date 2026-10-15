@@ -1,3 +1,4 @@
+import { frameTexture } from './frameTexture.ts';
 import type Phaser from 'phaser';
 import type { ArtPart } from '../content/artManifest.ts';
 import type { SceneryProp } from '../domain/world/Scenery.ts';
@@ -70,7 +71,9 @@ export function bakeStaticComposition(
       const part = parts[prop.kind];
       if (!source || !part)
         throw new Error(`missing composition art ${prop.kind}`);
-      const frame = scene.textures.get(source.texture).get(prop.kind);
+      const frame = scene.textures
+        .get(frameTexture(prop.kind, source.texture))
+        .get(prop.kind);
       const image = frame.source.image;
       if (
         !(image instanceof HTMLCanvasElement) &&

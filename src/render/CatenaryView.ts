@@ -1,3 +1,4 @@
+import { frameTexture } from './frameTexture.ts';
 import Phaser from 'phaser';
 import { gameConfig } from '../config/gameConfig.ts';
 import {
@@ -62,7 +63,7 @@ export function chunkCatenary(
     key: typeof catenaryParts.pole | typeof catenaryParts.span,
   ) => {
     const part = worldParts[key];
-    const object = scene.add.image(0, 0, art.texture, key);
+    const object = scene.add.image(0, 0, frameTexture(key, art.texture), key);
     const origin = frameOrigin(part.pivotU, art.pxPerU, object.frame);
     return object.setOrigin(origin.x, origin.y);
   };

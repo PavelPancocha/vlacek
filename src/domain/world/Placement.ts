@@ -31,6 +31,7 @@ export function admissibleKind(
     kind !== `near.garden-${context.season}`
   )
     return false;
+  if (kind === 'back.sled-child' && context.season !== 'winter') return false;
   if (kind === 'near.pond' && context.surface === 'sand') return false;
   if (context.season !== 'winter' && kind.includes('snow')) return false;
   if (

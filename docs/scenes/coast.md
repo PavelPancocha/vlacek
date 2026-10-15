@@ -98,3 +98,9 @@ NEW: pobřežní skála 180 × 110 u; oblé světlé vrstvy s nízkou přední v
 Stávající lodě potřebují ověřený údaj o přídi a kotvení, nikoli nutně kompletní novou kresbu.
 Mola, maják, mušle, písečné hračky a trávy se znovu používají.
 Palmy, kokosové plody a další exotická výplň nejsou součástí tohoto katalogu.
+
+### Sezónní život D-027
+
+Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
+a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
+koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.

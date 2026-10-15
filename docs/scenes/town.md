@@ -125,3 +125,9 @@ Region začíná a končí předměstím TO-01. Vnitřní dvouchunkové obrazy s
 ## Oprava kompozice settlements-2
 
 TO-02 má souvislou nízkou pěší cestu a jednotlivce mimo chráněný pás. Na začátku a konci městského regionu se přední pěšina během posledních 160 u zúží do louky a končí v bodě, ne useknutá na hranici. Stejně končí před pracovním dvorem TO-05, který pěšinu nemá, a před oběma břehy řeky. Nízká servisní cesta stanice se na koncích nástupiště také zúží. Ulice přejde potok po malém silničním mostě s kamennou mostovkou, pokračujícím asfaltem a nízkým zábradlím; na březích se neusekne. TO-04 sdílí nízkou servisní cestu stanice. TO-05 rezervuje suchý pracovní dvůr, který obsahuje sklad/pilu i celý obal uloženého materiálu; přístup je veden kolem ostatních parcel. Zahrady rodinných domů patří k jejich parcelám; přední zahrádky sdílejí pěšinu a připojené branky. V osadě vlastní ulici a přístupy settlements; paralelní silniční linka se na hranici napojí nebo ustoupí do terénu.
+
+### Sezónní život D-027
+
+Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
+a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
+koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.

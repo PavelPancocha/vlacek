@@ -196,6 +196,44 @@ export function mixColour(a: number, b: number, t: number): number {
   return mixed;
 }
 
+/** Local season tint leaves sand and already white surfaces unchanged. */
+export function seasonalColour(
+  color: number,
+  season: RegionPlan['season'],
+  sand = false,
+): number {
+  if (sand || season === 'summer') return color;
+  if (season === 'winter') return mixColour(color, 0xf1f6fa, 0.94);
+  return season === 'autumn'
+    ? mixColour(color, 0xb39355, 0.6)
+    : mixColour(color, 0xafd776, 0.12);
+}
+function seasonNear(base: NearGround, region: RegionPlan): NearPalette {
+  if (region.season === 'winter') return NEAR_PALETTE.snow;
+  const palette = NEAR_PALETTE[base];
+  if (region.season === 'summer' || base === 'sand') return palette;
+  return {
+    bank: seasonalColour(palette.bank, region.season),
+    bankShade: seasonalColour(palette.bankShade, region.season),
+    bands: palette.bands.map((b) => ({
+      ...b,
+      color: seasonalColour(b.color, region.season),
+    })),
+  };
+}
+function seasonBack(base: BackGround, region: RegionPlan): BackPalette {
+  if (region.season === 'winter') return BACK_PALETTE.snow;
+  const palette = BACK_PALETTE[base];
+  if (region.season === 'summer' || base === 'sand') return palette;
+  const colour = (c: number) => seasonalColour(c, region.season);
+  return {
+    ...palette,
+    base: colour(palette.base),
+    edge: colour(palette.edge),
+    patches: palette.patches.map(colour),
+    ...(palette.rows === undefined ? {} : { rows: colour(palette.rows) }),
+  };
+}
 function regionGround(region: RegionPlan): NearGround {
   return region.season === 'winter'
     ? 'snow'
@@ -212,10 +250,10 @@ export function spatialNearPalette(
 ): NearPalette {
   const t = transitionAt(seed, worldXU);
   return t.progress === 0
-    ? NEAR_PALETTE[base]
+    ? seasonNear(base, t.from)
     : blendNearPalette(
-        NEAR_PALETTE[regionGround(t.from)],
-        NEAR_PALETTE[regionGround(t.to)],
+        seasonNear(regionGround(t.from), t.from),
+        seasonNear(regionGround(t.to), t.to),
         t.progress,
       );
 }
@@ -232,8 +270,8 @@ export function spatialBackPalette(
     base = contextAt(seed, worldXU, 'back').surface;
   const t = transitionAt(seed, worldXU),
     // Placement climate may already be incoming; authored owner ground is not.
-    a = BACK_PALETTE[base],
-    b = BACK_PALETTE[regionGround(t.to)];
+    a = seasonBack(base, t.from),
+    b = seasonBack(regionGround(t.to), t.to);
   if (t.progress === 0) return a;
   return {
     base: mixColour(a.base, b.base, t.progress),
@@ -246,3 +284,56 @@ export function spatialBackPalette(
       : {}),
   };
 }
+
+const BACKDROP_SEASONS = {
+  spring: { color: 0xc7e58f, alpha: 0.08 },
+  summer: { color: 0xffffff, alpha: 0 },
+  autumn: { color: 0xe4ba82, alpha: 0.2 },
+  winter: { color: 0xcbdfea, alpha: 0.22 },
+};
+
+/** Distant colour atmosphere; regular rectangles work on Canvas as well as WebGL. */
+export function seasonalBackdropWash(
+  from: RegionPlan['season'],
+  to: RegionPlan['season'],
+  progress: number,
+): { color: number; alpha: number } {
+  const a = BACKDROP_SEASONS[from],
+    b = BACKDROP_SEASONS[to];
+  return {
+    color: mixColour(a.color, b.color, progress),
+    alpha: a.alpha + (b.alpha - a.alpha) * progress,
+  };
+}
+
+/** Snow coverage of the drawn solid near surface, excluding sand/water. */
+export function spatialSnowCoverage(
+  seed: number,
+  worldXU: number,
+  base: NearGround,
+): number {
+  if (base === 'sand') return 0;
+  const t = transitionAt(seed, worldXU);
+  return (
+    (t.from.season === 'winter' ? 1 - t.progress : 0) +
+    (t.to.season === 'winter' ? t.progress : 0)
+  );
+}
+
+/** Renderer adapter for the real solid surface under one bogie. */
+export function scenerySnowCoverage(
+  seed: number,
+  worldXU: number,
+  sc: ChunkScenery,
+): number {
+  const localXU = worldXU - sc.chunkIndex * 1024;
+  if (sc.bridge && Math.abs(localXU - sc.bridge.localXU) <= BRIDGE_HALF_U)
+    return 0;
+  const style = sc.near.find(
+    (s) => localXU >= s.fromX && localXU < s.toX,
+  )?.style;
+  return style === undefined ? 0 : spatialSnowCoverage(seed, worldXU, style);
+}
+import type { ChunkScenery } from '../domain/world/Scenery.ts';
+
+import { BRIDGE_HALF_U } from '../domain/world/Structures.ts';

@@ -112,3 +112,17 @@ NEW: skalní portál 180 × 240 u; oddělené boční části, otvor a překrýv
 NEW: mostní konzola vedení 36 × 170 u, tunelový kontakt 128 × 12 u a staniční nosník 256 × 180 u.
 Kryty a dlouhá tělesa vznikají z omezených fragmentů, nikoli z natažení jednoho obřího SVG.
 Použít existující zděný portál, kamenný most a zábradlí tam, kde odpovídají potřebné geometrii.
+
+### Sezónní život D-027
+
+Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
+a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
+koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.
+
+### Vedlejší zimní portály — D-027
+
+Sníh kryje travnaté křídlo obou vedlejších kopců bez zásahu do oblouku
+či kamenné zdi. Počasí kontroluje omezenou siluetu portálu a rohy celého
+sprite; pod otevřeným obloukem platí jeho skutečný otvor. Sněžení venku
+pokračuje, bez vypínače vázaného na polohu vlaku. Snow caps hlavních tunelů
+sdílejí běžný střešní díl; atlas musí zahrnout všechny zimní hostitele.

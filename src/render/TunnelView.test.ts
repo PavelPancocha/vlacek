@@ -177,3 +177,61 @@ it('tunnel-3: fitted covers belong to the chunk that owns each portal', () => {
     secondaryPortalFeet(scene, site, (x) => x * 0.07885, 4.35, 3),
   ).toHaveLength(0);
 });
+
+it('SEA-05: winter hill is snowy without summer flowers, tunnel cover remains opaque', () => {
+  const scene = new Phaser.Scene();
+  const graphics = new Phaser.GameObjects.Graphics(scene);
+  const fills = vi.spyOn(graphics, 'fillStyle');
+  const view = new TunnelView(
+    scene,
+    undefined,
+    { id: 'winter', chunkIndex: 6, fromX: 200, toX: 700 },
+    { railY: () => 0, meadowY: () => 20 },
+    (paint) => {
+      paint(graphics);
+      return new Phaser.GameObjects.Container(scene);
+    },
+    { flanks: 0, interior: 1, shade: 2, cover: 3 },
+    [],
+    {
+      climateAt: () => ({
+        from: { season: 'winter', weather: 'snow' },
+        to: { season: 'winter', weather: 'snow' },
+        progress: 0,
+        season: 'winter',
+        weather: 'snow',
+        spring: 0,
+        summer: 0,
+        autumn: 0,
+        winter: 1,
+        snowfall: 1,
+        rainfall: 0,
+      }),
+      sandAt: () => false,
+    },
+  );
+  expect(fills.mock.calls.some(([color]) => color === 0xf1f6fa)).toBe(true);
+  expect(
+    fills.mock.calls.some(
+      ([color]) => color === 0xf4d03f || color === 0xe74c3c,
+    ),
+  ).toBe(false);
+  expect(view.coversPoint({ x: 6 * 1024 + 400, y: -50 })).toBe(true);
+});
+
+it('SEA-05: secondary portal foot uses the same winter cover as its hill', () => {
+  const scene = new Phaser.Scene();
+  const graphics = new Phaser.GameObjects.Graphics(scene);
+  Object.assign(scene, { add: { graphics: () => graphics } });
+  const fills = vi.spyOn(graphics, 'fillStyle');
+  // The ordinary closed rear half remains dark; only its ground skirt is snow.
+  secondaryPortalFeet(
+    scene,
+    { fromX: 1024, toX: 3072 },
+    () => 0,
+    4.35,
+    1,
+    () => 0xe7f0f5,
+  );
+  expect(fills.mock.calls.map(([tone]) => tone)).toEqual([0x24211e, 0xe7f0f5]);
+});

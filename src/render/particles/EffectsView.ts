@@ -1,7 +1,9 @@
+import { frameTexture } from '../frameTexture.ts';
 import type Phaser from 'phaser';
 import type { ArtPart } from '../../content/artManifest.ts';
 import { worldParts } from '../../content/worldArt.ts';
 import { frameOrigin } from '../atlasPacking.ts';
+import type { Particle } from './ParticleField.ts';
 import type { ParticleField } from './ParticleField.ts';
 import { bubbleSizeU } from './bubbleInteraction.ts';
 
@@ -35,7 +37,12 @@ export class EffectsView {
     this.#frames.length = 0;
   }
 
-  draw(field: ParticleField, originX: number, unitsPerCss = 0): void {
+  draw(
+    field: ParticleField,
+    originX: number,
+    unitsPerCss = 0,
+    opacity?: (particle: Particle, point: { x: number; y: number }) => number,
+  ): void {
     const texture = this.#texture;
     const particles = field.particles();
     let used = 0;
@@ -44,9 +51,15 @@ export class EffectsView {
         const frame = field.frameOf(particle);
         const part = frame === undefined ? undefined : parts[frame];
         if (frame === undefined || !part) continue;
-        const image = this.#image(used, texture, frame, part);
+        const image = this.#image(
+          used,
+          frameTexture(frame, texture),
+          frame,
+          part,
+        );
         used += 1;
         const at = field.positionOf(particle);
+        const alpha = field.alphaOf(particle) * (opacity?.(particle, at) ?? 1);
         const size =
           frame === 'fx.bubble'
             ? bubbleSizeU(field, particle, unitsPerCss)
@@ -59,7 +72,7 @@ export class EffectsView {
           .setVisible(true)
           .setPosition(at.x - originX, at.y)
           .setScale(size / part.widthU / this.#pxPerU)
-          .setAlpha(field.alphaOf(particle))
+          .setAlpha(alpha)
           .setRotation(
             kind?.alignToMotion === true
               ? Math.atan2(particle.vy, particle.vx)
@@ -91,13 +104,13 @@ export class EffectsView {
     if (!image) {
       image = this.#scene.add.image(0, 0, texture, frame).setDepth(this.#depth);
       this.#images[index] = image;
-    } else if (this.#frames[index] !== frame) {
-      image.setFrame(frame);
+    } else if (this.#frames[index] !== `${texture}/${frame}`) {
+      image.setTexture(texture, frame);
     }
-    if (this.#frames[index] !== frame) {
+    if (this.#frames[index] !== `${texture}/${frame}`) {
       const origin = frameOrigin(part.pivotU, this.#pxPerU, image.frame);
       image.setOrigin(origin.x, origin.y);
-      this.#frames[index] = frame;
+      this.#frames[index] = `${texture}/${frame}`;
     }
     return image;
   }

@@ -95,3 +95,9 @@ NEW: mladá borovice 40 × 44 u; kompaktní silueta vhodná do bezpečného pop�
 Přízemní písek může využít společnou kresbu jemného prachu s vlastní barvou.
 Stávající borovice, dunová tráva a kameny se sdílejí s ostatními krajinami.
 Nevznikají kaktusy, velbloudi, palmy, oázy ani nový katalog pouštních rekvizit.
+
+### Sezónní život D-027
+
+Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
+a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
+koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.

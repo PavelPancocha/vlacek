@@ -64,13 +64,37 @@ function drawingScene() {
     let color = 0,
       translateX = 0,
       translateY = 0;
-    const target = { x, y, key, frame: { width: 128, height: 128 } };
+    const target = {
+      x,
+      y,
+      key,
+      scaleX: 1,
+      scaleY: 1,
+      rotation: 0,
+      frame: { width: 128, height: 128 },
+    };
     const proxy = new Proxy(target, {
       get(target, property) {
         if (property in target) {
           const value: unknown = Reflect.get(target, property);
           return value;
         }
+        if (property === 'setScale')
+          return (x: number, y = x) => {
+            target.scaleX = x;
+            target.scaleY = y;
+            return proxy;
+          };
+        if (property === 'setRotation')
+          return (value: number) => {
+            target.rotation = value;
+            return proxy;
+          };
+        if (property === 'setTexture')
+          return (_texture: string, key: string) => {
+            target.key = key;
+            return proxy;
+          };
         if (property === 'setPosition')
           return (x: number, y: number) => {
             target.x = x;
@@ -539,34 +563,45 @@ it.each(['wheat', 'crops', 'glade'] as const)(
   },
 );
 
-it('GEN-23 review2 authored surface survives an already incoming winter climate', () => {
-  let found: { seed: number; x: number } | undefined;
-  for (let seed = 0; seed < 20 && !found; seed++) {
-    let r = regionAt(seed, 0);
-    for (let i = 0; i < 12; i++, r = regionAt(seed, r.toXU))
-      if (r.season !== 'winter' && regionAt(seed, r.toXU).season === 'winter') {
-        found = { seed, x: r.toXU - 3072 + 8 };
-        break;
+it.each(['summer', 'autumn', 'spring'] as const)(
+  'GEN-23 / SEA-02: authored %s surface survives an already incoming winter climate',
+  (season) => {
+    let found: { seed: number; x: number } | undefined;
+    for (let seed = 0; seed < 20 && !found; seed++) {
+      let r = regionAt(seed, 0);
+      for (let i = 0; i < 40; i++, r = regionAt(seed, r.toXU))
+        if (r.season === season && regionAt(seed, r.toXU).season === 'winter') {
+          found = { seed, x: r.toXU - 3072 + 8 };
+          break;
+        }
+    }
+    if (!found) throw new Error('winter transition witness missing');
+    const { seed, x } = found;
+    expect(contextAt(seed, x, 'back').season).toBe('winter');
+    const t = transitionAt(seed, x);
+    // D-027 now colours the authored surface before the transition. The old
+    // summer-only RGB expectation accidentally used an autumn witness (seed 0).
+    // Keep its exact summer case and separately require both seasonal endpoints.
+    const tint = season === 'autumn' ? 0xb39355 : 0xafd776;
+    const strength = season === 'autumn' ? 0.6 : season === 'spring' ? 0.12 : 0;
+    for (const style of ['wheat', 'crops', 'glade'] as const) {
+      const palette = spatialBackPalette(seed, x, style);
+      for (const shift of [0, 8, 16]) {
+        const original = (BACK_PALETTE[style].base >> shift) & 255;
+        const a = Math.round(
+          original + (((tint >> shift) & 255) - original) * strength,
+        );
+        const b = (BACK_PALETTE.snow.base >> shift) & 255;
+        expect((palette.base >> shift) & 255).toBe(
+          Math.round(a + (b - a) * t.progress),
+        );
       }
-  }
-  if (!found) throw new Error('winter transition witness missing');
-  const { seed, x } = found;
-  expect(contextAt(seed, x, 'back').season).toBe('winter');
-  const t = transitionAt(seed, x);
-  for (const style of ['wheat', 'crops', 'glade'] as const) {
-    const palette = spatialBackPalette(seed, x, style);
-    for (const shift of [0, 8, 16]) {
-      const a = (BACK_PALETTE[style].base >> shift) & 255;
-      const b = (BACK_PALETTE.snow.base >> shift) & 255;
-      expect((palette.base >> shift) & 255).toBe(
-        Math.round(a + (b - a) * t.progress),
+      expect(palette.rows !== undefined).toBe(
+        BACK_PALETTE[style].rows !== undefined,
       );
     }
-    expect(palette.rows !== undefined).toBe(
-      BACK_PALETTE[style].rows !== undefined,
-    );
-  }
-});
+  },
+);
 
 it.each([4, 5, 60, 61])(
   'SCN-G06 review2 rounded headland and grass margin at chunk %i',
@@ -680,4 +715,141 @@ it('SCN-CO02/GEN-23: later background fragments never erase the continuous sea a
   expect(polygons.findLast((p) => pointInside(point, p.points))?.color).toBe(
     WATER_PALETTE.sea.middle,
   );
+});
+
+it('SEA-06 regression: seed 1 mill water with fractional edges renders without rejecting its cosmetic seed', () => {
+  for (let k = 286; k <= 290; k++) {
+    const sc = chunkScenery(1, k, worldPlacementCatalog);
+    const table = buildArcLengthTable(generateTrackProfile(1, k), k, 1024, 8);
+    const draw = drawingScene();
+    expect(
+      () =>
+        new ChunkView(draw.scene, table, 1, sc, undefined, {
+          backGround: 3,
+          backProps: 4,
+          ground: 5,
+          track: 6,
+          train: 7,
+          wires: 7.5,
+          nearProps: 8,
+        }),
+    ).not.toThrow();
+  }
+});
+
+it('SEA-07 integration: farm animation consumes budget and holds its pose when denied', () => {
+  const sc = chunkScenery(1, 0, worldPlacementCatalog);
+  sc.props = [
+    {
+      id: 'farmer',
+      kind: 'back.farmer-work',
+      work: 'farmer',
+      xU: 100,
+      layer: 'back',
+      depth: 0.5,
+      scale: 1,
+      flip: false,
+      phase: 0,
+    },
+  ];
+  const drawn = drawingScene();
+  const table = buildArcLengthTable(generateTrackProfile(1, 0), 0, 1024, 8);
+  const view = new ChunkView(
+    drawn.scene,
+    table,
+    1,
+    sc,
+    { texture: 'world', pxPerU: 1 },
+    {
+      backGround: 0,
+      backProps: 1,
+      ground: 2,
+      track: 3,
+      train: 4,
+      wires: 5,
+      nearProps: 6,
+    },
+  );
+  expect(view.update(23, undefined, 1, 0, 1)).toBe(1);
+  expect(drawn.images.some((image) => image.key === 'back.farmer-wave')).toBe(
+    true,
+  );
+  expect(view.update(24, undefined, 1, 0, 0)).toBe(0);
+  expect(drawn.images.some((image) => image.key === 'back.farmer-wave')).toBe(
+    true,
+  );
+  expect(view.update(24.1, undefined, 1, 0, 1)).toBe(1);
+  expect(drawn.images.some((image) => image.key === 'back.farmer-wave')).toBe(
+    true,
+  );
+  view.destroy();
+});
+
+it('SEA-01 integration: the settlement green is snow-covered in the winter village', () => {
+  const sc = chunkScenery(2, 490, worldPlacementCatalog);
+  const area = sc.reservations.find((r) => r.purpose === 'village-green');
+  expect(area).toBeDefined();
+  const drawn = drawingScene();
+  const table = buildArcLengthTable(generateTrackProfile(2, 490), 490, 1024, 8);
+  const view = new ChunkView(drawn.scene, table, 2, sc, undefined, {
+    backGround: 0,
+    backProps: 1,
+    ground: 2,
+    track: 3,
+    train: 4,
+    wires: 5,
+    nearProps: 6,
+  });
+  const polygon = drawn.polygons.find(
+    (p) =>
+      p.points.length === area?.polygon.length &&
+      p.points.every(
+        (point, i) =>
+          point.x === (area?.polygon[i]?.xU ?? 0) - 490 * 1024 &&
+          point.y === area?.polygon[i]?.yU,
+      ),
+  );
+  expect(polygon?.color).toBe(BACK_PALETTE.snow.base);
+  view.destroy();
+});
+
+it('SEA-01 integration: the attached station canopy roof receives its authored snow plane', () => {
+  const sc = chunkScenery(2, 490, worldPlacementCatalog);
+  sc.props = [
+    {
+      id: 'canopy',
+      kind: 'back.platform-canopy',
+      xU: 100,
+      layer: 'back',
+      depth: 0.5,
+      scale: 1,
+      flip: false,
+      phase: 0,
+    },
+  ];
+  const drawn = drawingScene();
+  const table = buildArcLengthTable(generateTrackProfile(2, 490), 490, 1024, 8);
+  const view = new ChunkView(
+    drawn.scene,
+    table,
+    2,
+    sc,
+    { texture: 'world', pxPerU: 1 },
+    {
+      backGround: 0,
+      backProps: 1,
+      ground: 2,
+      track: 3,
+      train: 4,
+      wires: 5,
+      nearProps: 6,
+    },
+  );
+  expect(
+    drawn.images.some((image) => image.key === 'back.platform-canopy-roof'),
+  ).toBe(true);
+  expect(drawn.polygons.some((polygon) => polygon.color === 0xf4f9fc)).toBe(
+    true,
+  );
+  view.destroy();
 });

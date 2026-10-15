@@ -9,6 +9,9 @@ import { contextAt } from '../domain/world/WorldPlan.ts';
 import { StationReaction } from '../domain/interaction/StationReaction.ts';
 import { settlementAttachmentAngle } from './settlementMotion.ts';
 import { parts as settlementArt } from '../content/world-modules/settlements.art.ts';
+import { frameTexture } from './frameTexture.ts';
+import { effectiveClimateAt, windAt } from '../domain/world/Seasons.ts';
+import { SeasonalSceneryView } from './SeasonalSceneryView.ts';
 import { transitionAt } from '../domain/world/Regions.ts';
 import { ROAD_BRIDGE_EDGE_U } from '../domain/world/SettlementScenery.ts';
 import { nearGroundRuns, nearGroundTailStrips } from './groundLayout.ts';
@@ -68,10 +71,12 @@ import {
 } from '../domain/world/Structures.ts';
 import {
   NEAR_PALETTE,
+  BACK_PALETTE,
   WATER_PALETTE,
   blendNearPalette,
   spatialNearPalette,
   spatialBackPalette,
+  mixColour,
   type NearPalette,
   type WaterPalette,
 } from './groundPalette.ts';
@@ -248,6 +253,7 @@ export class ChunkView {
     view: FarmForestView;
     prop: SceneryProp;
     foot: { xU: number; yU: number };
+    timeSec?: number;
   }[] = [];
   readonly #settlementMotion: {
     image: Phaser.GameObjects.Image;
@@ -256,6 +262,10 @@ export class ChunkView {
     winter: boolean;
     reaction: StationReaction | undefined;
   }[] = [];
+  #seasonal: SeasonalSceneryView | undefined;
+  #lastDecorationSec: number | undefined;
+  readonly #animationTimes = new WeakMap<Phaser.GameObjects.Image, number>();
+  #animatedLastFrame = 0;
   readonly #near: Phaser.GameObjects.Image[] = [];
   /** Plants and trees that sway in the wind, with their phase. */
   readonly #swaying: {
@@ -327,8 +337,16 @@ export class ChunkView {
             r.purpose === 'forecourt' ||
             r.purpose === 'working-yard',
         )) {
+          const climate = effectiveClimateAt(
+            seed,
+            (area.polygon[0]?.xU ?? table.chunkIndex * CHUNK_WIDTH_U) + 256,
+          );
           g.fillStyle(
-            area.purpose === 'village-green' ? 0x91a96a : 0xb2ad9b,
+            mixColour(
+              area.purpose === 'village-green' ? 0x91a96a : 0xb2ad9b,
+              BACK_PALETTE.snow.base,
+              climate.winter,
+            ),
             1,
           );
           g.fillPoints(
@@ -675,6 +693,14 @@ export class ChunkView {
       this.#objects.push(...catenary.containers);
       this.#poles = catenary.poles;
     }
+    this.#seasonal = new SeasonalSceneryView(
+      scene,
+      seed,
+      table.chunkIndex * CHUNK_WIDTH_U,
+      art.texture,
+      art.pxPerU,
+      parts,
+    );
     const backProps = scene.add.container(0, 0).setDepth(depths.backProps);
     const nearProps = scene.add.container(0, 0).setDepth(depths.nearProps);
     const station = scenery.features.find((f) => f.kind === 'station');
@@ -748,9 +774,12 @@ export class ChunkView {
       }
       const source = prop.kind.startsWith('backdrop.') ? forestArt : art;
       if (!source) continue;
-      const image = this.#image(scene, source, prop.kind, prop.flip).setName(
-        prop.id,
-      );
+      const image = this.#image(
+        scene,
+        source,
+        this.#seasonal.frame(prop.kind, prop.xU),
+        prop.flip,
+      ).setName(prop.id);
       image.setDepth(paintOrder(prop));
       this.#placeProp(image, prop, prop.xU, source.pxPerU);
       const parent = prop.layer === 'back' ? backProps : nearProps;
@@ -781,6 +810,12 @@ export class ChunkView {
             .setScale(scale / art.pxPerU)
             .setDepth(image.depth + 0.00001);
           (prop.layer === 'back' ? backProps : nearProps).add(child);
+          this.#seasonal.add(
+            { ...prop, kind: attachment.part, flip: false },
+            child,
+            parent,
+            prop.layer === 'back' ? depths.backProps : depths.nearProps,
+          );
           if (
             attachment.part === 'back.playground-swing' ||
             attachment.part.includes('-arm')
@@ -800,6 +835,12 @@ export class ChunkView {
                   : undefined,
             });
         }
+      this.#seasonal.add(
+        prop,
+        image,
+        parent,
+        prop.layer === 'back' ? depths.backProps : depths.nearProps,
+      );
       if (prop.layer === 'near') this.#near.push(image);
       if (prop.motion) this.#moving.push({ image, prop });
       else if (swayAmplitudeRad(prop.kind) > 0)
@@ -850,6 +891,17 @@ export class ChunkView {
         .setAlpha(0);
       backProps.addAt(image, 0);
       this.#glints.push({ image, phase: spot.phase });
+      if (
+        scenery.water.some(
+          (w) => w.kind !== 'sea' && spot.x >= w.fromX && spot.x < w.toX,
+        )
+      )
+        this.#seasonal.addWaterSource(
+          `water:${table.chunkIndex}:${spot.x}`,
+          spot.x,
+          spot.y,
+          depths.backProps,
+        );
     }
     for (const parent of [backProps, nearProps]) {
       const bounds = parent.getBounds();
@@ -1069,6 +1121,15 @@ export class ChunkView {
         cover: depths.train + 0.6,
       },
       hangerXs,
+      {
+        climateAt: (x) =>
+          effectiveClimateAt(seed, table.chunkIndex * CHUNK_WIDTH_U + x),
+        sandAt: (x) =>
+          ['coast', 'dunes'].includes(
+            transitionAt(seed, table.chunkIndex * CHUNK_WIDTH_U + x).from
+              .landscape,
+          ),
+      },
     );
     this.#objects.push(...this.#tunnel.containers);
   }
@@ -1082,13 +1143,7 @@ export class ChunkView {
   }
   /** Actual animated decorative view objects; no simulation or RNG work. */
   get animatedObjectCount(): number {
-    return (
-      this.#moving.length +
-      this.#swaying.length +
-      this.#glints.length +
-      this.#farm.length +
-      this.#settlementMotion.length
-    );
+    return this.#animatedLastFrame;
   }
 
   /** Catenary masts of this chunk (0 unless the journey is electric). */
@@ -1112,20 +1167,53 @@ export class ChunkView {
    * shows the chunk's crossing as the simulation holds it.
    */
   /** `motion` scales the decorative sway and glints (doc 07 §9). */
+  get seasonalSources() {
+    return this.#seasonal?.sources ?? [];
+  }
   update(
     timeSec: number,
     crossing?: CrossingState,
     motion = 1,
-    headXU = Infinity,
+    frontXU = Infinity,
+    animationBudget = Infinity,
+    view = { left: -Infinity, right: Infinity },
+    stage: 'all' | 'life' | 'decoration' = 'all',
+    headXU = frontXU,
     speedUPerSec = 0,
-  ): void {
-    this.#crossing?.update(crossing, timeSec);
+  ): number {
+    let remaining = Math.max(0, animationBudget);
+    const before = stage === 'decoration' ? this.#animatedLastFrame : 0;
+    if (stage !== 'decoration') {
+      this.#animatedLastFrame = 0;
+      this.#crossing?.update(crossing, timeSec);
+      const life =
+        this.#seasonal?.update(timeSec, motion, frontXU, remaining, view) ?? 0;
+      this.#animatedLastFrame += life;
+      remaining -= life;
+    }
+    if (stage === 'life') return this.#animatedLastFrame;
+    const dt =
+      this.#lastDecorationSec === undefined
+        ? 0
+        : Math.min(0.1, Math.max(0, timeSec - this.#lastDecorationSec));
+    this.#lastDecorationSec = timeSec;
+    const visible = (image: Phaser.GameObjects.Image) =>
+      image.x >= view.left - 60 && image.x <= view.right + 60;
+    const clock = (image: Phaser.GameObjects.Image) => {
+      const t = (this.#animationTimes.get(image) ?? 0) + dt;
+      this.#animationTimes.set(image, t);
+      return t;
+    };
     for (const { image, prop } of this.#moving) {
+      if (!visible(image)) continue;
+      if (remaining-- <= 0) break;
+      this.#animatedLastFrame++;
+      const localTime = clock(image);
       const motion = prop.motion;
       if (!motion) continue;
       // Triangle wave over the patrol range, one leg per range length.
       const legs =
-        (timeSec * motion.speedUPerSec) / motion.rangeU + 2 * prop.phase;
+        (localTime * motion.speedUPerSec) / motion.rangeU + 2 * prop.phase;
       const t = legs - 2 * Math.floor(legs / 2);
       const forward = t < 1;
       const offset = (forward ? t : 2 - t) * motion.rangeU - motion.rangeU / 2;
@@ -1134,10 +1222,21 @@ export class ChunkView {
       // The art faces right; it turns round on the way back.
       image.setFlipX(!forward);
     }
-    for (const { view, prop, foot: target } of this.#farm) {
-      if (view.root.parentContainer?.visible === false) continue;
-      view.update(timeSec);
-      const x = prop.xU + farmPatrolOffsetU(prop, timeSec, view.patrolRatio);
+    for (const farm of this.#farm) {
+      const { view: machine, prop, foot: target } = farm;
+      if (
+        machine.root.parentContainer?.visible === false ||
+        machine.root.x < view.left - 320 ||
+        machine.root.x > view.right + 320
+      )
+        continue;
+      if (remaining-- <= 0) continue;
+      this.#animatedLastFrame++;
+      const localTime = (farm.timeSec ?? timeSec - dt) + dt;
+      farm.timeSec = localTime;
+      machine.update(localTime);
+      const x =
+        prop.xU + farmPatrolOffsetU(prop, localTime, machine.patrolRatio);
       const foot = propFootU(
         prop,
         x,
@@ -1147,7 +1246,7 @@ export class ChunkView {
           : 0,
         target,
       );
-      view.root.setPosition(foot.xU, foot.yU);
+      machine.root.setPosition(foot.xU, foot.yU);
     }
     for (const view of this.#settlementMotion) {
       const age = view.reaction?.step(
@@ -1155,10 +1254,12 @@ export class ChunkView {
         headXU,
         speedUPerSec,
       );
+      if (!visible(view.image) || remaining-- <= 0) continue;
+      this.#animatedLastFrame++;
       view.image.setRotation(
         settlementAttachmentAngle(
           view.kind,
-          age ?? timeSec,
+          age ?? clock(view.image),
           age === undefined ? view.phase : 0,
           view.winter,
           age !== undefined,
@@ -1167,11 +1268,26 @@ export class ChunkView {
       );
     }
     // Grass, flowers and branches in the wind; glints on the water.
-    for (const { image, kind, phase } of this.#swaying)
-      if (image.parentContainer?.visible !== false)
-        image.setRotation(swayAngle(kind, timeSec, phase, motion));
-    for (const { image, phase } of this.#glints)
-      image.setAlpha(glintAlpha(timeSec, phase, motion));
+    for (const { image, kind, phase } of this.#swaying) {
+      if (!visible(image)) continue;
+      if (remaining-- <= 0) break;
+      this.#animatedLastFrame++;
+      const localTime = clock(image);
+      image.setRotation(
+        swayAngle(kind, localTime, phase, motion) *
+          (windAt(this.#seed, timeSec) / 12),
+      );
+    }
+    for (const { image, phase } of this.#glints) {
+      if (!visible(image)) continue;
+      if (remaining-- <= 0) {
+        image.setAlpha(0);
+        continue;
+      }
+      this.#animatedLastFrame++;
+      image.setAlpha(glintAlpha(clock(image), phase, motion));
+    }
+    return this.#animatedLastFrame - before;
   }
 
   destroy(): void {
@@ -1179,6 +1295,7 @@ export class ChunkView {
     this.#crossing = undefined;
     this.#tunnel = undefined;
     this.#decorativeGroups.length = 0;
+    this.#seasonal = undefined;
     for (const object of this.#objects) object.destroy();
     this.#objects.length = 0;
     for (const key of this.#textures) this.#scene.textures.remove(key);
@@ -1229,7 +1346,9 @@ export class ChunkView {
     flip: boolean,
   ): Phaser.GameObjects.Image {
     const part = parts[key];
-    const image = scene.add.image(0, 0, art.texture, key).setFlipX(flip);
+    const image = scene.add
+      .image(0, 0, frameTexture(key, art.texture), key)
+      .setFlipX(flip);
     if (part) {
       const origin = frameOrigin(part.pivotU, art.pxPerU, image.frame);
       image.setOrigin(origin.x, origin.y);
@@ -1526,7 +1645,14 @@ export class ChunkView {
             ),
           ),
       );
-      g.fillStyle(0x4b7436, 0.9);
+      g.fillStyle(
+        mixColour(
+          0x4b7436,
+          0xb39355,
+          effectiveClimateAt(this.#seed, x0 + (upper[0]?.x ?? 0)).autumn * 0.7,
+        ),
+        0.9,
+      );
       g.fillPoints([...edge, ...upper.slice().reverse()], true);
     }
   }
@@ -2039,7 +2165,7 @@ export class ChunkView {
     g.fillPoints(outline(0, 0.07), true);
     // Spots for the flashing glints (drawn as images over the texture).
     for (let i = 0; i < GLINTS_PER_BASIN; i++) {
-      const h = hash32('glint', this.#table.chunkIndex, basin.fromX, i);
+      const h = hash32('glint', this.#table.chunkIndex, String(basin.fromX), i);
       const x =
         from +
         WATER_END_U +
@@ -2056,7 +2182,7 @@ export class ChunkView {
     // Ripples: short level strokes, longer and brighter nearer the shore.
     const chunk = this.#table.chunkIndex;
     for (let i = 0; i < 34; i++) {
-      const h = hash32('ripple', chunk, basin.fromX, i);
+      const h = hash32('ripple', chunk, String(basin.fromX), i);
       const x = from + ((h % 1000) / 1000) * (to - from);
       const t = 0.12 + (((h >>> 10) % 1000) / 1000) * 0.8;
       const k = open(x);

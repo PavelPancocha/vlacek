@@ -60,3 +60,16 @@ export function glintAlpha(timeSec: number, phase: number, scale = 1): number {
 export function motionScale(effects: 'low' | 'standard'): number {
   return effects === 'low' ? REDUCED_MOTION : 1;
 }
+
+/** A small step within the original pasture footprint, with a long quiet interval. */
+export function grazingStep(
+  kind: string,
+  timeSec: number,
+  phase: number,
+  widthU: number,
+): number {
+  if (kind !== 'cow' && kind !== 'sheep') return 0;
+  const cycle = 25 + phase * 20,
+    event = (timeSec + phase * cycle) % cycle;
+  return event < 3 ? Math.sin((Math.PI * event) / 3) * widthU * 0.025 : 0;
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="28" viewBox="0 0 40 28">
+  <!-- Holý listnatý keř se sněhem; seasons-life-2, vlastní vektorová kresba. -->
+  <g transform="scale(1 1.12)">
+  <ellipse cx="20.0" cy="24" rx="18.0" ry="1" fill="#9baeba" fill-opacity=".25"/>
+  <path d="M20.0 25 L14.0 8.75 M20.0 23 L28.0 7.5 M16.0 15.5 L7.199999999999999 12.5 M24.0 15.75 L34.8 13.0" fill="none" stroke="#7d766a" stroke-width="2" stroke-linecap="round"/>
+  <path d="M4.8 13.0 Q10.0 4.5 18.0 9.0 Q24.0 0.75 32.8 9.0 Q39.6 15.0 34.0 16.75 Q24.0 12.75 16.0 16.25 Q8.0 18.75 4.8 13.0 Z" fill="#f6fafc" stroke="#bcced9" stroke-width=".6"/>
+  </g>
+</svg>

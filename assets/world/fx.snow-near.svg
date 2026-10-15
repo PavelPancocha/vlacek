@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 8 8">
+  <!-- Vláček, seasons-life-3: bílá vločka s modrošedým stínem čitelným i na sněhu. -->
+  <path d="M4 1 V7 M1.4 2.5 L6.6 5.5 M1.4 5.5 L6.6 2.5" stroke="#7292ab" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+  <path d="M4 .9 V6.7 M1.4 2.2 L6.6 5.2 M1.4 5.2 L6.6 2.2" stroke="#fbfdff" stroke-width=".8" fill="none" stroke-linecap="round"/>
+</svg>

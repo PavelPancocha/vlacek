@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="130" height="100" viewBox="0 0 130 100">
+  <!-- Vláček, art-water-coast-mountains-1: Stávající tělo mlýna bez kola a bez malovaného náhonu. 1 SVG jednotka = 1 u. -->
+  <defs><linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6efe0"/><stop offset="1" stop-color="#d9ccb0"/></linearGradient><linearGradient id="roof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9c3a2a"/><stop offset="1" stop-color="#5a2a1a"/></linearGradient>
+  </defs>
+    <ellipse cx="60" cy="99" rx="58" ry="2.4" fill="#1d2a14" fill-opacity="0.18"/>
+  <rect x="8" y="40" width="74" height="59" fill="url(#wall)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M2 42 L20 8 H70 L88 42 Z" fill="url(#roof)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M8 36 H82 M14 26 H76 M18 16 H72" stroke="#5a2a1a" stroke-width="0.5"/>
+  <rect x="18" y="52" width="14" height="12" fill="#3d5a6c" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><path d="M25 52 V64 M18 58 H32" stroke="#f4f1ea" stroke-width="0.9"/>
+  <rect x="40" y="74" width="12" height="24" fill="#6d4c33" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M82 44 H122 L118 52 H82" fill="#6d4c33" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+
+</svg>

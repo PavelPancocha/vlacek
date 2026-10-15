@@ -99,7 +99,7 @@ Implementace částic a drobných animací ([D-014](../docs/decisions/014-partic
 - **Zdroje částic.** Kouř, pára, výfuk a hvězdičky vycházejí z emitorů v manifestu vozidla, se sklonem modelu.
   - Kouř jde v taktech hnacích kol.
   - Jiskry přicházejí jen při prudkém brzdění.
-  - Sníh a listí víří kola jen nad sněhem či lesní půdou a jen za jízdy.
+  - Sníh víří každý viditelný podvozek jen nad místním sněhem a za jízdy; listí pouze na podzim u konkrétního listnatého zdroje.
 - **Drobné pohyby.** Tráva a stromy se houpou, voda občas zableskne, zvířata jemně dýchají. Jen jednou za čas přeletí ptáci nebo motýli.
 - **Úsporný profil.** Profil `low` i omezené efekty snižují strop částic z 240 na 96 a hustotu na polovinu.
 
@@ -153,3 +153,25 @@ Přepínání biome nesmí na hlavním vlákně najednou dekódovat velkou novou
 Repozitář má `assets/SOURCES.md` s původem a podmínkami použití každé sady a `THIRD_PARTY_NOTICES.md` podle skutečně použitých závislostí. Dočasné placeholdery musí být označené. Nečerpat bez ověření z náhodných obrázků z vyhledávání nebo z chráněných dětských seriálů.
 
 Výtvarná akceptace vyžaduje kontaktní list všech 10 lokomotiv a 32 vagonků, denní a noční scénu každého biomu a přehled hlavních infrastruktur. Tento balíček definuje, co se má vytvořit; samotné ilustrace ani audio v něm dodány nejsou.
+
+### Roční období a místní život — D-027
+
+Vzhled a intenzita počasí používají společný postup regionu podle x, žádný
+skutečný kalendář. Listnaté stromy mají jarní, podzimní a holé/zasněžené zimní
+kresby; jehličnany na podzim zůstávají zelené. Střechy používají autorské
+obrysy sněhových říms a plochy širokých střešních rovin s výřezy pro komíny
+a vikýře, tunel vlastní svou sezónní kresbu. Listy a okvětní
+lístky mají lokální zdroje, sněžení tři hloubky a pokračuje při stání.
+Víření od podvozků po zastavení dohasne, kryt tunelu i terén zakrývají
+částice podle skutečné polohy. Vážky zůstávají nad sladkou vodou, kachny
+s vlnkami na rybníčku, rackové u pobřeží. Mlýn, vlajka, výpravčí a klidné
+pohyby pastviny používají herní čas a vlastní fáze. Společný strop částic
+je 240/96, zdrojů 32/12 a dekorativních animací 160/64 (standard/low).
+Podrobnosti a kompatibilita: [D-027](../docs/decisions/027-seasons-and-life.md),
+akceptace SEA-01–08 v [katalogu scén](../docs/scenes/acceptance.md).
+
+Sníh zůstává čitelný i na bílém podkladu díky modrošedému spodnímu obrysu
+vloček. Víření od podvozků tvoří oddělená zrna a krátkou stopu za posledním
+vozem, odlišnou od komínové páry; nezvyšuje dosavadní pool ani emisní strop.
+Zimní střechy se kontrolují v horním, středním i spodním pásu při měřítku
+krátké a nejdelší soupravy v Canvasu i WebGL (D-027).

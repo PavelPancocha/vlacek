@@ -112,3 +112,23 @@ Velká vesnice má 6 144 u: dva chunky příjezdu VI-01, dva návsi VI-02 a dva 
 Náves VI-02 se plánuje jednou pro celý dvouchunkový obraz, před domy. Její nepravidelný obvod vede společnou silnici; parcely s přístupy ji obklopují. Hustota přijatých domů ve středu převyšuje oba okraje. Zahrady domů leží vedle jejich skutečné parcely nebo za ní. Přední záhony tvoří společnou zahrádkářskou skupinu s nízkou podélnou pěšinou a napojenými brankami; žádná pěšina nepřekračuje kolej. Přijaté budovy a přístupy rezervují místo dalším parcelám. Při konfliktu hlavní cesty se zkouší menší kompozice na bezpečném přístupu.
 
 Objížďka překážky mění ulici jen uvnitř chunku a plynule se vrací na kanonické hraniční body. Vstup i výstup osady zůstávají přesně na bodech exportovaného plánu; před přijetím se kontroluje celý polygon vozovky včetně návratových ramen.
+
+### Sezónní život D-027
+
+Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
+a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
+koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.
+
+### Sezónní dálka a střechy — obrazová oprava D-027
+
+Vzdálená víska má far/mid pásy s několika střechami za poli. Zimní střechy
+jsou bílé, pole zasněžená a listnáče holé; podzim má sklizenou půdu a barevné
+koruny, jaro drobné květy. Blízké střechy mají čitelný sněhový polštář
+na autorských obrysech, s mezerou u komína. Totéž ukotvení se použije na
+nové střechy settlements. Telefon 1140 × 512 musí stále číst sníh jako plochu.
+
+Oprava seasons-life-3: sníh vyplňuje také horní, střední a spodní část široké
+střešní roviny, ne pouze její hranu. Výřezy zachovávají komín, vikýř i štít;
+plocha dědí pivot, perspektivu, zrcadlení a natočení hostitele. Nové střechy
+settlements čtou stejné lokální kotvy. Obrazová kontrola zahrnuje každý
+viditelný dům, krátkou i nejdelší soupravu, Canvas i WebGL.

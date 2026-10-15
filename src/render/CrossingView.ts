@@ -1,3 +1,4 @@
+import { frameTexture } from './frameTexture.ts';
 import Phaser from 'phaser';
 import type { ArtPart } from '../content/artManifest.ts';
 import {
@@ -226,7 +227,7 @@ export class CrossingView {
     const image = this.#scene.add.image(
       this.#chunkX + x,
       y,
-      this.#art.texture,
+      frameTexture(key, this.#art.texture),
       key,
     );
     const part = parts[key];

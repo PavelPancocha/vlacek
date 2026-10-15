@@ -1,5 +1,6 @@
 import { gameConfig } from '../../config/gameConfig.ts';
 import type { AudioLayer, AudioManager } from '../AudioManager.ts';
+import type { Season } from '../../domain/world/Regions.ts';
 import type { Biome } from '../../domain/world/Biomes.ts';
 import type { CrossingPhase } from '../../domain/interaction/LevelCrossing.ts';
 
@@ -17,8 +18,8 @@ export function wheelSound(speedUPerSec: number) {
     gain: speed === 0 ? 0 : 0.15 + 0.55 * speed,
   };
 }
-/** World-core can provide season here; until then the current biome owns the bed. */
-export function ambientSound(biome: Biome, season?: string): string {
+/** Recorded beds only; season excludes warm crickets from winter. */
+export function ambientSound(biome: Biome, season?: Season): string {
   if (season === 'winter' || biome === 'mountains') return 'wind';
   if (season === 'summer' && biome === 'countryside') return 'crickets';
   switch (biome) {
@@ -81,6 +82,7 @@ export interface AudioFrame {
   wheelRadiusU: number;
   throttle: boolean;
   biome: Biome;
+  season?: Season;
   covered: number;
   bellGain: number;
 }
@@ -94,7 +96,7 @@ export class AudioDirector {
       { key: 'wheels', id: 'wheels', ...wheel, priority: 60 },
       {
         key: 'ambient',
-        id: ambientSound(frame.biome),
+        id: ambientSound(frame.biome, frame.season),
         gain: 0.6,
         rate: 1,
         priority: 10,

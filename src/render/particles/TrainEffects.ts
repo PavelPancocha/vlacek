@@ -31,6 +31,10 @@ export interface TrainEffectsInput {
   front: { x: number; y: number; ground: 'snow' | 'leaves' | undefined };
   /** 1 standard, 0.5 for the low quality profile (doc 13). */
   rateScale: number;
+  /** Each bogie uses its local seasonal ground and continuous intensity. */
+  groundAt?: (
+    worldXU: number,
+  ) => { kind: 'snow' | 'leaves'; strength: number } | undefined;
   /** False for a source point behind this train's rock cover. */
   canEmit?: (point: { x: number; y: number }) => boolean;
   /** Drawing layer of this train, retained by particles after entry. */
@@ -110,7 +114,9 @@ export class TrainEffects {
     const clock = (key: string) => {
       let found = this.#clocks.get(key);
       if (!found) {
-        found = new EmissionClock();
+        found = new EmissionClock(
+          key.startsWith('ground:') ? this.#random() : 0,
+        );
         this.#clocks.set(key, found);
       }
       return found;
@@ -225,7 +231,42 @@ export class TrainEffects {
     }
 
     // Snow or leaves where they lie, only while moving.
-    const ground = input.front.ground;
+    if (input.groundAt && speed > STIR_MIN_SPEED) {
+      const points = input.wheels;
+      // Reserve 30% of the existing snow rate for the trailing contact. Uniform
+      // division across a long train otherwise leaves gaps behind its last car.
+      let rear = points[0];
+      for (const wheel of points)
+        if (
+          !rear ||
+          input.travelDirection * wheel.x < input.travelDirection * rear.x
+        )
+          rear = wheel;
+      for (const [i, wheel] of points.entries()) {
+        const surface = input.groundAt(wheel.x);
+        if (!surface) continue;
+        const rate =
+          (surface.kind === 'snow' ? SNOW_PER_SEC : LEAVES_PER_SEC) *
+          share *
+          surface.strength *
+          scale *
+          (surface.kind === 'snow'
+            ? 0.7 / Math.max(1, points.length) + (wheel === rear ? 0.3 : 0)
+            : 1 / Math.max(1, points.length));
+        emit(
+          surface.kind === 'snow' ? 'snow' : 'leaf',
+          wheel.x,
+          wheel.y,
+          clock(`ground:${i}`).tick(rate, dt),
+          {
+            jitterU: 4,
+            vxU: -input.travelDirection * speed * 0.08,
+            sizeScale: surface.kind === 'snow' ? 1.5 : 1,
+          },
+        );
+      }
+    }
+    const ground = input.groundAt ? undefined : input.front.ground;
     if (ground !== undefined && speed > STIR_MIN_SPEED) {
       const rate = (ground === 'snow' ? SNOW_PER_SEC : LEAVES_PER_SEC) * share;
       emit(

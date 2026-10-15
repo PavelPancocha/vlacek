@@ -101,3 +101,9 @@ Použít vítr, řídké lesní ptáky a potok; tunel má jemně změněný zvuk
 NEW: české horské hřbety 1 024 × 320 u a střední svah 1 024 × 180 u, letní a zimní varianta.
 NEW: skalní skupina 160 × 100 u; vrstevnatá zaoblená skála pro svahy mimo kolej.
 Portály, viadukt, chata a sněhové objekty se přebírají ze společných katalogů.
+
+### Sezónní život D-027
+
+Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
+a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
+koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.

@@ -159,3 +159,16 @@ nad výslednými chunky včetně případného nahrazení stanicí.
 podle podpory pole. Ořez funguje shodně v Canvas a WebGL; za oblé souvratě, do
 potoka ani přejezdu se kresba nevylije. Rozlišení je nejvýše 1 px/u a textury vlastní
 chunk. Stroj, kola, nářadí a zemědělec zůstávají samostatně animované.
+
+### Sezónní život D-027
+
+Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
+a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
+koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.
+
+### Sezónní dálka — obrazová oprava D-027
+
+Far i mid používají samostatné pásy: v zimě sněhová pole a bílá střecha statku,
+holé větve listnáčů; na podzim sklizená pole a teplé lesíky; na jaře světlé
+květové akcenty. Letní kresba zůstává původní. Změnu řídí světové x a oba
+presety regionového přechodu, nikoliv čas nebo zastavení.

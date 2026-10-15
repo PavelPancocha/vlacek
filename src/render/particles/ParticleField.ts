@@ -49,9 +49,12 @@ export interface Particle {
   sizeEnd: number;
   /** 0 … 1, desynchronises flutter and wing beats. */
   phase: number;
+  bounds: EmitOptions['bounds'];
 }
 
 export interface EmitOptions {
+  /** A local water habitat retained only for the particle's short lifetime. */
+  bounds?: { left: number; right: number; top: number; bottom: number };
   /** Keep train particles under the opaque cover of their own track. */
   depth?: number;
   /** Velocity added to every particle (inherited from the emitter), u/s. */
@@ -84,6 +87,7 @@ function blankParticle(): Particle {
     sizeStart: 0,
     sizeEnd: 0,
     phase: 0,
+    bounds: undefined,
   };
 }
 
@@ -153,6 +157,7 @@ export class ParticleField {
       particle.id = this.#nextId++;
       particle.kind = kindIndex;
       particle.depth = options.depth;
+      particle.bounds = options.bounds;
       particle.x = x + (r() * 2 - 1) * jitter;
       particle.y = y + (r() * 2 - 1) * jitter;
       particle.vx = Math.cos(direction) * speed + (options.vxU ?? 0);
@@ -194,6 +199,12 @@ export class ParticleField {
         const keep = Math.exp(-kind.dragPerSec * dtSec);
         p.vx *= keep;
         p.vy *= keep;
+      }
+      if (p.bounds) {
+        if (p.x < p.bounds.left || p.x > p.bounds.right) p.vx = -p.vx;
+        if (p.y < p.bounds.top || p.y > p.bounds.bottom) p.vy = -p.vy;
+        p.x = Math.max(p.bounds.left, Math.min(p.bounds.right, p.x));
+        p.y = Math.max(p.bounds.top, Math.min(p.bounds.bottom, p.y));
       }
       p.rotation += p.spin * dtSec;
     }
@@ -246,8 +257,24 @@ export class ParticleField {
     if (!wobble) return { x: particle.x, y: particle.y };
     const angle = 2 * Math.PI * (wobble.hz * particle.age + particle.phase);
     return {
-      x: particle.x + Math.sin(angle) * wobble.ampU,
-      y: particle.y + Math.sin(angle * 2) * wobble.ampU * 0.3,
+      x: particle.bounds
+        ? Math.max(
+            particle.bounds.left,
+            Math.min(
+              particle.bounds.right,
+              particle.x + Math.sin(angle) * wobble.ampU,
+            ),
+          )
+        : particle.x + Math.sin(angle) * wobble.ampU,
+      y: particle.bounds
+        ? Math.max(
+            particle.bounds.top,
+            Math.min(
+              particle.bounds.bottom,
+              particle.y + Math.sin(angle * 2) * wobble.ampU * 0.3,
+            ),
+          )
+        : particle.y + Math.sin(angle * 2) * wobble.ampU * 0.3,
     };
   }
 

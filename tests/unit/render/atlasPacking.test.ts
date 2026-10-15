@@ -1,3 +1,4 @@
+import { backdropWindowFrames } from '../../../src/render/backdropFrames.ts';
 import { artParts, vehicleArt } from '../../../src/content/artManifest.ts';
 import { vehicleArtLayers } from '../../../src/content/artLayers.ts';
 import { locomotives, wagons } from '../../../src/content/vehicles.ts';
@@ -247,20 +248,21 @@ describe('vehicle art atlas', () => {
     });
   }
 
-  it('fits the backdrops and clouds into their own atlas at 1 px/u', () => {
-    const backdrops = Object.fromEntries(
-      Object.entries(worldParts).filter(([key]) => isBackdropPart(key)),
-    );
-    expect(Object.keys(backdrops).length).toBe(25);
-    expect(backdrops).toHaveProperty('backdrop.town-sparse');
-    expect(backdrops).toHaveProperty('backdrop.town-dense');
-    const items = artAtlasItems(backdrops, BACKDROP_MAX_PX_PER_U);
-    expect(
-      packAtlas(items, {
-        maxSize: MAX_ATLAS_EDGE_PX,
-        paddingPx: ATLAS_PADDING_PX,
-      }).frames.size,
-    ).toBe(Object.keys(backdrops).length);
+  it('fits each active backdrop window into its own atlas at 1 px/u', () => {
+    for (const seed of [1, 2, 3, 4])
+      for (const x of [5000, 117136, 493968, 1232896]) {
+        const keys = backdropWindowFrames(seed, x);
+        const backdrops = Object.fromEntries(
+          Object.entries(worldParts).filter(([key]) => keys.includes(key)),
+        );
+        const items = artAtlasItems(backdrops, BACKDROP_MAX_PX_PER_U);
+        expect(
+          packAtlas(items, {
+            maxSize: MAX_ATLAS_EDGE_PX,
+            paddingPx: ATLAS_PADDING_PX,
+          }).frames.size,
+        ).toBe(keys.length);
+      }
   });
 
   it('gives every frame a transparent margin for smooth edges without MSAA (D-013)', () => {

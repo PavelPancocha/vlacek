@@ -388,11 +388,21 @@ describe('oncoming trains (doc 05 §6, D-017)', () => {
 describe('particle sprites', () => {
   it('draws every particle kind from the effect parts of the world art', async () => {
     const { effectParts } = await import('../../../../src/content/worldArt.ts');
+    const { parts: seasonParts } =
+      await import('../../../../src/content/world-modules/seasons-life.art.ts');
     const { PARTICLE_FRAMES } =
       await import('../../../../src/render/particles/particleKinds.ts');
     // The glint shimmers on water in the chunk view, not as a particle.
     expect([...PARTICLE_FRAMES, 'fx.glint'].sort()).toEqual(
-      [...effectParts].sort(),
+      [
+        ...effectParts.filter(
+          (key) =>
+            !['fx.leaf-a', 'fx.leaf-b', 'fx.leaf-c', 'fx.snow'].includes(key),
+        ),
+        ...Object.keys(seasonParts).filter(
+          (key) => key.startsWith('fx.') && !key.startsWith('fx.duck-ripple'),
+        ),
+      ].sort(),
     );
   });
 });
@@ -424,4 +434,61 @@ it('tunnel-1: suppresses every vehicle source behind rock and preserves its trac
   expect(field.particles().every((p) => 'depth' in p && p.depth === 7.55)).toBe(
     true,
   );
+});
+
+it('SEA-04: each bogie stirs its own snow surface; a dry front cannot hide snowy rear wheels', () => {
+  const field = new ParticleField(PARTICLE_KINDS, 240, () => 0.5);
+  const effects = new TrainEffects(field, () => 0.5);
+  for (let i = 0; i < 60; i++)
+    effects.step({
+      ...base,
+      speedUPerSec: 480,
+      wheels: [
+        { x: 10, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      groundAt: (x) => (x < 50 ? { kind: 'snow', strength: 1 } : undefined),
+    });
+  expect(field.live).toBeGreaterThan(0);
+  expect(field.particles().every((p) => p.x >= 6 && p.x <= 14)).toBe(true);
+  const count = field.live;
+  effects.step({ ...base, groundAt: () => ({ kind: 'snow', strength: 1 }) });
+  expect(field.live).toBe(count);
+  field.step(1.2);
+  expect(field.live).toBe(0);
+});
+
+it('SEA-04: low longest train leaves a continuous short granular trail without raising its emission budget', () => {
+  const field = new ParticleField(PARTICLE_KINDS, 96, lcg(31));
+  const effects = new TrainEffects(field, lcg(32));
+  let born = 0;
+  for (let tick = 0; tick < 240; tick++) {
+    const front = tick * 8;
+    const wheels = Array.from({ length: 22 }, (_, i) => ({
+      x: front - i * 86,
+      y: 0,
+    }));
+    born +=
+      effects
+        .step({
+          ...base,
+          speedUPerSec: 480,
+          rateScale: 0.5,
+          wheels,
+          groundAt: () => ({ kind: 'snow', strength: 1 }),
+        })
+        .get('snow') ?? 0;
+    field.step(1 / 60);
+    if (tick >= 180 && tick % 2 === 0) {
+      const tail = front - 21 * 86;
+      const trail = field
+        .particles()
+        .filter(
+          (p) => p.x < tail - 20 && p.x > tail - 400 && field.alphaOf(p) > 0.3,
+        );
+      expect(trail.length, `tick ${tick}`).toBeGreaterThanOrEqual(3);
+    }
+  }
+  expect(born).toBeLessThanOrEqual(4 * 70 * 0.5 + 22); // existing fractional phases
+  expect(field.live).toBeLessThanOrEqual(96);
 });

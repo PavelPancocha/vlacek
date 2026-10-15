@@ -106,3 +106,9 @@ Dosavadní jízda neobsahovala automat zastávkové scénky. D-024 doplňuje či
 ## Oprava kompozice settlements-2
 
 Staniční ulice a vstupní pěšiny se rezervují před okolními parcelami a kontrolují vůči vodě i infrastruktuře. Pouze pojmenované vstupy se smějí dotknout vlastní budovy/nástupiště. Pobřežní přístup se posune na suchý břeh. Střední stanice má složené zadní přednádraží s lavičkou a zelení i nízké přední servisní okolí; velká stanice má souvislou servisní cestu po celé délce a drobné keře/kameny mimo průjezdný profil. Druhé nástupiště není podmínkou tohoto řezu.
+
+### Sezónní život D-027
+
+Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
+a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
+koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.

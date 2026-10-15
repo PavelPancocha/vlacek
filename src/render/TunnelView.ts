@@ -1,4 +1,7 @@
+import { frameTexture } from './frameTexture.ts';
 import Phaser from 'phaser';
+import type { EffectiveClimate } from '../domain/world/Seasons.ts';
+import { mixColour } from './groundPalette.ts';
 import { gameConfig } from '../config/gameConfig.ts';
 import { tunnelParts, worldParts } from '../content/worldArt.ts';
 import { TUNNEL_MAST_CLEARANCE_U } from '../domain/world/Catenary.ts';
@@ -88,6 +91,10 @@ export class TunnelView {
     depths: TunnelDepths,
     /** Chunk-local x of the ceiling hangers of an electric journey's wire. */
     hangerXs: readonly number[] = [],
+    appearance?: {
+      climateAt(xU: number): EffectiveClimate;
+      sandAt(xU: number): boolean;
+    },
   ) {
     this.id = site.id;
     const { fromX, toX } = site;
@@ -119,6 +126,22 @@ export class TunnelView {
      * the rail and a shared grid, so the flanks and the cover join
      * without a seam.
      */
+    const toneAt = (x: number) => {
+      const c = appearance?.climateAt(x);
+      const sand = appearance?.sandAt(x) ?? false;
+      const autumn = c?.autumn ?? 0,
+        winter = c?.winter ?? 0;
+      return {
+        base: mixColour(
+          mixColour(sand ? 0xd9c48a : HILL_TONE, 0xb39355, autumn * 0.7),
+          0xf1f6fa,
+          winter,
+        ),
+        shade: mixColour(sand ? 0xb49b65 : 0x3f7326, 0xbfd0de, winter),
+        winter,
+        flowers: sand ? 0 : 1 - Math.max(autumn, winter),
+      };
+    };
     const paintHill = (
       g: Phaser.GameObjects.Graphics,
       from: number,
@@ -127,10 +150,11 @@ export class TunnelView {
       bottom: (x: number) => number,
     ) => {
       const upper = xs(from, to).map((x) => point(x, top(x)));
-      g.fillStyle(HILL_TONE, 1);
+      const tone = toneAt((from + to) / 2);
+      g.fillStyle(tone.base, 1);
       g.fillPoints([...upper, ...lower], true);
       // Mown stripes, darker towards the foot.
-      g.lineStyle(5, 0x3f7326, 0.18);
+      g.lineStyle(5, tone.shade, 0.18);
       for (let i = 1; i < 7; i++) {
         const stripe = (x: number) =>
           top(x) + (ground.railY(x) - top(x)) * (i / 7);
@@ -142,7 +166,7 @@ export class TunnelView {
             g.lineBetween(a, stripe(a), b, stripe(b));
         }
       }
-      g.lineStyle(1.4, 0x2f5a1c, 1);
+      g.lineStyle(1.4, tone.shade, 1);
       g.strokePoints(upper, false, false);
       for (
         let x = Math.ceil((from + 12) / FLOWER_STEP_U) * FLOWER_STEP_U;
@@ -150,7 +174,7 @@ export class TunnelView {
         x += FLOWER_STEP_U
       ) {
         const y = top(x) + 10 + ((x * 7) % 31);
-        if (y > bottom(x) - 6) continue;
+        if (y > bottom(x) - 6 || toneAt(x).flowers < 0.4) continue;
         g.fillStyle(
           [0xf4d03f, 0xffffff, 0xe74c3c][Math.round(x) % 3] ?? 0xffffff,
           1,
@@ -177,7 +201,7 @@ export class TunnelView {
             continue;
           }
           const size = 0.8 + ((n * 7) % 5) / 10;
-          g.fillStyle(0x3f7326, 0.35);
+          g.fillStyle(tone.shade, 0.35);
           g.fillEllipse(sx + 1, y + 4 * size, 20 * size, 5 * size);
           for (const [dx, dy, r, tone] of [
             [-5, 0, 5.5, 0x3d7a28],
@@ -186,7 +210,7 @@ export class TunnelView {
             [-2, -7, 2.4, 0x7bbd52],
             [5, -5, 2, 0x86c65c],
           ] as const) {
-            g.fillStyle(tone, 1);
+            g.fillStyle(mixColour(tone, 0xf1f6fa, toneAt(sx).winter), 1);
             g.fillCircle(sx + dx * size, y + dy * size, r * size);
           }
         }
@@ -353,7 +377,7 @@ export class TunnelView {
       const image = scene.add.image(
         x,
         ground.railY(x),
-        art.texture,
+        frameTexture(tunnelParts.portal, art.texture),
         tunnelParts.portal,
       );
       const pivot = mirrored
@@ -367,6 +391,25 @@ export class TunnelView {
           .setScale(1 / art.pxPerU),
       );
     }
+    if (art)
+      for (const x of [fromX, toX]) {
+        const winter = appearance?.climateAt(x).winter ?? 0;
+        if (winter <= 0) continue;
+        const snow = worldParts['snow.roof-64'];
+        const cap = scene.add.image(
+          x - 78,
+          ground.railY(x) - 228,
+          frameTexture('snow.roof-64', art.texture),
+          'snow.roof-64',
+        );
+        const origin = frameOrigin(snow.pivotU, art.pxPerU, cap.frame);
+        cover.add(
+          cap
+            .setOrigin(origin.x, origin.y)
+            .setScale(156 / 64 / art.pxPerU, 0.45 / art.pxPerU)
+            .setAlpha(winter),
+        );
+      }
     cover.setDepth(depths.cover);
     this.#coveredPoint = (point) => {
       const x = point.x - site.chunkIndex * chunkWidthU;

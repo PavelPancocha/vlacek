@@ -15,7 +15,7 @@ import type { Consist } from '../domain/types.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
 import { animalSounds } from '../content/soundManifest.ts';
-import { biomeAt } from '../domain/world/Biomes.ts';
+import { contextAt } from '../domain/world/WorldPlan.ts';
 import { chunkOfEntityId } from '../domain/world/ChunkObjects.ts';
 import { chunkScenery } from '../domain/world/Scenery.ts';
 import { worldPlacementCatalog } from '../content/worldPlacementCatalog.ts';
@@ -462,7 +462,8 @@ export class AppController {
       distanceU,
       wheelRadiusU: loco.wheelRadiusU,
       throttle: ride.lastIntent === 'THROTTLE',
-      biome: biomeAt(seed, ride.headCursor().chunkIndex).biome,
+      biome: contextAt(seed, frontX).region.landscape,
+      season: contextAt(seed, frontX).season,
       covered: coveredFraction(tailX, frontX, tunnels),
       bellGain: crossingBellGain(
         ride.crossings,

@@ -1,3 +1,5 @@
+import { effectiveClimateAt } from '../domain/world/Seasons.ts';
+import { frameTexture } from './frameTexture.ts';
 import Phaser from 'phaser';
 import { gameConfig } from '../config/gameConfig.ts';
 import {
@@ -62,7 +64,12 @@ export function chunkSecondaryTrack(
     TRACK_TILE_STEP_U,
   )) {
     const part = worldParts[tile.part];
-    const image = scene.add.image(0, 0, art.texture, tile.part);
+    const image = scene.add.image(
+      0,
+      0,
+      frameTexture(tile.part, art.texture),
+      tile.part,
+    );
     const origin = frameOrigin(part.pivotU, art.pxPerU, image.frame);
     track.add(
       image
@@ -82,7 +89,7 @@ export function chunkSecondaryTrack(
       [secondaryParts.hill, hills],
     ] as const) {
       const part = worldParts[key];
-      const image = scene.add.image(x, y, art.texture, key);
+      const image = scene.add.image(x, y, frameTexture(key, art.texture), key);
       // A mirrored image keeps its origin: mirror the pivot as well.
       const pivot = mirrored
         ? { x: part.widthU - part.pivotU.x, y: part.pivotU.y }
@@ -99,6 +106,49 @@ export function chunkSecondaryTrack(
           )
           .setScale(1 / art.pxPerU),
       );
+    }
+    const snow = effectiveClimateAt(seed, worldX).winter;
+    if (snow > 0) {
+      const cover = scene.add.graphics().setAlpha(snow);
+      const sign = mirrored ? -1 : 1;
+      const angle = -Math.atan(
+        sampleArcLengthTable(table, arcAtX(table, worldX)).grade,
+      );
+      const cos = Math.cos(angle),
+        sin = Math.sin(angle);
+      const point = (dx: number, dy: number) =>
+        new Phaser.Math.Vector2(
+          x + sign * dx * cos - dy * sin,
+          y + sign * dx * sin + dy * cos,
+        );
+      // Snow on the grassy flank only; masonry, arch and evergreen silhouettes keep their art.
+      cover.fillStyle(0xe7f0f5, 1);
+      cover.fillPoints(
+        [
+          point(-380, 6),
+          point(-367, -44),
+          point(-337, -104),
+          point(-291, -146),
+          point(-230, -168),
+          point(-177, -175),
+          point(-129, -173),
+          point(-88, -165),
+          point(-64, -145),
+          point(-64, 6),
+        ],
+        true,
+      );
+      cover.lineStyle(3, 0xf8fbfd, 1);
+      cover.strokePoints([
+        point(-365, -42),
+        point(-335, -101),
+        point(-290, -143),
+        point(-230, -165),
+        point(-177, -172),
+        point(-130, -170),
+        point(-88, -162),
+      ]);
+      hills.add(cover);
     }
   };
   if (site.fromX >= x0 && site.fromX < x0 + chunkWidthU)
@@ -117,6 +167,7 @@ export function secondaryPortalFeet(
   railY: (worldX: number) => number,
   depth: number,
   chunkIndex: number,
+  groundColourAt: (worldX: number) => number = () => 0x6eae43,
 ): Phaser.GameObjects.Graphics[] {
   return (
     [
@@ -147,7 +198,7 @@ export function secondaryPortalFeet(
         [point(0, -110), point(rearX, -110), point(rearX, 12), point(0, 12)],
         true,
       );
-      graphics.fillStyle(0x6eae43, 1);
+      graphics.fillStyle(groundColourAt(x), 1);
       graphics.fillPoints(
         portalFootPoints(x, mirrored, railY).map(
           (point) => new Phaser.Math.Vector2(point.x, point.y),

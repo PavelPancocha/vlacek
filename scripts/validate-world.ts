@@ -195,3 +195,46 @@ if (errors.length) {
 console.log(
   `World v2: ${cases} cases, ascending/descending/shuffled/repeated fingerprints, 3 mutation proofs; R3 ${firstBlocks} first blocks passed.`,
 );
+
+// SEA-01/03 and SCN-FH06: bounded witnesses, not a vacuous conditional check.
+const seasonalCoverage = new Set<string>();
+let deciduousAutumn = 0,
+  sleds = 0;
+for (let seed = 1; seed <= 20; seed++) {
+  let region = regionAt(seed, 0);
+  for (let index = 0; index < 36; index++) {
+    seasonalCoverage.add(`${region.landscape}/${region.season}`);
+    for (let x = region.fromXU + 2048; x < region.toXU - 8192; x += 4096) {
+      const sc = chunkScenery(seed, x / 1024, worldPlacementCatalog);
+      if (region.season === 'autumn')
+        deciduousAutumn += sc.props.filter((p) =>
+          [
+            'tree.oak',
+            'tree.birch',
+            'tree.linden',
+            'tree.apple',
+            'tree.plum',
+            'tree.willow',
+          ].includes(p.kind),
+        ).length;
+      for (const prop of sc.props.filter((p) => p.kind === 'back.sled-child')) {
+        assert.equal(region.season, 'winter');
+        assert.equal(prop.layer, 'back');
+        assert.equal(prop.motion?.rangeU, 48);
+        sleds++;
+      }
+    }
+    region = regionAt(seed, region.toXU);
+  }
+}
+for (const landscape of ['forest', 'town', 'countryside'])
+  for (const season of ['spring', 'summer', 'autumn', 'winter'])
+    assert(
+      seasonalCoverage.has(`${landscape}/${season}`),
+      `SEA-01 missing ${landscape}/${season}`,
+    );
+assert(deciduousAutumn > 0, 'SEA-03 missing deciduous leaf sources');
+assert(sleds > 0, 'SCN-FH06 missing winter sleds');
+console.log(
+  `Seasonal coverage: 12 combinations, ${deciduousAutumn} deciduous autumn sources, ${sleds} winter sleds`,
+);

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="20" viewBox="0 0 64 20">
+  <!-- Vláček, seasons-life-2: Silný sněhový polštář; kotva (0, 10), komínové mezery určuje obrys střechy. -->
+  <path d="M0 9 Q9.6 7 16 9 T32 9 T48 9 T64 9 L64 18 Q48 20 32 18 T0 18 Z" fill="#c8d9e5"/>
+  <path d="M0 9 Q5.12 9 9.6 6 Q15.36 4 20.48 7 Q26.24 9 31.36 6 Q36.48 4 41.6 7 Q49.92 9 54.4 6 Q60.8 6 64 9 L64 18 Q48 19 32 18 T0 18 Z" fill="#f3f8fb"/>
+  <path d="M1 8 Q6.4 9 11.52 6 M24.32 8 Q28.16 8 32 6 M44.8 8 Q51.2 8 54.4 6" fill="none" stroke="#fff" stroke-width=".8" stroke-linecap="round"/>
+</svg>

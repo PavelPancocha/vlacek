@@ -100,3 +100,9 @@ NEW: přívoz 90 × 35 u s rozpoznatelnou přídí; vážka 16 × 10 u; ryba 24 
 NEW: hráz/výpust 100 × 35 u a břehový rákosový shluk 100 × 45 u.
 Upravit `back.watermill`: oddělit kolo přibližně 52 × 52 u, zachovat společný pivot a kontaktní bod náhonu.
 Vodní tvary se generují z geometrie; `near.pond` se nekopíruje jako univerzální náhrada různých rybníků.
+
+### Sezónní život D-027
+
+Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
+a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
+koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.

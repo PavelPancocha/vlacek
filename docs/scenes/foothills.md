@@ -101,3 +101,20 @@ NEW: lanovkový sloup 20 × 80 u, kabina 24 × 20 u a malá stanice 70 × 45 u; 
 NEW: lomová stěna 512 × 180 u a bagr 100 × 70 u s odděleným ramenem.
 NEW: sáňky s dítětem 32 × 24 u; malá vzdálená zimní postava, bez jízdy k trati.
 Chalupy, seno, traktor, lesní skupiny a mosty se sdílejí; nevzniká druhá sada totožných rekvizit.
+
+### Sezónní život D-027
+
+Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
+a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
+koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.
+
+Zimní světlina `winter-sled` má jednu sáňkující postavu za tratí v hloubce
+0,55–0,70. Krátký 48u pohyb při 6 u/s zůstává uvnitř celé povolené stopy;
+břízy a borovice stojí ještě dál. Jarní, letní ani podzimní plán scénku nevybírá.
+
+### Sezónní dálka — obrazová oprava D-027
+
+Zimní far/mid pásy mají sněhovou půdu, bílé střechy a holé listnaté větve;
+jehličnany si zachovávají vlastní tmavou kresbu. Podzim ukazuje sklizená pole
+s barevným lesíkem, jaro jemné květové akcenty. Pásy a částice se prolínají
+prostorovým postupem world-core; stojící vlak sezónu nemění.
