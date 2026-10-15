@@ -593,6 +593,18 @@ const baseWorldParts = {
     heightU: 4,
     pivotU: { x: 5, y: 2 },
   },
+  'fx.contact-spark': {
+    file: 'fx.contact-spark.svg',
+    widthU: 14,
+    heightU: 8,
+    pivotU: { x: 7, y: 4 },
+  },
+  'fx.contact-glow': {
+    file: 'fx.contact-glow.svg',
+    widthU: 28,
+    heightU: 28,
+    pivotU: { x: 14, y: 14 },
+  },
   'fx.star': {
     file: 'fx.star.svg',
     widthU: 14,
@@ -1061,6 +1073,8 @@ export const effectParts: readonly WorldPartKey[] = [
   'fx.diesel',
   'fx.star',
   'fx.spark',
+  'fx.contact-spark',
+  'fx.contact-glow',
   'fx.leaf-a',
   'fx.leaf-b',
   'fx.leaf-c',

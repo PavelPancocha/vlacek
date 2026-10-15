@@ -60,11 +60,18 @@ export class EffectsView {
         used += 1;
         const at = field.positionOf(particle);
         const alpha = field.alphaOf(particle) * (opacity?.(particle, at) ?? 1);
-        const size =
+        let size =
           frame === 'fx.bubble'
             ? bubbleSizeU(field, particle, unitsPerCss)
             : field.sizeOf(particle);
         const kind = field.kindOf(particle);
+        if (kind?.sizeCssPx && unitsPerCss > 0) {
+          const [fromCss, toCss] = kind.sizeCssPx;
+          const ageShare = Math.min(1, particle.age / particle.life);
+          const burstScale = particle.sizeStart / kind.sizeU[0];
+          size =
+            (fromCss + (toCss - fromCss) * ageShare) * burstScale * unitsPerCss;
+        }
         const depth = particle.depth ?? this.#depth;
         // Phaser queues a scene-wide sort even when the depth has not changed.
         if (image.depth !== depth) image.setDepth(depth);

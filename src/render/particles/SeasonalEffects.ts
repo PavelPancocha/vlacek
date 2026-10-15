@@ -217,3 +217,9 @@ export class SeasonalEffects {
     this.#sources.clear();
   }
 }
+
+/** Effective winter or the snowy edge of a climate transition can frost the wire. */
+export function frostyWireAt(seed: number, worldXU: number): boolean {
+  const climate = effectiveClimateAt(seed, worldXU);
+  return climate.season === 'winter' || climate.snowfall > 0;
+}

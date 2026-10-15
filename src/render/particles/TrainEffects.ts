@@ -1,6 +1,6 @@
 import type { MotionIntent } from '../../domain/input/InputReducer.ts';
 import { EmissionClock } from './emission.ts';
-import type { ParticleField } from './ParticleField.ts';
+import type { EmitOptions, ParticleField } from './ParticleField.ts';
 import { kindIndex, type ParticleKindName } from './particleKinds.ts';
 
 /** Locomotive emitter in render coordinates, tilted with the vehicle. */
@@ -26,7 +26,13 @@ export interface TrainEffectsInput {
   /** Wheel–rail contact points of drawn vehicles (brake sparks). */
   wheels: readonly { x: number; y: number }[];
   /** Where an electric locomotive's pantograph touches the wire. */
-  pantograph?: { x: number; y: number };
+  pantograph?:
+    | { x: number; y: number; outOfRange?: boolean; tiltDeg?: number }
+    | undefined;
+  /** Actual supports; each is also a junction of drawn wire spans (D-016). */
+  catenarySupportXs?: readonly number[];
+  /** seasons-life hook: set from effective winter climate, not ground decoration. */
+  frostyWire?: boolean;
   /** Front wheels of the locomotive and the ground under them. */
   front: { x: number; y: number; ground: 'snow' | 'leaves' | undefined };
   /** 1 standard, 0.5 for the low quality profile (doc 13). */
@@ -56,9 +62,9 @@ const STARS_PER_SPEED = 4;
 /** Sparks only when braking above this share of the top speed. */
 const SPARK_MIN_SHARE = 0.3;
 const SPARK_EVENTS_PER_SEC = 4;
-/** Now and then a spark at the pantograph, above this speed share. */
-const PANTOGRAPH_SPARK_MIN_SHARE = 0.3;
-const PANTOGRAPH_SPARKS_PER_SEC = 0.35;
+/** A slowly coasting contact is quiet; traction can spark at the first movement. */
+const CONTACT_COAST_MIN_SHARE = 0.2;
+const CONTACT_MAX_DT_SEC = 0.25;
 /** Snow and leaves only above this speed (u/s). */
 const STIR_MIN_SPEED = 40;
 const SNOW_PER_SEC = 70;
@@ -69,8 +75,8 @@ const PUFF_INHERIT = 0.3;
 /**
  * The train's particles (doc 14 §4): smoke in exhaust beats of the steam
  * locomotive's driving wheels and white steam when it starts off, diesel
- * exhaust under throttle, stars from the fairy-tale chimney, rare sparks
- * when braking hard or at an electric locomotive's pantograph, and snow or
+ * exhaust under throttle, stars from the fairy-tale chimney, rare brake sparks
+ * and gentle contact flicker at an electric pantograph, and snow or
  * leaves stirred up only where they lie and only while moving. Pure: time,
  * state and randomness come in.
  */
@@ -78,6 +84,12 @@ export class TrainEffects {
   readonly #field: ParticleField;
   readonly #random: () => number;
   readonly #clocks = new Map<string, EmissionClock>();
+  #contactCarry = 0;
+  #lastContactX: number | undefined;
+  #contactStopped = false;
+  readonly #contactAnchor = { x: 0, y: 0, active: false };
+  readonly #contactOptions: EmitOptions = {};
+  readonly #glowOptions: EmitOptions = { anchor: this.#contactAnchor };
 
   constructor(field: ParticleField, random: () => number) {
     this.#field = field;
@@ -87,13 +99,31 @@ export class TrainEffects {
   /** New journey: discard the previous train's fractional emission clocks. */
   reset(): void {
     this.#clocks.clear();
+    this.#resetContact();
+    this.#contactAnchor.active = false;
   }
 
   /** Emits this frame's particles; returns the count per kind. */
   step(input: TrainEffectsInput): Map<string, number> {
+    // Use the rendered contact on every frame, including zero-tick interpolation.
+    // ParticleField ages the glow after emission but never extrapolates it ahead.
+    const contact = input.pantograph;
+    this.#contactAnchor.active = contact !== undefined && !contact.outOfRange;
+    if (contact) {
+      this.#contactAnchor.x = contact.x;
+      this.#contactAnchor.y = contact.y;
+    }
     const emitted = new Map<string, number>();
     const dt = input.dtSec;
-    if (dt <= 0) return emitted;
+    if (dt <= 0) {
+      // Interpolation renders may have no simulation tick even while driving.
+      // A paused/reset ride is stationary; only that clears contact carry.
+      if (input.speedUPerSec <= 1) {
+        this.#resetContact();
+        this.#contactStopped = true;
+      }
+      return emitted;
+    }
     const scale = input.rateScale;
     const speed = Math.max(0, input.speedUPerSec);
     const share = speed / Math.max(1, input.maxSpeedUPerSec);
@@ -219,16 +249,7 @@ export class TrainEffects {
       }
     }
 
-    // Now and then a spark where the pantograph slides along the wire.
-    const contact = input.pantograph;
-    if (contact && share > PANTOGRAPH_SPARK_MIN_SHARE) {
-      const events = clock('pantograph').tick(
-        PANTOGRAPH_SPARKS_PER_SEC * share * scale,
-        dt,
-      );
-      for (let e = 0; e < events; e++)
-        emit('spark', contact.x, contact.y, 1 + Math.floor(this.#random() * 2));
-    }
+    this.#sparkContact(input, emitted);
 
     // Snow or leaves where they lie, only while moving.
     if (input.groundAt && speed > STIR_MIN_SPEED) {
@@ -278,6 +299,88 @@ export class TrainEffects {
       );
     }
     return emitted;
+  }
+
+  #resetContact(): void {
+    this.#contactCarry = 0;
+    this.#lastContactX = undefined;
+    this.#contactStopped = false;
+  }
+
+  /** One calm burst at most per game step; reuses options and scalar state. */
+  #sparkContact(input: TrainEffectsInput, emitted: Map<string, number>): void {
+    const contact = input.pantograph;
+    if (!contact || contact.outOfRange || input.dtSec >= CONTACT_MAX_DT_SEC) {
+      this.#resetContact();
+      return;
+    }
+    const speed = Math.max(0, input.speedUPerSec);
+    const share = Math.min(1, speed / Math.max(1, input.maxSpeedUPerSec));
+    const pulling = input.intent === 'THROTTLE';
+    const started = this.#contactStopped && speed > 1 && pulling;
+    this.#contactStopped = speed <= 1;
+    const previousX = this.#lastContactX;
+    this.#lastContactX = contact.x;
+    if (
+      speed <= 1 ||
+      input.intent === 'BRAKE' ||
+      (!pulling && share <= CONTACT_COAST_MIN_SHARE)
+    ) {
+      this.#contactCarry = 0;
+      return;
+    }
+    let passedSupport = false;
+    if (previousX !== undefined && input.catenarySupportXs)
+      for (const x of input.catenarySupportXs) {
+        if (
+          input.travelDirection === 1
+            ? previousX < x && contact.x >= x
+            : previousX > x && contact.x <= x
+        ) {
+          passedSupport = true;
+          break;
+        }
+      }
+    const rate =
+      (0.8 + 1.4 * share) *
+      (pulling ? 1.25 : 1) *
+      (input.frostyWire ? 1.25 : 1) *
+      input.rateScale;
+    this.#contactCarry += rate * input.dtSec;
+    const special = started || passedSupport;
+    if (!special && this.#contactCarry < 1) return;
+    // Drop whole events instead of carrying a hitch or a support burst forward.
+    this.#contactCarry = special ? 0 : this.#contactCarry % 1;
+    if (input.canEmit?.(contact) === false) return;
+    const low = input.rateScale < 1;
+    const options = this.#contactOptions;
+    if (input.depth === undefined) delete options.depth;
+    else options.depth = input.depth;
+    options.sizeScale = special ? 1.2 : 1;
+    options.directionOffsetDeg =
+      (contact.tiltDeg ?? 0) + (input.travelDirection === -1 ? 180 : 0);
+    const count = this.#field.emit(
+      kindIndex('contact-spark'),
+      contact.x,
+      contact.y,
+      (special ? 6 : 4) / (low ? 2 : 1),
+      options,
+    );
+    emitted.set('contact-spark', count);
+    const glow = this.#glowOptions;
+    if (input.depth === undefined) delete glow.depth;
+    else glow.depth = input.depth;
+    glow.sizeScale = (special ? 1.14 : 1) * (low ? 0.5 : 1);
+    emitted.set(
+      'contact-glow',
+      this.#field.emit(
+        kindIndex('contact-glow'),
+        contact.x,
+        contact.y,
+        1,
+        glow,
+      ),
+    );
   }
 }
 

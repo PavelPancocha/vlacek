@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
+  <!-- Vlastní kresba: bílé kontaktní jádro a měkký modrý okraj; velikost v CSS px. -->
+  <defs><radialGradient id="soft"><stop stop-color="#f8fcff"/><stop offset="0.4" stop-color="#f3faff"/><stop offset="0.65" stop-color="#cce7ff" stop-opacity="0.85"/><stop offset="1" stop-color="#90c4f3" stop-opacity="0"/></radialGradient></defs>
+  <circle cx="14" cy="14" r="14" fill="url(#soft)"/>
+</svg>

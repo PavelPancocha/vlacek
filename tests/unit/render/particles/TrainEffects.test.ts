@@ -1,3 +1,5 @@
+import { effectiveClimateAt } from '../../../../src/domain/world/Seasons.ts';
+import { frostyWireAt } from '../../../../src/render/particles/SeasonalEffects.ts';
 import { describe, expect, it } from 'vitest';
 import { vehicleArt } from '../../../../src/content/artManifest.ts';
 import { locomotives } from '../../../../src/content/vehicles.ts';
@@ -235,9 +237,9 @@ describe('TrainEffects (doc 14 §4)', () => {
       20,
     ).counts;
     expect(still.get('spark') ?? 0).toBe(0);
-    expect(moving.get('spark') ?? 0).toBeGreaterThan(0);
-    // Only now and then: a handful in twenty seconds.
-    expect(moving.get('spark') ?? 0).toBeLessThan(30);
+    expect(moving.get('contact-spark') ?? 0).toBeGreaterThan(100);
+    expect(moving.get('contact-spark') ?? 0).toBeLessThanOrEqual(300);
+    expect(moving.get('spark') ?? 0).toBe(0);
     expect(moving.get('smoke') ?? 0).toBe(0);
   });
 
@@ -491,4 +493,296 @@ it('SEA-04: low longest train leaves a continuous short granular trail without r
   }
   expect(born).toBeLessThanOrEqual(4 * 70 * 0.5 + 22); // existing fractional phases
   expect(field.live).toBeLessThanOrEqual(96);
+});
+
+// SPK-01: rates, traction, lifecycle and the shared cap are observable emissions.
+describe('contact sparking (sparks-1, TRN-08)', () => {
+  const pantograph = { x: 100, y: -128 };
+  const moving = { pantograph, speedUPerSec: MAX, intent: 'THROTTLE' as const };
+  const sparks = (input: Partial<TrainEffectsInput>) =>
+    run(input).counts.get('contact-spark') ?? 0;
+
+  it('is frequent at game scale and increases with speed and traction', () => {
+    const slow = sparks({ ...moving, speedUPerSec: MAX * 0.4 });
+    const fast = sparks(moving);
+    const coast = sparks({ ...moving, intent: 'COAST' });
+    expect(slow).toBeGreaterThan(25);
+    expect(fast).toBeGreaterThan(slow);
+    expect(fast).toBeGreaterThan(coast);
+    expect(fast).toBeLessThanOrEqual(150);
+  });
+
+  it.each([
+    { speedUPerSec: 0 },
+    { intent: 'COAST' as const, speedUPerSec: MAX * 0.1 },
+    { intent: 'BRAKE' as const },
+    { pantograph: undefined },
+    { pantograph: { ...pantograph, outOfRange: true } },
+  ])('does not spark at an inactive contact: %j', (override) => {
+    expect(sparks({ ...moving, ...override })).toBe(0);
+  });
+
+  it('bursts once at the actual support / span joint, not on both adjacent frames', () => {
+    const field = new ParticleField(PARTICLE_KINDS, 240, () => 0.5);
+    const effects = new TrainEffects(field, () => 0.5);
+    const input = { ...base, ...moving, catenarySupportXs: [110] };
+    effects.step(input);
+    expect(
+      effects
+        .step({ ...input, pantograph: { x: 111, y: -128 } })
+        .get('contact-spark'),
+    ).toBe(6);
+    expect(
+      effects
+        .step({ ...input, pantograph: { x: 112, y: -128 } })
+        .get('contact-spark') ?? 0,
+    ).toBe(0);
+    expect(
+      field
+        .particles()
+        .every((p) => p.vx < 0 || p.kind === kindIndex('contact-glow')),
+    ).toBe(true);
+  });
+
+  it('bursts on the first moving step after standing under throttle', () => {
+    const field = new ParticleField(PARTICLE_KINDS, 240, () => 0.5);
+    const effects = new TrainEffects(field, () => 0.5);
+    effects.step({ ...base, pantograph });
+    expect(
+      effects
+        .step({ ...base, pantograph, intent: 'THROTTLE', speedUPerSec: 2 })
+        .get('contact-spark'),
+    ).toBe(6);
+    expect(
+      effects
+        .step({ ...base, pantograph, intent: 'THROTTLE', speedUPerSec: 4 })
+        .get('contact-spark') ?? 0,
+    ).toBe(0);
+  });
+
+  it('uses game time, drops suspension backlog and resets the spatial passage', () => {
+    const count = (dtSec: number) => {
+      const field = new ParticleField(PARTICLE_KINDS, 1000, () => 0.5);
+      const effects = new TrainEffects(field, () => 0.5);
+      let n = 0;
+      for (let i = 0; i < Math.round(10 / dtSec); i++)
+        n +=
+          effects.step({ ...base, ...moving, dtSec }).get('contact-spark') ?? 0;
+      return n;
+    };
+    expect(count(1 / 30)).toBeGreaterThan(100);
+    expect(Math.abs(count(1 / 30) - count(1 / 120))).toBeLessThanOrEqual(2);
+    const field = new ParticleField(PARTICLE_KINDS, 240, () => 0.5);
+    const effects = new TrainEffects(field, () => 0.5);
+    effects.step({ ...base, ...moving, catenarySupportXs: [110] });
+    expect(
+      effects.step({ ...base, ...moving, dtSec: 0 }).get('contact-spark') ?? 0,
+    ).toBe(0);
+    expect(
+      effects.step({ ...base, ...moving, dtSec: 10 }).get('contact-spark') ?? 0,
+    ).toBe(0);
+    expect(
+      effects
+        .step({
+          ...base,
+          ...moving,
+          pantograph: { x: 120, y: -128 },
+          catenarySupportXs: [110],
+        })
+        .get('contact-spark') ?? 0,
+    ).toBe(0);
+  });
+
+  it('increases frequency on frosty wire, reduces low density, retains smaller low glow and stays capped', () => {
+    expect(sparks({ ...moving, frostyWire: true })).toBeGreaterThan(
+      sparks(moving),
+    );
+    const low = run({ ...moving, rateScale: 0.5 }, 60, 96);
+    const full = run(moving, 60, 240);
+    expect(low.counts.get('contact-spark') ?? 0).toBeGreaterThan(100);
+    expect(low.counts.get('contact-spark') ?? 0).toBeLessThan(
+      (full.counts.get('contact-spark') ?? 0) / 2,
+    );
+    expect(low.counts.get('contact-glow') ?? 0).toBeGreaterThan(0);
+    expect(full.counts.get('contact-glow') ?? 0).toBeGreaterThan(0);
+    expect(low.maxLive).toBeLessThanOrEqual(96);
+    expect(full.maxLive).toBeLessThanOrEqual(240);
+    const crowded = run(moving, 10, 2);
+    expect(crowded.maxLive).toBeLessThanOrEqual(2);
+  });
+});
+
+it('sparks-1: remembers standstill on the initial zero-time render for the first moving tick', () => {
+  const field = new ParticleField(PARTICLE_KINDS, 240, () => 0.5);
+  const effects = new TrainEffects(field, () => 0.5);
+  const pantograph = { x: 100, y: -128 };
+  effects.step({ ...base, pantograph, dtSec: 0 });
+  expect(
+    effects
+      .step({ ...base, pantograph, intent: 'THROTTLE', speedUPerSec: 2 })
+      .get('contact-spark'),
+  ).toBe(6);
+});
+
+it('sparks-1: interpolation-only renders do not erase fractional game-time emission', () => {
+  const field = new ParticleField(PARTICLE_KINDS, 240, () => 0.5);
+  const effects = new TrainEffects(field, () => 0.5);
+  const input = {
+    ...base,
+    pantograph: { x: 100, y: -128 },
+    speedUPerSec: MAX,
+    intent: 'THROTTLE' as const,
+  };
+  let count = 0;
+  for (let i = 0; i < 60; i++) {
+    count += effects.step(input).get('contact-spark') ?? 0;
+    effects.step({ ...input, dtSec: 0 });
+  }
+  expect(count).toBeGreaterThanOrEqual(8);
+  expect(count).toBeLessThanOrEqual(12);
+});
+
+it('sparks-1: both contact kinds retain their tunnel layer and hidden sources advance without a release burst', () => {
+  const field = new ParticleField(PARTICLE_KINDS, 240, () => 0.5);
+  const effects = new TrainEffects(field, () => 0.5);
+  const input = {
+    ...base,
+    pantograph: { x: 100, y: -128 },
+    speedUPerSec: MAX,
+    intent: 'THROTTLE' as const,
+    depth: 7.55,
+  };
+  for (let i = 0; i < 60; i++) effects.step({ ...input, canEmit: () => false });
+  expect(field.live).toBe(0);
+  effects.step({ ...input, dtSec: 1 / 120 });
+  expect(field.live).toBe(0);
+  for (let i = 0; i < 10; i++) effects.step(input);
+  expect(
+    field.particles().some((p) => p.kind === kindIndex('contact-spark')),
+  ).toBe(true);
+  expect(
+    field.particles().some((p) => p.kind === kindIndex('contact-glow')),
+  ).toBe(true);
+  expect(field.particles().every((p) => p.depth === 7.55)).toBe(true);
+  field.clear();
+  effects.reset();
+  expect(effects.step(input).get('contact-spark') ?? 0).toBe(0);
+});
+
+it('sparks-2: four bright streaks and a glow form a calm burst every 0.3–0.8 game seconds at speed', () => {
+  const field = new ParticleField(PARTICLE_KINDS, 240, () => 0.5);
+  const effects = new TrainEffects(field, () => 0.5);
+  const input = {
+    ...base,
+    pantograph: { x: 100, y: -128 },
+    speedUPerSec: MAX,
+    intent: 'THROTTLE' as const,
+  };
+  let last = 0,
+    bursts = 0;
+  for (let frame = 1; frame <= 300; frame++) {
+    const emitted = effects.step(input);
+    field.step(input.dtSec);
+    if ((emitted.get('contact-spark') ?? 0) === 0) continue;
+    expect(emitted.get('contact-spark')).toBe(4);
+    expect(emitted.get('contact-glow')).toBe(1);
+    const gapSec = (frame - last) / 60;
+    expect(gapSec).toBeGreaterThanOrEqual(0.3);
+    expect(gapSec).toBeLessThanOrEqual(0.8);
+    last = frame;
+    bursts++;
+  }
+  expect(bursts).toBeGreaterThanOrEqual(8);
+});
+
+it.each(['lowered', 'out-of-range', 'reset'] as const)(
+  'sparks-3: removes an attached glow when its contact is %s, including a zero-tick render',
+  (mode) => {
+    const field = new ParticleField(PARTICLE_KINDS, 96, () => 0.5);
+    const effects = new TrainEffects(field, () => 0.5);
+    const pantograph = { x: 100, y: -128 };
+    effects.step({ ...base, pantograph });
+    effects.step({
+      ...base,
+      pantograph,
+      speedUPerSec: MAX,
+      intent: 'THROTTLE',
+    });
+    field.step(1 / 60);
+    expect(
+      field.particles().some((p) => p.kind === kindIndex('contact-glow')),
+    ).toBe(true);
+    if (mode === 'reset') effects.reset();
+    else
+      effects.step({
+        ...base,
+        dtSec: 0,
+        pantograph:
+          mode === 'lowered' ? undefined : { ...pantograph, outOfRange: true },
+      });
+    field.step(0);
+    expect(
+      field.particles().some((p) => p.kind === kindIndex('contact-glow')),
+    ).toBe(false);
+    expect(
+      field.particles().some((p) => p.kind === kindIndex('contact-spark')),
+    ).toBe(true);
+    // The released glow record is reused by a free spark; no anchor may leak.
+    const freeX = 300;
+    field.emit(kindIndex('contact-spark'), freeX, 0, 1);
+    const recycled = field.particles().at(-1);
+    if (!recycled) throw new Error('recycled particle missing');
+    effects.step({ ...base, dtSec: 0, pantograph: { x: 500, y: -200 } });
+    field.step(1 / 60);
+    expect(recycled.x).toBeLessThan(freeX);
+    expect(recycled.x).toBeGreaterThan(freeX - 10);
+  },
+);
+
+// Integration: actual seeded climate drives the same contact emitter used by RideScene.
+it('integrate-2: winter and snowy transitions increase contact frequency without changing warm wire or caps', () => {
+  const seed = 2;
+  const positions = Array.from({ length: 12_000 }, (_, i) => i * 512);
+  const winter = positions.find((x) => {
+    const c = effectiveClimateAt(seed, x);
+    return c.season === 'winter' && c.snowfall === 0;
+  });
+  const snowyEdge = positions.find((x) => {
+    const c = effectiveClimateAt(seed, x);
+    return c.season !== 'winter' && c.snowfall > 0;
+  });
+  const warm = positions.find((x) => {
+    const c = effectiveClimateAt(seed, x);
+    return c.winter === 0 && c.snowfall === 0;
+  });
+  if (winter === undefined || snowyEdge === undefined || warm === undefined)
+    throw new Error('seeded climate witnesses missing');
+  const moving = {
+    pantograph: { x: 100, y: -128 },
+    speedUPerSec: MAX,
+    intent: 'THROTTLE' as const,
+  };
+  const dry = run(moving).counts.get('contact-spark') ?? 0;
+  expect(frostyWireAt(seed, warm)).toBe(false);
+  expect(
+    run({ ...moving, frostyWire: frostyWireAt(seed, warm) }).counts.get(
+      'contact-spark',
+    ),
+  ).toBe(dry);
+  for (const x of [winter, snowyEdge]) {
+    expect(frostyWireAt(seed, x)).toBe(true);
+    for (const rateScale of [1, 0.5]) {
+      const capacity = rateScale === 1 ? 240 : 96;
+      const baseline = run({ ...moving, rateScale }, 10, capacity);
+      const cold = run(
+        { ...moving, rateScale, frostyWire: frostyWireAt(seed, x) },
+        10,
+        capacity,
+      );
+      expect(cold.counts.get('contact-spark') ?? 0).toBeGreaterThan(
+        baseline.counts.get('contact-spark') ?? 0,
+      );
+      expect(cold.maxLive).toBeLessThanOrEqual(capacity);
+    }
+  }
 });

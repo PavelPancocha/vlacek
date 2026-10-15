@@ -285,3 +285,38 @@ Tři sousední simulační snímky běží přes skutečný host/reducer při 30
 bez posunu během odečtu. Canvas/WebGL, krátký/2000u vlak, low/standard;
 po zastavení se ověřuje zánik víření. Unit regrese chrání rezervu blízkého
 sněhu před kouřem a souvislost stopy bez zvýšení emise či poolu.
+
+### Kontaktní jiskření — sparks-1 (TRN-08, SPK-01)
+
+Unit `TrainEffects.test.ts`: četnost roste s rychlostí a plynem, rozjezd
+a skutečná podpěra/spoj rozpětí vyvolají jednu skupinku. Stání, pomalý
+dojezd, brzda, chybějící zdvižený kontakt a `outOfRange` nové kontaktní
+jiskry potlačí. Výsledky za stejný herní čas odpovídají při 30/120 Hz;
+pauza i dlouhý krok zahodí doháněcí emisi. Hook `frostyWire` zvýší četnost,
+low zachová menší svit a sníží četnost i počet čárek; sdílené pole drží svůj strop.
+
+Pixelový `tunnel-occlusion.spec.ts`: elektrická souprava 2 000 u na
+1140 × 512 i 568 × 320, Canvas a WebGL, viditelné kontaktní pixely ve třech
+po sobě jdoucích herních snímcích. Revize sparks-2 vyžaduje v okně 48 × 32
+CSS px alespoň 32 pixelů s R ≥ 190, G ≥ 205, B ≥ 215 a rozdílem alespoň
+45 v některém kanálu proti snímku bez efektu, nikoli jen dvě libovolné
+změny. Test vzorkuje skutečný záblesk explicitními herními ticky a vlak se
+pohybuje, aby svit sledoval skutečný kontakt. Velikosti v CSS ověřuje
+`EffectsView.test.ts` při měřítkách 0,342 a 0,1704 CSS px/u včetně low.
+Revize sparks-3 kontroluje v `EffectsView.test.ts` celou životnost téhož
+svitu v pořadí emise → posun pole → kresba při 30/60 FPS a standard/low,
+změnu sklonu i interpolační snímek bez ticku. Zvlášť ověřuje zánik kotvy
+po sklopení, `outOfRange` a resetu a opětovné použití částice bez staré kotvy.
+Pixelový test má 30 FPS a zachovává uvedený práh jasné plochy; navíc odděleně
+měří těžiště jasných pixelů svitu bez volně letících čárek, nejvýše
+1,25 CSS px od kontaktu. Referenci počítá z pivotu skutečně kreslené hlavy
+a transformace vozidla, nikoli z polohy testované částice či odhadu středu vlaku.
+Stejné živé částice za neprůhlednou
+skálou nezmění žádný pixel zakrytého výřezu. Po jejich vypršení za skálou
+nevznikají nové kontaktní částice ani při držení plynu. Navazují stávající
+`effects.spec.ts`, `electric.spec.ts` a celá tunelová regrese.
+Fyzická zařízení a vnímání dítětem: **NEOVĚŘENO**.
+
+Integrace seasons-life/sparks: `TrainEffects.test.ts` používá skutečné
+`effectiveClimateAt` pro suchou zimu, zasněžený okraj přechodu a teplý drát;
+kontroluje vyšší emise pouze v mrazu a původní stropy 240/96 v obou profilech.

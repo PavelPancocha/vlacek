@@ -31,7 +31,10 @@ import type { NpcFleet } from '../domain/interaction/OncomingTrain.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import type { Biome } from '../domain/world/Biomes.ts';
 import { heightAtX } from '../domain/world/ArcLengthTable.ts';
-import { contactWireHeightU } from '../domain/world/Catenary.ts';
+import {
+  catenaryPoleXs,
+  contactWireHeightU,
+} from '../domain/world/Catenary.ts';
 import {
   PORTAL_HILL_U,
   SECONDARY_SCALE,
@@ -67,6 +70,7 @@ import { DEPTH } from './RideSceneDepth.ts';
 import { effectiveClimateAt } from '../domain/world/Seasons.ts';
 import {
   SeasonalEffects,
+  frostyWireAt,
   type SeasonalSource,
 } from './particles/SeasonalEffects.ts';
 import { AmbientLife } from './particles/AmbientLife.ts';
@@ -341,7 +345,10 @@ export class RideScene extends Phaser.Scene {
    */
   #frameTick: number | undefined;
   /** Where the drawn pantograph touches the wire this frame (render). */
-  #pantographContact: { x: number; y: number } | undefined;
+  #pantographContact: TrainEffectsInput['pantograph'];
+  readonly #pantographPoint = { x: 0, y: 0, outOfRange: false, tiltDeg: 0 };
+  #contactSupportChunk: number | undefined;
+  #contactSupportXs: readonly number[] = [];
   /** CSS px covered by controls at the top and bottom of the screen. */
   #insetsCss = { top: 0, bottom: 0, controls: 0 };
   #originX = 0;
@@ -792,6 +799,8 @@ export class RideScene extends Phaser.Scene {
   #reset(): void {
     this.#particles.clear();
     this.#trainEffects.reset();
+    this.#contactSupportChunk = undefined;
+    this.#contactSupportXs = [];
     this.#ambient.reset();
     this.#seasonalEffects.clear();
     this.#animalTimes.clear();
@@ -1462,8 +1471,12 @@ export class RideScene extends Phaser.Scene {
           return { kind: 'leaves', strength: c.autumn };
         return undefined;
       },
+      catenarySupportXs: this.#contactSupportXs,
       ...(this.#pantographContact
-        ? { pantograph: this.#pantographContact }
+        ? {
+            pantograph: this.#pantographContact,
+            frostyWire: frostyWireAt(ride.seed, this.#pantographContact.x),
+          }
         : {}),
     });
     // Oncoming locomotives emit their own effect outside their tunnels.
@@ -1875,10 +1888,23 @@ export class RideScene extends Phaser.Scene {
     const result = pantographReach(base, pose.angleRad, wire);
     if (result.outOfRange) this.stats.pantographOutOfRange++;
     const reach = result.reachU;
-    this.#pantographContact = {
-      x: base.x - reach * Math.sin(pose.angleRad),
-      y: base.y - reach * Math.cos(pose.angleRad),
-    };
+    const contact = this.#pantographPoint;
+    contact.x = base.x - reach * Math.sin(pose.angleRad);
+    contact.y = base.y - reach * Math.cos(pose.angleRad);
+    contact.outOfRange = result.outOfRange;
+    contact.tiltDeg = (-pose.angleRad * 180) / Math.PI;
+    this.#pantographContact = contact;
+    const chunk = Math.floor(contact.x / CHUNK_WIDTH_U);
+    if (chunk !== this.#contactSupportChunk) {
+      // Bounded window also covers a passage across the chunk seam. Allocate
+      // only on a chunk change, using the same shifted supports as the drawing.
+      this.#contactSupportXs = catenaryPoleXs(
+        ride.seed,
+        (chunk - 1) * CHUNK_WIDTH_U,
+        (chunk + 2) * CHUNK_WIDTH_U,
+      );
+      this.#contactSupportChunk = chunk;
+    }
     // Where the drawn head ends after its limited stretch.
     const head = vehicleArtLayers(art, vehicle.lengthU, 0, reach).find(
       (layer) => layer.part === pantograph.head,

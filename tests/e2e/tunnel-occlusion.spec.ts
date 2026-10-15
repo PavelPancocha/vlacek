@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { vehicleArt } from '../../src/content/artManifest.ts';
 import type { RideSimulation } from '../../src/domain/ride/RideSimulation.ts';
 import type { ParticleField } from '../../src/render/particles/ParticleField.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
@@ -17,17 +18,25 @@ const VEHICLE_EFFECT_FRAMES = [
   'bubble-pop',
   'rainbow-puff',
   'spark',
+  'contact-spark',
+  'contact-glow',
   'leaf',
   'snow',
 ].flatMap((name) => PARTICLE_KINDS[kindIndex(name)]?.frames ?? []);
 
 interface ProbeScene {
   sys: { setActive(active: boolean): void };
+  update(timeMs: number, deltaMs: number): void;
   children: {
     list: {
       type: string;
       depth: number;
       x?: number;
+      list?: { x: number; y: number; frame?: { name: string | number } }[];
+      getWorldTransformMatrix?(): {
+        transformPoint(x: number, y: number): { x: number; y: number };
+      };
+      visible: boolean;
       frame?: { name: string | number };
       setVisible(visible: boolean): void;
     }[];
@@ -87,9 +96,10 @@ async function restore(
   arcOffsetU: number,
   wagonIds: string[] = [],
   seed = 123,
+  locomotiveId = 'steam_local',
 ): Promise<void> {
   const consist = {
-    locomotiveId: 'steam_local',
+    locomotiveId,
     wagons: wagonIds.map((definitionId, i) => ({
       instanceId: 'w' + i,
       definitionId,
@@ -837,6 +847,231 @@ for (const renderer of ['canvas', 'webgl']) {
           false,
         );
       }
+    });
+  }
+}
+
+/** Bright blue-white area attributable to the effect, not sky or train art. */
+async function brightContactArea(
+  page: Page,
+  before: Buffer,
+  without: Buffer,
+): Promise<{ count: number; x: number; y: number }> {
+  return page.evaluate(
+    async ([a, b]) => {
+      let width = 0;
+      const pixels = async (base64: string) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${base64}`;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        width = image.width;
+        canvas.width = width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('pixel context missing');
+        ctx.drawImage(image, 0, 0);
+        return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      };
+      const [lit, background] = await Promise.all([
+        pixels(a ?? ''),
+        pixels(b ?? ''),
+      ]);
+      let count = 0,
+        sumX = 0,
+        sumY = 0;
+      for (let i = 0; i < lit.length; i += 4) {
+        const r = lit[i] ?? 0,
+          g = lit[i + 1] ?? 0,
+          blue = lit[i + 2] ?? 0;
+        const contrast = Math.max(
+          Math.abs(r - (background[i] ?? 0)),
+          Math.abs(g - (background[i + 1] ?? 0)),
+          Math.abs(blue - (background[i + 2] ?? 0)),
+        );
+        if (r >= 190 && g >= 205 && blue >= 215 && contrast >= 45) {
+          count++;
+          sumX += ((i / 4) % width) + 0.5;
+          sumY += Math.floor(i / 4 / width) + 0.5;
+        }
+      }
+      return { count, x: sumX / count, y: sumY / count };
+    },
+    [before.toString('base64'), without.toString('base64')],
+  );
+}
+
+for (const renderer of ['canvas', 'webgl']) {
+  for (const viewport of [
+    { width: 1140, height: 512 },
+    { width: 568, height: 320 },
+  ]) {
+    test(`sparks-3 ${renderer} ${viewport.width}: contact pixels persist over three game frames and stay behind rock`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      await probeScene(page);
+      // Exactly 2000 u including couplers: exercise the maximum permitted train.
+      await restore(
+        page,
+        renderer,
+        1,
+        700,
+        [
+          'cargo_cars',
+          'cargo_container',
+          'cargo_box',
+          ...Array<string>(8).fill('passenger_open'),
+        ],
+        123,
+        'electric_modern',
+      );
+      await page.keyboard.down('ArrowRight');
+      await page.evaluate(() => {
+        const { ride } = window.__tunnelProbe;
+        const step = ride.step.bind(ride);
+        ride.step = (intent) => {
+          ride.speedUPerSec = 480;
+          step(intent);
+          ride.speedUPerSec = 480;
+          ride.previousHeadS = ride.headS;
+        };
+      });
+      await expect
+        .poll(async () => (await snapshot(page)).intent)
+        .toBe('THROTTLE');
+      // Sample at 30 FPS, including the newborn glow after emit → advance → draw.
+      await page.evaluate((glowKind) => {
+        const { scene, field } = window.__tunnelProbe;
+        scene.sys.setActive(false);
+        field.clear();
+        for (let i = 0; i < 30; i++) {
+          scene.update(performance.now(), 1000 / 30);
+          if (field.particles().some((p) => p.kind === glowKind)) return;
+        }
+        throw new Error('no contact glow within one game second');
+      }, kindIndex('contact-glow'));
+      const pantograph = vehicleArt['electric_modern']?.pantograph;
+      if (!pantograph) throw new Error('pantograph art missing');
+      for (let i = 0; i < 3; i++) {
+        if (i > 0)
+          await page.evaluate(() =>
+            window.__tunnelProbe.scene.update(performance.now(), 1000 / 30),
+          );
+        await renderedFrame(page);
+        // Use the actual drawn head's pivot and its vehicle transform, not
+        // an approximate locomotive offset or the particle position under test.
+        const contact = await page.evaluate((pantograph) => {
+          const { scene } = window.__tunnelProbe;
+          const vehicle = scene.children.list.find(
+            (o) =>
+              o.depth === 7 &&
+              o.visible &&
+              o.list?.some((child) => child.frame?.name === pantograph.head),
+          );
+          const head = vehicle?.list?.find(
+            (o) => o.frame?.name === pantograph.head,
+          );
+          if (!vehicle?.getWorldTransformMatrix || !head)
+            throw new Error('drawn head missing');
+          const at = vehicle
+            .getWorldTransformMatrix()
+            .transformPoint(head.x, head.y - pantograph.headContactU);
+          const rect = document
+            .querySelector('canvas')
+            ?.getBoundingClientRect();
+          if (!rect) throw new Error('canvas missing');
+          const origin = scene.cameras.main.getWorldPoint(0, 0);
+          const cssPerU =
+            (scene.cameras.main.zoom * rect.width) / scene.scale.width;
+          return {
+            x: rect.left + (at.x - origin.x) * cssPerU,
+            y: rect.top + (at.y - origin.y) * cssPerU,
+          };
+        }, pantograph);
+        const crop = {
+          x: Math.floor(contact.x - 24),
+          y: Math.floor(contact.y - 16),
+          width: 48,
+          height: 32,
+        };
+        const before = await page.screenshot({ clip: crop });
+        await page.evaluate(() => {
+          for (const o of window.__tunnelProbe.scene.children.list)
+            if (o.frame?.name === 'fx.contact-spark') o.setVisible(false);
+        });
+        await renderedFrame(page);
+        const glowOnly = await page.screenshot({ clip: crop });
+        const shown = await page.evaluate(() => {
+          const objects = window.__tunnelProbe.scene.children.list.filter(
+            (o) => o.visible && o.frame?.name === 'fx.contact-glow',
+          );
+          for (const o of objects) o.setVisible(false);
+          return objects.length;
+        });
+        expect(shown).toBeGreaterThan(0);
+        await renderedFrame(page);
+        const without = await page.screenshot({ clip: crop });
+        expect(
+          (await brightContactArea(page, before, without)).count,
+          'at least 32 bright high-contrast contact pixels in each burst frame',
+        ).toBeGreaterThanOrEqual(32);
+        // The loose streaks deliberately trail behind. Measure the contact glow
+        // independently, with the same brightness/contrast mask as above.
+        const glow = await brightContactArea(page, glowOnly, without);
+        expect(glow.count, 'bright contact core exists').toBeGreaterThan(0);
+        expect(
+          Math.hypot(crop.x + glow.x - contact.x, crop.y + glow.y - contact.y),
+          'bright glow centroid stays within 1.25 CSS px of the rendered contact',
+        ).toBeLessThanOrEqual(1.25);
+      }
+      // Existing living contact particles moved under the opaque core.
+      await page.evaluate(() => {
+        const { ride, field, scene } = window.__tunnelProbe;
+        ride.track.ensureRange(ride.track.startS, ride.track.endS + 8000);
+        // 370 u leaves the full 204 u locomotive inside the opaque span;
+        // 550 u straddles the exit even though the contact itself is covered.
+        ride.headS = ride.track.sFromLocalX(6, 370);
+        ride.previousHeadS = ride.headS;
+        ride.step = () => {
+          ride.simulationTick++;
+        };
+        ride.speedUPerSec = 480;
+        for (const p of field.particles()) {
+          if (p.depth === 7.55) {
+            p.x = 6500;
+            p.y = -ride.vehiclePose(0).centerY - 128;
+          }
+        }
+        scene.update(performance.now(), 1000 / 60);
+      });
+      await renderedFrame(page);
+      expect(
+        (await snapshot(page)).tunnels.some((t) => t.vehicles[0] === 'inside'),
+      ).toBe(true);
+      expect(
+        (await snapshot(page)).effects.kinds['contact-spark'] ?? 0,
+      ).toBeGreaterThan(0);
+      const covered = await worldCrop(page, {
+        x: 6465,
+        y: await page.evaluate(
+          () => -window.__tunnelProbe.ride.vehiclePose(0).centerY - 250,
+        ),
+        width: 110,
+        height: 250,
+      });
+      await expectCoveredPixels(page, covered, 7.55);
+      // Advance real effect ticks under throttle: hidden sources must not renew
+      // the old contact particles after their short lifetimes expire.
+      await page.evaluate(() => {
+        const { scene } = window.__tunnelProbe;
+        scene.sys.setActive(false);
+        for (let i = 0; i < 30; i++) scene.update(performance.now(), 1000 / 60);
+      });
+      const hiddenKinds = (await snapshot(page)).effects.kinds;
+      expect(hiddenKinds['contact-spark'] ?? 0).toBe(0);
+      expect(hiddenKinds['contact-glow'] ?? 0).toBe(0);
+      await page.keyboard.up('ArrowRight');
     });
   }
 }

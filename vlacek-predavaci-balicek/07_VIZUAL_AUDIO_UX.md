@@ -98,7 +98,7 @@ Implementace částic a drobných animací ([D-014](../docs/decisions/014-partic
 - **Pole částic.** Omezené, znovupoužívané pole drží částice ve světových souřadnicích. Okolní život kreslí vrstva 10; částice hráčova vlaku vrstva 7,55 a NPC 4,32 pod příslušnou skálou. Zdroje uvnitř skály nevypouštějí nové částice a kryt zakryje i dříve vzniklé částice. Pole se posouvá simulačním časem, takže v pauze stojí.
 - **Zdroje částic.** Kouř, pára, výfuk a hvězdičky vycházejí z emitorů v manifestu vozidla, se sklonem modelu.
   - Kouř jde v taktech hnacích kol.
-  - Jiskry přicházejí jen při prudkém brzdění.
+  - Brzdové jiskry přicházejí jen při prudkém brzdění; kontaktní jiskření elektrických lokomotiv popisuje sekce sparks-1 níže.
   - Sníh víří každý viditelný podvozek jen nad místním sněhem a za jízdy; listí pouze na podzim u konkrétního listnatého zdroje.
 - **Drobné pohyby.** Tráva a stromy se houpou, voda občas zableskne, zvířata jemně dýchají. Jen jednou za čas přeletí ptáci nebo motýli.
 - **Úsporný profil.** Profil `low` i omezené efekty snižují strop částic z 240 na 96 a hustotu na polovinu.
@@ -175,3 +175,49 @@ vloček. Víření od podvozků tvoří oddělená zrna a krátkou stopu za posl
 vozem, odlišnou od komínové páry; nezvyšuje dosavadní pool ani emisní strop.
 Zimní střechy se kontrolují v horním, středním i spodním pásu při měřítku
 krátké a nejdelší soupravy v Canvasu i WebGL (D-027).
+
+## Kontaktní jiskření elektrického vlaku — sparks-1
+
+Revize sparks-2 (2026-10-14): původní pevné velikosti v u a práh dvou
+změněných pixelů technicky prokazovaly efekt, ale dítě jiskření nevidělo.
+Dítě nyní pozná modrobílý záblesk u kontaktu na první pohled: měkký svit
+má 14 → 12 CSS px, jasné bílé jádro a modrý průhledný okraj. Žije 0,15 s,
+s krátkým náběhem a dohasnutím. Čtyři světlé čárky mají 5 → 4 CSS px,
+životnost 0,28–0,4 s, odletí dozadu podél drátu a trochu klesnou.
+Za plného plynu a rychlosti přijde běžná skupinka přibližně každých 0,36 s;
+četnost roste s rychlostí a trakcí, při námraze o čtvrtinu více. Nejde o
+poruchu, ohňostroj ani celoobrazovkové blikání. Sběrač i drát zůstávají
+čitelné, HUD je nad efektem.
+
+Velikost je v CSS px a renderer ji převádí skutečným `unitsPerCss`,
+nikoli pevnou velikostí světa: na 1140 × 512 je měřítko 0,342 CSS px/u,
+na 568 × 320 přibližně 0,17. Oba viewporty se soupravou 2 000 u mají stejnou
+čitelnost. Při rozjezdu a průjezdu podporou/spojem vznikne šest čárek do
+6 CSS px a svit necelých 16 CSS px. V této troleji jsou
+spoje rozpětí u podpor; efekt používá skutečné posunuté souřadnice podpor
+z `Catenary.ts`, žádný fiktivní spoj uprostřed drátu. Ve stání, při pomalém
+dojezdu (do 20 % rychlosti), brzdění, sklopeném sběrači nebo omezení dosahu
+nevznikají nové kontaktní částice. Jiskry od brzdových kol se nemění.
+
+Efekt sleduje skutečný kontakt i na svahu, mostě a portálu. Revize sparks-3
+ukotvuje svit po celých 0,15 s k aktuálně vykreslenému kontaktu; krok pole
+částic ho už neposouvá rychlostí vlaku o snímek dopředu. Kotva se obnovuje
+i při interpolačním snímku bez simulačního ticku. Volné čárky dál odletují
+samostatně. Sklopení sběrače, `outOfRange` nebo reset jízdy živý svit zruší;
+při stání či brzdění platný kontakt jen nechá dosavadní svit doznít.
+Zdroje za skálou
+neemitují a všechny částice i svit mají vrstvu 7,55 pod neprůhledným krytem
+D-018. Čas je herní, pauza ani návrat do aplikace nespustí doháněcí emisi.
+Nejvýše jedna skupinka na krok; globální stropy 240/96 platí i pro svit.
+Úsporný profil má poloviční četnost, dvě/tři čárky a menší svit 7 → 6 CSS px. Stav,
+pole i obrázky se opakovaně používají. Save a geometrie trasy se nemění.
+
+`RideScene` napojuje `frostyWire` na `effectiveClimateAt(seed, worldXU)`
+v aktuálním světovém x kresleného kontaktu sběrače. Efektivní zima nebo
+nenulová váha sněžení na přechodu znamená námrazu a zvýší četnost o 25 %;
+teplý suchý drát zachová původní četnost. Zvuk se nepřidává.
+
+Zdrojové assety `assets/world/fx.contact-spark.svg` a
+`assets/world/fx.contact-glow.svg` jsou vlastní vektorové kresby vytvořené
+pro tento projekt 2026-10-14, bez externích zdrojů; stejné podmínky jako
+ostatní vlastní SVG světa. Jsou součástí atlasu a webového buildu.

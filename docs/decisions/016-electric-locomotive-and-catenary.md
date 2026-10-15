@@ -39,7 +39,7 @@ Katalog dosud elektrickou lokomotivu neměl; test to výslovně hlídal, dokud v
    - `vehicleArtLayers` přizpůsobí ramena délce k drátu (`PANTOGRAPH_STRETCH`, 0,07–1,6 násobku kresby), hlava se nenatahuje. Fyzická mez je nyní 59,4 u včetně hlavy, šířka ramen zůstává větší než maximální výška ramen 54,4 u. `pantographReachU` přijímá pracovní dosah 34–59,4 u; drát mimo dosah omezí na tuto mez místo dalšího natahování. `pantographReach` vrací `{ reachU, outOfRange }` pro diagnostiku; číselný vstup rendereru `pantographReachU` používá tentýž výsledek a nevyhazuje výjimku. Nekonečný dosah se omezí na příslušný kraj, `NaN` na dolní mez, vždy s příznakem chyby. Výška sklopené sestavy nad patou je 7,38 u.
    - V depu není drát, a tak pantograf leží sklopený.
    - Kamera u elektrické jízdy drží v obraze i výšku kontaktu.
-   - Jiskra: nad 30 % nejvyšší rychlosti v místě kontaktu občas odletí jedna nebo dvě, asi jednou za tři sekundy.
+   - Kontaktní jiskření (sparks-1): čitelné modrobílé čárky a měkký krátký svit reagují na rychlost a trakci, rozjezd a skutečnou podpěru/spoj rozpětí. Brzda, stání, pomalý dojezd a omezený dosah nové kontaktní částice vypnou. Návrh, četnost, velikosti, zimní hook a rozpočty vlastní [dokument 07](../../vlacek-predavaci-balicek/07_VIZUAL_AUDIO_UX.md#kontaktní-jiskření-elektrického-vlaku--sparks-1). Save ani vedení se nemění.
 6. **Diagnostika.** Snímek `?debug=1` hlásí `catenary`: elektrifikaci, počet stožárů ve vykreslených chuncích a mezeru mezi sběračem a drátem.
 7. **Bez grafiky (PWA-10).** Když se grafika nenačte, stožáry a drát se kreslí jednoduchými čarami na stejných místech a ve stejné výšce, takže vedení vede celou trasou i tehdy ([D-011](011-vector-vehicle-art-and-atlas.md)).
 
@@ -98,6 +98,33 @@ Vozidlový fallback v `RideScene` zatím sběrač nekreslí; jeho doplnění vla
   - Parní jízda vedení nemá, obnovená elektrická jízda ho má.
 - Výkon s nejdelší soupravou za elektrickou lokomotivou (`PERF_LOCOMOTIVE=electric_retro`) je stejný jako s parní: medián 30 FPS, p95 50 ms.
 - Katalog má čtyři lokomotivy; výběr mašinky i depo ukazují elektriku se sklopeným pantografem.
+
+### Ukotvení kontaktního svitu (2026-10-14, sparks-3)
+
+Záře dědila rychlost vlaku a po vzniku se ještě před kresbou posunula o celý
+krok pole částic: při 480 u/s a 30 FPS o 16 u před skutečný kontakt. Nově
+`TrainEffects` vlastní jednu opakovaně používanou kotvu ze současné kreslené
+polohy sběrače. Pouze kontaktní svit ji sleduje po celou životnost; pole mu
+posouvá věk, nikoli polohu podle rychlosti. Platí i pro interpolační snímky
+bez ticku, změnu sklonu a low profil. Volné jiskry dál letí ve světě.
+
+Chybějící nebo nedosažitelný kontakt a reset zneplatní kotvu; pole svit
+odstraní i při nulovém ticku. Uvolnění a recyklace částice zahodí referenci
+na kotvu. Rozpočet, velikost v CSS, četnost a hloubka pod skálou zůstávají.
+Regrese používá skutečné pořadí emise → posun pole → kresba při 30/60 FPS;
+pixelový test měří těžiště jasného svitu vůči skutečné kreslené hlavě
+s tolerancí 1,25 CSS px. Uložená data, katalog a geometrie se nemění.
+
+### Integrace se sezónami (2026-10-15, integrate-2)
+
+`RideScene` předává `frostyWire` podle `effectiveClimateAt(seed, worldXU)`
+u aktuálně kresleného kontaktu sběrače. Efektivní zima nebo nenulová váha
+sněžení na přechodu zvýší četnost o 25 %; pro teplý suchý drát se nemění.
+API klimatu nemá samostatný příznak námrazy. Četnost je jediné nové chování:
+ukotvení svitu, CSS velikost, tunelové zakrytí, standard/low stropy 240/96,
+sněhové a listové částice i víření všech podvozků zůstávají společné.
+Seedovaná regrese srovnává emise nad suchou zimou, sněhovým přechodem
+a teplým místem pro oba profily. Save ani geometrie trasy se nemění.
 
 ## Kompatibilita
 

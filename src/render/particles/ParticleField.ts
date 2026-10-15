@@ -18,6 +18,8 @@ export interface ParticleKind {
   windU: number;
   /** Drawn width at birth and at death. */
   sizeU: readonly [number, number];
+  /** Optional screen-space width; the view converts CSS px through its camera. */
+  sizeCssPx?: readonly [number, number];
   /** Peak opacity between the fade in and the fade out. */
   alpha: number;
   spinDegPerSec: readonly [number, number];
@@ -29,12 +31,21 @@ export interface ParticleKind {
   alignToMotion?: boolean;
 }
 
+/** Updated by the owning emitter from its current rendered contact, in u. */
+export interface ParticleAnchor {
+  x: number;
+  y: number;
+  active: boolean;
+}
+
 export interface Particle {
   /** Unique emission identity, stable until death even when the pool is reused. */
   id: number;
   kind: number;
   /** Optional source-track layer; ambient particles use the view default. */
   depth: number | undefined;
+  /** Contact glows follow this anchor; loose particles have none. */
+  anchor: ParticleAnchor | undefined;
   /** World x and render y (down) of the particle, u. */
   x: number;
   y: number;
@@ -55,6 +66,8 @@ export interface Particle {
 export interface EmitOptions {
   /** A local water habitat retained only for the particle's short lifetime. */
   bounds?: { left: number; right: number; top: number; bottom: number };
+  /** Attached light: follow the rendered source instead of integrating velocity. */
+  anchor?: ParticleAnchor;
   /** Keep train particles under the opaque cover of their own track. */
   depth?: number;
   /** Velocity added to every particle (inherited from the emitter), u/s. */
@@ -76,6 +89,7 @@ function blankParticle(): Particle {
     id: 0,
     kind: 0,
     depth: undefined,
+    anchor: undefined,
     x: 0,
     y: 0,
     vx: 0,
@@ -96,7 +110,8 @@ const between = (range: readonly [number, number], t: number) =>
 
 /**
  * Decorative particles in world space (doc 14 §4): emitted particles move
- * by their own velocity, never with the emitter. A fixed capacity bounds
+ * by their own velocity, except contact lights attached to an explicit anchor.
+ * A fixed capacity bounds
  * the count (doc 13 `quality.*.maxDecorativeParticles`), particle records
  * are reused, and time comes in explicitly, so a paused ride (step 0)
  * stands still. Pure: the random source is injected.
@@ -158,6 +173,7 @@ export class ParticleField {
       particle.kind = kindIndex;
       particle.depth = options.depth;
       particle.bounds = options.bounds;
+      particle.anchor = options.anchor;
       particle.x = x + (r() * 2 - 1) * jitter;
       particle.y = y + (r() * 2 - 1) * jitter;
       particle.vx = Math.cos(direction) * speed + (options.vxU ?? 0);
@@ -178,18 +194,27 @@ export class ParticleField {
     return emitted;
   }
 
-  /** Advances every particle by `dtSec` of simulation time. */
+  /** Updates anchors even on interpolation-only renders; ages in game time. */
   step(dtSec: number): void {
-    if (dtSec <= 0) return;
     const particles = this.#particles;
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       if (!p) continue;
+      if (p.anchor) {
+        if (!p.anchor.active) {
+          this.#removeAt(i);
+          continue;
+        }
+        p.x = p.anchor.x;
+        p.y = p.anchor.y;
+      }
+      if (dtSec <= 0) continue;
       p.age += dtSec;
       if (p.age >= p.life) {
         this.#removeAt(i);
         continue;
       }
+      if (p.anchor) continue;
       const kind = this.#kinds[p.kind];
       if (!kind) continue;
       p.x += (p.vx + kind.windU) * dtSec;
@@ -223,6 +248,7 @@ export class ParticleField {
     if (!p) return;
     const last = this.#particles.pop();
     if (last && last !== p) this.#particles[index] = last;
+    p.anchor = undefined;
     this.#spare.push(p);
   }
 
@@ -293,6 +319,7 @@ export class ParticleField {
   }
 
   clear(): void {
+    for (const p of this.#particles) p.anchor = undefined;
     this.#spare.push(...this.#particles);
     this.#particles.length = 0;
   }

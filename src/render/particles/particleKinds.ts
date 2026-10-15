@@ -113,6 +113,34 @@ const KINDS = {
     spinDegPerSec: [0, 0],
     alignToMotion: true,
   },
+  'contact-spark': {
+    frames: ['fx.contact-spark'],
+    lifeSec: [0.28, 0.4],
+    speedU: [60, 140],
+    directionDeg: [145, 200],
+    gravityU: 80,
+    dragPerSec: 0.5,
+    windU: 0,
+    sizeU: [14, 9],
+    sizeCssPx: [5, 4],
+    alpha: 0.95,
+    spinDegPerSec: [0, 0],
+    alignToMotion: true,
+  },
+  'contact-glow': {
+    frames: ['fx.contact-glow'],
+    lifeSec: [0.15, 0.15],
+    speedU: [0, 0],
+    directionDeg: [0, 0],
+    gravityU: 0,
+    dragPerSec: 0,
+    windU: 0,
+    sizeU: [28, 20],
+    sizeCssPx: [14, 12],
+    alpha: 1,
+    spinDegPerSec: [0, 0],
+    rotationDeg: 0,
+  },
   leaf: {
     frames: [
       'fx.leaf-oak-amber',
@@ -336,6 +364,8 @@ const NAMES = [
   'songbird',
   'gull',
   'rain',
+  'contact-spark',
+  'contact-glow',
 ] as const satisfies readonly ParticleKindName[];
 // Compile-time: every kind above is in the list.
 const everyKindListed: [
