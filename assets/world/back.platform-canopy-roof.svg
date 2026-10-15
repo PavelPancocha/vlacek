@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="20" viewBox="0 0 160 20">
+  <!-- Vlastní vektorová kresba projektu Vláček, art-village-town-station-1. -->
+  <defs>
+    <linearGradient id="wall" x2=".8" y2="1">
+      <stop stop-color="#eeeecc" />
+      <stop offset="1" stop-color="#c5c2a4" />
+    </linearGradient>
+    <linearGradient id="roof" x2=".2" y2="1">
+      <stop stop-color="#84968a" />
+      <stop offset="1" stop-color="#56695f" />
+    </linearGradient>
+    <linearGradient id="wood" x2=".3" y2="1">
+      <stop stop-color="#c49a6c" />
+      <stop offset="1" stop-color="#805c3f" />
+    </linearGradient>
+    <linearGradient id="metal" x2=".7" y2="1">
+      <stop stop-color="#a1acac" />
+      <stop offset="1" stop-color="#53666c" />
+    </linearGradient>
+  </defs>
+  <clipPath id="roof-clip">
+    <path d="M1 13 L12 4 L147 4 L159 13 L155 17 L5 17 Z" />
+  </clipPath>
+  <path d="M1 13 L12 4 L147 4 L159 13 L155 17 L5 17 Z" fill="url(#roof)" stroke="#374333" stroke-width="0.6" stroke-linejoin="round" />
+  <g clip-path="url(#roof-clip)">
+    <path d="M0 8 H160 M0 12 H160 M0 16 H160" fill="none" stroke="#663427" stroke-width="0.38" stroke-linejoin="round" />
+    <path d="M4 5 v3 M13 5 v3 M22 5 v3 M31 5 v3 M40 5 v3 M49 5 v3 M58 5 v3 M67 5 v3 M76 5 v3 M85 5 v3 M94 5 v3 M103 5 v3 M112 5 v3 M121 5 v3 M130 5 v3 M139 5 v3 M148 5 v3 M157 5 v3 M8 9 v3 M17 9 v3 M26 9 v3 M35 9 v3 M44 9 v3 M53 9 v3 M62 9 v3 M71 9 v3 M80 9 v3 M89 9 v3 M98 9 v3 M107 9 v3 M116 9 v3 M125 9 v3 M134 9 v3 M143 9 v3 M152 9 v3 M4 13 v3 M13 13 v3 M22 13 v3 M31 13 v3 M40 13 v3 M49 13 v3 M58 13 v3 M67 13 v3 M76 13 v3 M85 13 v3 M94 13 v3 M103 13 v3 M112 13 v3 M121 13 v3 M130 13 v3 M139 13 v3 M148 13 v3 M157 13 v3" fill="none" stroke="#663427" stroke-width="0.35" stroke-linejoin="round" />
+  </g>
+  <path d="M5 16 H155" fill="none" stroke="#bcc5b5" stroke-width="1" stroke-linejoin="round" />
+  <path d="M15 4 H145" fill="none" stroke="#a9b8a8" stroke-width="0.8" stroke-linejoin="round" />
+</svg>

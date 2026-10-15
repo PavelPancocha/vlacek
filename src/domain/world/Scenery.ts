@@ -1,6 +1,9 @@
 import { farmForestComposition } from './FarmForestComposition.ts';
 import { workRoadSupports } from './WorkGeometry.ts';
 import { streamBendU } from './StreamGeometry.ts';
+import { settlementScenery } from './SettlementScenery.ts';
+import { longStation, type StationExtent } from './SettlementPlan.ts';
+import { stationScenery } from './StationScenery.ts';
 import type { PlacementTraceEntry } from './PlacementTrace.ts';
 import { secondarySite } from './SecondaryTrack.ts';
 import { gameConfig } from '../../config/gameConfig.ts';
@@ -45,7 +48,6 @@ import {
   infrastructureReservations,
   roadReservation,
   waterReservation,
-  platformReservation,
   type Reservation,
   type PlacementRelation,
   type FeatureExtent,
@@ -160,10 +162,9 @@ const { chunkWidthU, maxPlacementAttempts, chunksPerBiomeBlock } =
   gameConfig.world;
 const EDGE_U = 16,
   ANIMAL_CLEARANCE_U = 60,
-  STATION_FLAT_U = 448,
+  STATION_FLAT_U = 480,
   FLAT_STEP_U = 16;
 type Roll = (...parts: (string | number)[]) => number;
-type Placement = Omit<SceneryProp, 'id'>;
 const lerp = (range: readonly [number, number], t: number) =>
   range[0] + (range[1] - range[0]) * t;
 /** Longest flat of a chunk's track, chunk-local, if long enough. */
@@ -192,7 +193,7 @@ export function stationFlat(
 
 /** Slot of the block's station, if one of slots 1–2 has a long flat. */
 export function stationSlot(seed: number, block: number): number | undefined {
-  if (block === 0) return 1;
+  if (block === 0 || longStation(seed, block)) return 1;
   const preferred = 1 + (hash32(seed, 1, 'station-slot', block) % 2);
   for (const slot of [preferred, 3 - preferred]) {
     if (stationFlat(seed, block * chunksPerBiomeBlock + slot)) return slot;
@@ -213,37 +214,29 @@ export const STATION_KINDS = [
   'tree.linden',
 ] as const;
 
-/** A small country station on the flat (doc 05 §3, doc 14 §5). */
-function stationPlacements(
-  flat: readonly [number, number],
-  roll: Roll,
-): Placement[] {
-  const c = Math.round((flat[0] + flat[1]) / 2);
-  const at = (kind: string, xU: number, depth: number): Placement => ({
-    kind,
-    layer: 'back',
-    xU,
-    depth,
-    scale: 1,
-    flip: false,
-    phase: 0,
-  });
-  const people = ['back.person-a', 'back.person-b', 'back.person-c'];
-  const waiting = 2 + Math.floor(roll('passengers') * 2);
-  return [
-    at('back.station', c, 0.16),
-    at('back.platform', c, 0.02),
-    at('back.lamp', c - 150, 0.03),
-    at('back.lamp', c + 150, 0.03),
-    at('back.bench', c + 92, 0.05),
-    at('back.dispatcher', c - 64, 0.045),
-    ...people
-      .slice(0, waiting)
-      .map((kind, i) => at(kind, c - 120 + i * 110 + roll('p', i) * 30, 0.04)),
-    ...[c - 260, c + 260]
-      .filter((x) => x > EDGE_U && x < chunkWidthU - EDGE_U)
-      .map((x) => ({ ...at('tree.linden', x, 0.5), flip: x > c })),
-  ];
+/** Full station extent is available from any intersecting chunk. */
+export function stationSite(
+  seed: number,
+  chunkIndex: number,
+): StationExtent | undefined {
+  const block = Math.floor(chunkIndex / 8);
+  const long = longStation(seed, block);
+  if (long)
+    return long.fromXU < (chunkIndex + 1) * 1024 &&
+      long.toXU > chunkIndex * 1024
+      ? long
+      : undefined;
+  if (chunkIndex - block * 8 !== stationSlot(seed, block)) return undefined;
+  const flat = stationFlat(seed, chunkIndex);
+  if (!flat) return undefined;
+  const fromXU = chunkIndex * 1024 + (flat[0] + flat[1] - 480) / 2;
+  return {
+    id: `g2:chunk:${chunkIndex}:station:0`,
+    ownerChunk: chunkIndex,
+    size: 'halt',
+    fromXU,
+    toXU: fromXU + 480,
+  };
 }
 
 /**
@@ -314,11 +307,11 @@ export function chunkScenery(
   const roll: Roll = (...parts) =>
     unitRandom(seed, 'placement-v2', chunkIndex, ...parts);
   const animalX = chunkObjects(seed, chunkIndex)[0]?.localXU ?? 512;
-  const flat =
-    scene.templateId !== 'farm-forest-dense' &&
-    place.slot === stationSlot(seed, place.block)
-      ? stationFlat(seed, chunkIndex)
-      : undefined;
+  const station =
+    scene.templateId === 'farm-forest-dense'
+      ? undefined
+      : stationSite(seed, chunkIndex);
+  const flat = station ? [station.fromXU - x0, station.toXU - x0] : undefined;
   const own = flat ? templateById('station') : templateById(scene.templateId);
   const ground = flat
     ? (LOCALITIES.find(
@@ -583,19 +576,53 @@ export function chunkScenery(
     if (event) event.rejectionCode = 'accepted';
     return true;
   };
-  if (flat) {
-    for (const [i, p] of stationPlacements(flat, roll).entries()) {
-      const id = atId('station', i);
-      const prop: SceneryProp = {
-        id,
-        ...p,
-        relations: reservations
-          .filter((r) => r.purpose === 'track')
-          .map((r) => ({
-            reservationId: r.id,
-            relation: 'platform-beside-track',
-          })),
-      };
+  const sourceRules = flat
+    ? ground.rules.filter(
+        (r) => r.layer === 'near' && r.aroundAnimalU === undefined,
+      )
+    : own.rules;
+  const rules =
+    region.season === 'winter'
+      ? [
+          ...sourceRules.filter(
+            (r) => r.layer === 'back' || r.seasons?.includes('winter'),
+          ),
+          ...snowField,
+        ]
+      : sourceRules;
+  const hasHouseRules =
+    scene.templateId.startsWith('settlements-village-') ||
+    scene.templateId === 'settlements-suburb' ||
+    rules.some((rule) =>
+      rule.kinds.some((kind) => kind.startsWith('back.house-')),
+    );
+  let memory = houseMemory.get(catalog);
+  if (!memory) {
+    memory = new Map();
+    houseMemory.set(catalog, memory);
+  }
+  const memoryKey = `${seed}/${chunkIndex}`;
+  let precedingHouses: readonly string[] = [];
+  // A route cycle starts after lakes; reconstruct within a finite group, never from camera history.
+  if (hasHouseRules && chunkIndex % (REGION_CYCLE_BLOCKS * 8) !== 0) {
+    const previousKey = `${seed}/${chunkIndex - 1}`;
+    if (!memory.has(previousKey)) chunkScenery(seed, chunkIndex - 1, catalog);
+    precedingHouses = memory.get(previousKey) ?? [];
+  }
+  if (station) {
+    const composition = stationScenery(
+      seed,
+      chunkIndex,
+      station,
+      catalog,
+      reservations,
+    );
+    reservations.push(...composition.reservations);
+    features.push(composition.feature);
+    roads.push(...composition.roads);
+    features.push(...composition.paths);
+    // Access is owned by the station and never introduces a railway crossing.
+    for (const prop of composition.props) {
       const event: PlacementTraceEntry | undefined = trace
         ? {
             candidate: {
@@ -613,61 +640,48 @@ export function chunkScenery(
           }
         : undefined;
       if (event) trace?.push(event);
+      if (
+        prop.layer === 'near' &&
+        Math.abs(prop.xU - animalX) < ANIMAL_CLEARANCE_U
+      ) {
+        if (event) event.rejectionCode = 'context';
+        continue;
+      }
       if (accept(prop, event)) props.push(prop);
     }
-    const platform = props.find((p) => p.kind === 'back.platform');
-    if (platform) {
-      const part = catalog[platform.kind];
-      if (!part) throw new Error('missing platform footprint');
-      const reserve = platformReservation(
-        platform.id,
-        projectedBounds(seed, chunkIndex, platform, part, true),
-      );
-      reservations.push(reserve);
-      for (const prop of props)
-        prop.relations = [
-          ...(prop.relations ?? []),
-          { reservationId: reserve.id, relation: 'platform-beside-track' },
-        ];
-    }
-    features.push({
-      id: `g2:chunk:${chunkIndex}:station:0`,
-      ownerId: region.id,
-      kind: 'station',
-      fromXU: x0 + flat[0],
-      toXU: x0 + flat[1],
-      dependencies: [],
-    });
   }
-  const sourceRules = flat
-    ? ground.rules.filter(
-        (r) => r.layer === 'near' && r.aroundAnimalU === undefined,
+  const settlement = scene.templateId.startsWith('settlements-')
+    ? settlementScenery(
+        seed,
+        chunkIndex,
+        scene,
+        region,
+        catalog,
+        reservations,
+        animalX,
+        precedingHouses,
       )
-    : own.rules;
-  const rules =
-    region.season === 'winter'
-      ? [
-          ...sourceRules.filter(
-            (r) => r.layer === 'back' || r.seasons?.includes('winter'),
-          ),
-          ...snowField,
-        ]
-      : sourceRules;
-  const hasHouseRules = rules.some((rule) =>
-    rule.kinds.some((kind) => kind.startsWith('back.house-')),
-  );
-  let memory = houseMemory.get(catalog);
-  if (!memory) {
-    memory = new Map();
-    houseMemory.set(catalog, memory);
-  }
-  const memoryKey = `${seed}/${chunkIndex}`;
-  let precedingHouses: readonly string[] = [];
-  // A route cycle starts after lakes; reconstruct within a finite group, never from camera history.
-  if (hasHouseRules && chunkIndex % (REGION_CYCLE_BLOCKS * 8) !== 0) {
-    const previousKey = `${seed}/${chunkIndex - 1}`;
-    if (!memory.has(previousKey)) chunkScenery(seed, chunkIndex - 1, catalog);
-    precedingHouses = memory.get(previousKey) ?? [];
+    : undefined;
+  if (settlement) {
+    for (const prop of settlement.props)
+      trace?.push({
+        candidate: {
+          id: prop.id,
+          kind: prop.kind,
+          worldXU: x0 + prop.xU,
+          layer: prop.layer,
+          depth: prop.depth,
+          attempt: 0,
+        },
+        admissible: [prop.kind],
+        rejectionCode: 'accepted',
+        conflictingReservation: undefined,
+        missingDependency: undefined,
+      });
+    props.push(...settlement.props);
+    roads.push(...settlement.roads);
+    features.push(...settlement.features);
+    reservations.push(...settlement.reservations);
   }
   const ordered = rules
     .map((rule, index) => ({ rule, index }))
@@ -1062,7 +1076,10 @@ export function chunkScenery(
         break;
       }
   }
-  const fences = fencesInChunk(seed, chunkIndex);
+  const fences = [
+    ...fencesInChunk(seed, chunkIndex),
+    ...(settlement?.fences ?? []),
+  ];
   for (const f of fences)
     features.push({
       id: f.id,

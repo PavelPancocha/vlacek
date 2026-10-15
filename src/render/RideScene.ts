@@ -1083,7 +1083,13 @@ export class RideScene extends Phaser.Scene {
       for (const foot of this.#portalFeet.get(k) ?? [])
         foot.setX(-this.#originX);
       const site = this.#sceneryOf(ride.seed, k).crossing;
-      chunk.update(timeSec, site && crossings.get(site.id), motion);
+      chunk.update(
+        timeSec,
+        site && crossings.get(site.id),
+        motion,
+        trainSpan.maxX - ride.layout.frontOffsetU,
+        ride.speedUPerSec,
+      );
       chunk.tunnel?.update(trainSpan);
     }
     this.stats.tunnels = [...this.#chunks.values()].flatMap((chunk) => {

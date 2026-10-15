@@ -451,7 +451,9 @@ it.each([4, 5, 60, 61])(
 it('GEN-23: renderer retains authored field rows while their transition begins', () => {
   const sc = chunkScenery(15, 16, worldPlacementCatalog),
     drawn = drawingScene();
-  expect(sc.back.some((s) => s.style === 'wheat')).toBe(true);
+  // The scene planner may choose the integrated farm here; this regression owns
+  // authored wheat rows at the transition, independently of motif scheduling.
+  sc.back = [{ style: 'wheat', fromX: 0, toX: 1024 }];
   const table = buildArcLengthTable(generateTrackProfile(15, 16), 16, 1024, 8);
   const view = new ChunkView(drawn.scene, table, 15, sc, undefined, {
     backGround: 0,

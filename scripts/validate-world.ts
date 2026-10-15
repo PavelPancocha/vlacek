@@ -16,6 +16,7 @@ import {
 import {
   validateChunkScenery,
   validateFarmForestRegions,
+  validateFootpathJoin,
   validateInfrastructureSurfaces,
   validateWorld,
   prominentMotifs,
@@ -117,27 +118,40 @@ for (const [motif, count] of Object.entries(coverage))
   assert(count > 0, `zero world motif coverage: ${motif}`);
 console.log('Positive world motifs:', JSON.stringify(coverage));
 // Every road/water scene in 100 complete itineraries; no expensive decorative comparisons.
-let surfaceCases = 0;
-for (let seed = 0; seed < 100; seed++)
+let surfaceCases = 0,
+  footpathJoins = 0;
+for (let seed = 0; seed < 100; seed++) {
+  let previous: ReturnType<typeof chunkScenery> | undefined;
   for (let k = 0; k < 480; k++) {
     const t = templateById(sceneAt(seed, k * 1024).templateId);
     if (
       !t.water &&
+      !t.id.startsWith('settlements-') &&
       t.biome !== 'coast' &&
       !t.rules.some((r) => r.kinds.includes('back.car'))
-    )
+    ) {
+      previous = undefined;
       continue;
-    errors.push(
-      ...validateInfrastructureSurfaces(
-        seed,
-        chunkScenery(seed, k, worldPlacementCatalog),
-      ),
-    );
+    }
+    const scenery = chunkScenery(seed, k, worldPlacementCatalog);
+    errors.push(...validateInfrastructureSurfaces(seed, scenery));
+    // Neighbouring settlement chunks meet at the same footpath points.
+    if (
+      previous?.chunkIndex === k - 1 &&
+      previous.scene.templateId.startsWith('settlements-') &&
+      t.id.startsWith('settlements-')
+    ) {
+      errors.push(...validateFootpathJoin(seed, previous, scenery));
+      footpathJoins++;
+    }
+    previous = scenery;
     surfaceCases++;
   }
+}
 assert(surfaceCases > 0, 'infrastructure surface sweep exercised zero cases');
+assert(footpathJoins > 0, 'footpath join sweep exercised zero cases');
 console.log(
-  `Road/water sweep: 100 complete seed cycles, ${surfaceCases} cases`,
+  `Road/water sweep: 100 complete seed cycles, ${surfaceCases} cases, ${footpathJoins} footpath joins`,
 );
 assert(cases > 0, 'world validator exercised zero cases');
 assert(

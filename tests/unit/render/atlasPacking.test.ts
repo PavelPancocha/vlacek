@@ -251,7 +251,9 @@ describe('vehicle art atlas', () => {
     const backdrops = Object.fromEntries(
       Object.entries(worldParts).filter(([key]) => isBackdropPart(key)),
     );
-    expect(Object.keys(backdrops).length).toBe(23);
+    expect(Object.keys(backdrops).length).toBe(25);
+    expect(backdrops).toHaveProperty('backdrop.town-sparse');
+    expect(backdrops).toHaveProperty('backdrop.town-dense');
     const items = artAtlasItems(backdrops, BACKDROP_MAX_PX_PER_U);
     expect(
       packAtlas(items, {

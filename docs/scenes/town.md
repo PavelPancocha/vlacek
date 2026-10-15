@@ -9,6 +9,7 @@ Posloupnost má alespoň tři různé místní obrazy; město není pouze řada 
 Na obzoru jsou nízké městské střechy a několik vzdálených bytových domů.
 Za tratí střídají rodinné domy malé řadovky podél jedné souvislé ulice.
 Mezi domy jsou zahrady a průhledy, takže příchod do města je postupný.
+Běžný celý dvouchunkový obraz TO-01 přijme 6–10 domů na oddělených parcelách s vlastními přístupy; menší počet patří pouze k prostorově omezené variantě s objížďkou nebo zakrytým úsekem ulice.
 U koleje pokračuje tráva a nízké oplocení mimo průjezdný profil.
 Před vlakem leží zahrádkářské záhony, keře a bezpečná pěšina.
 Po ulici občas projede auto, zatímco nad střechami pomalu plují mraky.
@@ -116,3 +117,11 @@ NEW: sklad/pila 180 × 90 u; společný stavební základ s odlišnými vraty a 
 NEW: malé depo 200 × 100 u a dvorní jeřáb 140 × 100 u s odděleným ramenem.
 Autobus, nákladní auto, ploty, lidé a sezónní střechy se sdílejí s příslušnými katalogy.
 Žádná varianta nepřidává reklamní značky, lidské obličeje vozidel ani povinnou logistiku.
+
+## Implementační řez D-024
+
+Region začíná a končí předměstím TO-01. Vnitřní dvouchunkové obrazy střídají ulici TO-02, park TO-03 a obslužný areál TO-05; stanice ST-03 má infrastrukturní přednost. Rodinné domy a řadovky mají přístupy ze společné ulice, bytové a panelové domy stojí pouze za tratí. Areál má právě sklad nebo pilu a obslužnou cestu; klády a bedny zůstávají v dvoře. Dálniční alternativa TO-06 zůstává dopravní lince, jeřáb ani depo nejsou součástí tohoto řezu. Městský horizont používá střídmý český pás, prostorové přechody regionu zůstávají podle D-023.
+
+## Oprava kompozice settlements-2
+
+TO-02 má souvislou nízkou pěší cestu a jednotlivce mimo chráněný pás. Na začátku a konci městského regionu se přední pěšina během posledních 160 u zúží do louky a končí v bodě, ne useknutá na hranici. Stejně končí před pracovním dvorem TO-05, který pěšinu nemá, a před oběma břehy řeky. Nízká servisní cesta stanice se na koncích nástupiště také zúží. Ulice přejde potok po malém silničním mostě s kamennou mostovkou, pokračujícím asfaltem a nízkým zábradlím; na březích se neusekne. TO-04 sdílí nízkou servisní cestu stanice. TO-05 rezervuje suchý pracovní dvůr, který obsahuje sklad/pilu i celý obal uloženého materiálu; přístup je veden kolem ostatních parcel. Zahrady rodinných domů patří k jejich parcelám; přední zahrádky sdílejí pěšinu a připojené branky. V osadě vlastní ulici a přístupy settlements; paralelní silniční linka se na hranici napojí nebo ustoupí do terénu.

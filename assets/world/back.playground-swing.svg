@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="34" height="38" viewBox="0 0 34 38">
+  <!-- Vlastní vektorová kresba projektu Vláček, art-village-town-station-1. -->
+  <defs>
+    <linearGradient id="wall" x2=".8" y2="1">
+      <stop stop-color="#eee0bd" />
+      <stop offset="1" stop-color="#c5b592" />
+    </linearGradient>
+    <linearGradient id="roof" x2=".2" y2="1">
+      <stop stop-color="#b2543d" />
+      <stop offset="1" stop-color="#72372a" />
+    </linearGradient>
+    <linearGradient id="wood" x2=".3" y2="1">
+      <stop stop-color="#c49a6c" />
+      <stop offset="1" stop-color="#805c3f" />
+    </linearGradient>
+    <linearGradient id="metal" x2=".7" y2="1">
+      <stop stop-color="#a1acac" />
+      <stop offset="1" stop-color="#53666c" />
+    </linearGradient>
+  </defs>
+  <path d="M7 3 L7 34 M27 3 L27 34" fill="none" stroke="#867657" stroke-width="1" stroke-linejoin="round" />
+  <rect x="4" y="33" width="26" height="3" rx="0.7" fill="url(#wood)" stroke="#374333" stroke-width="0.6" />
+</svg>

@@ -22,6 +22,18 @@ export interface ArtPart {
   pivotU: ArtPoint;
   /** Second joint of a rod (connecting rod small end), part units. */
   endU?: ArtPoint;
+  /** Full animated silhouette relative to the pivot, in u; ground contact stays unchanged. */
+  motionBoundsU?: {
+    leftU: number;
+    rightU: number;
+    topU: number;
+    bottomU: number;
+  };
+  /** Region atlas selection; seasonal parts are loaded only for these presets. */
+  atlasGroup?: {
+    landscapes?: readonly string[];
+    seasons?: readonly ('spring' | 'summer' | 'autumn' | 'winter')[];
+  };
 }
 
 export const artParts = {

@@ -26,6 +26,11 @@ export function admissibleKind(
   if (kind === 'near.stubble' && !['summer', 'autumn'].includes(context.season))
     return false;
   if (kind === 'back.combine' && context.season !== 'summer') return false;
+  if (
+    kind.startsWith('near.garden-') &&
+    kind !== `near.garden-${context.season}`
+  )
+    return false;
   if (kind === 'near.pond' && context.surface === 'sand') return false;
   if (context.season !== 'winter' && kind.includes('snow')) return false;
   if (

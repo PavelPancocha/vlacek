@@ -96,3 +96,13 @@ NEW: přístřešek 160 × 60 u; samostatné sloupky a střecha s kotvením zimn
 NEW: mávací pózy cestujících 14–16 × 36–40 u a výpravčího 16 × 40 u.
 NEW: malý praporek 20 × 16 u s jemným pohybem, bez závislosti na stavu jízdy.
 Budovy, lavičky, lampy, autobus a bedny se sdílejí se stávajícím katalogem.
+
+## Implementační řez D-024
+
+Malá zastávka má 480 u celkové a 448 u použitelné délky, střední stanice 1 216 u, velké městské nádraží 2 368 u (32 + 18 × 128 + 32), z toho 2 336 u použitelných. Délka není perspektivně zmenšená: díly mají jednotkové světové měřítko a 2u přesah kresby. Dlouhá stanice má jediný ID a rozsah ve všech dotčených chunkech; obrázek patří chunku svého středu, nástupištní rezervace je dostupná také při samostatném dotazu uprostřed. Před generováním svahů se rezervuje rovina včetně přechodových ramen; slot 1 zůstává vlastníkem a přejezd ve slotu 3 zůstává mimo platformu. První blok zachovává R3 se zastávkou v chunku 1. Kontext volí zastávku mimo osady, střední stanici v plánované velké vsi a velké nádraží v městském regionu. Budova má přístup, cestující a výpravčí stojí na platformě mimo sloupy přístřešků.
+
+Dosavadní jízda neobsahovala automat zastávkové scénky. D-024 doplňuje čistý kosmetický automat jediného aktéra: přiblížení do 640 u před platformou, dobrovolné zastavení uvnitř intervalu při rychlosti pod 4 u/s po 0,5 s a cooldown 12 s. Mává dvě sekundy, při stání neopakuje reakci bez nového zastavení. Čte výhradně simulační tick a polohu; nemění vstup, rychlost, náklad ani save. Stav vlastní view stanice a zaniká s ním; při znovunačtení scény může znovu pozdravit, bez dohánění zmeškaných událostí. Píšťalová odpověď a vlastní chůze cestujících nejsou v tomto obsahovém řezu dokončené.
+
+## Oprava kompozice settlements-2
+
+Staniční ulice a vstupní pěšiny se rezervují před okolními parcelami a kontrolují vůči vodě i infrastruktuře. Pouze pojmenované vstupy se smějí dotknout vlastní budovy/nástupiště. Pobřežní přístup se posune na suchý břeh. Střední stanice má složené zadní přednádraží s lavičkou a zelení i nízké přední servisní okolí; velká stanice má souvislou servisní cestu po celé délce a drobné keře/kameny mimo průjezdný profil. Druhé nástupiště není podmínkou tohoto řezu.

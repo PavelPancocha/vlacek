@@ -13,7 +13,6 @@ export interface FarmForestPart extends ArtPart {
   pose?: string;
   season?: string;
   tileWidthU?: number;
-  atlasGroup?: { seasons: readonly string[] };
   /** Conservative whole animation/tool envelope, relative to the body's foot. */
   workBoundsU?: BoundsU;
 }

@@ -213,8 +213,14 @@ export class Backdrop {
     layer.biome = biome;
     layer.season = season;
     const keys = {
-      far: farmForestBackdropKey(biome, season, 'far'),
-      mid: farmForestBackdropKey(biome, season, 'mid'),
+      far:
+        biome === 'town'
+          ? 'backdrop.town-sparse'
+          : farmForestBackdropKey(biome, season, 'far'),
+      mid:
+        biome === 'town'
+          ? 'backdrop.town-dense'
+          : farmForestBackdropKey(biome, season, 'mid'),
     };
     for (const which of ['far', 'mid'] as const)
       for (const image of layer[which]) {
@@ -243,7 +249,12 @@ export class Backdrop {
     const texture = this.#texture;
     const biome = layer.biome;
     if (texture === undefined || biome === undefined) return images;
-    const key = farmForestBackdropKey(biome, layer.season ?? 'summer', which);
+    const key =
+      biome === 'town'
+        ? which === 'far'
+          ? 'backdrop.town-sparse'
+          : 'backdrop.town-dense'
+        : farmForestBackdropKey(biome, layer.season ?? 'summer', which);
     while (images.length < count) {
       const part = parts[key];
       const image = this.#scene.add

@@ -25,9 +25,19 @@ export type ReservationPurpose =
   | 'tunnel-hill'
   | 'secondary-hill'
   | 'secondary-track'
+  | 'village-green'
+  | 'parcel'
+  | 'working-yard'
+  | 'forecourt'
   | 'platform'
   | 'catenary';
 export type AllowedRelation =
+  | 'object-on-parcel'
+  | 'object-in-yard'
+  | 'object-on-forecourt'
+  | 'entrance-on-path'
+  | 'pedestrian-on-path'
+  | 'object-on-village-green'
   | 'object-on-field'
   | 'object-on-forest-floor'
   | 'bridge-over-river'
@@ -64,6 +74,17 @@ export function relationAllows(
   relation: AllowedRelation,
 ): boolean {
   switch (relation) {
+    case 'object-on-parcel':
+      return purpose === 'parcel';
+    case 'object-in-yard':
+      return purpose === 'working-yard';
+    case 'object-on-forecourt':
+      return purpose === 'forecourt';
+    case 'entrance-on-path':
+    case 'pedestrian-on-path':
+      return purpose === 'village-road';
+    case 'object-on-village-green':
+      return purpose === 'village-green';
     case 'object-on-field':
       return purpose === 'field';
     case 'object-on-forest-floor':

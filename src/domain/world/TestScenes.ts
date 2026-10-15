@@ -3,7 +3,12 @@ import { contextAt } from './WorldPlan.ts';
 import { tunnelSite } from './Structures.ts';
 import { crossingSite } from './Crossings.ts';
 import type { PlacementCatalog } from './SceneryGeometry.ts';
-import { stationFlat, stationSlot, chunkScenery } from './Scenery.ts';
+import {
+  stationFlat,
+  stationSlot,
+  stationSite,
+  chunkScenery,
+} from './Scenery.ts';
 import { generateTrackProfile } from './TrackProfile.ts';
 import { buildArcLengthTable, arcAtX } from './ArcLengthTable.ts';
 import type { TrackCursor } from './TrackWindow.ts';
@@ -11,6 +16,12 @@ export const TEST_SCENES = [
   'tunnel',
   'crossing',
   'station',
+  'halt',
+  'large-station',
+  'big-station',
+  'village',
+  'village-bus',
+  'suburb',
   'town',
   'autumn',
   'winter',
@@ -50,6 +61,45 @@ export function locateTestScene(
       const c = crossingSite(seed, k);
       if (!c) continue;
       x = k * 1024 + c.localXU;
+    } else if (
+      kind === 'halt' ||
+      kind === 'large-station' ||
+      kind === 'big-station'
+    ) {
+      const site = stationSite(seed, k);
+      const size =
+        kind === 'halt' ? 'halt' : kind === 'large-station' ? 'station' : 'big';
+      if (!site || site.size !== size) continue;
+      x =
+        site.toXU -
+        (kind === 'big-station' ? 300 : kind === 'large-station' ? 180 : 120);
+    } else if (
+      kind === 'village' ||
+      kind === 'village-bus' ||
+      kind === 'suburb' ||
+      kind === 'town'
+    ) {
+      const target =
+        kind === 'village'
+          ? 'settlements-village-green'
+          : kind === 'village-bus'
+            ? 'settlements-village-exit'
+            : kind === 'suburb'
+              ? 'settlements-suburb'
+              : 'settlements-street';
+      if (contextAt(seed, x).scene.templateId !== target) continue;
+      const sc = chunkScenery(seed, k, catalog);
+      const prop = sc.props.find((p) =>
+        kind === 'village'
+          ? p.kind === 'back.chapel'
+          : kind === 'village-bus'
+            ? p.kind === 'back.bus'
+            : kind === 'suburb'
+              ? p.kind === 'back.row-house'
+              : p.kind === 'back.panel-house',
+      );
+      if (!prop) continue;
+      x = k * 1024 + prop.xU;
     } else if (kind === 'station') {
       if (k % 8 !== stationSlot(seed, Math.floor(k / 8))) continue;
       const f = stationFlat(seed, k);
@@ -108,7 +158,10 @@ export function locateTestScene(
       )
     )
       continue;
-    const start = x - 640,
+    const start =
+        kind === 'halt' || kind === 'large-station' || kind === 'big-station'
+          ? x
+          : x - 640,
       chunkIndex = Math.floor(start / 1024);
     const table = buildArcLengthTable(
       generateTrackProfile(seed, chunkIndex),

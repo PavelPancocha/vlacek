@@ -317,3 +317,22 @@ it('rejects invalid crossing deadlines and a maximum warning shorter than the mi
     ).toContain('crossing.openHysteresisSeconds');
   }
 });
+
+it('D-024: station reaction defaults follow document 13 and invalid timing is rejected', () => {
+  expect(gameConfig.station).toEqual({
+    stopSpeedThresholdUPerSec: 4,
+    stopDetectionSeconds: 0.5,
+    sceneCooldownSeconds: 12,
+  });
+  for (const key of [
+    'stopSpeedThresholdUPerSec',
+    'stopDetectionSeconds',
+    'sceneCooldownSeconds',
+  ] as const)
+    expect(
+      validateGameConfig({
+        ...gameConfig,
+        station: { ...gameConfig.station, [key]: 0 },
+      }),
+    ).toContain(`station.${key}`);
+});

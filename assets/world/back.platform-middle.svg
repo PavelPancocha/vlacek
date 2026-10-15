@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="132" height="24" viewBox="0 0 132 24">
+  <!-- Vlastní vektorová kresba projektu Vláček, art-village-town-station-1. -->
+  <rect x="0" y="4" width="132" height="20" rx="0" fill="#c0bda7" stroke="none" stroke-width="0" />
+  <rect x="0" y="15" width="132" height="2" rx="0" fill="#eee7cb" stroke="none" stroke-width="0" />
+  <rect x="0" y="17" width="132" height="5" rx="0" fill="#918e7b" stroke="none" stroke-width="0" />
+  <rect x="0" y="22" width="132" height="2" rx="0" fill="#737b67" stroke="none" stroke-width="0" />
+  <path d="M0 10 H132" fill="none" stroke="#c9c6b2" stroke-width="0.5" stroke-linejoin="round" />
+</svg>

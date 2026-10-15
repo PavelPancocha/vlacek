@@ -1,4 +1,5 @@
 import { gameConfig } from '../../config/gameConfig.ts';
+import { longStation } from './SettlementPlan.ts';
 import { regionAt } from './Regions.ts';
 import { unitRandom } from './Hash.ts';
 
@@ -93,13 +94,16 @@ function buildBlockPlan(seed: number, b: number): ProfileVertex[] {
       gameConfig.world.maxTrackGrade,
     ),
   };
+  const station = longStation(seed, b);
   const target = blockStartHeightU(seed, b + 1);
   let y = blockStartHeightU(seed, b);
   // R3: slot 1 and both transition shoulders are reserved before slopes.
   let x =
     b === 0
       ? 2 * chunkWidthU + plan.transitionU / 2
-      : length(seed, 'flat', b, 0, plan.flatMinU, plan.flatMaxU);
+      : station
+        ? station.toXU - b * BLOCK_U + plan.transitionU / 2 + 32
+        : length(seed, 'flat', b, 0, plan.flatMinU, plan.flatMaxU);
   const vertices: ProfileVertex[] = [
     { xU: 0, yU: y },
     { xU: x, yU: y },

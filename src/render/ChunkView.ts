@@ -6,7 +6,11 @@ import {
 import { farmPatrolOffsetU } from './farmForestMotion.ts';
 import { FarmForestView } from './FarmForestView.ts';
 import { contextAt } from '../domain/world/WorldPlan.ts';
+import { StationReaction } from '../domain/interaction/StationReaction.ts';
+import { settlementAttachmentAngle } from './settlementMotion.ts';
+import { parts as settlementArt } from '../content/world-modules/settlements.art.ts';
 import { transitionAt } from '../domain/world/Regions.ts';
+import { ROAD_BRIDGE_EDGE_U } from '../domain/world/SettlementScenery.ts';
 import { nearGroundRuns, nearGroundTailStrips } from './groundLayout.ts';
 import {
   clipPolygonX,
@@ -15,6 +19,7 @@ import {
   roadSide,
   waterSectionU,
   waterLevelU,
+  type PointU,
   type RoadPath,
 } from '../domain/world/SceneryGeometry.ts';
 import {
@@ -244,6 +249,13 @@ export class ChunkView {
     prop: SceneryProp;
     foot: { xU: number; yU: number };
   }[] = [];
+  readonly #settlementMotion: {
+    image: Phaser.GameObjects.Image;
+    kind: string;
+    phase: number;
+    winter: boolean;
+    reaction: StationReaction | undefined;
+  }[] = [];
   readonly #near: Phaser.GameObjects.Image[] = [];
   /** Plants and trees that sway in the wind, with their phase. */
   readonly #swaying: {
@@ -309,6 +321,27 @@ export class ChunkView {
             );
           this.#paintWater(g, basin, WATER_PALETTE[coast ? 'sea' : 'lake']);
         }
+        for (const area of scenery.reservations.filter(
+          (r) =>
+            r.purpose === 'village-green' ||
+            r.purpose === 'forecourt' ||
+            r.purpose === 'working-yard',
+        )) {
+          g.fillStyle(
+            area.purpose === 'village-green' ? 0x91a96a : 0xb2ad9b,
+            1,
+          );
+          g.fillPoints(
+            area.polygon.map(
+              (p) =>
+                new Phaser.Math.Vector2(
+                  p.xU - table.chunkIndex * CHUNK_WIDTH_U,
+                  p.yU,
+                ),
+            ),
+            true,
+          );
+        }
         // Cars drive on a road (doc 04 §6: a car gets a road).
         for (const road of scenery.roads.filter((r) => r.layer !== 'near'))
           this.#paintRoad(g, road);
@@ -316,6 +349,22 @@ export class ChunkView {
           this.#paintCrossingRoad(g, scenery.crossing.localXU, 'back', 0);
         if (scenery.bridge)
           this.#paintStream(g, scenery.bridge.localXU, 'back', 0);
+        // A street keeps its asphalt over the stream on a small road bridge.
+        for (const bridge of scenery.features) {
+          if (bridge.kind !== 'road-bridge') continue;
+          const road = scenery.roads.find(
+              (r) => r.id === bridge.dependencies[0],
+            ),
+            deck = scenery.reservations.find((r) => r.ownerId === bridge.id);
+          if (road && deck)
+            this.#paintRoadBridge(
+              g,
+              road,
+              deck.polygon,
+              bridge.fromXU,
+              bridge.toXU,
+            );
+        }
       },
       {
         left: -reach,
@@ -341,6 +390,9 @@ export class ChunkView {
         ) +
         NEAR_TAIL_U,
       ...surfaces.flatMap((r) => r.polygon.map((p) => p.yU + 8)),
+      ...scenery.roads
+        .filter((r) => r.layer === 'near')
+        .flatMap((r) => r.points.map((p) => p.yU + 10)),
     );
     const ground = this.#bake(
       (g) => {
@@ -625,6 +677,17 @@ export class ChunkView {
     }
     const backProps = scene.add.container(0, 0).setDepth(depths.backProps);
     const nearProps = scene.add.container(0, 0).setDepth(depths.nearProps);
+    const station = scenery.features.find((f) => f.kind === 'station');
+    const stationReaction = station
+      ? new StationReaction(
+          station.fromXU,
+          station.toXU,
+          gameConfig.simulation.fixedHz,
+          gameConfig.station.stopSpeedThresholdUPerSec,
+          gameConfig.station.stopDetectionSeconds,
+          gameConfig.station.sceneCooldownSeconds,
+        )
+      : undefined;
     // Each layer far to near; a nearer prop covers a farther one. Every child
     // (image, machine, bed, baked layer) carries this order as its depth, so
     // the deferred baked layers sort into place among the individual props.
@@ -692,6 +755,51 @@ export class ChunkView {
       this.#placeProp(image, prop, prop.xU, source.pxPerU);
       const parent = prop.layer === 'back' ? backProps : nearProps;
       parent.add(image);
+      const authored: Readonly<
+        Record<
+          string,
+          {
+            widthU: number;
+            attachmentsU?: readonly {
+              part: string;
+              atU: { x: number; y: number };
+            }[];
+          }
+        >
+      > = settlementArt;
+      const attachments = authored[prop.kind]?.attachmentsU;
+      const parentPart = parts[prop.kind];
+      if (parentPart && attachments)
+        for (const attachment of attachments) {
+          const child = this.#image(scene, art, attachment.part, false);
+          const scale = propScale(prop);
+          child
+            .setPosition(
+              image.x + (attachment.atU.x - parentPart.pivotU.x) * scale,
+              image.y + (attachment.atU.y - parentPart.pivotU.y) * scale,
+            )
+            .setScale(scale / art.pxPerU)
+            .setDepth(image.depth + 0.00001);
+          (prop.layer === 'back' ? backProps : nearProps).add(child);
+          if (
+            attachment.part === 'back.playground-swing' ||
+            attachment.part.includes('-arm')
+          )
+            this.#settlementMotion.push({
+              image: child,
+              kind: attachment.part,
+              phase: prop.phase,
+              winter: scenery.region.season === 'winter',
+              reaction:
+                prop.kind === 'back.dispatcher-wave' ||
+                (prop.kind === 'back.passenger-a' &&
+                  scenery.features.some(
+                    (f) => f.kind === 'station' && f.toXU - f.fromXU === 480,
+                  ))
+                  ? stationReaction
+                  : undefined,
+            });
+        }
       if (prop.layer === 'near') this.#near.push(image);
       if (prop.motion) this.#moving.push({ image, prop });
       else if (swayAmplitudeRad(prop.kind) > 0)
@@ -724,7 +832,12 @@ export class ChunkView {
       });
     }
     if (art)
-      for (const fence of scenery.fences) this.#addFence(backProps, fence, art);
+      for (const fence of scenery.fences)
+        this.#addFence(
+          fence.layer === 'near' ? nearProps : backProps,
+          fence,
+          art,
+        );
     // Stable sorts: equal depths keep propDrawOrder.
     backProps.sort('depth');
     nearProps.sort('depth');
@@ -973,7 +1086,8 @@ export class ChunkView {
       this.#moving.length +
       this.#swaying.length +
       this.#glints.length +
-      this.#farm.length
+      this.#farm.length +
+      this.#settlementMotion.length
     );
   }
 
@@ -998,7 +1112,13 @@ export class ChunkView {
    * shows the chunk's crossing as the simulation holds it.
    */
   /** `motion` scales the decorative sway and glints (doc 07 §9). */
-  update(timeSec: number, crossing?: CrossingState, motion = 1): void {
+  update(
+    timeSec: number,
+    crossing?: CrossingState,
+    motion = 1,
+    headXU = Infinity,
+    speedUPerSec = 0,
+  ): void {
     this.#crossing?.update(crossing, timeSec);
     for (const { image, prop } of this.#moving) {
       const motion = prop.motion;
@@ -1029,6 +1149,23 @@ export class ChunkView {
       );
       view.root.setPosition(foot.xU, foot.yU);
     }
+    for (const view of this.#settlementMotion) {
+      const age = view.reaction?.step(
+        Math.round(timeSec * gameConfig.simulation.fixedHz),
+        headXU,
+        speedUPerSec,
+      );
+      view.image.setRotation(
+        settlementAttachmentAngle(
+          view.kind,
+          age ?? timeSec,
+          age === undefined ? view.phase : 0,
+          view.winter,
+          age !== undefined,
+          motion,
+        ),
+      );
+    }
     // Grass, flowers and branches in the wind; glints on the water.
     for (const { image, kind, phase } of this.#swaying)
       if (image.parentContainer?.visible !== false)
@@ -1048,6 +1185,7 @@ export class ChunkView {
     this.#textures.length = 0;
     this.#moving.length = 0;
     this.#farm.length = 0;
+    this.#settlementMotion.length = 0;
     this.#near.length = 0;
     this.#swaying.length = 0;
     this.#glints.length = 0;
@@ -1108,7 +1246,7 @@ export class ChunkView {
       to = x0 + CHUNK_WIDTH_U,
       parts = FENCE_PARTS[fence.style];
     for (const [i, p] of fence.posts.entries()) {
-      const end = i === fence.posts.length - 1;
+      const end = !fence.closed && i === fence.posts.length - 1;
       const owner = Math.floor((p.xU - (end ? 1e-7 : 0)) / CHUNK_WIDTH_U);
       if (owner === this.#table.chunkIndex) {
         const image = this.#image(this.#scene, art, parts.post, false).setDepth(
@@ -1122,7 +1260,8 @@ export class ChunkView {
           .setScale(1 / art.pxPerU);
         container.add(image);
       }
-      const next = fence.posts[i + 1];
+      const next =
+        fence.posts[i + 1] ?? (fence.closed ? fence.posts[0] : undefined);
       if (!next || p.xU < x0 || p.xU >= to) continue;
       const key = i === fence.gatePanel ? parts.gate : parts.panel;
       const image = this.#image(this.#scene, art, key, false).setDepth(
@@ -1135,7 +1274,13 @@ export class ChunkView {
           `${fenceChildId(fence, i === fence.gatePanel ? 'gate' : 'panel', i)}:fragment:${this.#table.chunkIndex}`,
         )
         .setPosition((p.xU + next.xU) / 2 - x0, (p.yU + next.yU) / 2)
-        .setRotation(Math.atan2(next.yU - p.yU, next.xU - p.xU))
+        // Both sides of a closed plot keep the pickets upright.
+        .setRotation(
+          Math.atan2(
+            (next.yU - p.yU) * (next.xU < p.xU ? -1 : 1),
+            Math.abs(next.xU - p.xU),
+          ),
+        )
         .setScale(length / part.widthU / art.pxPerU, 1 / art.pxPerU);
       container.add(image);
     }
@@ -1577,20 +1722,95 @@ export class ChunkView {
     g.strokePoints(side(1), false, false);
     g.lineStyle(0.8, 0xb5b3ad, 1);
     g.strokePoints(side(-1), false, false);
-    if (road.surface === 'dirt') return;
+    if (road.surface === 'dirt' || road.style) return;
     // Dashed middle line along the straight part.
     g.lineStyle(1.2, 0xf4f1e6, 0.9);
     const straight = points.filter((point) => point.x >= from && point.x <= to);
     for (let i = 0; i + 1 < straight.length; i++) {
       const a = straight[i];
       const b = straight[i + 1];
-      if (!a || !b) continue;
+      if (!a || !b || a.x === b.x) continue;
       g.lineBetween(
         a.x + 6,
         a.y + ((b.y - a.y) * 6) / 32,
         a.x + 18,
         a.y + ((b.y - a.y) * 18) / 32,
       );
+    }
+  }
+
+  /**
+   * A street's small road bridge over the stream, painted over the water
+   * exactly on its reserved deck polygon: a stone deck with a darker fascia
+   * on the near side, the street's asphalt and centre dashes continuing
+   * across, and low railings with posts along both edges.
+   */
+  #paintRoadBridge(
+    g: Phaser.GameObjects.Graphics,
+    road: RoadPath,
+    deck: readonly PointU[],
+    fromXU: number,
+    toXU: number,
+  ): void {
+    const x0 = this.#table.chunkIndex * CHUNK_WIDTH_U;
+    const xs: number[] = [];
+    for (let x = fromXU; x < toXU; x += 8) xs.push(x);
+    xs.push(toXU);
+    const yAt = (line: readonly PointU[], x: number) => {
+      for (let i = 0; i + 1 < line.length; i++) {
+        const a = line[i],
+          b = line[i + 1];
+        if (a && b && x >= a.xU && x <= b.xU)
+          return a.yU + ((b.yU - a.yU) * (x - a.xU)) / (b.xU - a.xU || 1);
+      }
+      return line.at(-1)?.yU ?? 0;
+    };
+    // An edge line of the street across the deck: -1 far, +1 near, 0 middle.
+    const edge = (sign: number, grow: number) => {
+      const line = roadSide(road, sign, grow);
+      return xs.map((x) => new Phaser.Math.Vector2(x - x0, yAt(line, x)));
+    };
+    const band = (a: Phaser.Math.Vector2[], b: Phaser.Math.Vector2[]) => [
+      ...a,
+      ...[...b].reverse(),
+    ];
+    g.fillStyle(0xb9b0a0, 1);
+    g.fillPoints(
+      deck.map((p) => new Phaser.Math.Vector2(p.xU - x0, p.yU)),
+      true,
+    );
+    g.fillStyle(0x8b8273, 1);
+    g.fillPoints(band(edge(1, 1.5), edge(1, ROAD_BRIDGE_EDGE_U)), true);
+    g.fillStyle(0x8e8d88, 1);
+    g.fillPoints(band(edge(-1, 0), edge(1, 0)), true);
+    g.lineStyle(1, 0x6c6b66, 1);
+    g.strokePoints(edge(1, 0), false, false);
+    g.lineStyle(0.8, 0xb5b3ad, 1);
+    g.strokePoints(edge(-1, 0), false, false);
+    const middle = roadSide(road, 0);
+    g.lineStyle(1.2, 0xf4f1e6, 0.9);
+    for (let s = Math.ceil(fromXU / 32) * 32; s + 18 <= toXU; s += 32)
+      g.lineBetween(
+        s + 6 - x0,
+        yAt(middle, s + 6),
+        s + 18 - x0,
+        yAt(middle, s + 18),
+      );
+    // Low railings: posts every 16 u, a rail along their tops, end posts heavier.
+    for (const sign of [-1, 1]) {
+      const foot = edge(sign, 1);
+      g.lineStyle(1.2, 0x5f5a52, 1);
+      g.strokePoints(
+        foot.map((p) => new Phaser.Math.Vector2(p.x, p.y - 5)),
+        false,
+        false,
+      );
+      foot.forEach((p, i) => {
+        const end = i === 0 || i === foot.length - 1;
+        if (!end && i % 2 !== 0) return;
+        g.lineStyle(end ? 2.2 : 1, 0x5f5a52, 1);
+        g.lineBetween(p.x, p.y, p.x, p.y - 5);
+      });
     }
   }
 

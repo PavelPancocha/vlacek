@@ -238,3 +238,17 @@ Proložení zapečených textur mezi sprity atlasu při `maxTextures: 1` témě�
 počet dávek. GL draw volání na snímek (1140×512, standard, souprava 2000 u, stojící
 vlak, SwiftShader) před a po opravě: hustý les 46→46, pracovní paseka 53→53,
 pole s balíkem 42→44.
+
+## Integrace se settlements (integrate-1)
+
+Plánovaná vesnice D-024 vlastní dvouchunkové sloty 4–6. Povinný sad a statek
+proto ve společném plánu následují ve slotech 7 a 8; pole ve slotu 2 a lesní
+skladba se nemění. Každý venkovský region tak zachovává nejméně dva další
+zemědělské motivy i celou vesnici. Regrese `SCN-CR04/FO01` reprodukuje původní
+kolizi v seedu 3 / regionu 0 a kontroluje 500 itinerářů. Jde stále o nevydaný
+generátor v2, save schéma a katalog soupravy se nemění. Typ atlasových metadat
+pracovních dílů nyní přebírá sezónní kontrakt `ArtPart`.
+
+Rendererová regrese GEN-23 drží autorské pšeničné řady explicitně ve fixture
+seedu 15 / chunku 16. Výběr nové scény ve společném plánu nemění požadavek
+na kreslení a prolínání řad; původní barevná aserce zůstává.

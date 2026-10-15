@@ -28,6 +28,8 @@ export interface PlacementPart {
   workContactsU?: readonly PointU[];
   bankAnchorsU?: readonly PointU[];
   swayRad?: number;
+  /** Animated silhouette around the art pivot; contacts still use the physical foot. */
+  motionBoundsU?: BoundsU;
 }
 export type PlacementCatalog = Readonly<Record<string, PlacementPart>>;
 export interface ProjectedProp {
@@ -110,7 +112,8 @@ export function projectedBounds(
   );
   const pivotX = prop.flip ? part.widthU - part.pivotU.xU : part.pivotU.xU;
   const shrink = contact ? ((1 - part.contactWidth) * part.widthU) / 2 : 0;
-  const envelope = part.workBoundsU;
+  const envelope =
+    part.workBoundsU ?? (contact ? undefined : part.motionBoundsU);
   const facingLeft = envelope
     ? prop.flip
       ? -envelope.rightU
@@ -336,6 +339,7 @@ export interface RoadPath {
   fromXU: number;
   toXU: number;
   points: readonly RoadPointU[];
+  style?: 'path' | 'service';
 }
 export function roadSide(path: RoadPath, sign: number, growU = 0): PointU[] {
   return path.points.map((p, i) => {

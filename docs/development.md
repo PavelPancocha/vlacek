@@ -152,6 +152,8 @@ Skrytá branka v pauze zůstává pět aktivací Build do tří sekund; dotykov�
 
 Lokátor testovacích scén nabízí také Pole se stroji (`fields`), Hustý les (`forest-dense`) a Lesní práce (ta vyžaduje skutečný harvestor). Readonly `snapshot().scenery.work` uvádí identitu, `xU`, vrstvu, zrcadlení, úhly kol a ramene a viditelnost drženého kmene a lože; nemění save, čas ani RNG.
 
+Testovací scény nabízí také vesnici, autobus a hřiště, předměstí, město a tři velikosti stanic ([D-024](decisions/024-settlements-and-long-stations.md)); dočasná diagnostická jízda chrání běžný uložený postup.
+
 ### Prostředí a nástroje
 
 - `EBADENGINE`: ověř `volta run node --version`, `volta run npm --version`, kořen projektu a Volta shims v PATH. Při zděděném jiném runtime použij explicitní `volta run npm ci`. Nepřepisuj `engine-strict` jen kvůli obejití chyby.

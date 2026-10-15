@@ -117,7 +117,7 @@ describe('track generator v2 (D-023)', () => {
     let descents = 0;
     const slopeLengths = new Set<number>();
     for (const seed of [1, 77, 123]) {
-      for (const [grade, lengthU] of constantRuns(sampleGrades(seed, 0, 64))) {
+      for (const [grade, lengthU] of constantRuns(sampleGrades(seed, 0, 480))) {
         if (grade === 0 && lengthU >= 256) longFlats += 1;
         if (Math.abs(grade) >= plan.gradeRangeMin - 1e-9 && lengthU >= 512) {
           if (grade > 0) climbs += 1;
@@ -131,6 +131,32 @@ describe('track generator v2 (D-023)', () => {
     expect(descents).toBeGreaterThan(8);
     // Irregular: many different straight-slope lengths.
     expect(slopeLengths.size).toBeGreaterThanOrEqual(6);
+  });
+
+  it('keeps early-route variation within 64 chunks, including the gentler countryside and town grades', () => {
+    let flats = 0,
+      climbs = 0,
+      descents = 0;
+    const lengths = new Set<number>();
+    // The old global 0.03 threshold excluded legitimate 0.01 town/lake and 0.015 countryside slopes.
+    const minimum = Math.min(
+      ...Object.values(gameConfig.world.landscapeProfiles).map(
+        (p) => p.gradeRangeMin,
+      ),
+    );
+    for (const seed of [1, 77, 123])
+      for (const [grade, lengthU] of constantRuns(sampleGrades(seed, 0, 64))) {
+        if (grade === 0 && lengthU >= 256) flats++;
+        if (Math.abs(grade) >= minimum - 1e-9 && lengthU >= 512) {
+          if (grade > 0) climbs++;
+          else descents++;
+          lengths.add(Math.round(lengthU / 64));
+        }
+      }
+    expect(flats).toBeGreaterThan(15);
+    expect(climbs).toBeGreaterThan(8);
+    expect(descents).toBeGreaterThan(8);
+    expect(lengths.size).toBeGreaterThanOrEqual(6);
   });
 
   it('block plans start and end flat at their seeded block heights', () => {

@@ -28,9 +28,11 @@ it('DEV-02: all test scenes resolve within a bounded seeded search', () => {
             (p) => p.layer === 'near' && p.kind === 'back.harvester',
           ),
         ).toBe(true);
-      expect(found.head.chunkIndex * 1024 + found.head.arcOffsetU).toBeLessThan(
-        found.worldXU,
-      );
+      const cursorApproxXU =
+        found.head.chunkIndex * 1024 + found.head.arcOffsetU;
+      if (kind === 'halt' || kind === 'large-station' || kind === 'big-station')
+        expect(cursorApproxXU).toBe(found.worldXU);
+      else expect(cursorApproxXU).toBeLessThan(found.worldXU);
       expect(locateTestScene(seed, kind, worldPlacementCatalog)).toEqual(found);
     }
 });

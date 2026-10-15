@@ -11,6 +11,7 @@ Za tratí se objeví první dva až čtyři domy podél místní silnice.
 Každý má krátkou přístupovou cestu a zahradu, která vysvětluje jeho odstup od souseda.
 U trati vede otevřený travnatý pás s nízkým plotem zahrady mimo kolej.
 Před vlakem jsou zeleninové záhony, keře a kočka u branky.
+Několik záhonů 100 × 20 u leží uvnitř jednoho většího pozemku se společným nízkým obvodovým plotem. Jedna branka navazuje na podélnou pěšinu; krátké vnitřní cestičky propojují záhony. Cestičky vycházejí ze vstupní cesty za brankou a i na nerovném terénu zůstávají celé uvnitř plotu. Plot ani pěšiny nepřecházejí kolej.
 Nad střechami pomalu plynou mraky a obyvatel občas zamává z vlastní zahrady.
 
 | Zóna           | Objekty                                                      | Počet                          | Vztahy a závislosti                | Zakázáno               |
@@ -49,7 +50,7 @@ Autobus občas přijede a odjede, zatímco houpačka se pod světlou oblohou jen
 | Zóna           | Objekty                                          | Počet             | Vztahy a závislosti           | Zakázáno                         |
 | -------------- | ------------------------------------------------ | ----------------- | ----------------------------- | -------------------------------- |
 | far            | Střechy a hostitelské kopce                      | Souvislé          | Navazuje na náves             | Nový biom kvůli hřišti           |
-| back 0,30–0,75 | NEW: přístřešek 60 × 45 u, autobus 100 × 40 u    | 1 + 0–1           | Záliv a průjezdná silnice     | Autobus mimo cestu               |
+| back 0,65–0,98 | NEW: přístřešek 60 × 45 u, autobus 100 × 40 u    | 1 + 0–1           | Záliv a průjezdná silnice     | Autobus mimo cestu               |
 | back 0,55–0,85 | NEW: malé hřiště 140 × 70 u; `back.person-a/b/c` | 1 celek, 2–4 lidé | U pěšiny, oplocené od dopravy | Hra na vozovce                   |
 | bank           | `near.grass-a`                                   | 3–5/1 024 u       | Volný odstup                  | Přechod přes koleje bez přejezdu |
 | near 0,35–0,80 | `animal.dog`, `near.bush`, úplný plot            | 0–1 pes, 2–4 keře | Pes uvnitř zahrady            | Rozběh psa k lokomotivě          |
@@ -101,3 +102,13 @@ NEW: kaple 70 × 100 u; omítaná česká kaplička s jednoduchou střechou.
 NEW: přístřešek 60 × 45 u a autobus 100 × 40 u; civilní podoba bez značek a obličeje.
 NEW: hřiště 140 × 70 u; oddělený díl houpačky, bez vysokých atrakcí.
 Mávací pózy lidí a sněhové střechy jsou sdílené se stanicemi a společným katalogem.
+
+## Implementační řez D-024
+
+Velká vesnice má 6 144 u: dva chunky příjezdu VI-01, dva návsi VI-02 a dva odjezdu VI-04 s autobusovou zastávkou a hřištěm VI-03. Jedna identita osady spojuje obecní cestu a přístupy. Cesta smí vytvořit pojmenované napojení na silnici existujícího plánovaného přejezdu za tratí; žádné nové křížení koleje nevzniká. Na skutečném začátku a konci odchází zúžením do zadního horizontu; přední pěšina se tam během posledních 160 u zúží do louky a končí v bodě. Řeka ji rozdělí na kusy zúžené před oběma břehy. Obecní cesta přejde potok po malém silničním mostě s kamennou mostovkou a nízkým zábradlím, místo aby se na březích usekla. Náves je nepravidelná plocha, kaple je pouze v prvním chunku středu. Typ domu se vybírá z pěti fasád podle pořadí parcely, se seedovaným posunem; sousední domy neopakují typ. Větší stanice má přednost před dekorací. Autobus čeká v samostatném silničním zálivu u přístřešku; v tomto řezu nepřijíždí přes přejezd. Houpačka se mírně pohybuje, v zimě stojí. Záhony vybírají spring/summer/autumn/winter z efektivního kontextu místa; každý zahradní celek má celý nízký plot s brankou a vlastní podporu.
+
+## Oprava kompozice settlements-2
+
+Náves VI-02 se plánuje jednou pro celý dvouchunkový obraz, před domy. Její nepravidelný obvod vede společnou silnici; parcely s přístupy ji obklopují. Hustota přijatých domů ve středu převyšuje oba okraje. Zahrady domů leží vedle jejich skutečné parcely nebo za ní. Přední záhony tvoří společnou zahrádkářskou skupinu s nízkou podélnou pěšinou a napojenými brankami; žádná pěšina nepřekračuje kolej. Přijaté budovy a přístupy rezervují místo dalším parcelám. Při konfliktu hlavní cesty se zkouší menší kompozice na bezpečném přístupu.
+
+Objížďka překážky mění ulici jen uvnitř chunku a plynule se vrací na kanonické hraniční body. Vstup i výstup osady zůstávají přesně na bodech exportovaného plánu; před přijetím se kontroluje celý polygon vozovky včetně návratových ramen.

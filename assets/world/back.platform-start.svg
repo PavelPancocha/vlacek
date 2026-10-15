@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="36" height="24" viewBox="0 0 36 24">
+  <!-- Vlastní vektorová kresba projektu Vláček, art-village-town-station-1. -->
+  <clipPath id="ramp">
+    <path d="M2 24 L18 4 H36 V24 Z" />
+  </clipPath>
+  <g clip-path="url(#ramp)">
+    <rect x="0" y="4" width="36" height="20" rx="0" fill="#c0bda7" stroke="none" stroke-width="0" />
+    <rect x="0" y="15" width="36" height="2" rx="0" fill="#eee7cb" stroke="none" stroke-width="0" />
+    <rect x="0" y="17" width="36" height="5" rx="0" fill="#918e7b" stroke="none" stroke-width="0" />
+    <rect x="0" y="22" width="36" height="2" rx="0" fill="#737b67" stroke="none" stroke-width="0" />
+    <path d="M0 10 H36" fill="none" stroke="#c9c6b2" stroke-width="0.5" stroke-linejoin="round" />
+  </g>
+</svg>

@@ -2,9 +2,9 @@ import { swayAmplitudeRad } from '../render/ambientMotion.ts';
 import { farmForestParts } from './world-modules/farm-forest.art.ts';
 import { worldParts } from './worldArt.ts';
 import type {
+  BoundsU,
   PlacementCatalog,
   PlacementPart,
-  BoundsU,
 } from '../domain/world/SceneryGeometry.ts';
 
 /** Numerical trust boundary: domain receives validated dimensions, never content imports. */
@@ -17,6 +17,7 @@ export function placementCatalog(
         heightU: number;
         pivotU: { x: number; y: number };
         workBoundsU?: BoundsU;
+        motionBoundsU?: BoundsU;
       }
     >
   >,
@@ -69,6 +70,21 @@ export function placementCatalog(
             });
       }
     if (key === 'back.combine') contacts.push({ xU: 62, yU: 0 });
+    const envelope = part.motionBoundsU;
+    if (
+      envelope !== undefined &&
+      (![
+        envelope.leftU,
+        envelope.rightU,
+        envelope.topU,
+        envelope.bottomU,
+      ].every(Number.isFinite) ||
+        envelope.leftU > -pivotU.x ||
+        envelope.rightU < widthU - pivotU.x ||
+        envelope.topU > -pivotU.y ||
+        envelope.bottomU < heightU - pivotU.y)
+    )
+      throw new Error(`invalid motion envelope ${key}`);
     result[key] = Object.freeze({
       widthU,
       heightU,
@@ -98,6 +114,7 @@ export function placementCatalog(
             ),
           }
         : {}),
+      ...(envelope ? { motionBoundsU: Object.freeze({ ...envelope }) } : {}),
       contactWidth:
         key.startsWith('tree.') || key.startsWith('backdrop.forest-')
           ? 0.18

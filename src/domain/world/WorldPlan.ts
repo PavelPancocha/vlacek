@@ -1,3 +1,4 @@
+import { settlementScene } from './SettlementPlan.ts';
 import { hash32, unitRandom } from './Hash.ts';
 import { regionAt, transitionAt, type RegionPlan } from './Regions.ts';
 import {
@@ -71,9 +72,9 @@ export function sceneAt(seed: number, worldXU: number): ScenePlan {
     chosen = templateById('near-field');
   if (r.landscape === 'forest' && index === 2)
     chosen = templateById('forest-work');
-  if (r.landscape === 'countryside' && index === 4)
+  if (r.landscape === 'countryside' && index === 7)
     chosen = templateById('orchard');
-  if (r.landscape === 'countryside' && index === 6)
+  if (r.landscape === 'countryside' && index === 8)
     chosen = templateById('farm');
   if (r.landscape === 'forest' && index === 0) chosen = templateById('forest');
   if (r.landscape === 'forest' && index === 6)
@@ -82,6 +83,8 @@ export function sceneAt(seed: number, worldXU: number): ScenePlan {
     chosen = templateById('farm-forest-dense');
   if (r.landscape === 'lakes' && index === millSlot)
     chosen = templateById('mill');
+  const settlement = settlementScene(r, index);
+  if (settlement) chosen = templateById(`settlements-${settlement}`);
   if (!chosen) throw new Error(`no scene for ${r.landscape}/${r.season}`);
   const result: ScenePlan = Object.freeze({
     id: `${r.id}:scene:${index}`,

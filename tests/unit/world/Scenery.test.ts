@@ -3,6 +3,8 @@ import {
   polygonsHit,
   projectedBounds,
 } from '../../../src/domain/world/SceneryGeometry.ts';
+import { SETTLEMENT_KINDS } from '../../../src/domain/world/SettlementScenery.ts';
+import { stationSite } from '../../../src/domain/world/Scenery.ts';
 import { sceneAt } from '../../../src/domain/world/WorldPlan.ts';
 import { snowField } from '../../../src/domain/world/scenes/rules.ts';
 import { worldPlacementCatalog } from '../../../src/content/worldPlacementCatalog.ts';
@@ -63,7 +65,7 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
         for (const prop of scenery.props) {
           expect(prop.id).toMatch(
             new RegExp(
-              `^g\\d+:chunk:${scenery.chunkIndex}:prop:(rule:\\d+|station|perch|footbridge):candidate:\\d+$`,
+              `^g\\d+:chunk:${scenery.chunkIndex}:prop:(rule:\\d+|station|perch|footbridge|settlement):candidate:\\d+$`,
             ),
           );
           const key = `${seed}/${prop.id}`;
@@ -91,6 +93,8 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
       if (!chosen || chosen.station) return;
       if (scenery.slot === chunksPerBiomeBlock - 1) return;
       const kinds = kindsOf(scenery.locality);
+      if (scenery.scene.templateId.startsWith('settlements-'))
+        for (const kind of SETTLEMENT_KINDS) kinds.add(kind);
       if (scenery.region.season === 'winter')
         for (const kind of snowField.flatMap((r) => r.kinds)) kinds.add(kind);
       for (const prop of scenery.props) {
@@ -165,41 +169,26 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
     });
   });
 
-  it('puts at most one station per block, in slot 1 or 2, on a flat track', () => {
+  it('puts at most one logical station per block, owned in slot 1 or 2, on a full flat', () => {
     let stations = 0;
-    for (const seed of SEEDS) {
-      for (let b = -2; b < 20; b++) {
-        const inBlock = Array.from(
-          { length: chunksPerBiomeBlock },
-          (_, s) =>
-            samples.find(
-              (sample) =>
-                sample.seed === seed &&
-                sample.scenery.chunkIndex === b * chunksPerBiomeBlock + s,
-            )?.scenery ??
-            chunkScenery(
-              seed,
-              b * chunksPerBiomeBlock + s,
-              worldPlacementCatalog,
-            ),
-        ).filter((scenery) => template(scenery.locality)?.station);
-        expect(inBlock.length).toBeLessThanOrEqual(1);
-        for (const station of inBlock) {
-          stations += 1;
-          expect([1, 2]).toContain(station.slot);
-          const platform = station.props.find(
-            (prop) => prop.kind === 'back.platform',
-          );
-          if (!platform) throw new Error('station without platform');
-          const profile = generateTrackProfile(seed, station.chunkIndex);
-          for (let x = platform.xU - 200; x <= platform.xU + 200; x += 8)
-            expect(Math.abs(profileGrade(profile, x)), `x ${x}`).toBeLessThan(
-              1e-9,
-            );
+    for (const seed of SEEDS)
+      for (let block = -2; block < 20; block++) {
+        const sites = Array.from({ length: 8 }, (_, slot) =>
+          stationSite(seed, block * 8 + slot),
+        ).filter((site) => site !== undefined);
+        const unique = new Map(sites.map((site) => [site.id, site]));
+        expect(unique.size).toBeLessThanOrEqual(1);
+        for (const site of unique.values()) {
+          stations++;
+          expect([1, 2]).toContain(site.ownerChunk - block * 8);
+          for (let x = site.fromXU; x <= site.toXU; x += 8) {
+            const k = Math.floor(x / 1024);
+            expect(
+              profileGrade(generateTrackProfile(seed, k), x - k * 1024),
+            ).toBeCloseTo(0, 10);
+          }
         }
       }
-    }
-    // Flats are common enough that most worlds have stations.
     expect(stations).toBeGreaterThan(20);
   });
 

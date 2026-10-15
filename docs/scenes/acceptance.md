@@ -41,25 +41,26 @@ Krajinné rozsahy výšek platí pro jádro regionu; přechody musí navazovat a
 
 ## Velká vesnice
 
-| ID       | Očekávaný výsledek                                                                                                   |
-| -------- | -------------------------------------------------------------------------------------------------------------------- |
-| SCN-VI01 | Testovací kompozice velké vsi měří 3 072–6 144 u a obsahuje příjezd VI-01, střed VI-02 a odjezd VI-04.               |
-| SCN-VI02 | V hustším středu je více domů na 1 024 u než na obou okrajích; alespoň jedna varianta obsahuje VI-03.                |
-| SCN-VI03 | Každý obytný dům má suchou parcelu a dosažitelný přístup z obecní cesty; přístup není přímka skrz jiný dům.          |
-| SCN-VI04 | Celá vesnice má nejvýše jeden kostel nebo kapli; sousední trojice domů neopakuje stejnou kombinaci fasády a střechy. |
-| SCN-VI05 | Autobus stojí u své zastávky mimo jízdní konflikt; hřiště je oddělené od silnice a koleje.                           |
-| SCN-VI06 | V každém úplném dvanáctiregionovém itineráři existuje alespoň jedna velká vesnice v `countryside` nebo `foothills`.  |
+| ID       | Očekávaný výsledek                                                                                                                        | Stav settlements-3                                                                                              |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| SCN-VI01 | Testovací kompozice velké vsi měří 6 144 u podle D-024 a obsahuje příjezd VI-01, střed VI-02 a odjezd VI-04.                              | OVĚŘENO: pořadí a délka plánových scén                                                                          |
+| SCN-VI02 | V hustším středu je více domů na 1 024 u než na obou okrajích; alespoň jedna varianta obsahuje VI-03.                                     | ČÁSTEČNĚ: geometrie jediné návsi a přijatá hustota v regresním seedu; celá vizuální/sezónní matice zbývá        |
+| SCN-VI03 | Každý obytný dům má suchou parcelu a dosažitelný přístup z obecní cesty; přístup není přímka skrz jiný dům.                               | OVĚŘENO: geometrické parcely/přístupy, kolize, suchý podklad a kanonické napojení i při objížďce (seed 1 / 8–9) |
+| SCN-VI04 | Celá vesnice má nejvýše jeden kostel nebo kapli; sousední trojice domů neopakuje stejnou kombinaci fasády a střechy.                      | ČÁSTEČNĚ: kaple a různé fasády; celá sezónní matice střech zbývá                                                |
+| SCN-VI05 | Autobus D-024 čeká ve vlastním zálivu u přístřešku mimo jízdní konflikt; hřiště je oddělené od silnice a koleje.                          | ČÁSTEČNĚ: stojící autobus, napojený záliv, oddělené hřiště; příjezdy/odjezdy zbývají                            |
+| SCN-VI06 | V každém úplném dvanáctiregionovém itineráři existuje alespoň jedna velká vesnice v `countryside` nebo `foothills`.                       | OVĚŘENO: plánové itineráře                                                                                      |
+| SCN-VI07 | Přední zahrádky mají jeden společný uzavřený plot, branku napojenou na pěšinu a 2–4 záhony 100 × 20 u uvnitř pozemku s vnitřními cestami. | OVĚŘENO: geometrie, mutační testy; čtyři záhony (seed 1 / 8), cesty uvnitř plotu (1 / 246)                      |
 
 ## Město
 
-| ID       | Očekávaný výsledek                                                                                                           |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| SCN-TO01 | Region `town` obsahuje předměstí TO-01, hustší ulici TO-02 a alespoň jednu scénu TO-04 nebo TO-05.                           |
-| SCN-TO02 | Před hustým středem a po něm existuje prostorový pokles hustoty; město nepřeskočí přímo do holého pole v jediném chunku.     |
-| SCN-TO03 | Každý městský region obsahuje park TO-03 nebo jiný jeho explicitně navržený klidnější průchod, nikoli další náhodnou fasádu. |
-| SCN-TO04 | Budovy mají cesty a suché parcely; samostatné vysoké městské budovy nevznikají v `near`.                                     |
-| SCN-TO05 | Sklad, pila a jeřáb mají pracovní obal uvnitř areálu; žádný náklad nepřechází nad hráčovou kolejí.                           |
-| SCN-TO06 | Dálniční varianta je nejvýše jednou v regionu, má souvislou geometrii a používá společná pravidla orientace vozidel.         |
+| ID       | Očekávaný výsledek                                                                                                           | Stav settlements-3                                                                                    |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| SCN-TO01 | Region `town` obsahuje předměstí TO-01, hustší ulici TO-02 a alespoň jednu scénu TO-04 nebo TO-05.                           | OVĚŘENO: vlastní předměstí/ulice/park/areál; běžný celý TO-01 má 6–10 přijatých domů (seed 6 / 78–79) |
+| SCN-TO02 | Před hustým středem a po něm existuje prostorový pokles hustoty; město nepřeskočí přímo do holého pole v jediném chunku.     | ČÁSTEČNĚ: pěšina končí zúžením na okraji, u dvora i u řeky (seed 6 / 79, 0 / 28–29); matice zbývá     |
+| SCN-TO03 | Každý městský region obsahuje park TO-03 nebo jiný jeho explicitně navržený klidnější průchod, nikoli další náhodnou fasádu. | OVĚŘENO: plán obsahuje park                                                                           |
+| SCN-TO04 | Budovy mají cesty a suché parcely; samostatné vysoké městské budovy nevznikají v `near`.                                     | OVĚŘENO: přístupové rezervace a výška vrstev                                                          |
+| SCN-TO05 | Sklad, pila a jeřáb mají pracovní obal uvnitř areálu; žádný náklad nepřechází nad hráčovou kolejí.                           | ČÁSTEČNĚ: sklad/pila a materiál jsou uvnitř dvora; jeřáb/dopravní činnost zbývají                     |
+| SCN-TO06 | Dálniční varianta je nejvýše jednou v regionu, má souvislou geometrii a používá společná pravidla orientace vozidel.         | OTEVŘENO: dopravní linka                                                                              |
 
 ## Les
 
@@ -134,15 +135,15 @@ Krajinné rozsahy výšek platí pro jádro regionu; přechody musí navazovat a
 
 ## Stanice
 
-| ID       | Očekávaný výsledek                                                                                                   |
-| -------- | -------------------------------------------------------------------------------------------------------------------- |
-| SCN-ST01 | První garantovaná stanice má nejméně 448 u použitelné roviny ve správném slotu; přechodová ramena se nezapočítávají. |
-| SCN-ST02 | Katalog a testovací presety obsahují délky malé 448 u, střední 1 024–1 536 u a velké 2 304–3 072 u.                  |
-| SCN-ST03 | Velké nástupiště je delší než maximální podporovaná souprava a má právě jeden skutečný začátek a konec.              |
-| SCN-ST04 | Celá použitelná platforma má nulový sklon a navazuje na stejnou geometrii, po níž jedou vozidla.                     |
-| SCN-ST05 | Budovy mají přístup, autobus silnici a lidé bezpečný nástupištní prostor; nikdo nevstupuje na kolej.                 |
-| SCN-ST06 | Průjezd stanici nezablokuje; zastávková scénka respektuje 4 u/s, 0,5 s a cooldown 12 s, bez vazby na náklad.         |
-| SCN-ST07 | Při dotazu jen na prostřední chunk dlouhé stanice jsou správně dostupné její pokračování, vlastník a geometrie.      |
+| ID       | Očekávaný výsledek                                                                                                                                | Stav settlements-3                                                                             |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| SCN-ST01 | První garantovaná stanice má nejméně 448 u použitelné roviny ve správném slotu; přechodová ramena se nezapočítávají.                              | OVĚŘENO: R3 a použitelná rovina                                                                |
+| SCN-ST02 | Katalog a testovací presety obsahují délky malé 448 u použitelné (480 u celkové), střední 1 216 u a velké 2 368 u.                                | OVĚŘENO: tři délky a přednádraží                                                               |
+| SCN-ST03 | Velké nástupiště je delší než maximální podporovaná souprava a má právě jeden skutečný začátek a konec.                                           | OVĚŘENO: délka, díly, jeden vlastník a nízká servisní cesta zúžená na obou koncích             |
+| SCN-ST04 | Celá použitelná platforma má nulový sklon a navazuje na stejnou geometrii, po níž jedou vozidla.                                                  | OVĚŘENO: celý interval po 8 u                                                                  |
+| SCN-ST05 | Budovy mají přístup, autobus silnici a lidé bezpečný nástupištní prostor; nikdo nevstupuje na kolej.                                              | ČÁSTEČNĚ: suchý přístup a geometrie osob; společný pohyb/integrovaná doprava zbývají           |
+| SCN-ST06 | Kosmetický StationReaction D-024 průjezd ani rozjezd nezablokuje; zastávková scénka respektuje 4 u/s, 0,5 s a cooldown 12 s, bez vazby na náklad. | ČÁSTEČNĚ: logický automat a volný odjezd; viditelný pozdrav a opakovaný cleanup view NEOVĚŘENO |
+| SCN-ST07 | Při dotazu jen na prostřední chunk dlouhé stanice jsou správně dostupné její pokračování, vlastník a geometrie.                                   | OVĚŘENO: dotaz na prostřední chunk a query order                                               |
 
 ## Mosty a tunely
 

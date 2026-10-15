@@ -209,6 +209,12 @@ export interface QualityConfig {
   standard: QualityProfile;
 }
 
+export interface StationConfig {
+  stopSpeedThresholdUPerSec: number;
+  stopDetectionSeconds: number;
+  sceneCooldownSeconds: number;
+}
+
 export interface GameConfig {
   simulation: SimulationConfig;
   save: SaveConfig;
@@ -219,10 +225,16 @@ export interface GameConfig {
   input: InputConfig;
   quality: QualityConfig;
   crossing: CrossingConfig;
+  station: StationConfig;
 }
 
 export const gameConfig: GameConfig = {
   simulation: { fixedHz: 60, maxCatchUpSteps: 5 },
+  station: {
+    stopSpeedThresholdUPerSec: 4,
+    stopDetectionSeconds: 0.5,
+    sceneCooldownSeconds: 12,
+  },
   save: {
     schemaVersion: 1,
     intervalSeconds: 5,
@@ -411,7 +423,16 @@ const positive = (value: number) => Number.isFinite(value) && value > 0;
 
 /** Returns the paths of invalid values; an empty list means valid. */
 export function validateGameConfig(config: GameConfig): string[] {
-  const { simulation, save, interaction, train, world, camera, input } = config;
+  const {
+    simulation,
+    save,
+    interaction,
+    train,
+    world,
+    camera,
+    input,
+    station,
+  } = config;
   const profile = (name: keyof QualityConfig): Check[] => {
     const q = config.quality[name];
     return [
@@ -426,6 +447,12 @@ export function validateGameConfig(config: GameConfig): string[] {
   const fraction = (value: number) =>
     Number.isFinite(value) && value >= 0 && value < 1;
   const checks: Check[] = [
+    [
+      'station.stopSpeedThresholdUPerSec',
+      positive(station.stopSpeedThresholdUPerSec),
+    ],
+    ['station.stopDetectionSeconds', positive(station.stopDetectionSeconds)],
+    ['station.sceneCooldownSeconds', positive(station.sceneCooldownSeconds)],
     ['simulation.fixedHz', positiveInteger(simulation.fixedHz)],
     ['simulation.maxCatchUpSteps', positiveInteger(simulation.maxCatchUpSteps)],
     ['save.schemaVersion', save.schemaVersion === 1],

@@ -17,9 +17,13 @@ export interface FenceFeature {
   fromXU: number;
   toXU: number;
   style: 'wood' | 'picket';
+  /** Authored foreground gardens use the same complete fence renderer. */
+  layer?: 'back' | 'near';
   depth: number;
   /** One whole path; posts are sampled by distance, never by fragment. */
   posts: readonly PointU[];
+  /** Enclosed plot: the last panel returns to the first post, without a duplicate post. */
+  closed?: boolean;
   gatePanel: number | undefined;
 }
 export const FENCE_PARTS = {
