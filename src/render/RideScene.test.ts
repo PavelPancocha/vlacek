@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { RideScene, type RideSceneHost } from './RideScene.ts';
 import { rebindWorldImage } from './worldImage.ts';
 
+const readyTextures = vi.hoisted(() => new Set<string>());
+
 vi.mock('phaser', () => {
   const graphics = {
     setDepth: vi.fn().mockReturnThis(),
@@ -33,6 +35,19 @@ vi.mock('phaser', () => {
 });
 vi.mock('./ArtAtlas.ts', () => ({
   ArtAtlas: class {
+    constructor(
+      _scene: unknown,
+      _sources: unknown,
+      readonly options: { texturePrefix: string },
+    ) {}
+    get textureKey() {
+      return readyTextures.has(this.options.texturePrefix)
+        ? this.options.texturePrefix
+        : undefined;
+    }
+    get info(): never {
+      throw new Error('readiness must not collect diagnostics');
+    }
     destroy() {}
   },
 }));
@@ -43,6 +58,7 @@ vi.mock('./Backdrop.ts', () => ({
 }));
 
 function setup(catalog: ReturnType<RideSceneHost['catalogVehicles']> = []) {
+  readyTextures.clear();
   const worldDrawn = vi.fn();
   const host: RideSceneHost = {
     frame: () => 0,
@@ -56,6 +72,7 @@ function setup(catalog: ReturnType<RideSceneHost['catalogVehicles']> = []) {
     artQuality: () => 'standard',
   };
   const scene = new RideScene(host);
+  scene.preload();
   scene.create();
   // Phaser Game.step emits Core.POST_RENDER even when the WebGL renderer
   // suppresses its own POST_RENDER during context loss.
@@ -68,6 +85,19 @@ function setup(catalog: ReturnType<RideSceneHost['catalogVehicles']> = []) {
 }
 
 describe('ride presentation signal', () => {
+  it('reports complete art from all three texture keys without collecting diagnostics', () => {
+    const { scene } = setup();
+    expect(scene.artReady).toBe(false);
+    readyTextures.add('art@');
+    expect(scene.artReady).toBe(false);
+    readyTextures.add('vehicle@');
+    expect(scene.artReady).toBe(false);
+    readyTextures.add('backdrop@');
+    expect(scene.artReady).toBe(true);
+    readyTextures.delete('vehicle@');
+    expect(scene.artReady).toBe(false);
+  });
+
   it('keeps the curtain during context loss and releases it after restoration', () => {
     const { frame, worldDrawn } = setup();
     frame(true);

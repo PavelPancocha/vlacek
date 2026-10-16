@@ -17,7 +17,14 @@ export class AtlasMetrics {
   readonly #affected = frameHistogram();
   #last: number | undefined;
   #following = 0;
-  constructor(readonly now: () => number = () => performance.now()) {}
+  constructor(
+    readonly now: () => number = () => performance.now(),
+    readonly onRecord?: (
+      stage: AtlasStage,
+      durationMs: number,
+      detail?: string,
+    ) => void,
+  ) {}
   measure<T>(stage: AtlasStage, work: () => T, detail?: string): T {
     const from = this.now();
     try {
@@ -36,6 +43,7 @@ export class AtlasMetrics {
     samples.push(durationMs);
     if (samples.length > 512) samples.shift();
     this.#following = 2;
+    this.onRecord?.(stage, durationMs, detail);
   }
   reset(): void {
     for (const samples of Object.values(this.#samples)) samples.length = 0;

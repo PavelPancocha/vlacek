@@ -323,3 +323,22 @@ Fyzická zařízení a vnímání dítětem: **NEOVĚŘENO**.
 Integrace seasons-life/sparks: `TrainEffects.test.ts` používá skutečné
 `effectiveClimateAt` pro suchou zimu, zasněžený okraj přechodu a teplý drát;
 kontroluje vyšší emise pouze v mrazu a původní stropy 240/96 v obou profilech.
+
+### Start a výkon — PERF-LOAD (D-032)
+
+`PerformanceProbe.test.ts` ověřuje navigační čas úvodu, požadavek → první
+prezentovaný snímek / dostupná grafika, součty souběžného SVG zpracování,
+oddělené CPU fáze atlasu, prvních 12 úseků a přesné 15s okno dlouhých úloh
+
+> 50 ms. Kopie vzorku nesmí měnit měření; další výjezd resetuje pouze jízdu.
+> Test také ověřuje odpojení observátoru a prohlížeč bez Long Tasks API.
+> `loading-perf.spec.ts` kontroluje skutečný výjezd v Canvas, načtené SVG,
+> platné atlasy, časové pořadí a nepřítomnost veřejného API bez diagnostiky.
+> Sonda je dostupná při `?debug=1` a v detailech dev menu po zapnutí diagnostiky;
+> její přesný význam a omezení vlastní [D-032](../docs/decisions/032-startup-and-ride-performance.md).
+> CPU throttling ×4, headless WebGL a lokální testy nejsou důkaz fyzického
+> telefonu/tabletu ani Tesly. Save, RNG a verze generátoru se nemění.
+
+`hud-perf.spec.ts` kontroluje nulové pravidelné odběry plného snapshotu a
+skutečné obnovení obou řádků HUD po explicitním posunu hodin. Údaje a jejich
+formátování zůstávají shodné; detaily geometrie se odebírají na vyžádání.

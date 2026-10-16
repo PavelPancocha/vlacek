@@ -56,6 +56,51 @@ export function diagnosticGroups(s: Partial<DebugSnapshot>): DiagnosticGroup[] {
         ],
       ],
     },
+    ...(s.perf
+      ? [
+          {
+            title: 'Načítání',
+            rows: [
+              [
+                'Úvod od navigace',
+                `${number(s.perf.startInteractiveMs, 1)} ms`,
+              ],
+              [
+                'Jízda / všechna grafika od požadavku',
+                `${number(s.perf.ride?.firstFrameMs, 1)} / ${number(s.perf.ride?.artReadyMs, 1)} ms`,
+              ],
+              [
+                'SVG načtené / zpracované',
+                `${s.perf.svg.fetchCount} / ${s.perf.svg.decodeCount}`,
+              ],
+              [
+                'SVG fetch / zpracování (součty)',
+                `${number(s.perf.svg.fetchMs, 1)} / ${number(s.perf.svg.decodeMs, 1)} ms`,
+              ],
+              [
+                'Atlas balení a kresba / upload CPU',
+                `${number(s.perf.atlas.packRasterMs, 1)} / ${number(s.perf.atlas.uploadMs, 1)} ms`,
+              ],
+              [
+                'Prvních 12 úseků generování / pečení',
+                `${number(
+                  s.perf.chunks.reduce((sum, c) => sum + c.generationMs, 0),
+                  1,
+                )} / ${number(
+                  s.perf.chunks.reduce((sum, c) => sum + c.bakeMs, 0),
+                  1,
+                )} ms`,
+              ],
+              [
+                'Dlouhé úlohy >50 ms za prvních 15 s jízdy',
+                s.perf.longTasks.supported
+                  ? `${s.perf.longTasks.count} / ${number(s.perf.longTasks.totalMs, 1)} ms`
+                  : 'Prohlížeč neměří',
+              ],
+            ] as const,
+          },
+        ]
+      : []),
     {
       title: 'Svět',
       rows: [

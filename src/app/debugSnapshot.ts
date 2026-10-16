@@ -14,6 +14,8 @@ import type { Settings } from '../platform/SaveValidation.ts';
 /** Read-only diagnostics via `?debug=1` or the hidden parent developer menu. */
 export interface DebugSnapshot {
   roadVehicles: RoadVehicleSnapshot[];
+  perf:
+    import('../platform/PerformanceProbe.ts').PerformanceSnapshot | undefined;
   worldDebug: {
     temporaryRide: boolean;
     location: TestSceneLocation | undefined;

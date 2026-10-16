@@ -119,6 +119,7 @@ import {
 
 /** What the scene needs from the application each frame. */
 export interface RideSceneHost {
+  perf?: import('../platform/PerformanceProbe.ts').PerformanceProbe | undefined;
   worldOverlays?(): WorldOverlayOptions;
   /** Runs one application frame; returns the render interpolation alpha. */
   frame(deltaSec: number, nowMs: number): number;
@@ -369,7 +370,7 @@ export class RideScene extends Phaser.Scene {
   #visibleObjects: VisibleObject[] = [];
   /** World art; undefined if it failed (plain shapes drawn). */
   #art: ArtAtlas | undefined;
-  readonly atlasMetrics = new AtlasMetrics();
+  readonly atlasMetrics: AtlasMetrics;
   readonly #textureMemory = new TextureMemory();
   /** Created in preload with the world and backdrop atlas owners. */
   #windowRequests = new WorldAtlasRequests(undefined, undefined);
@@ -426,6 +427,36 @@ export class RideScene extends Phaser.Scene {
   constructor(host: RideSceneHost) {
     super('ride');
     this.#host = host;
+    const probe = host.perf;
+    this.atlasMetrics = new AtlasMetrics(
+      undefined,
+      probe
+        ? (stage, duration, detail) => {
+            if (
+              stage === 'prepare' ||
+              stage === 'register' ||
+              stage === 'upload'
+            )
+              probe.atlasWork(duration, stage === 'upload');
+            if (detail?.startsWith('decode:')) {
+              const key = detail.slice('decode:'.length);
+              const source =
+                ART_SOURCES.find((s) => s.key === key) ??
+                VEHICLE_SOURCES.find((s) => s.key === key) ??
+                BACKDROP_SOURCES.find((s) => s.key === key);
+              const resource = source
+                ? performance
+                    .getEntriesByName(
+                      new URL(source.url, document.baseURI).href,
+                    )
+                    .at(-1)
+                : undefined;
+              probe.svgFetched(key, resource?.duration ?? 0);
+            } else if (detail?.startsWith('bitmap:'))
+              probe.svgDecoded(detail.slice('bitmap:'.length));
+          }
+        : undefined,
+    );
   }
 
   /**
@@ -439,6 +470,20 @@ export class RideScene extends Phaser.Scene {
     controlsCss: number = bottomCss,
   ): void {
     this.#insetsCss = { top: topCss, bottom: bottomCss, controls: controlsCss };
+  }
+
+  /** Avoid collecting diagnostic atlas objects in the per-frame probe. */
+  get artReady(): boolean {
+    return (
+      !this.#windowRequests?.pending &&
+      !this.#vehiclePending &&
+      !this.#art?.ready &&
+      !this.#backdropArt?.ready &&
+      !this.#vehicleArt?.ready &&
+      this.#art?.textureKey !== undefined &&
+      this.#vehicleArt?.textureKey !== undefined &&
+      this.#backdropArt?.textureKey !== undefined
+    );
   }
 
   /** Size of the art atlas, for diagnostics; undefined if it failed. */
@@ -713,6 +758,7 @@ export class RideScene extends Phaser.Scene {
       mid: DEPTH.mid,
     });
     this.events.once('destroy', () => {
+      this.#host.perf?.finishLoading();
       this.closeAtlasProof();
       stopPresenting();
       this.#worldOverlay?.destroy();
@@ -1039,7 +1085,13 @@ export class RideScene extends Phaser.Scene {
   #sceneryOf(seed: number, chunkIndex: number): ChunkScenery {
     let scenery = this.#scenery.get(chunkIndex);
     if (!scenery) {
+      const started = this.#host.perf ? performance.now() : 0;
       scenery = chunkScenery(seed, chunkIndex, worldPlacementCatalog);
+      this.#host.perf?.chunk(
+        chunkIndex,
+        'generation',
+        performance.now() - started,
+      );
       this.#scenery.set(chunkIndex, scenery);
     }
     return scenery;
@@ -1337,11 +1389,13 @@ export class RideScene extends Phaser.Scene {
     for (let k = first; k <= last; k++) {
       let chunk = this.#chunks.get(k);
       if (!chunk) {
+        const scenery = this.#sceneryOf(ride.seed, k);
+        const started = this.#host.perf ? performance.now() : 0;
         chunk = new ChunkView(
           this,
           ride.track.chunkTable(k),
           ride.seed,
-          this.#sceneryOf(ride.seed, k),
+          scenery,
           art,
           {
             backGround: DEPTH.backGround,
@@ -1366,6 +1420,7 @@ export class RideScene extends Phaser.Scene {
             : undefined,
           this.#textureMemory,
         );
+        this.#host.perf?.chunk(k, 'bake', performance.now() - started);
         this.#chunks.set(k, chunk);
         const site = secondarySiteOfChunk(ride.seed, k);
         if (site && chunk.secondaryPortalViews > 0) {
@@ -2041,6 +2096,7 @@ export class RideScene extends Phaser.Scene {
         const texture = atlas.textureKey,
           scale = atlas.info?.pxPerU;
         if (!texture || scale === undefined) return;
+        this.#host.perf?.atlas(0, 0);
         const textureFor = (frame: string) => atlas.textureFor(frame);
         if (backdrop) {
           this.#backdrop?.setAtlas(texture, scale, textureFor);
@@ -2100,6 +2156,7 @@ export class RideScene extends Phaser.Scene {
     const replaced = atlas.commitPrepared();
     const key = atlas.textureKey;
     if (!key) return;
+    this.#host.perf?.atlas(0, 0);
     for (const slot of [...this.#slots, ...this.#npcSlots]) {
       slot.images.forEach((image, i) => {
         const shown = slot.frames[i];

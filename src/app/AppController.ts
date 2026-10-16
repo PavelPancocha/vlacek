@@ -45,6 +45,10 @@ import {
 } from '../platform/DevOptions.ts';
 import { DomInputAdapter } from '../platform/DomInputAdapter.ts';
 import { FullscreenController } from '../platform/FullscreenController.ts';
+import {
+  PerformanceProbe,
+  observeLongTasks,
+} from '../platform/PerformanceProbe.ts';
 import { FrameStats } from '../platform/FrameStats.ts';
 import type { CssRect } from '../platform/InputRouter.ts';
 import { createGameHost, type GameHost } from '../render/GameHost.ts';
@@ -89,6 +93,9 @@ export class AppController {
   readonly #frames = new FrameStats(600);
   /** Every crossing phase of the ride, recorded each frame (debug only). */
   readonly #crossingPhases = new PhaseLog();
+  readonly #perf: PerformanceProbe | undefined;
+  readonly #stopPerf: () => void;
+  readonly #perfInput = new AbortController();
   readonly #scene: RideScene;
   readonly #host: GameHost;
   readonly #input: DomInputAdapter;
@@ -113,6 +120,11 @@ export class AppController {
     session: GameSession,
     options: AppControllerOptions,
   ) {
+    this.#perf = options.debug
+      ? new PerformanceProbe(() => performance.now())
+      : undefined;
+    if (this.#perf) performance.setResourceTimingBufferSize(2048);
+    this.#stopPerf = this.#perf ? observeLongTasks(this.#perf) : () => {};
     this.#session = session;
     this.#options = options;
     this.#gameRoot = gameRoot;
@@ -151,9 +163,36 @@ export class AppController {
         },
       });
     }
+    // Capture the request before the real router performs synchronous restoration.
+    const request = (event: Event) => {
+      if (
+        event instanceof MouseEvent &&
+        event.type === 'click' &&
+        event.detail !== 0
+      )
+        return;
+      const button =
+        event.target instanceof Element
+          ? event.target.closest('[data-action]')
+          : null;
+      if (button?.matches(':disabled, [aria-disabled="true"]')) return;
+      if (
+        ['continue', 'depart'].includes(
+          button?.getAttribute('data-action') ?? '',
+        )
+      )
+        this.#perf?.requestRide();
+    };
+    if (this.#perf)
+      for (const type of ['pointerup', 'click'])
+        this.#uiRoot.addEventListener(type, request, {
+          capture: true,
+          signal: this.#perfInput.signal,
+        });
     this.#portrait = isPortrait();
 
     this.#scene = new RideScene({
+      perf: this.#perf,
       worldOverlays: () => this.#worldOverlays,
       frame: (deltaSec, nowMs) => this.#frame(deltaSec, nowMs),
       ride: () => this.#session.ride,
@@ -165,6 +204,10 @@ export class AppController {
           this.#ui.developerMenuOpen,
         ),
       worldDrawn: () => {
+        this.#perf?.presented(
+          this.#scene.artReady,
+          session.screen.name === 'RIDING',
+        );
         if (
           !this.#curtain.hidden &&
           !worldHidden(
@@ -351,6 +394,7 @@ export class AppController {
       this.#refreshUi();
     });
     this.#refreshUi();
+    this.#perf?.markStartInteractive();
   }
 
   #worldDeveloperAction(action: string): void {
@@ -440,7 +484,26 @@ export class AppController {
     this.#refreshUi();
     if (this.#diagnostics && nowMs - this.#lastDiagnosticsMs > 250) {
       this.#lastDiagnosticsMs = nowMs;
-      this.#diagnostics.textContent = hudLines(this.snapshot()).join('\n');
+      const frames = this.#frames.summary();
+      const ride = this.#session.ride;
+      this.#diagnostics.textContent = hudLines({
+        medianFps: frames.medianFps,
+        p95FrameMs: frames.p95FrameMs,
+        renderer: this.#renderer,
+        renderProfile: {
+          quality:
+            this.#options.qualityOverride ?? this.#session.settings.quality,
+          ...renderProfile(
+            this.#session.settings,
+            gameConfig.quality,
+            this.#options.qualityOverride,
+          ),
+        },
+        seed: this.#session.journeySeed,
+        headChunk: ride?.headCursor().chunkIndex,
+        speedUPerSec: ride?.speedUPerSec ?? 0,
+        vehicles: ride?.vehicleCount ?? 0,
+      }).join('\n');
     }
     return alpha;
   }
@@ -644,6 +707,7 @@ export class AppController {
     const frames = this.#frames.summary();
     const canvas = this.#host.canvas as HTMLCanvasElement | undefined;
     return {
+      perf: this.#perf?.snapshot(),
       worldDebug: {
         temporaryRide: session.diagnosticRide,
         location: session.diagnosticRide ? this.#worldLocation : undefined,
@@ -782,6 +846,8 @@ export class AppController {
 
   dispose(): void {
     this.#pwa.dispose();
+    this.#stopPerf();
+    this.#perfInput.abort();
     this.#input.dispose();
     this.#fullscreen.dispose();
     this.#host.destroy();
