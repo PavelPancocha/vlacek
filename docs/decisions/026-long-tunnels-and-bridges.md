@@ -249,13 +249,14 @@ skutečné meze profilů krajiny. Geometrie, zakrytí a pata portálu se neměn�
 
 Odvozené maximum integrovaného katalogu po změně: low 97 951 432 B
 (93,41 MiB; rezerva 2 711 864 B do nezměněných 96 MiB), standard
-145 702 368 B (138,95 MiB do 192 MiB). Nejde o celkovou RAM procesu,
+147 406 304 B (140,58 MiB do 192 MiB; po integraci všech linek, viz
+[D-030](030-world-atlas-region-window.md)). Nejde o celkovou RAM procesu,
 ale o obálku evidovaných pixelů včetně souběhu publikace atlasů.
 Největší čtený rámec potřebuje současně 940 240 B na low a 2 393 184 B
 na standard; další vlastní scratch canvas má 0 B. S již evidovaným
 canvasem materiálu 1 632 464 B je pracovní souběh nejvýše 2 572 704 B,
 respektive 4 025 648 B. Maximum staré světové sady je 10 485 760 B na low
-a 25 165 824 B na standard; metadata nově zahrnují i podhorské tunely.
+a 26 017 792 B na standard; metadata nově zahrnují i podhorské tunely.
 Čtyřsouborová matice nadále vynucuje stejné rozpočty 96/192 MiB,
 nejvýše dvě stránky v sadě a maximální rozměr stránky 2048².
 
