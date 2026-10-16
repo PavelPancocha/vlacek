@@ -552,3 +552,22 @@ svědek lomu přesouvá do stejného seedu / chunku 105. Priorita infrastruktury
 a kontrola přítomnosti i validního umístění zůstávají. Zrcadlené molo v
 ChunkView ukládá autorský pivot přes D-030 `setWorldPivot`, aby jej pozdní
 publikace stránky zachovala (regrese seed 1 / chunk 290). Save se nemění.
+
+### Integrate-4: hranice kresby jeřábu v diagnostice
+
+Překryv `crossing.post-low over service_crane.body` v seedu 1 / chunku 108
+byl falešný: rám těla má 84 u, ale poslední natřený bod včetně tahu končí
+na y=68,7 u. `paintedBoundsU` drží konzervativní spodní mez 69 u.
+Diagnostika používá tyto hranice včetně atlasového okraje, pivotu, otočení
+a transformace rodiče; kola dál používají kruh. Geometrie přejezdu, kresba
+a save se nemění. Regrese zachovává nulový překryv a testuje rastry
+0,5/1/1,25 px/u i otočeného zrcadleného rodiče. Při úpravě SVG je třeba
+přezkoumat jeho metadata hranic.
+
+Úplný browserový svědek po opravě těla odhalil stejný problém u overlaye:
+`service_crane.overlay` má dvě oddělené kreslené oblasti podvozků.
+`paintedBoundsU` proto obsahuje seznam konzervativních obdélníků, u overlaye
+x=11–61 / 127–177 a y=56–83 u. Střed mezi podvozky se do překryvu
+nepočítá; skutečné podvozky zůstávají zahrnuté. Všechny tři rastry a rodičovské
+transformace zachovávají stejnou souřadnou soustavu. Žádný asset ani přejezd
+se neposouvá či ořezává.

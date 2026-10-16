@@ -706,6 +706,7 @@ button.build-id {
 }
 
 .diagnostics-groups h2 {
+  scroll-margin-block: 4px;
   margin: 0;
   font-size: 1.1rem;
 }

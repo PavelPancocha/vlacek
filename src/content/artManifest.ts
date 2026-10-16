@@ -20,6 +20,13 @@ export interface ArtPart {
   heightU: number;
   /** Point the part is placed and rotated by, part units from top left. */
   pivotU: ArtPoint;
+  /** Conservative painted rectangle in part units; omit to use the full frame. */
+  paintedBoundsU?: readonly {
+    leftU: number;
+    topU: number;
+    rightU: number;
+    bottomU: number;
+  }[];
   /** Second joint of a rod (connecting rod small end), part units. */
   endU?: ArtPoint;
   /** Full animated silhouette relative to the pivot, in u; ground contact stays unchanged. */
@@ -212,12 +219,19 @@ export const artParts = {
     widthU: 188,
     heightU: 84,
     pivotU: { x: 94, y: 84 },
+    // Hoses including their stroke end at y=68.7; the rest below is transparent.
+    paintedBoundsU: [{ leftU: 0, topU: 0, rightU: 188, bottomU: 69 }],
   },
   'service_crane.overlay': {
     file: 'service_crane.overlay.svg',
     widthU: 188,
     heightU: 84,
     pivotU: { x: 94, y: 84 },
+    // The two bogies leave a transparent gap beneath the machinery house.
+    paintedBoundsU: [
+      { leftU: 11, topU: 56, rightU: 61, bottomU: 83 },
+      { leftU: 127, topU: 56, rightU: 177, bottomU: 83 },
+    ],
   },
   'fun_balloons.body': {
     file: 'fun_balloons.body.svg',

@@ -304,3 +304,35 @@ it.each(['webgl', 'canvas'] as const)(
     expect(doubles.memory.snapshot.bytes).toBe(0);
   },
 );
+
+it('keeps a prepared window pending until its frame-boundary publication', async () => {
+  const owner = () => ({
+    ready: false,
+    settling: false,
+    textureKey: 'displayed',
+    prepare() {
+      this.ready = true;
+      return Promise.resolve();
+    },
+    cancelPreparation() {
+      this.ready = false;
+    },
+  });
+  const world = owner(),
+    backdrop = owner();
+  const requests = new WorldAtlasRequests(world, backdrop);
+  const wanted = request(1, 1, 1);
+  const publishWorld = (isBackdrop: boolean) => {
+    if (!isBackdrop) world.ready = false;
+  };
+  requests.update(wanted, publishWorld);
+  await Promise.resolve();
+  requests.update(wanted, publishWorld);
+  await Promise.resolve();
+  expect(backdrop.ready).toBe(true);
+  expect(requests.pending).toBe(true);
+  requests.update(wanted, () => {
+    backdrop.ready = false;
+  });
+  expect(requests.pending).toBe(false);
+});

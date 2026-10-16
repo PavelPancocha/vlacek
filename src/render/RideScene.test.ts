@@ -1,7 +1,8 @@
+import Phaser from 'phaser';
 import { locomotives } from '../content/vehicles.ts';
 import EventEmitter from 'eventemitter3';
 import { describe, expect, it, vi } from 'vitest';
-import { RideScene, type RideSceneHost } from './RideScene.ts';
+import { RideScene, drawnBounds, type RideSceneHost } from './RideScene.ts';
 import { rebindWorldImage } from './worldImage.ts';
 
 const readyTextures = vi.hoisted(() => new Set<string>());
@@ -27,6 +28,19 @@ vi.mock('phaser', () => {
         make = { graphics: () => graphics };
       },
       Math: { Vector2: class {} },
+      Geom: {
+        Rectangle: class {
+          constructor(
+            public x: number,
+            public y: number,
+            public width: number,
+            public height: number,
+          ) {}
+          get bottom() {
+            return this.y + this.height;
+          }
+        },
+      },
       Core: { Events: { POST_RENDER: 'postrender' } },
       Renderer: { Events: { POST_RENDER: 'postrender' } },
       Scenes: { Events: { SHUTDOWN: 'shutdown' } },
@@ -156,4 +170,79 @@ it('does not allocate unused vehicle silhouette textures when the catalogue is a
     expect.any(Number),
     expect.any(Number),
   );
+});
+
+// Platform image double: run the actual diagnostic geometry, including parent transforms.
+it.each([0.5, 1, 1.25])(
+  'crossing diagnostic excludes the crane body transparent lower margin at %s px/u',
+  (scale) => {
+    const image = {
+      frame: { name: 'service_crane.body' },
+      texture: { key: 'vehicle@1' },
+      displayOriginX: 94 * scale + 1,
+      displayOriginY: 84 * scale + 1,
+      getBounds: () => new Phaser.Geom.Rectangle(1000 - 94, 200 - 84, 188, 84),
+      getWorldTransformMatrix: () => ({
+        a: 1 / scale,
+        b: 0,
+        c: 0,
+        d: 1 / scale,
+        tx: 1000,
+        ty: 200,
+      }),
+    };
+    const [bounds] = drawnBounds(
+      image as unknown as Phaser.GameObjects.Image,
+      scale,
+    );
+    if (!bounds) throw new Error('missing body bounds');
+    expect(bounds.bottom).toBeCloseTo(185);
+    expect(bounds.width).toBeCloseTo(188);
+  },
+);
+
+it('rotates and mirrors the crane painted bounds with its parent', () => {
+  const image = {
+    frame: { name: 'service_crane.body' },
+    texture: { key: 'vehicle@1' },
+    displayOriginX: 95,
+    displayOriginY: 85,
+    getBounds: () => new Phaser.Geom.Rectangle(0, 0, 84, 188),
+    getWorldTransformMatrix: () => ({
+      a: 0,
+      b: -1,
+      c: -1,
+      d: 0,
+      tx: 1000,
+      ty: 200,
+    }),
+  };
+  const [bounds] = drawnBounds(image as unknown as Phaser.GameObjects.Image, 1);
+  if (!bounds) throw new Error('missing body bounds');
+  expect(bounds.x).toBeCloseTo(1015);
+  expect(bounds.width).toBeCloseTo(69);
+  expect(bounds.height).toBeCloseTo(188);
+});
+
+it('crossing diagnostic leaves the transparent gap between the crane bogies clear', () => {
+  const image = {
+    frame: { name: 'service_crane.overlay' },
+    texture: { key: 'vehicle@1' },
+    displayOriginX: 95,
+    displayOriginY: 85,
+    getBounds: () => new Phaser.Geom.Rectangle(906, 116, 188, 84),
+    getWorldTransformMatrix: () => ({
+      a: 1,
+      b: 0,
+      c: 0,
+      d: 1,
+      tx: 1000,
+      ty: 200,
+    }),
+  };
+  const bounds = drawnBounds(image as unknown as Phaser.GameObjects.Image, 1);
+  expect(bounds).toHaveLength(2);
+  expect(bounds.some((b) => b.x < 1000 && b.x + b.width > 1000)).toBe(false);
+  expect(bounds.some((b) => b.x <= 940 && b.x + b.width >= 940)).toBe(true);
+  expect(bounds.some((b) => b.x <= 1050 && b.x + b.width >= 1050)).toBe(true);
 });

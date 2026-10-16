@@ -16,7 +16,7 @@ import type { WorldHit } from '../platform/InputRouter.ts';
 import { gameConfig } from '../config/gameConfig.ts';
 import { vehicleArtLayers } from '../content/artLayers.ts';
 import { artFileUrl, worldFileUrl } from '../content/artFiles.ts';
-import { artParts, vehicleArt } from '../content/artManifest.ts';
+import { artParts, vehicleArt, type ArtPart } from '../content/artManifest.ts';
 import {
   OBJECT_RADIUS_U,
   OBJECT_SHAPES,
@@ -64,6 +64,7 @@ import {
 } from './ArtAtlas.ts';
 import {
   ART_MAX_PX_PER_U,
+  FRAME_MARGIN_PX,
   BACKDROP_MAX_PX_PER_U,
   frameOrigin,
   journeyArtKeys,
@@ -265,12 +266,12 @@ const PLACEHOLDER_WHEEL_RADIUS_PX = 16;
 
 /**
  * World box of what an image draws, for the overlap checks: a wheel's disc
- * (its pivot is the centre), otherwise the image's bounds.
+ * (its pivot is the centre), authored painted bounds, or the full frame.
  */
-function drawnBounds(
+export function drawnBounds(
   image: Phaser.GameObjects.Image,
   pxPerU: number | undefined,
-): Phaser.Geom.Rectangle {
+): readonly Phaser.Geom.Rectangle[] {
   const radiusU = WHEEL_RADIUS_U.get(image.frame.name);
   const radiusPx =
     image.texture.key === 'wheel'
@@ -278,10 +279,39 @@ function drawnBounds(
       : radiusU !== undefined && pxPerU !== undefined
         ? radiusU * pxPerU
         : undefined;
-  if (radiusPx === undefined) return image.getBounds();
+  if (radiusPx === undefined) {
+    const parts: Readonly<Record<string, ArtPart | undefined>> = artParts;
+    const part = parts[image.frame.name];
+    if (!part?.paintedBoundsU || pxPerU === undefined)
+      return [image.getBounds()];
+    const m = image.getWorldTransformMatrix();
+    return part.paintedBoundsU.map((painted) => {
+      const left = image.flipX ? part.widthU - painted.rightU : painted.leftU;
+      const right = image.flipX ? part.widthU - painted.leftU : painted.rightU;
+      const top = image.flipY ? part.heightU - painted.bottomU : painted.topU;
+      const bottom = image.flipY
+        ? part.heightU - painted.topU
+        : painted.bottomU;
+      const corners = [left, right].flatMap((xU) =>
+        [top, bottom].map((yU) => {
+          const x = FRAME_MARGIN_PX + xU * pxPerU - image.displayOriginX;
+          const y = FRAME_MARGIN_PX + yU * pxPerU - image.displayOriginY;
+          return { x: m.a * x + m.c * y + m.tx, y: m.b * x + m.d * y + m.ty };
+        }),
+      );
+      const x = Math.min(...corners.map((p) => p.x));
+      const y = Math.min(...corners.map((p) => p.y));
+      return new Phaser.Geom.Rectangle(
+        x,
+        y,
+        Math.max(...corners.map((p) => p.x)) - x,
+        Math.max(...corners.map((p) => p.y)) - y,
+      );
+    });
+  }
   const m = image.getWorldTransformMatrix();
   const r = radiusPx * Math.hypot(m.a, m.b);
-  return new Phaser.Geom.Rectangle(m.tx - r, m.ty - r, 2 * r, 2 * r);
+  return [new Phaser.Geom.Rectangle(m.tx - r, m.ty - r, 2 * r, 2 * r)];
 }
 
 function hex(color: string): number {
@@ -518,7 +548,10 @@ export class RideScene extends Phaser.Scene {
     const atlases = [this.#art, this.#backdropArt];
     const memory = this.#textureMemory.snapshot;
     return {
-      pending: this.#windowRequests.pending || this.#vehiclePending,
+      pending:
+        this.#windowRequests.pending ||
+        this.#vehiclePending ||
+        !!this.#vehicleArt?.ready,
       failure:
         this.#windowRequests.failure ??
         (this.#worldLoadFailures.length
@@ -1012,10 +1045,12 @@ export class RideScene extends Phaser.Scene {
     const train = this.#slots
       .filter((slot) => slot.container.visible)
       .flatMap((slot) => slot.images.filter((image) => image.visible))
-      .map((image) => ({
-        frame: image.frame.name,
-        box: drawnBounds(image, this.#vehicleArt?.info?.pxPerU),
-      }));
+      .flatMap((image) =>
+        drawnBounds(image, this.#vehicleArt?.info?.pxPerU).map((box) => ({
+          frame: image.frame.name,
+          box,
+        })),
+      );
     let inView = 0;
     let overTrain = 0;
     const overlaps: string[] = [];

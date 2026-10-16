@@ -542,9 +542,9 @@ export const ATLAS_BOUND: Readonly<
     peakBytes: 97951432,
   },
   standard: {
-    oldWorldBytes: 25165824,
+    oldWorldBytes: 26017792,
     oldBackdropBytes: 9191424,
-    peakBytes: 145702368,
+    peakBytes: 147406304,
   },
 };
 

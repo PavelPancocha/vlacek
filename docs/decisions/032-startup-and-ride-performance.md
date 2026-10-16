@@ -509,3 +509,15 @@ framů publikovaných world/backdrop stránek a vozidlového atlasu.
 
 Phaser chunk split zachovává plugin PWA i inventář precache. Historické
 benchmarky výše nejsou novým FPS či fyzickým měřením integrovaného buildu.
+
+### Integrate-4: první zakrytá příprava a podrobnosti rodičovského panelu
+
+Produkční scheduling zůstává podle D-030. Pokus použít cold/message-task
+režim během zakrytého startu neodstranil mezní běhy, proto se nezavádí.
+Testovací setupy a původní lhůty zůstávají beze změny; žádné dodatečné čekání.
+
+Nadpisy diagnostických skupin mají scroll-margin-block 4 px: po přidání
+výkonových údajů uměl prohlížeč při programatickém scrollu na tabletu oříznout
+část nadpisu Tunely (viewport ratio 0,984375). Původní požadavek plné
+viditelnosti ratio 1 zůstává a šest clipboard/viewport případů po opravě
+prochází v desktop i tablet-touch.

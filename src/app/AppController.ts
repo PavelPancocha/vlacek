@@ -739,7 +739,14 @@ export class AppController {
       vehicleAtlas: this.#scene.vehicleAtlas,
       effects: this.#scene.effectsStats,
       backdropAtlas: this.#scene.backdropAtlas,
-      backdrop: this.#scene.stats.backdrop,
+      backdrop: this.#scene.stats.backdrop
+        ? {
+            currentBiome: this.#scene.stats.backdrop.currentBiome,
+            incomingBiome: this.#scene.stats.backdrop.incomingBiome,
+            fade: this.#scene.stats.backdrop.fade,
+            world: this.#scene.stats.backdrop.world,
+          }
+        : undefined,
       artSourceTextures: this.#scene.artSourceTextures,
       scenery: {
         biome: this.#scene.stats.biome,

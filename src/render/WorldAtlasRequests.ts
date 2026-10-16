@@ -62,7 +62,7 @@ export class WorldAtlasRequests {
   }
 
   get pending(): boolean {
-    return this.#pending;
+    return this.#pending || !!this.#world?.ready || !!this.#backdrop?.ready;
   }
   get failure(): string | undefined {
     return this.#failure;

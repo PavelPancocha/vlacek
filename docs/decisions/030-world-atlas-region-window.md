@@ -38,7 +38,12 @@ WebGL nahrává nové díly po dlaždicích ≤256 × 256 px. CPU nedrží celos
 
 Profil **low omezuje atlas vozidel i světa na 1,25 px/u při libovolné šířce viewportu** (`profileArtScale`) a **pozadí na 0,75 px/u** (`profileBackdropScale`); standard ponechává 2 a 1 px/u a limit 192 MiB. Kamera a geometrie soupravy se nemění. Kamera D-028 má při DPR 1 zoom 0,6 × šířka CSS / 2000 u. Strop světa a vozidel se proto projeví až nad 4096 CSS px, strop pozadí nad 2500 CSS px: referenční telefon 1140 px kreslí pozadí při 0,5 px/u, 1920 px (Tesla) při 0,75 px/u jako dosud. Nad těmito šířkami se low kresba více zvětšuje; vzdálené pozadí nejvýše o třetinu proti 1 px/u. Změna profilu ze standardního na low může do uvolnění starých textur nést původní standardní alokace.
 
-**Integrovaný katalog.** Matice počítá se skutečně registrovanými díly integrační báze d2fff15: osady, sezóny a život, jiskry, zimní města a silnice. Linky, které ještě nepřistály, doplňuje snapshot `tests/fixtures/world-catalogue-snapshot.ts`: world-v2-water-mountains@b6b2288 a world-v2-tunnels-bridges@d7074ee. Snapshot byl jen čten z jejich `worldArt.ts` a `world-modules/*.art.ts`. Skupiny jsou vyhodnocené `worldAtlasGroup` nad pravidly scén každého zdroje a rozšiřují skupiny registrovaných dílů, které tyto linky kladou jinam. Celkem 381 dílů. Test selže, jakmile se modul ze snapshotu zaregistruje (metadata pak musí přijít z registru) nebo když registrovaný díl ve snapshotu změní rozměr. Staging balíčky zůstávají jen dokladem jejich vlastních rozpočtů.
+**Integrovaný katalog (integrate-4).** Obě obsahové linky jsou registrované:
+379 dílů včetně tunelů/mostů a vody/hor. Jejich položky byly odstraněné ze
+snapshotu `tests/fixtures/world-catalogue-snapshot.ts`; seznam čekajících modulů
+je prázdný. Zbývající základní snapshot hlídá rozměry vydaných dílů. Registry
+vznikly generátorem, hostování zachovává obě linky. Historická báze d2fff15
+používala 381 dílů včetně dvou později odstraněných duplicit mlýna.
 
 Test ověřuje všech 258 sousedních dvojic krajin a sezón, oba renderery a **všechny rastrové kroky obou profilů**: low 0,5/0,5, 0,75/0,75, 1/0,75 a 1,25/0,75 px/u (svět/pozadí), standard 0,5–2 px/u pro svět s pozadím do 1 px/u. U každého okna kontroluje nejvýše dvě stránky ≤2048², umístění všech dílů a model životností. Zobrazená (stará) sada je největší okno téhož profilu. Balení řadí shodné rozměry podle klíčů v pořadí kódových jednotek, nikoli podle jazyka procesu; matice dává totéž pod `cs_CZ.UTF-8` i `C.UTF-8`. Případy jsou rozdělené do čtyř souborů podle rastru světa, takže úplné balení běží na více workerech; lokálně žádný případ netrval ani sekundu. Doplňkový test prochází okna seedů 1/7/123/2026 po 512 u přes tři cykly regionů: okno nejdelší soupravy (nejvýše 23 940 u) nikdy nedrží víc než dva regiony, protože nejkratší region má tři bloky (24 576 u), a každá dvojice je v matici.
 
@@ -49,28 +54,37 @@ Test ověřuje všech 258 sousedních dvojic krajin a sezón, oba renderery a **
 1. Pás pozadí ustoupí registrované sezónní variantě (výše). Samotné toto pravidlo dávalo 94,70 MiB.
 2. Strop pozadí 0,75 px/u na low. Samotný by dal 87,92 MiB.
 
-Na integrované bázi d2fff15 s čekajícími linkami dává low **92 332 496 B = 88,06 MiB**, tedy rezervu 7,94 MiB do 96 MiB. Bez countryside pásů ve městě by se ušetřilo zhruba dalších 0,4 MiB. Podle `backdropFrames` je město nekreslí, amendment 12 je však předepisuje, proto zůstávají. Je to maximum modelovaných souběžných fází, ne součet jejich maxim. Obsahuje i scratch/readback pečení chunků, které může běžet současně s přípravou kteréhokoli atlasu.
+Po přistání obou linek je maximum low **97 951 432 B = 93,414 MiB**,
+rezerva **2 711 864 B = 2,586 MiB** do 96 MiB. Standard má maximum
+**147 406 304 B = 140,578 MiB**, rezervu 51,422 MiB do 192 MiB.
+Původní obálky 88,06/127,66 MiB platily pouze pro historickou bázi.
+Countryside pásy ve městě zůstávají podle amendment 12, ačkoli je backdropFrames
+nekreslí. Jde o maximum souběžných životností v modelu, včetně pracovních
+ploch struktur a kompozic; nárůsty samostatných linek nelze prostě sečíst.
 
-| Alokace (low, nejhorší fáze: příprava světa)                   | Horní mez B |   MiB |
-| -------------------------------------------------------------- | ----------: | ----: |
-| Zem (7 chunků a slotový tunel) a kompozice (5 chunků)          |  53 541 112 | 51,06 |
-| Vozidla + NPC do 1,25 px/u                                     |  10 575 872 | 10,09 |
-| Svět, zobrazené okno (největší okno profilu)                   |   8 388 608 |  8,00 |
-| Svět, připravované okno (foothills/autumn → town/winter, 1,25) |   8 388 608 |  8,00 |
-| Dekodér světa, 4 největší díly, obraz + bitmapa                |   3 989 600 |  3,80 |
-| Pozadí, největší okno (countryside/spring → town/autumn, 0,75) |   4 696 968 |  4,48 |
-| Pečení/upload země, největší GPU textura                       |   2 656 304 |  2,53 |
-| Pomocné textury WebGL                                          |      95 424 |  0,09 |
+| Profil   | Největší starý svět B | Největší staré pozadí B |    Vrchol B |     MiB | Limit MiB |
+| -------- | --------------------: | ----------------------: | ----------: | ------: | --------: |
+| Low      |            10 485 760 |               4 696 968 |  97 951 432 |  93,414 |        96 |
+| Standard |            26 017 792 |               9 191 424 | 147 406 304 | 140,578 |       192 |
 
-| Fáze (maximum přes matici low) | Horní mez B |   MiB |
-| ------------------------------ | ----------: | ----: |
-| Studený start (bez chunků)     |  31 986 504 | 30,50 |
-| Výměna vozidel                 |  91 602 960 | 87,36 |
-| Příprava světa                 |  92 332 496 | 88,06 |
-| Obnova země/kompozic           |  79 954 288 | 76,25 |
-| Příprava pozadí                |  88 891 288 | 84,77 |
+Nejhorší je WebGL publikace nového world okna: low foothills/spring →
+town/winter při 1,25/0,75 px/u (shodná maxima mají i další teplé sezóny),
+standard foothills/autumn → town/winter při 2/1 px/u. Ve standardu samotné
+nové společné hostování zvětšilo největší packed world z 25 165 824 na
+26 017 792 B. Umění ani limit se nezmenšují ani nezvyšují.
 
-Nejvyšší je příprava světa; je to součet první tabulky. Okno town/spring + foothills/winter z recenze má pozadí 1548 × 745 = 4 613 040 B při 0,75 px/u a 2048 × 983 = 8 052 736 B místo 11 165 696 B při 1 px/u. Regrese ho počítá jako nové okno po největším starém i po sobě samém. Standard: horní mez 133 856 744 B = 127,66 MiB do 192 MiB (svět 20 692 992 B, pozadí 9 191 424 B, vozidla 16 777 216 B). Konstanty jsou v `ATLAS_BOUND` (`tests/helpers/atlasResidency.ts`); každý případ dokazuje, že jeho okna i vrchol zůstávají pod nimi.
+| Fáze nejhoršího low okna |          B |    MiB |
+| ------------------------ | ---------: | -----: |
+| Studený start            | 34 427 336 | 32,832 |
+| Výměna vozidel           | 94 781 064 | 90,390 |
+| Příprava světa           | 97 951 432 | 93,414 |
+| Obnova země/kompozic     | 83 132 392 | 79,281 |
+| Příprava pozadí          | 92 069 392 | 87,804 |
+
+Konstanty vlastní `ATLAS_BOUND` (`tests/helpers/atlasResidency.ts`). Čtyři
+atlasBound soubory stále ověřují 814 případů, všechny stupně a oba renderery.
+Red před přepočtem: 813 PASS / 1 FAIL (standard packed world
+26 017 792 > 25 165 824 B). Výpočet používá skutečný společný katalog.
 
 `groundPixelEnvelope` odvozuje rozměry země ze sklonu, náspu, předního pásu včetně 8u přesahu ploch, tunelu a kamery. `compositionPixelEnvelope` odvozuje vrstvy z reálných pravidel, rozměrů dílů, projekce a ořezu na chunk. Vozidlová obálka používá poličkové balení a plochu všech katalogových obdélníků s paddingem: každá uzavřená řada má šířku větší než šířka stránky minus nejširší díl a její výška není menší než výška následující řady. Tím kryje každý podvýběr hráče i NPC bez neplatného předpokladu monotónnosti balení podmnožin. Browserová regrese navíc modeluje **skutečné** rozměry dané soupravy, NPC a držených textur. Historické rozměry 2022 × 890 při 1,75 a 2008 × 1196 při 2 px/u zůstávají samostatnou regresí; současná kamera při 3840 i 4096 CSS px používá 1,25 px/u a test navíc provede skutečnou výměnu 3200 → 4096 CSS px (1 → 1,25) a ověří zachování limitu při 5120 CSS px.
 
@@ -82,8 +96,21 @@ Paušál 26 MiB ani dřívější tvrzení 94,84/94,47/93,28/86,10 MiB již nejs
 
 Rendererový výběr se neukládá. Schéma, katalogová ID, contentVersion, seed ani generátor se nemění. D-019 dál vlastní výběr NPC a unikátních vozidlových dílů; D-030 mění pouze načítání a životnost pixelů. Produkční build obsahuje všechny assety lokálně.
 
-Báze integrace: `d2fff15` (world-core, kamera, master, farm/forest, osady, sezóny a život, jiskry, zimní města, silnice). Water-mountains a tunnels-bridges v ní ještě nejsou; jejich metadata jsou ve snapshotu, nikoli důkazem běžícího obsahu. Regresní `assertEmittedAtlasKeys` rekurzivně kontroluje rodiče, přílohy i animační klíče; adaptér farm/forest sbírá skutečné volby rendereru, 1200 chunků pro seedy 1/7/123. Vykreslovací průchod (`chunkEmissions`) chunk zviditelní, takže ořezané kompozice upečou a jejich čtení rámečků se počítá. `chunkPivotDrift` každý chunk postaví jednou s rezidentními rámečky a jednou bez nich, po pozdní publikaci porovná originy všech obrázků `world-part` a vyžaduje shodu. Po připojení dalšího obsahu musí jeho adaptér použít stejný helper. Nová jízda nebo diagnostický skok ponechá clonu do publikace všech potřebných atlasů; nesmí péct nový les z předchozího atlasu krajiny. Při opožděném nebo chybějícím snímku se kompozice odloží, její klíč je v `missingFrames` a po publikaci se vykreslí. Existující chunky se při přípravě dalšího okna dál kreslí. Testy diagnostického skoku s pozastavenými hodinami posouvají virtuální snímky do dokončení publikace atlasů a clony; pevný jednorázový krok není dokončení asynchronního skoku. Poruchová injekce vozidel míří na dočasný ImageBitmap v aktuálním měřítku, nikoli na dřívější trvale načtený obrázek ve 2 px/u.
+Báze integrate-4 je `5e3385d` včetně PWA; water-mountains a tunnels-bridges
+jsou nyní přistálé. Historická atlasová báze byla `d2fff15`. Regresní `assertEmittedAtlasKeys` rekurzivně kontroluje rodiče, přílohy i animační klíče; adaptér farm/forest sbírá skutečné volby rendereru, 1200 chunků pro seedy 1/7/123. Vykreslovací průchod (`chunkEmissions`) chunk zviditelní, takže ořezané kompozice upečou a jejich čtení rámečků se počítá. `chunkPivotDrift` každý chunk postaví jednou s rezidentními rámečky a jednou bez nich, po pozdní publikaci porovná originy všech obrázků `world-part` a vyžaduje shodu. Po připojení dalšího obsahu musí jeho adaptér použít stejný helper. Nová jízda nebo diagnostický skok ponechá clonu do publikace všech potřebných atlasů; nesmí péct nový les z předchozího atlasu krajiny. Při opožděném nebo chybějícím snímku se kompozice odloží, její klíč je v `missingFrames` a po publikaci se vykreslí. Existující chunky se při přípravě dalšího okna dál kreslí. Testy diagnostického skoku s pozastavenými hodinami posouvají virtuální snímky do dokončení publikace atlasů a clony; pevný jednorázový krok není dokončení asynchronního skoku. Poruchová injekce vozidel míří na dočasný ImageBitmap v aktuálním měřítku, nikoli na dřívější trvale načtený obrázek ve 2 px/u.
 
 Příkazy a výsledky integrace, paměťová a snímková tabulka patří do předání linky a vývojového návodu. Desktopový Chromium Canvas/WebGL není test fyzického tabletu ani Tesly; zařízení a firmware jsou **NEOVĚŘENO**.
 
 Atlasové E2E ponechávají API/source trace, ale průběžné JPEG/DOM snímkování při měření vypínají: GPU readback soutěží s měřeným uploadem. Obraz dokládají samostatná PNG po měřeném úseku. Farmový cold boot používá nativní hodiny; virtuální hodiny se instalují až po připravení atlasů pro následné scénové kroky. Lhůty, počet workerů a podmínky úspěchu se nemění; jedinými výjimkami jsou 15 s pro publikaci po změně měřítka a `test.slow()` testu seed 1 (viz Časové řezy).
+
+## Integrate-4: publikace a původní diagnostický kontrakt
+
+`pending` zahrnuje také hotové world/backdrop stránky čekající na frame-boundary
+commit; společný snapshot navíc započítá hotový nepublikovaný atlas vozidel.
+Regrese nejprve reprodukovala `pending: false` při `backdrop.ready: true`,
+potom vyžaduje true až do publikace. Veřejný `snapshot().backdrop` zachovává
+čtyři dosavadní pole; interní `missingFrames` dál přispívají do worldAtlases.
+Tím se zachovají přesné kontroly R10 a obnoveného pohledu.
+
+Browserové setupy, aserce, numerické timeouty a retries zůstávají beze změny.
+Izolované běhy porovnávají stejný grep na integraci a bázi 5e3385d.
