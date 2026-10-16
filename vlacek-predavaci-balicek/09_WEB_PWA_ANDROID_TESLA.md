@@ -50,6 +50,7 @@ Příklad manifestu pro nasazení do `/vlacek/`:
   "start_url": "/vlacek/",
   "scope": "/vlacek/",
   "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
   "orientation": "landscape",
   "background_color": "#F5F1E8",
   "theme_color": "#F5F1E8",
@@ -65,6 +66,12 @@ Příklad manifestu pro nasazení do `/vlacek/`:
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "icons/icon-maskable-512.png",
@@ -84,7 +91,7 @@ Průběžná hra má volitelné tlačítko pro celou obrazovku na úvodu, při v
 
 Zamítnutí vstupu nebo výstupu se zachytí bez pádu; tlačítko zůstane do obnovení stránky neaktivní, bez opakované žádosti, s krátkou zprávou. Opuštění pomocí systému zůstává možné. Nepodporované API tlačítko skryje, základní online hra pokračuje v běžné kartě. Změna režimu uklidí vstupy; resize přepočítá zobrazení a pauza zůstává pauzou. Opuštění režimu během jízdy vyvolá pauzu i bez změny rozměrů. Nikdy se automaticky nežádá ani neobnovuje fullscreen.
 
-Standardní API je ověřeno automaticky v headless Chromium (viz [protokol](../docs/validation/2026-10-12-cela-obrazovka.md)); nejde o důkaz podpory Android tabletu, iOS ani Tesly. Jejich skutečné chování včetně systémového gesta a firmwaru zůstává **NEOVĚŘENO** v [matici zařízení](../docs/device-tests/v0.1.md). PWA manifest ani instalace se touto změnou nezavádí.
+Standardní API je ověřeno automaticky v headless Chromium (viz [protokol](../docs/validation/2026-10-12-cela-obrazovka.md)); nejde o důkaz podpory Android tabletu, iOS ani Tesly. Jejich skutečné chování včetně systémového gesta a firmwaru zůstává **NEOVĚŘENO** v [matici zařízení](../docs/device-tests/v0.1.md). Manifest, vlastní PNG ikony, iOS meta tagy a volitelná instalace jsou zavedené v [D-031](../docs/decisions/031-installable-offline-pwa.md). Nabídka instalace patří výhradně do skrytého rodičovského panelu (D-020), pouze po události `beforeinstallprompt`. Fyzická instalace a offline na Androidu, iOS i Tesle zůstávají **NEOVĚŘENO**.
 
 Instalační nabídku ukazovat pouze rodiči a jen tam, kde ji prohlížeč skutečně nabízí. Nelze slibovat stejné instalační chování každého Android browseru nebo Tesly. PWA v praxi stále podléhá pravidlům hostitelského prohlížeče.
 
@@ -129,6 +136,8 @@ Registrace a doplňování balíku nesmí blokovat online první jízdu. Stav pr
 
 Prohlížeč může uložené soubory odstranit při nedostatku místa nebo podle vlastních pravidel. Offline připravenost proto není doživotní garance a po návratu se znovu ověřuje (S08).
 
+Aktuální implementace ([D-031](../docs/decisions/031-installable-offline-pwa.md)): inventář vzniká z reálného produkčního `dist/`, obsahuje všechny emitované SVG/PNG, MP3, JS/CSS, HTML, manifest, ikony a kredity. Worker kontroluje SHA-256 každého souboru, odmítá redirect/chybný stav a při selhání odstraní jen vlastní neúplný nový balík, který nepoužívá aktivní ani čekající worker. Při reinstalaci téhož vydání znovu použije existující balík až po kontrole značky, všech položek a jejich hashů; rollback A při čekajícím B tak nesmaže aktivní A ani při chybě sítě nebo zápisu. Registrace začíná po připraveném rendereru a prvním snímku, v dev režimu je vypnutá. Rodičovský panel ukazuje stav, build uloženého balíku a čekající aktualizaci. Připravenost ověřuje skutečnou cache a opakuje ji po návratu stránky. Lokální produkční Chromium test pokrývá offline reload, picker, depo, jízdu, uložené assety/audio, neúplný update a chybějící API; fyzická zařízení jsou **NEOVĚŘENO**.
+
 ## 8. Aktualizace bez přerušení jízdy
 
 **V1 používá jednoduchý standardní model čekajícího service workeru.** Nová verze se může připravit při online návštěvě, ale nenutí rozehranou kartu k reloadu. Nevolat automaticky `skipWaiting()` ani `clients.claim()` tak, aby se živá hra přepnula pod jinou verzí.
@@ -137,7 +146,7 @@ Aktualizace se standardně aktivuje, když už žádná karta/okno nepoužívá 
 
 Při běžném webu bez workeru se nové soubory načtou při příštím načtení stránky. HTML má revalidaci; hashed assety dlouhou cache. Všechny assety používané aktuálním builtem zůstanou na serveru dostupné během nasazení a po rozumnou dobu pro již otevřené karty. Nasazení nesmí nejdříve smazat staré JS chunk soubory a teprve potom nahrát nové.
 
-Po automatické aktivaci nového workeru ponechat aktuální a nejméně předchozí úplnou cache. Cleanup nesmí proběhnout během nedokončené instalace. Při další aktualizaci uvolnit starší nepotřebné cache; dlouhodobě se nesmí vrstvit všechny verze. Save není součást statické cache a aktualizace jej nemaže.
+Po automatické aktivaci nového workeru ponechat aktuální a nejnověji staženou předchozí úplnou cache podle času dokončení stažení, nikoli pořadí aktivací. Jde o vědomé omezení: po rollbacku se starší vydání může stahovat znovu; rollback na GitHub Pages znovu publikuje jeho soubory. Cleanup nesmí proběhnout během nedokončené instalace. Při další aktualizaci uvolnit starší nepotřebné cache; dlouhodobě se nesmí vrstvit všechny verze. Save není součást statické cache a aktualizace jej nemaže.
 
 Rychlé nucené přepnutí všech otevřených instancí s koordinací mezi kartami je **mimo V1**. Nezavádět ho kvůli domnělému pohodlí. Přesná pravidla životního cyklu vycházejí ze service worker dokumentace S14.
 

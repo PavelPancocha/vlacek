@@ -183,6 +183,38 @@ describe('SaveRepository', () => {
     }
   });
 
+  it('DATA-04 PWA: an old tab preserves a newer backup written after its load', () => {
+    const storage = new MemoryStorage();
+    storage.data.set(PRIMARY_KEY, fixture('v1-journey.json'));
+    const repo = new SaveRepository(storage, rules, gameConfig.save);
+    repo.load();
+    const newer = fixture('v1-future-generator.json');
+    storage.data.set(BACKUP_KEY, newer);
+    expect(repo.save(valid('v1-no-journey.json'))).toBe('memory-only');
+    expect(storage.getItem(BACKUP_KEY)).toBe(newer);
+    expect(storage.getItem(PRIMARY_KEY)).toBe(fixture('v1-journey.json'));
+  });
+
+  it('DATA-04 PWA: unreadable current storage cannot bypass the version guard', () => {
+    const memory = new MemoryStorage();
+    const original = fixture('v1-journey.json');
+    memory.data.set(PRIMARY_KEY, original);
+    let denyReads = false;
+    const storage: StorageLike = {
+      getItem: (key) => {
+        if (denyReads) throw new Error('denied');
+        return memory.getItem(key);
+      },
+      setItem: (key, value) => memory.setItem(key, value),
+      removeItem: (key) => memory.removeItem(key),
+    };
+    const repo = new SaveRepository(storage, rules, gameConfig.save);
+    repo.load();
+    denyReads = true;
+    expect(repo.save(valid('v1-no-journey.json'))).toBe('memory-only');
+    expect(memory.getItem(PRIMARY_KEY)).toBe(original);
+  });
+
   it('DATA-07: a failed primary write after the backup keeps a valid restore point', () => {
     const storage = new MemoryStorage();
     const repo = new SaveRepository(storage, rules, gameConfig.save);

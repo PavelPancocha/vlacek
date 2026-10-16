@@ -79,14 +79,14 @@ export class SaveRepository {
     }
     const first =
       primary === null ? undefined : parseSave(primary, this.#rules);
-    if (first?.status === 'valid')
-      return { source: 'primary', save: first.save };
     const second = backup === null ? undefined : parseSave(backup, this.#rules);
     if (first?.status === 'newer' || second?.status === 'newer') {
       // Keep the newer build's data untouched; this session plays in memory.
       this.#status = 'memory-only';
       return { source: 'none', notice: 'newer-save-kept' };
     }
+    if (first?.status === 'valid')
+      return { source: 'primary', save: first.save };
     if (second?.status === 'valid') {
       return {
         source: 'backup',
@@ -109,18 +109,30 @@ export class SaveRepository {
     this.#lastSaved = envelope;
     if (this.#status === 'memory-only' || !this.#storage) return 'memory-only';
     const storage = this.#storage;
+    let current: string | null;
+    let backup: string | null;
     try {
-      const current = storage.getItem(PRIMARY_KEY);
-      if (current !== null) {
-        const result = parseSave(current, this.#rules);
-        if (result.status === 'newer') {
-          this.#status = 'memory-only';
-          return 'memory-only';
-        }
-        if (result.status === 'valid') storage.setItem(BACKUP_KEY, current);
-      }
+      current = storage.getItem(PRIMARY_KEY);
+      backup = storage.getItem(BACKUP_KEY);
     } catch {
-      // A failed backup write still leaves the previous primary in place.
+      // If versions cannot be read, keep the stored data untouched.
+      this.#status = 'memory-only';
+      return 'memory-only';
+    }
+    const primaryResult =
+      current === null ? undefined : parseSave(current, this.#rules);
+    const backupResult =
+      backup === null ? undefined : parseSave(backup, this.#rules);
+    if (primaryResult?.status === 'newer' || backupResult?.status === 'newer') {
+      this.#status = 'memory-only';
+      return 'memory-only';
+    }
+    if (primaryResult?.status === 'valid' && current !== null) {
+      try {
+        storage.setItem(BACKUP_KEY, current);
+      } catch {
+        // The valid primary still survives if the following write also fails.
+      }
     }
     try {
       storage.setItem(PRIMARY_KEY, json);

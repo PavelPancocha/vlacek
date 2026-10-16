@@ -1,4 +1,9 @@
-import { expect, test, type Page } from '@playwright/test';
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Page,
+} from '@playwright/test';
 
 /** Collects console errors and requests leaving the page origin. */
 function watchPage(page: Page, origin: string) {
@@ -20,24 +25,43 @@ function watchPage(page: Page, origin: string) {
   return problems;
 }
 
+/** Wait outside a controlled page, which deliberately pins its original build. */
+async function waitForDeployedBuild(
+  request: APIRequestContext,
+): Promise<string | undefined> {
+  const expectedCommit = process.env['E2E_EXPECT_COMMIT']?.slice(0, 7);
+  if (expectedCommit) {
+    // Poll the server before opening a controlled document. An old active SW
+    // deliberately keeps old HTML until every old tab closes (D-031).
+    await expect
+      .poll(
+        async () => {
+          const response = await request.get('./', {
+            headers: { 'Cache-Control': 'no-cache' },
+          });
+          return (await response.text()).match(
+            /name="vlacek-build" content="([^"]+)"/,
+          )?.[1];
+        },
+        { timeout: 120_000, intervals: [2_000] },
+      )
+      .toContain(expectedCommit);
+  }
+  return expectedCommit;
+}
+
 test('boots the renderer with a build ID and no external requests', async ({
   page,
   baseURL,
+  request,
 }) => {
   const problems = watchPage(page, new URL(baseURL ?? '').origin);
-  // Deployed-site check: wait until the CDN serves the expected commit.
-  const expectedCommit = process.env['E2E_EXPECT_COMMIT']?.slice(0, 7);
-  await expect
-    .poll(
-      async () => {
-        await page.goto('./');
-        return page
-          .locator('meta[name="vlacek-build"]')
-          .getAttribute('content');
-      },
-      { timeout: expectedCommit ? 120_000 : 10_000, intervals: [2_000] },
-    )
-    .toContain(expectedCommit ?? '+');
+  const expectedCommit = await waitForDeployedBuild(request);
+  await page.goto('./');
+  await expect(page.locator('meta[name="vlacek-build"]')).toHaveAttribute(
+    'content',
+    new RegExp(expectedCommit ?? '[+]'),
+  );
   const root = page.locator('#game-root');
   await expect(root).toHaveAttribute('data-renderer', /^(webgl|canvas)$/);
   await expect(root.locator('canvas')).toBeVisible();
@@ -154,4 +178,38 @@ test.describe('quality profile (doc 13 quality, D-014)', () => {
       });
       expect(ratio).toBeCloseTo(density, 1);
     });
+});
+
+test('PWA: the complete live bundle survives an offline reload', async ({
+  page,
+  context,
+  request,
+}) => {
+  const expectedCommit = await waitForDeployedBuild(request);
+  await page.goto('./');
+  // Resolve only on activation; first install intentionally does not claim this tab.
+  const complete = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.ready;
+    const worker = registration.active;
+    if (!worker) throw new Error('active worker missing');
+    const channel = new MessageChannel();
+    const result = new Promise<unknown>((resolve) => {
+      channel.port1.onmessage = (event: MessageEvent<unknown>) => {
+        channel.port1.close();
+        resolve(event.data);
+      };
+    });
+    worker.postMessage('offline-status', [channel.port2]);
+    return result;
+  });
+  expect(complete).toMatchObject({ ready: true });
+  const build = await page
+    .locator('meta[name="vlacek-build"]')
+    .getAttribute('content');
+  expect(complete).toMatchObject({ buildId: build });
+  if (expectedCommit) expect(build).toContain(expectedCommit);
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.locator('#game-root canvas')).toBeVisible();
+  await expect(page.locator('h1')).toHaveText('Vyber mašinku');
 });

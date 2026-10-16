@@ -1,6 +1,8 @@
 import { worldDeveloperSections } from './DevWorldMenu.ts';
 import { soundManifest } from '../content/soundManifest.ts';
 import audioCreditsUrl from '../../assets/audio/credits.txt?url&no-inline';
+import { pwaSection } from './PwaSection.ts';
+import type { PwaState } from '../platform/PwaController.ts';
 import { seedOverride } from '../platform/CapabilityProbe.ts';
 import { actionButton, el } from './dom.ts';
 import type { DevOptions } from '../platform/DevOptions.ts';
@@ -40,6 +42,7 @@ export function developerMenu(
   values: DevMenuValues,
   signal: AbortSignal,
   currentSeed: number | undefined,
+  pwa: PwaState,
 ): HTMLElement {
   const select = (
     name: string,
@@ -188,6 +191,7 @@ export function developerMenu(
       { class: 'screen-content' },
       el('p', { class: 'hint' }, 'Změny se použijí po opětovném načtení.'),
       form,
+      pwaSection(pwa),
       el('p', { class: 'hint', role: 'status', 'data-dev-error': '' }),
     ),
     el(

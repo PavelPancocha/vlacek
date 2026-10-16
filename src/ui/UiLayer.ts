@@ -1,3 +1,5 @@
+import { initialPwaState, type PwaState } from '../platform/PwaController.ts';
+import { updatePwaSection } from './PwaSection.ts';
 import type { Screen } from '../app/AppState.ts';
 import type { DebugSnapshot } from '../app/debugSnapshot.ts';
 import type { SessionNotice } from '../app/GameSession.ts';
@@ -94,6 +96,7 @@ function label(text: string): HTMLElement {
  */
 export class UiLayer {
   readonly #root: HTMLElement;
+  #pwa: PwaState = initialPwaState;
   #signature = '';
   #viewSignature = '';
   #updateView: ((model: UiModel) => void) | undefined;
@@ -108,6 +111,11 @@ export class UiLayer {
 
   constructor(root: HTMLElement) {
     this.#root = root;
+  }
+
+  updatePwa(state: PwaState): void {
+    this.#pwa = state;
+    updatePwaSection(this.#root, state);
   }
 
   get developerMenuOpen(): boolean {
@@ -330,7 +338,7 @@ export class UiLayer {
       case 'PAUSED':
         views.push(
           this.#devValues
-            ? developerMenu(this.#devValues, signal, model.seed)
+            ? developerMenu(this.#devValues, signal, model.seed, this.#pwa)
             : this.#pause(model),
         );
         break;

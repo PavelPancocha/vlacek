@@ -761,3 +761,7 @@ button.build-id {
 .error-view .big-button {
   flex-shrink: 0;
 }
+
+.pwa-section [hidden] {
+  display: none;
+}
