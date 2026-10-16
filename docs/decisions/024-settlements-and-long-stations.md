@@ -45,6 +45,41 @@ Přední zahrádky tvoří jeden větší pozemek v prvním chunku dvouchunkové
 
 Rebase na integraci `82a55bf` zachovává novější oblé přední povrchy, palety, rezervace a rodičovské nástroje. Popředí zahrnuje zároveň celé povrchy s jejich 8u lemem i nízké cesty. Browserová kontrola používá skutečné nové rámování: střed kreslené soupravy do 1 % od 46 % šířky, nejméně 15 % obrazu za jejím koncem a 23 % před čelem včetně přesahů SVG. Formát save, limit soupravy a politika vývojových v2 cest výše zůstávají stejné.
 
+## Zakončení ulice pod kopcem — polish-1 / polish-2
+
+Regrese seed 1 / chunk 246 měla mezi plochým koncem ulice a svahem tunelu
+travnatou mezeru. Fragment dostane pouze kreslicí `drawingPoints`: vnitřní
+konec pokračuje 32 u (nejvýše 64 u), pokud celý koncový řez včetně krajnice
+leží uvnitř skutečně neprůhledného obrysu kopce. Rezervace slouží pouze
+k určení vlastníka, nikoli jako důkaz zakrytí. `StreetHillCover` používá
+vnitřní tětivy dvou konvexních křivek SVG `secondary.portal-hill` před
+otvorem portálu, s jeho pivotem, zrcadlením a rotací podle sklonu koleje.
+U krátkého tunelu kopíruje skutečně kreslenou 16u lomenou čáru `TunnelView`,
+včetně nerovností a 8u interpolace koleje vlastnícího chunku. Celý koncový
+řez musí být uvnitř a nesmí protínat žádnou hranu obrysu; pokud nevyhoví
+ani 32u, ani 64u přesah, zůstane původní konec posledního volného segmentu.
+Renderer použije
+prodloužení při kreslení povrchu. Kanonické chunkové spoje, `points`,
+rezervace průjezdné ulice, přijaté přístupy a dráhy vozidel se nemění;
+krátký zakrytý přesah není nová průjezdná cesta. Save ani kompatibilita
+nevydaného generátoru v2 se nemění. Geometrická regrese v
+`SettlementsReview.test.ts` zachovává seed 1 / chunk 246.
+`StreetHillCover.test.ts` doplňuje village-green před levým vedlejším portálem
+(seed 1 / chunk 11) a vyčnívající krajnici krátkého kopce (seed 7 / chunk 62).
+`TunnelView.test.ts` porovnává zakrytí s polygony skutečně upečenými
+`TunnelView`; `streetHillOutline.test.ts` ověřuje oba směry zrcadlení na
+nenulovém sklonu, rozměry a pivot skutečného manifestu. Celé SVG kotví
+otisk SHA-256, včetně neprůhledné výplně, průhlednosti a ořezu; před změnou
+otisku je nutná kontrola lokálního obrysu `StreetHillCover`. Regrese chunku 11
+výslovně vyžaduje původní konec bez prodloužení a vždy geometricky ověří
+vyčnívající krajnici obou odmítnutých přesahů proti cestě neprůhledné výplně,
+nikoli proti definici ořezu. Umístění objektů, rezervace a přijaté trasy se nemění.
+
 ## Kontroly
 
 `VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/world/Settlements.test.ts tests/unit/interaction/StationReaction.test.ts tests/unit/render/settlementMotion.test.ts` ověřuje plán, délky, podpory, sezónu, sloupy a kosmetický automat. `volta run npm run validate:world` kontroluje skutečnou kompozici, query order a R3 nad 20 000 seedy. Browserová sada `tests/e2e/settlements.spec.ts` používá skutečné rodičovské menu, 2 000u soupravu, Canvas i WebGL a nový vstup pro okamžitý odjezd. Cílené E2E se spouští pod sdíleným zámkem podle pravidel linky; celý `npm run check` pod samostatným zámkem. CI a skutečné zařízení se z těchto lokálních kontrol neodvozují.
+
+Integrace integrate-4 zachovává oba importy v TunnelView.test: zimní
+portály D-026 i rendererovou paritu hran kopce. Harbour trace regrese
+po změně vodního katalogu používá seed 1 / chunk 312 a aktuální
+`back.harbour-pier`; stále porovnává přijatou hloubku s vykresleným objektem.

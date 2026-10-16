@@ -6,6 +6,8 @@ import { tunnelSite, type TunnelSite } from '../domain/world/Structures.ts';
 import { TunnelView } from './TunnelView.ts';
 import { worldParts, type WorldPartKey } from '../content/worldArt.ts';
 import { regionAt } from '../domain/world/Regions.ts';
+import { streetHillCoversCap } from '../domain/world/StreetHillCover.ts';
+import { pointInside, railYUpU } from '../domain/world/SceneryGeometry.ts';
 import { secondaryPortalFeet } from './SecondaryView.ts';
 import { BACK_PALETTE } from './groundPalette.ts';
 import { effectiveClimateAt } from '../domain/world/Seasons.ts';
@@ -608,3 +610,61 @@ it('SEA-05: secondary portal foot uses the same winter cover as its hill', () =>
   );
   expect(fills.mock.calls.map(([tone]) => tone)).toEqual([0x24211e, 0xe7f0f5]);
 });
+
+for (const [seed, k] of [
+  [7, 62],
+  [1, 246],
+] as const)
+  it(`street caps match TunnelView's actual baked flank, seed ${seed} / ${k}`, () => {
+    const site = tunnelSite(seed, k);
+    if (!site) throw Error('missing tunnel');
+    const scene = new Phaser.Scene();
+    const graphics = new Phaser.GameObjects.Graphics(scene);
+    const polygons = vi.spyOn(graphics, 'fillPoints');
+    new TunnelView(
+      scene,
+      undefined,
+      site,
+      {
+        railY: (x) => -railYUpU(seed, k * 1024 + x),
+        meadowY: () => 30,
+      },
+      (paint) => {
+        paint(graphics);
+        return new Phaser.GameObjects.Container(scene);
+      },
+      { flanks: 1, interior: 2, shade: 3, cover: 4 },
+      [],
+      seed,
+    );
+    const points = polygons.mock.calls[0]?.[0];
+    if (!points) throw Error('no opaque flank baked');
+    const actual = points.map((p) => ({ xU: k * 1024 + p.x, yU: p.y }));
+    let covered = 0,
+      rejected = 0;
+    for (let x = site.fromX - 160; x < site.toX + 160; x += 17)
+      for (let y = -310; y < 0; y += 13) {
+        const cap = [
+          { xU: k * 1024 + x - 3, yU: y - 10.6 },
+          { xU: k * 1024 + x + 3, yU: y + 10.6 },
+        ];
+        const expected = Array.from({ length: 101 }, (_, i) => {
+          const t = i / 100;
+          return pointInside(
+            { xU: k * 1024 + x - 3 + 6 * t, yU: y - 10.6 + 21.2 * t },
+            actual,
+          );
+        }).every(Boolean);
+        const result = streetHillCoversCap(
+          seed,
+          k,
+          { purpose: 'tunnel-hill', ownerId: site.id },
+          cap,
+        );
+        expect(result, `actual baked cap ${x}/${y}`).toBe(expected);
+        if (result) covered++;
+        else rejected++;
+      }
+    expect(covered).toBeGreaterThan(100);
+    expect(rejected).toBeGreaterThan(100);
+  });

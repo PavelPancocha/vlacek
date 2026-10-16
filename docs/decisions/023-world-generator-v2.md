@@ -89,3 +89,8 @@ Kompaktní sběrač podle CNT-03 podporuje `world.pantographMaxTrackGrade = 0.12
 Projekce čte omezenou cache 129 vzorků výšky po 8 u na chunk, shodných s renderovým LUT, a sdílí již spočítanou obálku kandidáta mezi přípustností a kolizemi. Optimalizace neukládá historii kamery ani nemění RNG, ID či trasu. Diagnostika se měří samostatně; výkonové profily vznikají pouze v dočasném instrumentovaném buildu, nikoli v herní doméně. Revizní opravy nemění vydaný formát save ani kompatibilitní verzi 2.
 
 Před budoucím přímým restartem seedu musí controller zavolat existující `GameSession.endDiagnosticRide()` a vyčistit svůj locator `#worldLocation`, stejně jako současná cesta `dev-apply`. Metoda vrátí původní jízdu a zruší diagnostický restore stav; teprve potom smí restart uložit novou běžnou cestu. Samotný restart dodá `feat/dev-hud-restart`; tento řez jeho chování nemění.
+
+Diagnostická stopa přístavu (polish-1, DEV-04) zaznamenává hloubku až po
+pobřežní korekci lodí a mola. Přijatý kandidát proto ukazuje stejnou
+hloubku jako výsledná rekvizita; regrese používá seed 0 / chunk 332.
+Mění se pouze diagnostika, nikoli rozmístění, RNG nebo save.

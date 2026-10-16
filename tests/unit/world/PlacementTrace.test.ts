@@ -89,3 +89,19 @@ it('DEV-04: a collision does not report an already satisfied dependency as missi
   expect(collisions.length).toBeGreaterThan(0);
   expect(collisions.every((t) => t.missingDependency === undefined)).toBe(true);
 });
+
+it('DEV-04: accepted harbour trace uses the emitted shoreline-adjusted depth (seed 1 / chunk 312)', () => {
+  const sc = chunkScenery(1, 312, worldPlacementCatalog);
+  const harbour = sc.props.filter(
+    (p) => p.kind.includes('boat') || p.kind === 'back.harbour-pier',
+  );
+  expect(harbour.length).toBeGreaterThan(0);
+  const trace = traceChunkPlacement(1, 312, worldPlacementCatalog);
+  for (const prop of harbour) {
+    const accepted = trace.find(
+      (t) => t.candidate.id === prop.id && t.rejectionCode === 'accepted',
+    );
+    expect(accepted, prop.id).toBeDefined();
+    expect(accepted?.candidate.depth, prop.kind).toBe(prop.depth);
+  }
+});

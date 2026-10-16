@@ -268,3 +268,8 @@ mezí 65 %. Sněhová plocha proto vede spodní střední hranu na y = 44,5–45
 místo 42–44 u; původní římsa je na y = 45,68 u. Horní tvar, rohy, komín
 a výřez vikýře zůstávají. Dva bodové testy zachycují nově pokrytou dolní
 část, pixelová brána ani maska se nemění. Barva a tloušťka obrysu zůstávají.
+
+Zimní domy a/c mají prázdné okenní truhlíky bez letních červených a žlutých
+květů (polish-1). Mění se pouze kruhy květů pod okny; rozměry, pivoty,
+geometrie střech a jejich sněhové masky zůstávají. Regrese `seasonalArt.test.ts`
+porovnává oblast truhlíků s barvami květů v letních SVG. Save se nemění.

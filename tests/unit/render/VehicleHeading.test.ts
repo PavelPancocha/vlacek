@@ -68,3 +68,20 @@ it('SCN-RD02: every car/boat variant in both directions on slopes', async () => 
       }
   }
 });
+
+it.each([
+  [1, 1, false],
+  [1, -1, true],
+  [-1, 1, true],
+  [-1, -1, false],
+] as const)(
+  'SCN-CR03/FO06: farm art front %s, direction %s retains its prior flip %s',
+  (frontX, direction, flip) => {
+    const heading = vehicleHeading({ xU: frontX, yU: 0 }, direction, 0, {
+      rotationRad: 0,
+      flipX: false,
+    });
+    expect(heading.flipX).toBe(flip);
+    expect(heading.rotationRad).toBeCloseTo(0);
+  },
+);

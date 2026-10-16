@@ -39,8 +39,8 @@ Vlastník požaduje pole a les před vlakem i za ním, práci mimo chráněný p
   simulační smyčky; pauza zastaví činnosti. Žádné timery, listenery ani runtime RNG.
   Lože vyvážečky zůstávají na pevných koncích cesty; její 32s cyklus zastaví
   při uchopení i odložení a vodorovný kmen se pohybuje pouze v úchopu.
-  Zrcadlení celé sestavy řeší `farmMachineFlip`; při integraci jej nahradí společný
-  heading helper linky roads. Směr kamery orientaci neurčuje.
+  Zrcadlení celé sestavy řeší společný `vehicleHeading` (D-029) z vlastního
+  směru patroly a `front` metadat kresby. Směr kamery orientaci neurčuje.
 - FO-02 má daleký a střední sezónní pás s původní paralaxou a nízký kreslený přední
   okraj. Na herním měřítku měly přední díly ostré obdélníkové okraje; lokální
   průhlednost posledních 5 % šířky a spodního lemu je změkčuje bez změny rozměrů. Bez načteného artu zůstává původní geometrický fallback. Datel a sova mají
@@ -189,8 +189,13 @@ existovat, teprve poté se kontroluje poloha a kola. Proba pouze odhalí referen
 z testovaného buildu; produkční debug API se nerozšiřuje.
 
 Rebase je na integrovaný `82a55bf` včetně kamery se středem na 46 % a master merge.
-Helper `vehicleHeading` na této základně ještě není; `farmMachineFlip` zůstává jediným
-místem pro pozdější napojení roads. Sezónní metadata nadále nastavují jen `seasons`;
+Integrace polish-1 nahrazuje `farmMachineFlip` společným `vehicleHeading` (D-029).
+Traktor, kombajn, harvestor, vyvážečka a auto s kládami zachovávají původní
+zrcadlení v obou směrech; nulová rychlost ponechá poslední směr. Složený
+stroj bez patroly se neotáčí. Regrese `FarmForestView.test.ts` kontroluje
+pravostrannou kresbu při pohybu doleva i po zastavení; `VehicleHeading.test.ts`
+zachovává všechny původní případy orientace. Save ani geometrie se nemění.
+Sezónní metadata nadále nastavují jen `seasons`;
 D-030 slučuje `landscapes` nezávisle. Žádná nová závislost, licence ani save formát.
 Generátor 2 stále není vydaný. Výsledky měření standard/low proti `f60a001`, browserových
 bran a snímky jsou součástí předání tohoto běhu; nejde o důkaz fyzické Tesly/tabletu.

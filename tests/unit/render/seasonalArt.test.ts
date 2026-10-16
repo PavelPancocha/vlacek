@@ -107,3 +107,31 @@ it('real snowy bridge approaches are snowy right up to the actual dry deck bound
 });
 import { scenerySnowCoverage } from '../../../src/render/groundPalette.ts';
 import { BRIDGE_HALF_U } from '../../../src/domain/world/Structures.ts';
+
+it.each(['a', 'c'])(
+  'SEA-01: winter house %s has no summer blossoms in its flower boxes',
+  (house) => {
+    const summer = readFileSync(`assets/world/back.house-${house}.svg`, 'utf8');
+    const winter = readFileSync(
+      `assets/world/back.house-${house}-winter.svg`,
+      'utf8',
+    );
+    // Summer blossoms are small circles above the ground-floor window boxes.
+    const blossoms = [
+      ...summer.matchAll(
+        /<circle\b[^>]*\bcy="(\d+(?:\.\d+)?)"[^>]*\br="0\.9"[^>]*\bfill="(#[a-f0-9]+)"[^>]*\/>/g,
+      ),
+    ].filter((m) => Number(m[1]) > 50 && Number(m[1]) < 70);
+    expect(blossoms.length).toBeGreaterThan(0);
+    const colours = new Set(blossoms.map((m) => m[2]));
+    const winterBoxCircles = [
+      ...winter.matchAll(
+        /<circle\b[^>]*\bcy="(\d+(?:\.\d+)?)"[^>]*\bfill="(#[a-f0-9]+)"[^>]*\/>/g,
+      ),
+    ].filter(
+      (m) => Number(m[1]) > 50 && Number(m[1]) < 70 && colours.has(m[2]),
+    );
+    expect(winterBoxCircles.map((m) => m[0])).toEqual([]);
+  },
+);
+import { readFileSync } from 'node:fs';

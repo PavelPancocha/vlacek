@@ -922,3 +922,25 @@ it('review 13: every bed path starts inside the gate and stays inside the plot (
     ).toHaveLength(1);
   }
 });
+
+it('polish-1: seed 1 / chunk 246 street cap reaches beneath the tunnel hill without changing its route', () => {
+  const sc = chunkScenery(1, 246, catalog);
+  const street = streetsOf(sc)[0];
+  const hill = sc.reservations.find((r) => r.purpose === 'tunnel-hill');
+  if (!street || !hill) throw Error('missing street/hill witness');
+  const drawing = { ...street, points: street.drawingPoints ?? street.points };
+  // Include the shoulder: the entire end cap must be hidden, not just its centre.
+  const cap = [-1, 1].map((sign) => roadSide(drawing, sign, 1.6).at(-1));
+  expect(
+    cap.every((p) => p && pointInside(p, hill.polygon)),
+    'cap covered by hill',
+  ).toBe(true);
+  expect(street.fromXU).toBe(246 * 1024);
+  expect(street.toXU).toBe(252192);
+  expect(street.points.at(-1)).toEqual({
+    xU: 252192,
+    yU: -144.57937052787472,
+    halfWidthU: 9,
+  });
+  expect(validateChunkScenery(1, sc, catalog)).toEqual([]);
+});

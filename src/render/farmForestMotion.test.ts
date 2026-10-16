@@ -1,14 +1,5 @@
 import { expect, it } from 'vitest';
-import {
-  farmMachineFlip,
-  forestWorkPose,
-  farmPatrolOffsetU,
-} from './farmForestMotion.ts';
-it('SCN-CR03/FO06: right-front machines face their own world movement in both directions', () => {
-  expect(farmMachineFlip('right', 1)).toBe(false);
-  expect(farmMachineFlip('right', -1)).toBe(true);
-  expect(farmMachineFlip('left', 1)).toBe(true);
-});
+import { forestWorkPose, farmPatrolOffsetU } from './farmForestMotion.ts';
 it('SCN-FO05: trunk stays gripped during transfer and rests at either end, stack changes only at handoff', () => {
   const start = forestWorkPose(0, 0, false),
     middle = forestWorkPose(12, 0, false),

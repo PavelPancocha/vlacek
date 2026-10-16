@@ -9,8 +9,8 @@ import {
 import { worldParts } from '../content/worldArt.ts';
 import type { ArtPart } from '../content/artManifest.ts';
 import { setWorldPivot } from './worldImage.ts';
+import { vehicleHeading } from '../domain/interaction/VehicleHeading.ts';
 import {
-  farmMachineFlip,
   forestWorkPose,
   type ForestWorkPose,
   type FarmForestDiagnostic,
@@ -42,7 +42,8 @@ export class FarmForestView {
     open: true,
     stacked: false,
   };
-  readonly #front: 'left' | 'right';
+  readonly #front: { xU: number; yU: number };
+  readonly #heading = { rotationRad: 0, flipX: false };
   readonly #textureFor: (key: string) => string;
   #wheelAngle = 0;
 
@@ -59,7 +60,7 @@ export class FarmForestView {
     this.root = scene.add.container(0, 0).setName(prop.id);
     const machine: FarmForestPart | undefined = farmForestParts[prop.kind];
     if (!machine) throw new Error(`missing compound ${prop.kind}`);
-    this.#front = machine.front ?? 'right';
+    this.#front = { xU: machine.front === 'left' ? -1 : 1, yU: 0 };
     const image = (key: string, pivot = parts[key]?.pivotU) => {
       const part = parts[key];
       if (!part || !pivot) throw new Error(`missing compound child ${key}`);
@@ -222,7 +223,12 @@ export class FarmForestView {
         p.work === 'forwarder'
           ? this.#pose.direction > 0
           : legs - 2 * Math.floor(legs / 2) < 1;
-      const flip = farmMachineFlip(this.#front, forward ? 1 : -1);
+      const flip = vehicleHeading(
+        this.#front,
+        (forward ? 1 : -1) * p.motion.speedUPerSec,
+        0,
+        this.#heading,
+      ).flipX;
       this.root.setScale(
         Math.abs(this.root.scaleX) * (flip ? -1 : 1),
         this.root.scaleY,

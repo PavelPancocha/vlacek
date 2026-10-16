@@ -384,6 +384,8 @@ export interface RoadPath {
   fromXU: number;
   toXU: number;
   points: readonly RoadPointU[];
+  /** Hidden street caps only; traffic and access keep the accepted route points. */
+  drawingPoints?: readonly RoadPointU[];
   style?: 'path' | 'service';
   /** Separated carriageways; absent on local roads. */
   medianHalfWidthU?: number;

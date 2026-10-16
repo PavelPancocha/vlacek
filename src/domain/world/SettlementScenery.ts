@@ -1,4 +1,5 @@
 import { hash32 } from './Hash.ts';
+import { streetHillCoversCap } from './StreetHillCover.ts';
 import { contextAt, sceneAt, type ScenePlan } from './WorldPlan.ts';
 import { regionAt, type RegionPlan } from './Regions.ts';
 import type { SceneryProp } from './Scenery.ts';
@@ -12,6 +13,7 @@ import {
   polygonsHit,
   boundsHitPolygon,
   roadPolygon,
+  roadSide,
   pointInside,
   clipPolygonX,
   type PlacementCatalog,
@@ -328,6 +330,34 @@ export function settlementScenery(
             toXU: to.xU,
             points,
           };
+          // Drawing alone reaches under the hill; accesses and traffic keep
+          // the fully clear route and its original reservation.
+          const drawingPoints = [...points];
+          for (const start of [true, false]) {
+            const end = start ? from : to;
+            if (end.xU === x0 || end.xU === x0 + 1024) continue;
+            for (const reachU of [32, 64]) {
+              const xU = end.xU + (start ? -reachU : reachU);
+              if (xU <= x0 || xU >= x0 + 1024) continue;
+              const tip = { ...end, xU, yU: roadY(xU) };
+              const cap = { ...piece, points: start ? [tip, end] : [end, tip] };
+              const shoulders = [-1, 1].flatMap((sign) => {
+                const edge = roadSide(cap, sign, 1.6)[start ? 0 : 1];
+                return edge ? [edge] : [];
+              });
+              if (
+                !obstacles.some((r) =>
+                  streetHillCoversCap(seed, k, r, shoulders),
+                )
+              )
+                continue;
+              if (start) drawingPoints.unshift(tip);
+              else drawingPoints.push(tip);
+              break;
+            }
+          }
+          if (drawingPoints.length !== points.length)
+            piece.drawingPoints = drawingPoints;
           mainRoads.push(piece);
           recordRoad(
             piece,

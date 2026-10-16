@@ -875,6 +875,7 @@ function baseChunkScenery(
               : section.topU +
                 (section.bottomU - section.topU) * (0.25 + 0.5 * r('depth'));
           p.depth = (-railYUpU(seed, x0 + p.xU) - footY) / 220;
+          if (event) event.candidate.depth = p.depth;
         }
         const bounds = projectedBounds(seed, chunkIndex, p, part);
         if (

@@ -1,10 +1,3 @@
-/** Integration point for the roads lane's shared world-heading helper. */
-export function farmMachineFlip(
-  front: 'left' | 'right',
-  direction: -1 | 1,
-): boolean {
-  return front === 'right' ? direction < 0 : direction > 0;
-}
 export interface ForestWorkPose {
   patrolRatio: number;
   travelRatio: number;

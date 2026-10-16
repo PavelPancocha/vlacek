@@ -2201,6 +2201,7 @@ export class ChunkView {
     road: RoadPath,
     shoulderOnly: boolean,
   ): void {
+    if (road.drawingPoints) road = { ...road, points: road.drawingPoints };
     const x0 = this.#table.chunkIndex * CHUNK_WIDTH_U;
     const from = road.fromXU - x0,
       to = road.toXU - x0;
