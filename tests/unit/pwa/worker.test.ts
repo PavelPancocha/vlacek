@@ -168,6 +168,30 @@ function browser() {
 }
 
 describe('PWA-03/11 rollback cache ownership', () => {
+  it('activates and removes a stale cache with an unreadable completion marker', async () => {
+    const env = browser();
+    const a = release('A');
+    await env.worker(a).install();
+    const b = release('B');
+    env.host(b);
+    const current = env.worker(b);
+    await current.install();
+    const staleName = 'vlacek:/vlacek/:stale:invalid';
+    for (const name of [staleName, 'another-app']) {
+      const cache = await env.storage.open(name);
+      await cache.put(
+        '/vlacek/__offline_complete__',
+        new Response('{"completedAt":'),
+      );
+    }
+
+    await expect(current.activate()).resolves.toBeUndefined();
+    expect(env.stores.has(staleName)).toBe(false);
+    expect(env.stores.has(a.cacheName)).toBe(true);
+    expect(env.stores.has(b.cacheName)).toBe(true);
+    expect(env.stores.has('another-app')).toBe(true);
+  });
+
   for (const failure of ['offline', 'mismatch', 'write'] as const)
     it(`A active → B waiting → rollback A preserves its complete cache despite ${failure}`, async () => {
       const env = browser();

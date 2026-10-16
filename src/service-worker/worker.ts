@@ -140,8 +140,13 @@ sw.addEventListener('activate', (event) => {
       for (const name of await caches.keys()) {
         if (!name.startsWith(prefix) || name === cacheName) continue;
         const cache = await caches.open(name);
-        const marker = await cache.match(markerUrl);
-        const value: unknown = marker ? await marker.json() : undefined;
+        let value: unknown;
+        try {
+          const marker = await cache.match(markerUrl);
+          value = marker ? await marker.json() : undefined;
+        } catch {
+          continue;
+        }
         if (
           typeof value === 'object' &&
           value !== null &&
