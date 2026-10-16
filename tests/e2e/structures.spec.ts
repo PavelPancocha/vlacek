@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, tapAction } from './helpers.ts';
+import { snapshot, tapAction, waitForWorldAtlases } from './helpers.ts';
 
 /**
  * A stopped electric journey in world 123 just before the bridge of
@@ -52,6 +52,7 @@ async function continueBeforeBridge(
   if (!resume) return;
   await tapAction(page, 'resume');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  await waitForWorldAtlases(page);
 }
 
 test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () => {

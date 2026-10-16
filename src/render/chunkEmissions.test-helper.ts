@@ -124,10 +124,12 @@ function drawChunk(scene: ChunkScene, world: ChunkArt, backdrop: ChunkArt) {
     create: () => ({ add() {} }),
     get: () => ({ getSourceImage: () => new Canvas() }),
     remove: () => true,
-    getFrame: (texture: string, key: string) => {
+    getFrame: (_texture: string, key: string) => {
       reads.add(key);
+      record(key);
       return {
-        ...frameOf(texture, key),
+        // Pixel compositions stay resident; the late-publication probe varies image frames.
+        ...frameOf('world', key),
         source: { image: new Canvas() },
         cutX: 0,
         cutY: 0,

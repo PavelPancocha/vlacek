@@ -55,6 +55,18 @@ export function locateTestScene(
 ): TestSceneLocation | undefined {
   if (!Number.isSafeInteger(maxChunks) || maxChunks <= 0 || maxChunks > 1920)
     return undefined;
+  let tunnelChunk: number | undefined;
+  if (kind === 'tunnel') {
+    for (let k = 0; k < maxChunks; k++) {
+      const t = tunnelSite(seed, k);
+      if (!t) continue;
+      tunnelChunk ??= k;
+      if (t.rock) {
+        tunnelChunk = k;
+        break;
+      }
+    }
+  }
   for (let k = 0; k < maxChunks; k++) {
     let x = k * 1024 + 512;
     if (
@@ -72,6 +84,7 @@ export function locateTestScene(
         x = k * 1024 + c.localXU;
       } else x = kind === 'road-ends' ? road.startXU + 160 : k * 1024 + 512;
     } else if (kind === 'tunnel') {
+      if (k !== tunnelChunk) continue;
       const t = tunnelSite(seed, k);
       if (!t) continue;
       x = k * 1024 + t.fromX;

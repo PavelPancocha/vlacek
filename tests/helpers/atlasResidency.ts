@@ -3,7 +3,12 @@ import { gameConfig } from '../../src/config/gameConfig.ts';
 import { artParts } from '../../src/content/artManifest.ts';
 import { locomotives, wagons } from '../../src/content/vehicles.ts';
 import { npcFleetFor } from '../../src/domain/interaction/npcFleet.ts';
-import { VALLEY_DEPTH_U } from '../../src/domain/world/Structures.ts';
+import {
+  VALLEY_DEPTH_U,
+  LARGE_VALLEY_DEPTH_U,
+  VALLEY_EASE_U,
+  EDGE_U,
+} from '../../src/domain/world/Structures.ts';
 import {
   BACK_PLANE_U,
   NEAR_DEPTH_RANGE_U,
@@ -56,12 +61,38 @@ export function journeyPixels(
   };
 }
 
-/** Bounds the exact back/near rectangles retained by ChunkView, including one slot-6 tunnel.
- * Seven chunks follow from D-028's 2000-u reference viewport plus 64 u and one guard chunk on each side.
- * This is geometry arithmetic, not a measured or rounded MiB allowance.
- */
-export function groundPixelEnvelope() {
+/** D-026 valley envelope over every allowed bridge deck in the block's slot 4. */
+function structureBankEnvelope(from: number, to: number) {
+  let bank = Math.max(gameConfig.world.terrain.maxEmbankmentU, VALLEY_DEPTH_U);
+  for (
+    let block = Math.floor(from / 8192) - 1;
+    block <= Math.floor(to / 8192) + 1;
+    block++
+  ) {
+    const x = block * 8192 + 4 * 1024;
+    const gap = Math.max(
+      x + EDGE_U - 8 - to,
+      from - (x + 1024 - EDGE_U + 8),
+      0,
+    );
+    const t = Math.max(0, 1 - gap / VALLEY_EASE_U);
+    bank = Math.max(bank, LARGE_VALLEY_DEPTH_U * t * t * (3 - 2 * t));
+  }
+  return bank;
+}
+
+/** Includes every long fragment across the seven-chunk window, not just one short portal. */
+function groundGeometryEnvelope() {
   const width = gameConfig.world.chunkWidthU;
+  const grade = Math.min(
+    gameConfig.world.maxTrackGrade,
+    gameConfig.world.pantographMaxTrackGrade,
+    Math.max(
+      ...Object.values(gameConfig.world.landscapeProfiles).map(
+        (p) => p.gradeRangeMax,
+      ),
+    ),
+  );
   const chunks =
     Math.ceil(
       (Math.max(2000, gameConfig.train.maxConsistLengthU) /
@@ -69,7 +100,7 @@ export function groundPixelEnvelope() {
         128) /
         width,
     ) + 3;
-  const railRange = width * gameConfig.world.maxTrackGrade;
+  const railRange = width * grade;
   const bank = Math.max(
     gameConfig.world.terrain.maxEmbankmentU,
     VALLEY_DEPTH_U,
@@ -78,17 +109,11 @@ export function groundPixelEnvelope() {
     width: width + 2 * (40 + 4 + 8),
     height: Math.ceil(railRange + BACK_PLANE_U + 16),
   };
-  // Near supports are inside depth [0,1]; ChunkView extends surfaces by 8 u; top is rail + bed -6.
-  const near = {
-    width: width + 12,
-    height: Math.ceil(
-      railRange + bank + NEAR_FOOT_OFFSET_U + NEAR_DEPTH_RANGE_U + 8 + 6,
-    ),
-  };
-  // TunnelView's 448-u tunnel, 170-u flanks, 290-u hill plus 16-u bump.
+  const bytes = (p: { width: number; height: number }) =>
+    p.width * p.height * 4;
   const tunnelWidth = 448 + 340 + 4;
-  const tunnelRange = tunnelWidth * gameConfig.world.maxTrackGrade;
-  const tunnel = [
+  const tunnelRange = tunnelWidth * grade;
+  const short = [
     { width: tunnelWidth, height: Math.ceil(tunnelRange + 290 + 16 + 8) },
     {
       width: tunnelWidth,
@@ -98,22 +123,93 @@ export function groundPixelEnvelope() {
     },
     {
       width: 448 + 2 * (TUNNEL_MAST_CLEARANCE_U + 4) + 4,
-      height: Math.ceil(railRange + 186 + 12),
+      height: Math.ceil(
+        (448 + 2 * (TUNNEL_MAST_CLEARANCE_U + 4) + 4) * grade + 186 + 12,
+      ),
     },
-    { width: 448 + 80 + 8, height: Math.ceil(railRange + 186 + 18) },
+    {
+      width: 448 + 80 + 8,
+      height: Math.ceil((448 + 80 + 8) * grade + 186 + 18),
+    },
   ];
-  const bytes = (p: { width: number; height: number }) =>
-    p.width * p.height * 4;
-  const pages = [
-    ...Array.from({ length: chunks }, () => [back, near]).flat(),
-    ...tunnel,
-  ];
+  let materialLargest = 0;
+  const long = (owner: number, length: number, start: number) => {
+    const from = owner * width - 896,
+      to = from + length;
+    const pages: { width: number; height: number }[] = [];
+    for (let k = start; k < start + chunks; k++) {
+      const left = Math.max(k * width - 2, from);
+      const right = Math.min((k + 1) * width + 2, to);
+      if (right <= left) continue;
+      const span = right - left;
+      const height = Math.ceil(span * grade + 294);
+      const page = { width: Math.ceil(span), height: Math.max(1, height) };
+      materialLargest = Math.max(materialLargest, bytes(page));
+      pages.push(page);
+    }
+    return pages;
+  };
+  let pages: { width: number; height: number }[] = [],
+    largest = 0;
+  // Each owner independently maximises its contribution; all eight window phases are covered.
+  for (let start = 0; start < 8; start++) {
+    const candidate = Array.from({ length: chunks }, (_, i) => {
+      const k = start + i;
+      return [
+        back,
+        {
+          width: width + 12,
+          height: Math.ceil(
+            railRange +
+              structureBankEnvelope(k * width, (k + 1) * width) +
+              NEAR_FOOT_OFFSET_U +
+              NEAR_DEPTH_RANGE_U +
+              8 +
+              6,
+          ),
+        },
+      ];
+    }).flat();
+    for (const owner of [-2, 6, 14]) {
+      const variants = [
+        owner >= start && owner < start + chunks ? short : [],
+        long(owner, 3072, start),
+        long(owner, 3328, start),
+      ];
+      candidate.push(
+        ...variants.reduce((a, b) =>
+          a.reduce((n, p) => n + bytes(p), 0) >=
+          b.reduce((n, p) => n + bytes(p), 0)
+            ? a
+            : b,
+        ),
+      );
+    }
+    largest = Math.max(largest, ...candidate.map(bytes));
+    if (
+      candidate.reduce((n, p) => n + bytes(p), 0) >
+      pages.reduce((n, p) => n + bytes(p), 0)
+    )
+      pages = candidate;
+  }
   return {
     chunks,
+    materialLargest,
     pages,
-    bytes: pages.reduce((sum, p) => sum + bytes(p), 0),
-    largest: Math.max(...pages.map(bytes)),
+    bytes: pages.reduce((n, p) => n + bytes(p), 0),
+    largest,
   };
+}
+const groundGeometry = groundGeometryEnvelope();
+export function groundPixelEnvelope(worldScale = 2) {
+  const part = worldParts['tunnel.rock-cover'];
+  // One GPU frame at a time: readPixels array + upright canvas; released before upload.
+  const readback =
+    (Math.ceil(part.widthU * worldScale) + 2) *
+    (Math.ceil(part.heightU * worldScale) + 2) *
+    4 *
+    2;
+  return { ...groundGeometry, readback };
 }
 
 /** Healthy ride auxiliary textures: Phaser 32px defaults, sky, wheel and animal fallback. */
@@ -143,7 +239,7 @@ import { worldParts } from '../../src/content/worldArt.ts';
 import { propScale } from '../../src/domain/world/SceneryGeometry.ts';
 
 /** Bound every clipped composition from its authored rules, including the lattice's preceding tile. */
-export function compositionPixelEnvelope() {
+function computeCompositionPixelEnvelope() {
   let perChunk = 0,
     largest = 0,
     readback = 0;
@@ -198,7 +294,9 @@ export function compositionPixelEnvelope() {
             (key.startsWith('near/')
               ? Math.max(
                   gameConfig.world.terrain.maxEmbankmentU,
-                  VALLEY_DEPTH_U,
+                  ['mountains', 'foothills', 'lakes'].includes(scene.biome)
+                    ? LARGE_VALLEY_DEPTH_U
+                    : VALLEY_DEPTH_U,
                 )
               : 0) +
             2,
@@ -223,11 +321,16 @@ export function compositionPixelEnvelope() {
   };
 }
 
+const compositions = computeCompositionPixelEnvelope();
+export function compositionPixelEnvelope() {
+  return compositions;
+}
+
 /** Next-fit decreasing-height shelves: each closed row uses > binWidth - maxItemWidth.
  * Its pixels cover that width times the NEXT row height. Sum all padded catalogue
  * rectangles to bound every possible journey/NPC subset, without assuming subset packing is monotone.
  */
-export function vehiclePixelEnvelope(scale: number) {
+function computeVehiclePixelEnvelope(scale: number) {
   const items = artAtlasItems(artParts, scale);
   const paddedArea = items.reduce(
     (sum, p) => sum + (p.width + 2) * (p.height + 2),
@@ -249,6 +352,19 @@ export function vehiclePixelEnvelope(scale: number) {
       .slice(0, 4)
       .reduce((a, b) => a + b, 0),
   };
+}
+
+const vehicles = new Map<
+  number,
+  ReturnType<typeof computeVehiclePixelEnvelope>
+>();
+export function vehiclePixelEnvelope(scale: number) {
+  let envelope = vehicles.get(scale);
+  if (!envelope) {
+    envelope = computeVehiclePixelEnvelope(scale);
+    vehicles.set(scale, envelope);
+  }
+  return envelope;
 }
 
 import {
@@ -420,14 +536,14 @@ export const ATLAS_BOUND: Readonly<
   >
 > = {
   low: {
-    oldWorldBytes: 8388608,
+    oldWorldBytes: 10485760,
     oldBackdropBytes: 4696968,
-    peakBytes: 92332496,
+    peakBytes: 97951432,
   },
   standard: {
-    oldWorldBytes: 20692992,
+    oldWorldBytes: 25165824,
     oldBackdropBytes: 9191424,
-    peakBytes: 133856744,
+    peakBytes: 145702368,
   },
 };
 
@@ -442,7 +558,9 @@ export function lifetimeModel(
     backdrop: ATLAS_BOUND[quality].oldBackdropBytes,
   },
 ) {
-  const ground = groundPixelEnvelope();
+  const ground = groundPixelEnvelope(
+    Math.max(...profileScales(quality).map((s) => s.world)),
+  );
   const compositions = compositionPixelEnvelope();
   const vehicle = vehiclePixelEnvelope(
     Math.max(...profileScales(quality).map((scale) => scale.world)),
@@ -465,7 +583,9 @@ export function lifetimeModel(
       newBytes: retained,
       largestNewBytes: ground.largest,
       preparationBytes: Math.max(
-        gpu ? ground.largest : 0,
+        gpu
+          ? Math.max(ground.largest, ground.materialLargest + ground.readback)
+          : 0,
         gpu ? compositions.gpuWorkBytes : compositions.canvasWorkBytes,
       ),
     },

@@ -480,9 +480,13 @@ export class AppController {
       k++
     ) {
       const tunnel = tunnelSite(seed, k);
-      if (tunnel)
+      if (!tunnel) continue;
+      const fromX = k * gameConfig.world.chunkWidthU + tunnel.fromX;
+      let seen = false;
+      for (const range of tunnels) if (range.fromX === fromX) seen = true;
+      if (!seen)
         tunnels.push({
-          fromX: k * gameConfig.world.chunkWidthU + tunnel.fromX,
+          fromX,
           toX: k * gameConfig.world.chunkWidthU + tunnel.toX,
         });
     }

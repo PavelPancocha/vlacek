@@ -22,11 +22,6 @@ export const CATALOGUE_SOURCES = [
     worktree: 'world-v2-water-mountains',
     commit: 'b6b2288',
   },
-  {
-    module: 'tunnels-bridges',
-    worktree: 'world-v2-tunnels-bridges',
-    commit: 'd7074ee',
-  },
 ] as const;
 
 export interface CataloguePartSnapshot {
@@ -648,94 +643,8 @@ export const catalogueSnapshot: Readonly<
     heightU: 180,
     group: { landscapes: ['mountains'], seasons: ['winter'] },
   },
-  'bridge.abutment': {
-    module: 'tunnels-bridges',
-    widthU: 50,
-    heightU: 100,
-    group: {
-      landscapes: [
-        'coast',
-        'countryside',
-        'dunes',
-        'foothills',
-        'forest',
-        'lakes',
-        'mountains',
-        'town',
-      ],
-    },
-  },
-  'bridge.catenary-console': {
-    module: 'tunnels-bridges',
-    widthU: 36,
-    heightU: 170,
-    group: {
-      landscapes: [
-        'coast',
-        'countryside',
-        'dunes',
-        'foothills',
-        'forest',
-        'lakes',
-        'mountains',
-        'town',
-      ],
-    },
-  },
   'bridge.railing': { module: 'base', widthU: 160, heightU: 20, group: {} },
-  'bridge.railing-long': {
-    module: 'tunnels-bridges',
-    widthU: 256,
-    heightU: 20,
-    group: {
-      landscapes: [
-        'coast',
-        'countryside',
-        'dunes',
-        'foothills',
-        'forest',
-        'lakes',
-        'mountains',
-        'town',
-      ],
-    },
-  },
-  'bridge.snow-cap': {
-    module: 'tunnels-bridges',
-    widthU: 256,
-    heightU: 8,
-    group: { seasons: ['winter'] },
-  },
-  'bridge.steel-span': {
-    module: 'tunnels-bridges',
-    widthU: 256,
-    heightU: 90,
-    group: {
-      landscapes: [
-        'coast',
-        'countryside',
-        'dunes',
-        'foothills',
-        'forest',
-        'lakes',
-        'mountains',
-        'town',
-      ],
-    },
-  },
   'bridge.stone': { module: 'base', widthU: 160, heightU: 84, group: {} },
-  'bridge.viaduct-arch': {
-    module: 'tunnels-bridges',
-    widthU: 160,
-    heightU: 160,
-    group: { landscapes: ['mountains'] },
-  },
-  'bridge.viaduct-pier': {
-    module: 'tunnels-bridges',
-    widthU: 40,
-    heightU: 160,
-    group: { landscapes: ['mountains'] },
-  },
   'catenary.pole': { module: 'base', widthU: 30, heightU: 192, group: {} },
   'catenary.span': { module: 'base', widthU: 256, heightU: 28, group: {} },
   'cloud.a': { module: 'base', widthU: 160, heightU: 60, group: {} },
@@ -1222,69 +1131,7 @@ export const catalogueSnapshot: Readonly<
     heightU: 100,
     group: { landscapes: ['lakes'] },
   },
-  'tunnel.contact': {
-    module: 'tunnels-bridges',
-    widthU: 128,
-    heightU: 12,
-    group: {
-      landscapes: [
-        'coast',
-        'countryside',
-        'dunes',
-        'foothills',
-        'forest',
-        'lakes',
-        'mountains',
-        'town',
-      ],
-    },
-  },
   'tunnel.portal': { module: 'base', widthU: 160, heightU: 240, group: {} },
-  'tunnel.rock-cap': {
-    module: 'tunnels-bridges',
-    widthU: 256,
-    heightU: 76,
-    group: {
-      landscapes: ['mountains'],
-      seasons: ['spring', 'summer', 'autumn'],
-    },
-  },
-  'tunnel.rock-cap-snow': {
-    module: 'tunnels-bridges',
-    widthU: 256,
-    heightU: 76,
-    group: { landscapes: ['mountains'], seasons: ['winter'] },
-  },
-  'tunnel.rock-cover': {
-    module: 'tunnels-bridges',
-    widthU: 256,
-    heightU: 290,
-    group: {
-      landscapes: ['mountains'],
-      seasons: ['spring', 'summer', 'autumn'],
-    },
-  },
-  'tunnel.rock-cover-snow': {
-    module: 'tunnels-bridges',
-    widthU: 256,
-    heightU: 290,
-    group: { landscapes: ['mountains'], seasons: ['winter'] },
-  },
-  'tunnel.rock-portal': {
-    module: 'tunnels-bridges',
-    widthU: 180,
-    heightU: 240,
-    group: {
-      landscapes: ['mountains'],
-      seasons: ['spring', 'summer', 'autumn'],
-    },
-  },
-  'tunnel.rock-portal-snow': {
-    module: 'tunnels-bridges',
-    widthU: 180,
-    heightU: 240,
-    group: { landscapes: ['mountains'], seasons: ['winter'] },
-  },
   'wheel.excavator': {
     module: 'water-mountains',
     widthU: 18,

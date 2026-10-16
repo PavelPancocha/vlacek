@@ -41,6 +41,39 @@ import { BIOMES } from '../../../src/domain/world/Biomes.ts';
 import { artAtlasItems, packAtlas } from '../../../src/render/atlasPacking.ts';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
 
+it.each([
+  ['tunnel.rock-portal', ['mountains', 'foothills', 'coast']],
+  ['tunnel.rock-cover', ['mountains', 'foothills', 'coast']],
+  ['tunnel.rock-cap', ['mountains', 'foothills', 'coast']],
+  ['tunnel.rock-portal-snow', ['mountains', 'foothills', 'coast']],
+  ['tunnel.rock-cover-snow', ['mountains', 'foothills', 'coast']],
+  ['tunnel.rock-cap-snow', ['mountains', 'foothills', 'coast']],
+  ['bridge.viaduct-arch', ['mountains', 'foothills']],
+  ['bridge.viaduct-pier', ['mountains', 'foothills']],
+  ['bridge.steel-span', ['lakes']],
+  ['bridge.abutment', ['lakes']],
+  ['bridge.railing-long', ['mountains', 'foothills', 'lakes']],
+  ['bridge.catenary-console', ['mountains', 'foothills', 'lakes']],
+  ['bridge.snow-cap', ['mountains', 'foothills', 'lakes']],
+  ['tunnel.contact', ['mountains', 'foothills']],
+] as const)(
+  'D-026 host mappings: %s carries only its rendered landscapes',
+  (key, landscapes) => {
+    expect(
+      [...(worldAtlasGroup(key, worldParts[key]).landscapes ?? BIOMES)].sort(),
+    ).toEqual([...landscapes].sort());
+  },
+);
+
+it('D-026 host mappings: dunes retain mound heather and transitional snow pines', () => {
+  expect(
+    worldAtlasKeys(worldParts, [{ landscape: 'dunes', season: 'summer' }]),
+  ).toContain('near.flowers-b');
+  expect(
+    worldAtlasKeys(worldParts, [{ landscape: 'dunes', season: 'winter' }]),
+  ).toContain('tree.pine-snow');
+});
+
 describe('D-030 region/season atlas selection', () => {
   it('selects base and matching region variants, never an inactive season', () => {
     const parts = {

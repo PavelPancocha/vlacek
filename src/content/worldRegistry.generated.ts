@@ -5,12 +5,14 @@ import * as art1 from './world-modules/integration-seasons.art.ts';
 import * as art2 from './world-modules/life.art.ts';
 import * as art3 from './world-modules/seasons-life.art.ts';
 import * as art4 from './world-modules/settlements.art.ts';
+import * as art5 from './world-modules/tunnels-bridges.art.ts';
 export const additionalWorldParts = {
   ...art0.parts,
   ...art1.parts,
   ...art2.parts,
   ...art3.parts,
   ...art4.parts,
+  ...art5.parts,
 } as const satisfies Record<string, ArtPart>;
 export const additionalWorldUsedKeys: readonly string[] = [
   ...art0.usedKeys,
@@ -18,6 +20,7 @@ export const additionalWorldUsedKeys: readonly string[] = [
   ...art2.usedKeys,
   ...art3.usedKeys,
   ...art4.usedKeys,
+  ...art5.usedKeys,
 ];
 export const additionalPartKeys: readonly string[] = [
   ...Object.keys(art0.parts),
@@ -25,4 +28,5 @@ export const additionalPartKeys: readonly string[] = [
   ...Object.keys(art2.parts),
   ...Object.keys(art3.parts),
   ...Object.keys(art4.parts),
+  ...Object.keys(art5.parts),
 ];

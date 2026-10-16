@@ -28,10 +28,18 @@ import {
   type WorldOwnership,
 } from '../src/domain/world/WorldValidation.ts';
 
+import {
+  validateStructures,
+  validateStructureFeatures,
+} from '../src/domain/world/StructureValidation.ts';
+
 const seeds = [
   0, 1, 2, 3, 4, 7, 10, 14, 18, 25, 63, 83, 110, 123, 157, 226, 234, 238, 247,
   252, 338, 1226, 4242, 0xffffffff,
 ];
+const structures = validateStructures(seeds);
+assert.deepEqual(structures.errors, []);
+console.log('Structures:', JSON.stringify(structures.coverage));
 let cases = 0;
 const errors: string[] = [];
 const coverage: Record<string, number> = {};
@@ -88,6 +96,7 @@ for (const seed of seeds) {
       features: scenery.features,
     });
     errors.push(...validateChunkScenery(seed, scenery, worldPlacementCatalog));
+    errors.push(...validateStructureFeatures(scenery));
     cases++;
     fingerprints.set(k, JSON.stringify(scenery));
   }

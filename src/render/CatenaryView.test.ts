@@ -11,6 +11,7 @@ import {
   heightAtX,
 } from '../domain/world/ArcLengthTable.ts';
 import { catenaryPoleXs, catenarySupport } from '../domain/world/Catenary.ts';
+import { generateTrackProfile } from '../domain/world/TrackProfile.ts';
 import { chunkCatenary } from './CatenaryView.ts';
 import { setFrameResolver } from './frameTexture.ts';
 
@@ -63,7 +64,7 @@ vi.mock('phaser', () => {
       this.y = y;
       return this;
     }
-    setScale(x: number, y: number) {
+    setScale(x: number, y = x) {
       this.scaleX = x;
       this.scaleY = y;
       return this;
@@ -201,4 +202,31 @@ describe('CatenaryView art geometry (TRN-08)', () => {
       }
     }
   });
+});
+
+it('SCN-TB09: bridge consoles hold the actual wire 128u over the viaduct rail', () => {
+  const seed = 0,
+    k = 188,
+    x0 = k * 1024;
+  const table = buildArcLengthTable(generateTrackProfile(seed, k), k, 1024, 8);
+  const view = chunkCatenary(
+    new Phaser.Scene(),
+    { texture: 'world', pxPerU: 2 },
+    table,
+    seed,
+    { poles: 0, wires: 1 },
+  );
+  const consoles =
+    view.containers[0]?.list.filter(
+      (o) =>
+        o instanceof Phaser.GameObjects.Image &&
+        o.frame.name === 'bridge.catenary-console',
+    ) ?? [];
+  expect(consoles.length).toBeGreaterThan(0);
+  for (const object of consoles) {
+    if (!(object instanceof Phaser.GameObjects.Image))
+      throw new Error('console missing');
+    const clamp = drawnPoint(object, { x: 8, y: 42 });
+    expect(clamp.y).toBeCloseTo(-heightAtX(table, x0 + clamp.x) - 128, 9);
+  }
 });

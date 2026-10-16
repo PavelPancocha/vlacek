@@ -1,3 +1,4 @@
+import { rockMountainHeightU } from './scenes/tunnels-bridges.scenes.ts';
 import type { CrossingSite } from './Crossings.ts';
 import { tunnelSite, type BridgeSite, type TunnelSite } from './Structures.ts';
 import { secondarySite } from './SecondaryTrack.ts';
@@ -180,11 +181,12 @@ export function infrastructureReservations(
       }),
     );
   }
-  for (const hill of [
-    tunnel,
-    tunnelSite(seed, k - 1),
-    tunnelSite(seed, k + 1),
-  ]) {
+  const hills = new Map(
+    [tunnel, tunnelSite(seed, k - 1), tunnelSite(seed, k + 1)]
+      .filter((hill): hill is TunnelSite => hill !== undefined)
+      .map((hill) => [hill.id, hill]),
+  );
+  for (const hill of hills.values()) {
     if (!hill) continue;
     const from = hill.chunkIndex * 1024 + hill.fromX - 170,
       to = hill.chunkIndex * 1024 + hill.toX + 170,
@@ -195,12 +197,14 @@ export function infrastructureReservations(
       'tunnel-hill',
       band(
         seed,
-        from,
-        to,
+        hill.rock ? Math.max(from, x0 - 200) : from,
+        hill.rock ? Math.min(to, x0 + 1224) : to,
         (x) =>
-          -290 *
-            Math.sqrt(Math.max(0, 1 - (Math.abs(x - middle) / half) ** 3)) -
-          16,
+          hill.rock
+            ? -rockMountainHeightU(from + 170, to - 170, x) - 64
+            : -290 *
+                Math.sqrt(Math.max(0, 1 - (Math.abs(x - middle) / half) ** 3)) -
+              16,
         () => 4,
       ),
       'back',

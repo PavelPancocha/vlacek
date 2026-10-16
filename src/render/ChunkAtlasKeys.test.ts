@@ -1,3 +1,4 @@
+import { tunnelSite, bridgeSite } from '../domain/world/Structures.ts';
 import {
   chunkEmissions,
   chunkPivotDrift,
@@ -108,3 +109,14 @@ it.each(
     }
   },
 );
+
+it('the rendered 1200-chunk sweep includes long rock tunnels and both large bridge variants', () => {
+  const covered = new Set<string>();
+  for (const seed of [1, 7, 123])
+    for (let k = 0; k < 400; k++) {
+      if (tunnelSite(seed, k)?.rock) covered.add('rock');
+      const bridge = bridgeSite(seed, k);
+      if (bridge?.variant) covered.add(bridge.variant);
+    }
+  expect([...covered].sort()).toEqual(['rock', 'steel', 'viaduct']);
+});

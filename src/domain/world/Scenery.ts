@@ -151,7 +151,7 @@ export interface ChunkScenery {
   crossing: CrossingSite | undefined;
   /** The stone bridge over a stream (slot 4), if any. */
   bridge: BridgeSite | undefined;
-  /** The short tunnel (slot 6), if any. */
+  /** Local fragment of a main-track tunnel owned in slot 6; full portal range. */
   tunnel: TunnelSite | undefined;
   props: SceneryProp[];
   region: RegionPlan;
@@ -1112,8 +1112,18 @@ export function chunkScenery(
     });
   for (const site of [crossing, bridge, tunnel])
     if (site) {
-      const from = 'localXU' in site ? x0 + site.localXU - 96 : x0 + site.fromX,
-        to = 'localXU' in site ? x0 + site.localXU + 96 : x0 + site.toX;
+      const from =
+          site === bridge && bridge?.fromX !== undefined
+            ? x0 + bridge.fromX
+            : 'localXU' in site
+              ? x0 + site.localXU - 96
+              : x0 + site.fromX,
+        to =
+          site === bridge && bridge?.toX !== undefined
+            ? x0 + bridge.toX
+            : 'localXU' in site
+              ? x0 + site.localXU + 96
+              : x0 + site.toX;
       features.push({
         id: site.id,
         ownerId: region.id,

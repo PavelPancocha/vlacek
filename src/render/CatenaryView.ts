@@ -12,6 +12,7 @@ import {
   type ArcLengthTable,
 } from '../domain/world/ArcLengthTable.ts';
 import { catenaryPoleXs, catenarySupport } from '../domain/world/Catenary.ts';
+import { bridgeSite } from '../domain/world/Structures.ts';
 import { frameOrigin } from './atlasPacking.ts';
 
 const { chunkWidthU, catenaryPoleSpacingU, catenaryContactHeightU } =
@@ -60,7 +61,10 @@ export function chunkCatenary(
   const poles = scene.add.container(0, 0).setDepth(depths.poles);
   const wires = scene.add.container(0, 0).setDepth(depths.wires);
   const image = (
-    key: typeof catenaryParts.pole | typeof catenaryParts.span,
+    key:
+      | typeof catenaryParts.pole
+      | typeof catenaryParts.span
+      | 'bridge.catenary-console',
   ) => {
     const part = worldParts[key];
     const object = scene.add
@@ -78,14 +82,27 @@ export function chunkCatenary(
     // at a tunnel its ceiling holds the wire (TunnelView draws the hanger).
     if (catenarySupport(seed, x) === 'mast') {
       masts += 1;
-      poles.add(
-        image(catenaryParts.pole)
-          .setPosition(
-            local - (catenaryAnchors.contact.x - pole.pivotU.x),
-            railY - CATENARY_POLE_DEPTH_U,
-          )
-          .setScale(1 / art.pxPerU, CATENARY_ART_SCALE_Y / art.pxPerU),
-      );
+      const bridge = bridgeSite(seed, table.chunkIndex);
+      const onBridge =
+        bridge?.fromX !== undefined &&
+        bridge.toX !== undefined &&
+        local >= bridge.fromX &&
+        local <= bridge.toX;
+      if (onBridge)
+        poles.add(
+          image('bridge.catenary-console')
+            .setPosition(local, railY)
+            .setScale(1 / art.pxPerU),
+        );
+      else
+        poles.add(
+          image(catenaryParts.pole)
+            .setPosition(
+              local - (catenaryAnchors.contact.x - pole.pivotU.x),
+              railY - CATENARY_POLE_DEPTH_U,
+            )
+            .setScale(1 / art.pxPerU, CATENARY_ART_SCALE_Y / art.pxPerU),
+        );
     }
     const next = catenaryPoleXs(seed, x + 1, x + 2 * catenaryPoleSpacingU)[0];
     if (next === undefined) continue;

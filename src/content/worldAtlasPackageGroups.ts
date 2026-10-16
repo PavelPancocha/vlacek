@@ -240,9 +240,6 @@ const groups: readonly { keys: readonly string[]; group: WorldAtlasGroup }[] = [
       'backdrop.mountains-ridges',
       'backdrop.mountains-slope',
       'back.cutting-rock',
-      'tunnel.rock-portal',
-      'tunnel.rock-cover',
-      'tunnel.rock-cap',
     ],
     // water-mountains@2e64ad3 declares these snow-free variants for spring to autumn.
     group: {
@@ -265,13 +262,16 @@ const groups: readonly { keys: readonly string[]; group: WorldAtlasGroup }[] = [
       'backdrop.mountains-ridges-snow',
       'backdrop.mountains-slope-snow',
       'back.cutting-rock-snow',
-      'tunnel.rock-portal-snow',
-      'tunnel.rock-cover-snow',
-      'tunnel.rock-cap-snow',
     ],
     group: { landscapes: ['mountains'], seasons: ['winter'] },
   },
-  { keys: ['bridge.snow-cap'], group: { seasons: ['winter'] } },
+  {
+    keys: ['bridge.snow-cap'],
+    group: {
+      landscapes: ['mountains', 'foothills', 'lakes'],
+      seasons: ['winter'],
+    },
+  },
   {
     keys: [
       'tree.oak-spring',
@@ -386,10 +386,45 @@ const groups: readonly { keys: readonly string[]; group: WorldAtlasGroup }[] = [
       ],
     },
   },
+  {
+    keys: ['tunnel.rock-portal', 'tunnel.rock-cover', 'tunnel.rock-cap'],
+    group: {
+      landscapes: ['mountains', 'foothills', 'coast'],
+      seasons: ['spring', 'summer', 'autumn'],
+    },
+  },
+  {
+    keys: [
+      'tunnel.rock-portal-snow',
+      'tunnel.rock-cover-snow',
+      'tunnel.rock-cap-snow',
+    ],
+    group: {
+      landscapes: ['mountains', 'foothills', 'coast'],
+      seasons: ['winter'],
+    },
+  },
 ];
 const hostLandscapes: Readonly<
   Record<string, readonly (typeof BIOMES)[number][]>
 > = {
+  // D-026 generator-owned infrastructure and the short dune mound.
+  'bridge.steel-span': ['lakes'],
+  'bridge.abutment': ['lakes'],
+  'bridge.viaduct-arch': ['mountains', 'foothills'],
+  'bridge.viaduct-pier': ['mountains', 'foothills'],
+  'bridge.railing-long': ['mountains', 'foothills', 'lakes'],
+  'bridge.catenary-console': ['mountains', 'foothills', 'lakes'],
+  'tunnel.contact': ['mountains', 'foothills'],
+  'near.flowers-b': [
+    'countryside',
+    'foothills',
+    'forest',
+    'lakes',
+    'mountains',
+    'town',
+    'dunes',
+  ],
   'wheel.farm-large': ['countryside', 'foothills', 'forest'],
   'wheel.farm-small': ['countryside', 'foothills', 'forest'],
   'back.plough': ['countryside', 'foothills'],
@@ -401,7 +436,7 @@ const hostLandscapes: Readonly<
     'foothills',
     'mountains',
   ],
-  'tree.pine-snow': ['mountains', 'forest', 'foothills'],
+  'tree.pine-snow': ['mountains', 'forest', 'foothills', 'dunes'],
   'tree.spruce-snow': ['mountains', 'forest', 'foothills'],
 };
 export const worldAtlasPackageGroups: Readonly<

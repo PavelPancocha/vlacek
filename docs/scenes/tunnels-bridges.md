@@ -60,6 +60,18 @@ Výjezd je skutečný druhý portál téže stavby, nikoli dekorace dalšího ch
 Před vlakem zůstává nízké okolí a otevřené přístupové úseky.
 Vozidla mizí postupně a u krátké varianty může být část soupravy současně před i za tunelem.
 Nad kopcem pokračuje obloha, ptáci a sezónně správná vegetace.
+Povrch krátkého kopce určuje region a sezóna u vstupního portálu: duny mají
+písek, borovice lesní a nízký vřes; pobřeží odhalenou skálu s řídkou trávou;
+hory a podhůří skálu s jehličnany; venkov a vesnice louku se stávajícími
+květy. Les a jezerní krajina ponechávají luční povrch. V zimě má každý
+hostitel sněhovou pokrývku bez letních květů. Používají se existující díly:
+`tree.pine`, `tree.spruce`, `near.dune-grass` a zimní `tree.pine-snow`,
+`tree.spruce-snow`, `near.snow-bush`; nízký vřes zastupuje zmenšený `near.bush` s fialovými květy `near.flowers-b`. Vegetace se
+vejde dovnitř původní siluety: nemění portál, zakrytí ani rezervace.
+Písečný kopec má teplejší, mírně tmavší tón než okolní rovina. Jemné
+světlo na horním svahu a stín směrem k patě dávají objem i skále a sněhu.
+Stínování leží uvnitř stávající výplně; obrys nepokračuje tam, kde se
+přední kryt ztenčí na nulovou plochu. Tvar kopce a pata portálu se nemění.
 
 | Zóna           | Objekty                             | Počet                      | Vztahy a závislosti               | Zakázáno                          |
 | -------------- | ----------------------------------- | -------------------------- | --------------------------------- | --------------------------------- |
@@ -76,6 +88,10 @@ Uvnitř stavby pokračuje stejná geometrie koleje i potřebný elektrický kont
 Přední nízké kameny nechávají otevřené části trati přehledné.
 Celá souprava může na určitou dobu zmizet za horninou, zatímco kamera dál sleduje její cestu.
 Obloha a venkovní počasí pokračují nad horou, ale kouř ani jiskry nesmějí prosvítat jejím tělesem.
+Hornina se skládá před neměnným uploadem z rámců aktuální regionální stránky;
+čtení GPU pixelů se uvolní ihned po každém materiálu. Horská silueta s vegetací, jednobarevný vnitřek
+a závěsy jsou statické vektory se stejnou geometrií; peče se pouze pás
+skutečného skalního materiálu mezi ústími.
 
 | Zóna           | Objekty                                          | Počet                            | Vztahy a závislosti                        | Zakázáno                              |
 | -------------- | ------------------------------------------------ | -------------------------------- | ------------------------------------------ | ------------------------------------- |
@@ -99,7 +115,7 @@ Mostní konzoly a tunelový kontakt jsou součást elektrifikované trasy, ne vo
 
 Jaro a léto přebírají zeleň hostitele; podzim přidává listí pouze od jeho listnáčů.
 Zima pokrývá římsy, zem a vhodné části konstrukcí, ale nezakrývá čitelnost koleje ani portálových otvorů.
-Pobřežní a dunové stavby používají svůj preset bez automatického sněhu; horské jen léto nebo zimu.
+Povrch krátkého kopce přebírá krajinu u portálu a dominantní sezónu z `effectiveClimateAt`, včetně přechodového bloku. V zimní části přechodu dostává sníh stejně jako okolní krajina.
 Venkovní sněžení pokračuje nad tunelem, lokální sníh od kol vzniká jen na skutečně zasněžené otevřené trati.
 Použít potok, vítr a hostitelské ptactvo; nové audio: jemný mostní dozvuk a tlumená tunelová odezva vlaku.
 Žádné dunivé nárazy, lekavá ozvěna ani zvuk jako podmínka pokračování.
@@ -126,3 +142,37 @@ Sníh kryje travnaté křídlo obou vedlejších kopců bez zásahu do oblouku
 sprite; pod otevřeným obloukem platí jeho skutečný otvor. Sněžení venku
 pokračuje, bez vypínače vázaného na polohu vlaku. Snow caps hlavních tunelů
 sdílejí běžný střešní díl; atlas musí zahrnout všechny zimní hostitele.
+
+## Implementační kontrakt D-026
+
+Dlouhý skalní tunel má 3 072 nebo 3 328 u. Plán se kotví ve slotu 6,
+začíná ve slotu 5 a končí nejpozději ve slotu 0 následujícího bloku;
+oba konce jsou ve stejném horském/podhorském regionu. Stanice 1/2,
+přejezd 3, most 4 a souběh 4–6 mají přednost. Těleso sleduje skutečný
+profil včetně jeho zaoblení; nesmí pro stavbu narovnat kolej. Vstup leží
+na svahu alespoň 1,5 %. Portál se otáčí podle místní tečny, světlost
+186 u se měří kolmo ke koleji. Kryt začíná 52 u za portálem, čepice
+končí 214 u nad kolejí a neprůhledná pata dosahuje na skutečnou louku.
+
+Logické ID a úplný rozsah jsou společné. Každý zasažený chunk umí stavbu
+samostatně rekonstruovat; renderer peče pouze místní fragment s přesahem
+2 u. Globální 256u fáze skalního materiálu se na švu nerestartuje.
+Nad materiálem stoupá společný hladký profil od portálu k vrcholu a klesá
+po zadním svahu. Vrchol leží přibližně 544 u nad kolejí; zelená louka
+a skupiny jehličnanů pokračují nad odhalenou skálou, v zimě se sněhem.
+Profil, vegetace i rezervace používají stejné souřadnice celé stavby;
+na technickém švu se nezačíná nový kopec. Vnější rameno bez hmoty
+nesmí skrývat venkovní částice.
+Portály vznikají jen u skutečných konců, nikoli na technických řezech.
+Při úplném zakrytí pokračuje držení pro jízdu, kamera a D-022 tlumení.
+
+Viadukt má 4–5 polí po 160 u a údolí nejméně 160 u; ocelový most
+má dvě pole po 256 u a řeku v průjezdném otvoru mezi podpěrami.
+Obě varianty vyžadují konstantní sklon nejvýše 3 % v celém mostním poli;
+nevyhovující kandidát ponechá původní malý most. V horském/podhorském
+hostiteli volíme viadukt, v jezerním hostiteli ocel. Nízké zábradlí leží
+pod vozidly, mostní konzoly používají původní globální fázi troleje.
+Zimní skalní portál a kryt jsou samostatné assety s `atlasGroup.seasons`.
+Krátký kopec vybírá hostitele jedinou funkcí `shortTunnelHostAt` z dnešního
+`regionAt(seed, portalX)`. Po integraci seasons-life se zde použije
+`effectiveClimateAt`; neprovádí se druhé nezávislé rozhodování o sezóně.

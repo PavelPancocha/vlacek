@@ -44,6 +44,10 @@ import {
   type FenceFeature,
 } from '../domain/world/Fences.ts';
 import Phaser from 'phaser';
+import { sceneryDecorationHash } from './sceneryDecorationHash.ts';
+import { largeBridgeView } from './BridgeView.ts';
+import { regionAt } from '../domain/world/Regions.ts';
+import { railYUpU } from '../domain/world/SceneryGeometry.ts';
 import { gameConfig } from '../config/gameConfig.ts';
 import type { ArtPart } from '../content/artManifest.ts';
 import {
@@ -356,7 +360,7 @@ export class ChunkView {
   readonly #glints: { image: Phaser.GameObjects.Image; phase: number }[] = [];
   /** Barriers, lamps and traffic of the chunk's level crossing. */
   #crossing: CrossingView | CrossingFallbackView | undefined;
-  /** The chunk's tunnel, whose hill clears while the train is inside. */
+  /** Main-track tunnel fragment; its rock stays opaque over the train. */
   #tunnel: TunnelView | undefined;
   /** Catenary masts of an electric journey (doc 03 §9). */
   #poles = 0;
@@ -649,6 +653,22 @@ export class ChunkView {
         );
     }
     this.#objects.push(back, ground);
+    if (scenery.bridge?.variant && scenery.bridge.variant !== 'stone')
+      this.#objects.push(
+        ...largeBridgeView(
+          scene,
+          art,
+          scenery.bridge,
+          {
+            railY: (x) => -this.#railAt(x),
+            meadowY: (x) => this.#meadowTop(x),
+          },
+          (paint, bounds) => this.#bake(paint, bounds, groundScale),
+          depths.track,
+          regionAt(seed, table.chunkIndex * 1024 + scenery.bridge.localXU)
+            .season === 'winter',
+        ),
+      );
     if (!art) {
       // Baked too: without MSAA a live line would alias (D-013). A bridge
       // still carries the track over its valley.
@@ -656,7 +676,8 @@ export class ChunkView {
       this.#objects.push(
         this.#bake(
           (g) => {
-            if (bridge) this.#paintPlainBridge(g, bridge.localXU);
+            if (bridge && !bridge.variant)
+              this.#paintPlainBridge(g, bridge.localXU);
             paintPlainTrack(g, table);
           },
           {
@@ -719,7 +740,7 @@ export class ChunkView {
         },
       );
     }
-    if (scenery.bridge) {
+    if (scenery.bridge && !scenery.bridge.variant) {
       // The stone bridge over the stream, rail head on its deck; its far
       // railing behind the train.
       const x = scenery.bridge.localXU;
@@ -753,7 +774,8 @@ export class ChunkView {
         scenery.tunnel,
         depths,
         electrified,
-        (paint, bounds) => this.#bake(paint, bounds, groundScale),
+        (paint, bounds, compose) =>
+          this.#bake(paint, bounds, groundScale, compose),
       );
     // The second track behind the main one, its tunnel mouths and portal
     // hills; the oncoming train is drawn between them (doc 04 §7).
@@ -1073,8 +1095,8 @@ export class ChunkView {
     electrified: boolean,
     groundScale: number,
   ): void {
-    const bake: Bake = (paint, bounds) =>
-      this.#bake(paint, bounds, groundScale);
+    const bake: Bake = (paint, bounds, compose) =>
+      this.#bake(paint, bounds, groundScale, compose);
     if (scenery.crossing) {
       const x = scenery.crossing.localXU;
       this.#crossing = new CrossingFallbackView(
@@ -1217,8 +1239,8 @@ export class ChunkView {
     const hangerXs = electrified
       ? catenaryPoleXs(
           seed,
-          x0 + site.fromX - TUNNEL_MAST_CLEARANCE_U,
-          x0 + site.toX + TUNNEL_MAST_CLEARANCE_U,
+          x0 + Math.max(-2, site.fromX - TUNNEL_MAST_CLEARANCE_U),
+          x0 + Math.min(1026, site.toX + TUNNEL_MAST_CLEARANCE_U),
         )
           .filter((x) => catenarySupport(seed, x) === 'hanger')
           .map((x) => x - x0)
@@ -1228,8 +1250,13 @@ export class ChunkView {
       art,
       site,
       {
-        railY: (x) => -this.#railAt(x),
-        meadowY: (x) => this.#meadowTop(x),
+        railY: (x) => (site.rock ? -railYUpU(seed, x0 + x) : -this.#railAt(x)),
+        meadowY: (x) =>
+          site.rock
+            ? -railYUpU(seed, x0 + x) +
+              TRACK_BED_DEPTH_U +
+              bankHeightU(seed, x0 + x)
+            : this.#meadowTop(x),
       },
       bake,
       {
@@ -1240,6 +1267,7 @@ export class ChunkView {
         cover: depths.train + 0.6,
       },
       hangerXs,
+      seed,
       {
         climateAt: (x) =>
           effectiveClimateAt(seed, table.chunkIndex * CHUNK_WIDTH_U + x),
@@ -1548,6 +1576,7 @@ export class ChunkView {
     paint: (g: Phaser.GameObjects.Graphics) => void,
     bounds: { left: number; top: number; right: number; bottom: number },
     scale: number,
+    compose?: Parameters<Bake>[2],
   ): Phaser.GameObjects.Container {
     const scene = this.#scene;
     const g = scene.make.graphics({}, false);
@@ -1567,7 +1596,11 @@ export class ChunkView {
     });
     try {
       g.generateTexture(canvas, canvas.width, canvas.height);
+      compose?.(canvas, this.memory, key);
       immutableTexture(scene, key, canvas, this.memory);
+    } catch (error) {
+      canvas.width = canvas.height = 1;
+      throw error;
     } finally {
       g.destroy();
       this.memory.remove(`canvas:${key}`);
@@ -2014,7 +2047,7 @@ export class ChunkView {
     const chunk = this.#table.chunkIndex;
     const patches = palette.rows === undefined ? 7 : 3;
     for (let i = 0; i < patches; i++) {
-      const h = hash32('ground-patch', chunk, span.fromX, i);
+      const h = sceneryDecorationHash('ground-patch', chunk, span.fromX, i);
       const depth = 0.1 + ((h % 1000) / 1000) * 0.8;
       const x =
         leftAt(depth) +
@@ -2518,7 +2551,12 @@ export class ChunkView {
     g.fillPoints(outline(0, 0.07), true);
     // Spots for the flashing glints (drawn as images over the texture).
     for (let i = 0; i < GLINTS_PER_BASIN; i++) {
-      const h = hash32('glint', this.#table.chunkIndex, String(basin.fromX), i);
+      const h = sceneryDecorationHash(
+        'glint',
+        this.#table.chunkIndex,
+        basin.fromX,
+        i,
+      );
       const x =
         from +
         WATER_END_U +
@@ -2535,7 +2573,7 @@ export class ChunkView {
     // Ripples: short level strokes, longer and brighter nearer the shore.
     const chunk = this.#table.chunkIndex;
     for (let i = 0; i < 34; i++) {
-      const h = hash32('ripple', chunk, String(basin.fromX), i);
+      const h = sceneryDecorationHash('ripple', chunk, basin.fromX, i);
       const x = from + ((h % 1000) / 1000) * (to - from);
       const t = 0.12 + (((h >>> 10) % 1000) / 1000) * 0.8;
       const k = open(x);

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="8" viewBox="0 0 256 8">
+  <!-- Vláček, art-water-coast-mountains-1: Zimní sníh na římse mostu. 1 SVG jednotka = 1 u. -->
+  <defs></defs>
+  <path d="M0 2 C16 2 20 4 32 3 S51 1 64 2 S95 4 112 3 S137 1 160 2 S203 4 224 3 S246 2 256 2 V6 H0Z" fill="#edf1e7"/>
+</svg>

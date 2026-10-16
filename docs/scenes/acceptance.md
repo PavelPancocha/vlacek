@@ -147,17 +147,34 @@ Krajinné rozsahy výšek platí pro jádro regionu; přechody musí navazovat a
 
 ## Mosty a tunely
 
-| ID       | Očekávaný výsledek                                                                                                          |
-| -------- | --------------------------------------------------------------------------------------------------------------------------- |
-| SCN-TB01 | Každý most odkazuje na existující tok, cestu nebo údolí a jeho opěry dosahují na vhodný terén.                              |
-| SCN-TB02 | Loď nebo silniční aktér pod mostem má volný koridor mimo podpěry.                                                           |
-| SCN-TB03 | Katalog obsahuje nízký kamenný most, ocelový most a vysoký viadukt; nelze je nahradit jediným zvětšeným spritem.            |
-| SCN-TB04 | Tunel má právě dva skutečné portály, jednu identitu a souvislé neprůhledné těleso přes všechny své chunky.                  |
-| SCN-TB05 | Existuje krátká varianta 448–768 u a dlouhá varianta alespoň 3 072 u, která přesahuje maximální soupravu.                   |
-| SCN-TB06 | Tunelová stavba zůstává dostupná při dotazu na vnitřní chunk bez vlastnícího chunku a při části soupravy uvnitř.            |
-| SCN-TB07 | Zakrytí respektuje konkrétní kolej a části vozidel hráče i NPC; jiný vlak ve stejném x se neskrývá bez prostorového důvodu. |
-| SCN-TB08 | Částice již emitované před portálem ani nové částice neprosvítají horninou; venkovní sněžení dál pokračuje.                 |
-| SCN-TB09 | Elektrická trasa má návazné vedení a potřebnou světlost v mostě, stanici i tunelu.                                          |
+| ID       | Očekávaný výsledek                                                                                                                                                                  |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SCN-TB01 | Každý most odkazuje na existující tok, cestu nebo údolí a jeho opěry dosahují na vhodný terén.                                                                                      |
+| SCN-TB02 | Loď nebo silniční aktér pod mostem má volný koridor mimo podpěry.                                                                                                                   |
+| SCN-TB03 | Katalog obsahuje nízký kamenný most, ocelový most a vysoký viadukt; nelze je nahradit jediným zvětšeným spritem.                                                                    |
+| SCN-TB04 | Tunel má dva portály, jednu identitu a souvislé neprůhledné těleso přes chunky; krátký kopec přebírá povrch a vegetaci regionu a efektivní sezóny u portálu, i v přechodovém bloku. |
+| SCN-TB05 | Existuje krátká varianta 448–768 u a dlouhé varianty 3 072/3 328 u, které přesahují maximální 2 000u soupravu.                                                                      |
+| SCN-TB06 | Tunelová stavba zůstává dostupná při dotazu na vnitřní chunk bez vlastnícího chunku a při části soupravy uvnitř.                                                                    |
+| SCN-TB07 | Zakrytí respektuje konkrétní kolej a části vozidel hráče i NPC; jiný vlak ve stejném x se neskrývá bez prostorového důvodu.                                                         |
+| SCN-TB08 | Částice již emitované před portálem ani nové částice neprosvítají horninou; venkovní sněžení dál pokračuje.                                                                         |
+| SCN-TB09 | Elektrická trasa má návazné vedení a potřebnou světlost v mostě, stanici i tunelu.                                                                                                  |
+
+D-030 regresní brána: skutečné pečení dlouhého tunelu v Canvas i WebGL,
+`missingFrames: []`, `pending: false`, uvolněné readbacky i při chybě kreslení,
+značky všech obrázků v reálném sweepu 1 200 chunků a nezměněný limit 96 MiB.
+
+Automatizované pokrytí SCN-TB01–09: `LongStructures.test.ts`, `TunnelView.test.ts`,
+`RockTunnelView.test.ts`, `ChunkView.test.ts`, `validate:world`,
+`long-structures.spec.ts` a regresní `tunnel-occlusion.spec.ts`. Revize TB-2
+kontroluje paty vykreslených podpěr, volný vodní/silniční obrys, skutečný
+elektrický kontakt a venkovní body před oběma skalními ústími.
+Revize TB-3 ověřuje povrch krátkého tunelu podle regionu a sezóny u portálu
+(duny bez louky, pobřežní/horská skála, zimní sníh) a stávající zakrytí.
+Revize TB-4 porovnává pixely vyplněného svahu dunového kopce s okolním
+pískem (seed 0, chunk 382, 1 140 × 512) v Canvas i WebGL. Výplň musí mít
+čitelný objem a obrys nesmí pokračovat přes ramena s nulovou plochou krytu.
+D-026 ponechává pod mostem vodní koridor bez lodního/silničního aktéra; pokud
+se aktér hostitelské scény přidá, musí respektovat tutéž konkrétní rezervaci.
 
 ## Život, sezóny a výkon
 
