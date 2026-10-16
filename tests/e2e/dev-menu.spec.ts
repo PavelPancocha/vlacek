@@ -8,6 +8,11 @@ import {
 import { generateTrackProfile } from '../../src/domain/world/TrackProfile.ts';
 import { parseSave, saveRules } from '../../src/platform/SaveValidation.ts';
 import { driveUntilMoving, snapshot, startRide, tapAction } from './helpers.ts';
+import {
+  advanceSeasonalFrames,
+  probeScene,
+  restore,
+} from './seasonalVisual.helpers.ts';
 
 test.beforeEach(async ({ page }) => {
   await page.clock.install();
@@ -801,18 +806,17 @@ test('restart effects: active ambient life starts again after the initial delay'
   page,
 }) => {
   await page.setViewportSize({ width: 568, height: 320 });
-  await page.addInitScript(() => {
-    Math.random = () => 0.5;
-  });
-  await paused(page, '?debug=1&seed=123&quality=low&renderer=canvas');
-  await tapAction(page, 'resume');
-  await page.clock.runFor(8000);
+  // D-027 seeds a shared effects stream: fix its frames as well as the journey.
+  await probeScene(page);
+  await restore(page, 'canvas', 0, 512, [], 123, 'low', true);
+  await advanceSeasonalFrames(page, 240);
   expect((await snapshot(page)).effects.kinds['bird'] ?? 0).toBeGreaterThan(0);
   await tapAction(page, 'pause');
   await openMenu(page);
   await activate(page, 'dev-restart');
+  await advanceSeasonalFrames(page, 1);
   await expect.poll(async () => (await snapshot(page)).effects.live).toBe(0);
   await tapAction(page, 'resume');
-  await page.clock.runFor(7600);
+  await advanceSeasonalFrames(page, 228);
   expect((await snapshot(page)).effects.kinds['bird'] ?? 0).toBeGreaterThan(0);
 });

@@ -32,6 +32,13 @@ Restart používá stávající `JourneySave` se stejným `schemaVersion`, `cont
 
 Regrese review dev-hud-2 ověřují úplný výběr fallback textu a nepotlačené kontextové menu, nedokončenou píšťalu přes oba úspěšné i odmítnuté restarty, uvolnění audio rozpočtu bez dvojího uvolnění při pozdním `ended` a reset ambientní události i zlomkových emisních hodin. Browserový průchod ověřuje novou počáteční prodlevu ambientního života ve skutečné cestě resetu jízdy. Formát uložených dat se těmito opravami nemění.
 
+Po D-027 už ambientní regrese nestubuje globální `Math.random`: částice
+sdílejí seedovaný proud jízdy, jehož čerpání závisí také na snímcích scenérie.
+Používá existující sezónní fixture od ticku 0, seed 123 a pevné 30Hz kroky
+(240 před restartem, 228 po pokračování, tedy původních 8 a 7,6 s).
+Jeden pozastavený krok po restartu provede skutečný reset scény; test dál
+vyžaduje nulové živé efekty a následný návrat ptáků. Produkční chování se nemění.
+
 ## Sloučení s world v2 (2026-10-14)
 
 Restart před `interrupt()` a přímým zápisem nové cesty ukončí dočasnou diagnostickou jízdu přes `endDiagnosticRide()` a zahodí její lokátor. Běžný save tak nikdy nepřevezme testovací scénu a pozdější návrat nemůže obnovit starou rodičovskou cestu. Regrese v `seedRestart.test.ts` ověřuje nový primár i následný návrat; `world-diagnostics.spec.ts` prochází oba restarty z dočasné scény a obnovu stránky. Schéma save a verze generátoru se tímto sloučením nemění.
