@@ -45,6 +45,95 @@ vi.mock('phaser', () => ({
 type Point = { x: number; y: number };
 afterEach(() => vi.unstubAllGlobals());
 
+it.each([0, 1, 2])(
+  'SCN-RD01: a road patrol leaves and returns to a stopped view with animation budget %i',
+  (budget) => {
+    const seed = 123,
+      k = 3,
+      scenery = chunkScenery(seed, k, worldPlacementCatalog);
+    const car = scenery.props.find((prop) => prop.roadPath);
+    if (!car?.motion) throw new Error('road patrol witness missing');
+    scenery.props = [
+      {
+        ...car,
+        id: 'budget-owner',
+        phase: 0.25,
+        motion: { ...car.motion, rangeU: 10 },
+      },
+      { ...car, phase: 0.25 },
+    ];
+    const drawn = drawingScene();
+    const table = buildArcLengthTable(
+      generateTrackProfile(seed, k),
+      k,
+      1024,
+      8,
+    );
+    const view = new ChunkView(
+      drawn.scene,
+      table,
+      seed,
+      scenery,
+      { texture: 'world', pxPerU: 1 },
+      {
+        backGround: 0,
+        backProps: 1,
+        ground: 2,
+        track: 3,
+        train: 4,
+        wires: 5,
+        nearProps: 6,
+      },
+    );
+    const sample = () => {
+      const actor = view.roadVehicles.find((actor) => actor.id === car.id);
+      if (!actor) throw new Error('road patrol image missing');
+      return actor;
+    };
+    view.update(0);
+    const initial = sample();
+    const xU = initial.worldXU - k * 1024;
+    const viewport = { left: xU - 1, right: xU + 1 };
+    const legSec = car.motion.rangeU / car.motion.speedUPerSec;
+    const outsideCount = view.update(
+      legSec / 2,
+      undefined,
+      1,
+      0,
+      budget,
+      viewport,
+    );
+    const outside = sample();
+    const outsideDiagnostic = view.animatedObjectCount;
+    const returnedCount = view.update(
+      legSec,
+      undefined,
+      1,
+      0,
+      budget,
+      viewport,
+    );
+    const returned = sample();
+
+    expect(returned.worldXU).toBeCloseTo(initial.worldXU);
+    expect(outside.worldXU - k * 1024).toBeGreaterThan(viewport.right + 60);
+    expect(outsideCount).toBe(Math.min(budget, 1));
+    expect(outsideDiagnostic).toBe(outsideCount);
+    expect(returnedCount).toBe(Math.min(budget, 2));
+    expect(view.animatedObjectCount).toBe(returnedCount);
+    expect(outside.wheelAngleRad).toBe(initial.wheelAngleRad);
+    expect(outside.frontX).toBe(initial.frontX);
+    if (budget < 2) {
+      expect(returned.wheelAngleRad).toBe(initial.wheelAngleRad);
+      expect(returned.frontX).toBe(initial.frontX);
+    } else {
+      expect(returned.wheelAngleRad).not.toBe(initial.wheelAngleRad);
+      expect(returned.frontX * initial.frontX).toBeLessThan(0);
+    }
+    view.destroy();
+  },
+);
+
 it('SCN-RD06: seed 1/x 16896 draws separated motorway carriageways around a green median', () => {
   const sc = chunkScenery(1, 16, worldPlacementCatalog),
     drawn = drawingScene();
@@ -1198,5 +1287,17 @@ it('SEA-01 / roads-6: a metadata-free sled faces its measured displacement on bo
   }
   expect([...directions].sort()).toEqual([-1, 1]);
   expect(moving).toBeGreaterThan(190);
+  const frozenXU = image.x;
+  expect(
+    view.update(20, undefined, 1, 0, 1, {
+      left: frozenXU + 1000,
+      right: frozenXU + 1100,
+    }),
+  ).toBe(0);
+  expect(image.x).toBe(frozenXU);
+  expect(view.update(30, undefined, 1, 0, 0)).toBe(0);
+  expect(image.x).toBe(frozenXU);
+  expect(view.update(30.1)).toBe(1);
+  expect(Math.abs(image.x - frozenXU)).toBeLessThanOrEqual(0.6 + 1e-9);
   view.destroy();
 });

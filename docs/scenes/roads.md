@@ -21,6 +21,10 @@ místního profilu zadního terénu, nikoli obdélníkového okraje pečené tex
 přesahují i do sousedních slotů a mají přednost před dekorativní dopravou.
 Auta se obracejí jen ve své dekorativní patrole; nejde o dopravní navigaci.
 Nesmějí přeskakovat mezi chunkovými fragmenty ani ztratit cestu pod koly.
+Při stojícím vlaku a kameře auto projede mimo záběr a po obratu se vrátí.
+Poloha silniční patroly dál sleduje simulační čas i mimo 60u viditelný
+okraj a při vyčerpaném rozpočtu animací; kola, čelo a výfuk se aktualizují
+jen ve viditelném rozsahu s přiděleným animačním místem.
 
 ## Vlastnictví ulic osady — amendment 13
 

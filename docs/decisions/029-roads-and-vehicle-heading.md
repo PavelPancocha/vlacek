@@ -81,6 +81,21 @@ Kamera nesmí být vstupem orientace. Lodní symetrické trupy neměly označeno
 
 ## Kompatibilita a ověření
 
+### PR #13 — návrat silniční patroly do záběru (2026-10-16)
+
+`ChunkView.update()` nejdřív přepočítá polohu každého aktéra s `roadPath`
+z absolutního simulačního času, teprve potom zkouší viditelnost s okrajem
+60 u a rozpočet animací. Vyčerpání rozpočtu nesmí ukončit průchod před
+aktualizací poloh dalších silničních aktérů. Auto se tak po obratu vrátí
+do záběru i při stojícím vlaku a kameře. Kola, čelo a výfuk se dál
+aktualizují pouze ve viditelném rozsahu a s přiděleným animačním místem;
+samotný přepočet polohy místo nespotřebuje a nezvyšuje `animatedObjects`.
+Patroly bez `roadPath` ponechávají místní hodiny: mimo záběr nebo bez
+rozpočtu stojí a po návratu pokračují bez dohánění času. Regrese nad
+seedem 123 / chunkem 3 ověřuje návrat auta při rozpočtech 0/1/2, včetně
+předchozího aktéra spotřebovávajícího místo; sled seedu 1 / chunku 102
+hlídá zachování místních hodin. Generátor, katalog, save a ovládání se nemění.
+
 ### Roads-6 — návrat orientace sáňkaře (2026-10-15)
 
 Přehraný renderer omylem přeskočil natočení patrol bez `roadVehicleArt`.

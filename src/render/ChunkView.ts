@@ -1417,22 +1417,21 @@ export class ChunkView {
     };
     for (const moving of this.#moving) {
       const { image, prop, visual, heading } = moving;
-      if (!visible(image)) continue;
-      if (remaining-- <= 0) break;
-      this.#animatedLastFrame++;
-      const localTime = clock(image);
+      if (!prop.roadPath && (!visible(image) || remaining <= 0)) continue;
+      const patrolTimeSec = prop.roadPath ? timeSec : clock(image);
       const patrol = prop.motion;
       if (!patrol) continue;
       // Triangle wave over the patrol range, one leg per range length.
       const legs =
-        ((prop.roadPath ? timeSec : localTime) * patrol.speedUPerSec) /
-          patrol.rangeU +
-        2 * prop.phase;
+        (patrolTimeSec * patrol.speedUPerSec) / patrol.rangeU + 2 * prop.phase;
       const t = legs - 2 * Math.floor(legs / 2);
       const forward = t < 1;
       const offset = (forward ? t : 2 - t) * patrol.rangeU - patrol.rangeU / 2;
       const x = Math.max(0, Math.min(CHUNK_WIDTH_U, prop.xU + offset));
       this.#placeProp(image, prop, x);
+      if (prop.roadPath && !visible(image)) continue;
+      if (remaining-- <= 0) continue;
+      this.#animatedLastFrame++;
       const speed = (forward ? 1 : -1) * patrol.speedUPerSec;
       const asset = roadVehicleArt[prop.kind];
       if (!asset) {
