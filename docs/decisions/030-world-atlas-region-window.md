@@ -103,6 +103,8 @@ Příkazy a výsledky integrace, paměťová a snímková tabulka patří do př
 
 Atlasové E2E ponechávají API/source trace, ale průběžné JPEG/DOM snímkování při měření vypínají: GPU readback soutěží s měřeným uploadem. Obraz dokládají samostatná PNG po měřeném úseku. Farmový cold boot používá nativní hodiny; virtuální hodiny se instalují až po připravení atlasů pro následné scénové kroky. Lhůty, počet workerů a podmínky úspěchu se nemění; jedinými výjimkami jsou 15 s pro publikaci po změně měřítka a `test.slow()` testu seed 1 (viz Časové řezy).
 
+**Pravidlo testů po D-019 (rozhodnutí vlastníka integrate-5, 2026-10-16).** Kontroly vykresleného stavu čekají na publikaci pomocí existujícího `waitForWorldAtlases`; záměrný fallback bez vozidlového artu používá stejnou podmínku bez požadavku na `vehicleAtlas`. Testy „od prvních snímků“ čekají u volajícího přes `page.waitForFunction` na `hidden` clony a potom vzorkují prvních 20 snímků: clona zmizí až po `rideFramesDrawn++` a `worldDrawn()`, nikoli po pouhé přípravě artu. Sampler ani kontrola celého vlaku nečekají na počet vykreslených vozidel. Nahrazuje se pouze synchronní předpoklad D-019; akcelerace zůstává nezávislá na kresbě, `driveUntilMoving`, aserce, timeouty, retries a `test.slow` se nemění. Případy závislé pouze na zátěži při dvou workerech (integrate-4 případy 4/5/9/17/25/34/38/43/44/48) se stejně jako H0 vykazují samostatně; nepřidává se jim synchronizace a rozhoduje CI v osmi shardech.
+
 ## Integrate-4: publikace a původní diagnostický kontrakt
 
 `pending` zahrnuje také hotové world/backdrop stránky čekající na frame-boundary

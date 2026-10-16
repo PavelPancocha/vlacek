@@ -343,6 +343,11 @@ test.describe('user path', () => {
   }) => {
     await buildLongestTrain(page);
     await tapAction(page, 'depart');
+    // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+    );
     await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
     const state = await snapshot(page);
     expect(state.renderedVehicles).toBe(state.vehicles);
@@ -356,6 +361,11 @@ test.describe('user path', () => {
     test.setTimeout(60_000);
     await buildLongestTrain(page, '?debug=1&seed=77');
     await tapAction(page, 'depart');
+    // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+    );
     await driveUntilMoving(page, 60);
     // ~8 s at full speed crosses several grade changes of seed 77.
     const boxes = [];
@@ -369,7 +379,12 @@ test.describe('user path', () => {
     await page.setViewportSize({ width: 1024, height: 600 });
     await expect.poll(async () => (await snapshot(page)).screen).toBe('PAUSED');
     await tapAction(page, 'resume');
-    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 10));
+    // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+    );
+    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
     expect((await snapshot(page)).vehicles).toBe(vehicles);
   });
 
@@ -401,7 +416,12 @@ test.describe('user path', () => {
     });
     await tapAction(page, 'continue');
     await tapAction(page, 'resume');
-    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 10));
+    // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+    );
+    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
   });
 
   test('UI-04: a depot copy from pause keeps the journey until Vyjet', async ({

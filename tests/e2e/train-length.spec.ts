@@ -39,7 +39,11 @@ test('D-028/TRN-07: build, ride and restore the exact 2000 u train through cross
   for (let i = 1; i < order.length; i++)
     expect(order[i]?.x).toBeLessThan(order[i - 1]?.x ?? -Infinity);
   await tapAction(page, 'depart');
-  await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 10));
+  // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+  await page.waitForFunction(
+    () => document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+  );
+  await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
   expect((await snapshot(page)).consistLengthU).toBe(2000);
   await page.mouse.move(700, 200);
   await page.mouse.down();
@@ -102,7 +106,11 @@ test('D-028/TRN-07: build, ride and restore the exact 2000 u train through cross
   await page.reload();
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
-  await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 10));
+  // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+  await page.waitForFunction(
+    () => document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+  );
+  await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
   const restored = await snapshot(page);
   expect(restored.vehicles).toBe(13);
   expect(restored.artVehicles).toBe(13);
@@ -150,7 +158,12 @@ for (const [width, height] of [
       expect(box.height).toBeGreaterThanOrEqual(64);
     }
     await tapAction(page, 'depart');
-    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 10));
+    // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+    );
+    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
     expect((await snapshot(page)).artVehicles).toBe(13);
   });
 }

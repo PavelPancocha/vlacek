@@ -3,7 +3,7 @@ import { gameConfig } from '../../src/config/gameConfig.ts';
 import { trainZoom } from '../../src/render/cameraFraming.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 import { vehicleArt } from '../../src/content/artManifest.ts';
-import { snapshot, tapAction } from './helpers.ts';
+import { snapshot, tapAction, waitForWorldAtlases } from './helpers.ts';
 
 /** First run in world 123 with this locomotive and two wagons. */
 async function departWith(page: Page, locomotive: string): Promise<void> {
@@ -14,6 +14,8 @@ async function departWith(page: Page, locomotive: string): Promise<void> {
     await tapAction(page, `add:${wagon}`);
   await tapAction(page, 'depart');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  // D-019 drew contact synchronously on depart; D-030 must publish the art first.
+  await waitForWorldAtlases(page);
 }
 
 /** Restore world 123 before its chunk 4 bridge and chunk 6 tunnel. */
@@ -57,6 +59,8 @@ async function continueBeforeBridge(
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  // D-019 drew contact synchronously on resume; D-030 must publish the art first.
+  await waitForWorldAtlases(page);
 }
 
 test.describe('electric locomotive and catenary (doc 03 §9, TRN-08, D-016)', () => {

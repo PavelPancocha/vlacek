@@ -35,6 +35,23 @@ export async function waitForWorldAtlases(page: Page): Promise<void> {
   });
 }
 
+export async function waitForWorldAtlasesWithoutVehicleArt(
+  page: Page,
+): Promise<void> {
+  // D-019 loaded world art before the ride; D-030 publishes it even after vehicle art fails.
+  await page.waitForFunction(() => {
+    const state = (
+      window as unknown as { __vlacek?: { snapshot(): DebugSnapshot } }
+    ).__vlacek?.snapshot();
+    return (
+      state !== undefined &&
+      !state.worldAtlases.pending &&
+      state.artAtlas !== undefined &&
+      state.worldAtlases.missingFrames.length === 0
+    );
+  });
+}
+
 export async function tapAction(page: Page, action: string): Promise<void> {
   await page.locator(`[data-action="${action}"]`).first().click();
 }
@@ -166,6 +183,8 @@ export async function restoredTrain(
   await page.goto('./?debug=1');
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
+  // D-019 published vehicle art synchronously on resume; D-030 requires publication first.
+  await waitForWorldAtlases(page);
   await expect
     .poll(async () => (await snapshot(page)).artVehicles)
     .toBe(ids.length + 1);
