@@ -13,6 +13,10 @@ export default defineConfig({
   forbidOnly: true,
   retries: 0,
   fullyParallel: true,
+  // One browser per CI runner: two software-WebGL Chromiums on its four
+  // vCPUs starved D-030 atlas publication past the 30 s test budget, while
+  // every such test passes alone. More shards keep the job time instead.
+  workers: process.env['CI'] ? 1 : undefined,
   reporter: process.env['CI']
     ? [
         ['list'],

@@ -154,6 +154,15 @@ Elektrický SCN-TB09 se dělí na tunelové závěsy (`from + 80`, `from + 2400`
 žádné timeouty, retries ani `test.slow()` se nemění. Tituly mají přípony
 `(entry)` / `(exit)` a `(tunnel hangers)` / `(bridge consoles)`.
 
+**Jeden prohlížeč na CI runner (2026-10-16).** Ani rozdělení nestačilo:
+v běhu 38920234409 přetáhly 30 s tabletové WebGL varianty obou ústí a
+resize `art.spec` na tabletu, předtím desktopové varianty a H0. Každý z
+nich samostatně prochází; selhávající sada se mezi běhy měnila. Příčinou je
+souběh dvou Chromií se softwarovým WebGL na čtyřech vCPU runneru, který
+zdržuje publikaci D-030. CI proto spouští `workers: 1`
+(`tests/e2e/playwright.config.ts`) v šestnácti shardech místo osmi; lokální
+příkazy s `--workers=2` se nemění. Lhůty, retries ani aserce se nemění.
+
 ## Integrate-4: publikace a původní diagnostický kontrakt
 
 `pending` zahrnuje také hotové world/backdrop stránky čekající na frame-boundary
