@@ -6,7 +6,7 @@ import { journeyArtKeys } from '../../src/render/atlasPacking.ts';
 import { expect, test } from '@playwright/test';
 import { isBackdropPart, worldParts } from '../../src/content/worldArt.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, startRide, tapAction } from './helpers.ts';
+import { snapshot, startRide, tapAction, waitForRideStart } from './helpers.ts';
 
 const mainFrames = (state: DebugSnapshot) =>
   worldAtlasWindowKeys(worldParts, state.worldAtlases.regions).filter(
@@ -249,6 +249,7 @@ test('H0: mixed groups rebuild the vehicle atlas on depot exit and restore while
   await tapAction(page, 'add:cargo_container');
   const loadedSources = sourceRequests.length;
   await tapAction(page, 'depart');
+  await waitForRideStart(page);
   await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(6);
   const next = await snapshot(page);
   expect(next.artVehicles).toBe(next.vehicles);
@@ -258,6 +259,7 @@ test('H0: mixed groups rebuild the vehicle atlas on depot exit and restore while
   expect(sourceRequests.length).toBe(loadedSources);
   await page.reload();
   await tapAction(page, 'continue');
+  await waitForRideStart(page);
   await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(6);
   const restored = await snapshot(page);
   // The restored journey stays paused while its art is drawn.

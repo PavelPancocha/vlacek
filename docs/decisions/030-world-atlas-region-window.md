@@ -109,7 +109,7 @@ Příkazy a výsledky integrace, paměťová a snímková tabulka patří do př
 
 Atlasové E2E ponechávají API/source trace, ale průběžné JPEG/DOM snímkování při měření vypínají: GPU readback soutěží s měřeným uploadem. Obraz dokládají samostatná PNG po měřeném úseku. Farmový cold boot používá nativní hodiny; virtuální hodiny se instalují až po připravení atlasů pro následné scénové kroky. Původní atlasové výjimky jsou 15 s pro publikaci po změně měřítka a `test.slow()` testu seed 1 (viz Časové řezy); pozdější výjimku pro start a obnovu jízdy popisuje rozhodnutí integrate-6 níže.
 
-**Původní pravidlo testů po D-019 (rozhodnutí vlastníka integrate-5, 2026-10-16).** Kontroly vykresleného stavu čekají na publikaci pomocí existujícího `waitForWorldAtlases`; záměrný fallback bez vozidlového artu používá stejnou podmínku bez požadavku na `vehicleAtlas`. Testy „od prvních snímků“ čekají u volajícího přes `page.waitForFunction` na `hidden` clony a potom vzorkují prvních 20 snímků: clona zmizí až po `rideFramesDrawn++` a `worldDrawn()`, nikoli po pouhé přípravě artu. Sampler ani kontrola celého vlaku nečekají na počet vykreslených vozidel. Nahrazuje se pouze synchronní předpoklad D-019; akcelerace zůstává nezávislá na kresbě, `driveUntilMoving`, aserce, timeouty, retries a `test.slow` se nemění. Případy závislé pouze na zátěži při dvou workerech (integrate-4 případy 4/5/9/17/25/34/38/43/44/48) se stejně jako H0 vykazují samostatně; nepřidává se jim synchronizace a rozhoduje CI v osmi shardech.
+**Původní pravidlo testů po D-019 (rozhodnutí vlastníka integrate-5, 2026-10-16).** Kontroly vykresleného stavu čekají na publikaci pomocí existujícího `waitForWorldAtlases`; záměrný fallback bez vozidlového artu používá stejnou podmínku bez požadavku na `vehicleAtlas`. Testy „od prvních snímků“ čekají u volajícího přes `page.waitForFunction` na `hidden` clony a potom vzorkují prvních 20 snímků: clona zmizí až po `rideFramesDrawn++` a `worldDrawn()`, nikoli po pouhé přípravě artu. Sampler ani kontrola celého vlaku nečekají na počet vykreslených vozidel. Nahrazuje se pouze synchronní předpoklad D-019; akcelerace zůstává nezávislá na kresbě, `driveUntilMoving`, aserce, timeouty, retries a `test.slow` se nemění. Případy závislé pouze na zátěži při dvou workerech (integrate-4 případy 4/5/9/17/25/34/38/43/44/48) se vykazují samostatně; nepřidává se jim synchronizace a rozhoduje CI v osmi shardech. H0 zůstává historicky citlivý na zátěž, ale po CI běhu 38915343324 má nyní po výjezdu z depa a obnově startovní čekání podle rozhodnutí integrate-6 níže (ci-followup-1, 2026-10-16).
 
 **Start a obnova jízdy (rozhodnutí vlastníka integrate-6, 2026-10-16).**
 Vlastník přijal přibližně dvousekundovou clonu po Vyjet jako cenu paměťové
@@ -132,12 +132,27 @@ Volání jsou pouze po startu/obnově a před stávající kontrolou:
 | `oncoming.spec.ts` — `continueBeforeSecondTrack` po `RIDING`    | SCN-09, následný výjezd NPC a `secondaryTrackViews > 0`; sdílený PWA-10 ponechává svůj další fallback waiter.                                    |
 | `structures.spec.ts` — obnova uvnitř tunelu po `PAUSED`         | Stav neprůhledného tunelu s `alpha === 1`.                                                                                                       |
 | `ride-reveal.spec.ts` — mid-biome obnova po `continue` do pauzy | `backdrop.currentBiome === countryside`.                                                                                                         |
+| `art.spec.ts` — H0 mixed groups po `depart` z depa              | `artVehicles === 6`; stejný start nové jízdy jako ve `startRide`.                                                                                |
+| `art.spec.ts` — H0 mixed groups po obnovení přes `continue`     | `artVehicles === 6`; následná aserce `PAUSED` zůstává.                                                                                           |
 
 Navazující polly ponechávají své původní lhůty (výchozích 5 s; SCN-09 má
 vlastní dosavadní poll výjezdu NPC). Aserce, samplery prvních snímků,
 `observeReveal`, `driveUntilMoving`, retries a `test.slow()` se nemění.
 Ostatní synchronizace z `4718efe`, včetně devíti čekání před vzorkováním
 prvních snímků, zůstávají. Další zvýšení lhůt toto rozhodnutí nepovoluje.
+
+**Rozdělení dlouhých scén (ci-followup-1, 2026-10-16).** CI běh
+38915343324 na `e9ba2a3` překročil 30 s ve dvou desktopových WebGL testech
+`long-structures.spec.ts`: součet obnovy, diagnostického skoku a publikací
+po přesunech byl delší než limit celého testu. Test SCN-TB04–09 nyní sdílí
+lokální přípravu s lokátorem a běží zvlášť pro vstup (`from + 80`,
+`from + 2500`) a výstup (`to + 80`, `to + 2100`). Vnitřní poloha
+`from + 2500` zachovává emisi částic na švu i kontrolu zakrytých pixelů.
+Elektrický SCN-TB09 se dělí na tunelové závěsy (`from + 80`, `from + 2400`,
+`to + 80`) a mostní konzoly (obnova u nalezeného mostu, jediný přesun na
+`consoleX + 100`). Hledání svědků, všechny aserce a oba renderery zůstávají;
+žádné timeouty, retries ani `test.slow()` se nemění. Tituly mají přípony
+`(entry)` / `(exit)` a `(tunnel hangers)` / `(bridge consoles)`.
 
 ## Integrate-4: publikace a původní diagnostický kontrakt
 

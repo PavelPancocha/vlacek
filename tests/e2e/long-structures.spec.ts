@@ -3,7 +3,7 @@ import {
   arcAtX,
 } from '../../src/domain/world/ArcLengthTable.ts';
 import { generateTrackProfile } from '../../src/domain/world/TrackProfile.ts';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { snapshot, tapAction, waitForWorldAtlases } from './helpers.ts';
 import { longestMixedConsist } from './perfConsist.ts';
 import {
@@ -24,6 +24,44 @@ import { railYUpU } from '../../src/domain/world/SceneryGeometry.ts';
 import { bankHeightU } from '../../src/domain/world/Terrain.ts';
 import { worldParts, TRACK_BED_DEPTH_U } from '../../src/content/worldArt.ts';
 import { regionAt } from '../../src/domain/world/Regions.ts';
+
+async function restoreLocatedLongTunnel(page: Page, renderer: string) {
+  await probeScene(page);
+  const consist = longestMixedConsist('steam_local');
+  await restore(
+    page,
+    renderer,
+    0,
+    200,
+    consist.wagons.map((w) => w.definitionId),
+    1,
+  );
+  // Exercise the real temporary diagnostic journey, not a second scene fixture.
+  await page.clock.install();
+  await tapAction(page, 'pause');
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60000));
+  for (let i = 0; i < 5; i++) await tapAction(page, 'dev-build');
+  await page.getByText('Testovací scény', { exact: true }).click();
+  await tapAction(page, 'dev-world-scene:tunnel');
+  await page.clock.resume();
+  await expect
+    .poll(async () => (await snapshot(page)).worldDebug.location?.kind)
+    .toBe('tunnel');
+  const location = (await snapshot(page)).worldDebug.location;
+  if (!location) throw new Error('locator missing');
+  await page.waitForFunction((x) => {
+    const ride = window.__tunnelProbe.ride;
+    return Math.abs(ride.sample(ride.headS).x - (x - 640)) < 2;
+  }, location.worldXU);
+  const k = Math.floor(location.worldXU / 1024),
+    site = tunnelSite(1, k);
+  if (!site) throw new Error('long tunnel missing');
+  expect(site.toX - site.fromX).toBeGreaterThanOrEqual(3072);
+  expect((await snapshot(page)).consistLengthU).toBe(2000);
+  const from = k * 1024 + site.fromX,
+    to = k * 1024 + site.toX;
+  return { from, to };
+}
 
 for (const renderer of ['canvas', 'webgl'])
   test(`SCN-TB04 D-030 ${renderer}: art-enabled long tunnel publishes immutable rock`, async ({
@@ -114,114 +152,84 @@ for (const renderer of ['canvas', 'webgl'])
   });
 
 for (const renderer of ['canvas', 'webgl'])
-  test(`SCN-TB04–09 ${renderer}: locator, 2000u train covered, both mouths and chunk seams`, async ({
-    page,
-  }) => {
-    await probeScene(page);
-    const consist = longestMixedConsist('steam_local');
-    await restore(
+  for (const mouth of ['entry', 'exit'])
+    test(`SCN-TB04–09 ${renderer}: locator, 2000u train covered, both mouths and chunk seams (${mouth})`, async ({
       page,
-      renderer,
-      0,
-      200,
-      consist.wagons.map((w) => w.definitionId),
-      1,
-    );
-    // Exercise the real temporary diagnostic journey, not a second scene fixture.
-    await page.clock.install();
-    await tapAction(page, 'pause');
-    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60000));
-    for (let i = 0; i < 5; i++) await tapAction(page, 'dev-build');
-    await page.getByText('Testovací scény', { exact: true }).click();
-    await tapAction(page, 'dev-world-scene:tunnel');
-    await page.clock.resume();
-    await expect
-      .poll(async () => (await snapshot(page)).worldDebug.location?.kind)
-      .toBe('tunnel');
-    const location = (await snapshot(page)).worldDebug.location;
-    if (!location) throw new Error('locator missing');
-    await page.waitForFunction((x) => {
-      const ride = window.__tunnelProbe.ride;
-      return Math.abs(ride.sample(ride.headS).x - (x - 640)) < 2;
-    }, location.worldXU);
-    const k = Math.floor(location.worldXU / 1024),
-      site = tunnelSite(1, k);
-    if (!site) throw new Error('long tunnel missing');
-    expect(site.toX - site.fromX).toBeGreaterThanOrEqual(3072);
-    expect((await snapshot(page)).consistLengthU).toBe(2000);
-    const from = k * 1024 + site.fromX,
-      to = k * 1024 + site.toX;
-    for (const headX of [from + 80, from + 2500, to + 80, to + 2100]) {
-      await page.evaluate((x) => {
-        const { ride } = window.__tunnelProbe;
-        ride.step = () => {};
-        while (ride.track.lastChunkIndex < Math.floor(x / 1024) + 3)
-          ride.track.ensureRange(ride.track.startS, ride.track.endS + 1);
-        ride.headS = ride.track.sFromLocalX(
-          Math.floor(x / 1024),
-          x - Math.floor(x / 1024) * 1024,
-        );
-        ride.resetMotion();
-      }, headX);
-      await renderedFrame(page);
-      await waitForWorldAtlases(page);
-      const state = await snapshot(page);
-      const expectedCover = await page.evaluate(
-        ({ from, to }) => {
-          const { ride } = window.__tunnelProbe,
-            front = ride.sample(ride.frontS).x,
-            tail = ride.sample(ride.tailS).x;
-          return (
-            Math.max(0, Math.min(front, to) - Math.max(tail, from)) /
-            (front - tail)
-          );
-        },
-        { from, to },
-      );
-      expect(state.audioDetails.covered).toBeCloseTo(expectedCover, 5);
-      const tunnels = state.tunnels;
-      if (headX === from + 2500) {
-        expect(
-          tunnels.some(
-            (t) =>
-              t.train === 'inside' && t.vehicles.every((v) => v === 'inside'),
-          ),
-        ).toBe(true);
-        // Old smoke/spark particles straddle a technical seam in the opaque core.
-        await page.evaluate(
-          (x) => {
-            const { ride, field } = window.__tunnelProbe;
-            const s = ride.track.sFromLocalX(Math.floor(x / 1024), x % 1024);
-            field.emit(0, x, -ride.sample(s).y - 80, 1, { depth: 7.55 });
-          },
-          Math.ceil((from + 700) / 1024) * 1024,
-        );
-        const box = state.trainBox;
-        if (!box) throw new Error('whole train bounds missing');
-        await expectCoveredPixels(
-          page,
-          {
-            x: Math.floor(box.left),
-            y: Math.floor(box.top),
-            width: Math.ceil(box.right - box.left),
-            height: Math.ceil(box.bottom - box.top),
-          },
-          7,
-        );
-      } else if (headX === from + 80 || headX === to + 80) {
-        expect(tunnels.some((t) => t.train === 'partly')).toBe(true);
-        const portal = headX === from + 80 ? from : to;
-        const box = await page.evaluate((x) => {
+    }) => {
+      const { from, to } = await restoreLocatedLongTunnel(page, renderer);
+      const positions =
+        mouth === 'entry' ? [from + 80, from + 2500] : [to + 80, to + 2100];
+      for (const headX of positions) {
+        await page.evaluate((x) => {
           const { ride } = window.__tunnelProbe;
-          const rail = ride.sample(
-            ride.track.sFromLocalX(Math.floor(x / 1024), x % 1024),
+          ride.step = () => {};
+          while (ride.track.lastChunkIndex < Math.floor(x / 1024) + 3)
+            ride.track.ensureRange(ride.track.startS, ride.track.endS + 1);
+          ride.headS = ride.track.sFromLocalX(
+            Math.floor(x / 1024),
+            x - Math.floor(x / 1024) * 1024,
           );
-          return { x: x - 12, y: -rail.y - 70, width: 24, height: 30 };
-        }, portal);
-        await expectCoveredPixels(page, await worldCrop(page, box), 7, false);
-      } else expect(tunnels.every((t) => t.train === 'outside')).toBe(true);
-    }
-  });
+          ride.resetMotion();
+        }, headX);
+        await renderedFrame(page);
+        await waitForWorldAtlases(page);
+        const state = await snapshot(page);
+        const expectedCover = await page.evaluate(
+          ({ from, to }) => {
+            const { ride } = window.__tunnelProbe,
+              front = ride.sample(ride.frontS).x,
+              tail = ride.sample(ride.tailS).x;
+            return (
+              Math.max(0, Math.min(front, to) - Math.max(tail, from)) /
+              (front - tail)
+            );
+          },
+          { from, to },
+        );
+        expect(state.audioDetails.covered).toBeCloseTo(expectedCover, 5);
+        const tunnels = state.tunnels;
+        if (headX === from + 2500) {
+          expect(
+            tunnels.some(
+              (t) =>
+                t.train === 'inside' && t.vehicles.every((v) => v === 'inside'),
+            ),
+          ).toBe(true);
+          // Old smoke/spark particles straddle a technical seam in the opaque core.
+          await page.evaluate(
+            (x) => {
+              const { ride, field } = window.__tunnelProbe;
+              const s = ride.track.sFromLocalX(Math.floor(x / 1024), x % 1024);
+              field.emit(0, x, -ride.sample(s).y - 80, 1, { depth: 7.55 });
+            },
+            Math.ceil((from + 700) / 1024) * 1024,
+          );
+          const box = state.trainBox;
+          if (!box) throw new Error('whole train bounds missing');
+          await expectCoveredPixels(
+            page,
+            {
+              x: Math.floor(box.left),
+              y: Math.floor(box.top),
+              width: Math.ceil(box.right - box.left),
+              height: Math.ceil(box.bottom - box.top),
+            },
+            7,
+          );
+        } else if (headX === from + 80 || headX === to + 80) {
+          expect(tunnels.some((t) => t.train === 'partly')).toBe(true);
+          const portal = headX === from + 80 ? from : to;
+          const box = await page.evaluate((x) => {
+            const { ride } = window.__tunnelProbe;
+            const rail = ride.sample(
+              ride.track.sFromLocalX(Math.floor(x / 1024), x % 1024),
+            );
+            return { x: x - 12, y: -rail.y - 70, width: 24, height: 30 };
+          }, portal);
+          await expectCoveredPixels(page, await worldCrop(page, box), 7, false);
+        } else expect(tunnels.every((t) => t.train === 'outside')).toBe(true);
+      }
+    });
 
 for (const renderer of ['canvas', 'webgl'])
   test(`SCN-TB01/03/09 ${renderer}: real viaduct and truss drawings with supports`, async ({
@@ -470,128 +478,132 @@ for (const renderer of ['canvas', 'webgl'])
   });
 
 for (const renderer of ['canvas', 'webgl'])
-  test(`SCN-TB09 ${renderer}: electric long train under bridge consoles and through rock-tunnel hangers`, async ({
-    page,
-  }) => {
-    await probeScene(page);
-    let bridge: ReturnType<typeof bridgeSite>,
-      tunnel: ReturnType<typeof tunnelSite>;
-    for (let k = 4; k < 480; k++) {
-      const b = bridgeSite(1, k),
-        t = tunnelSite(1, k);
-      if (b?.variant === 'steel') bridge ??= b;
-      if (t?.rock) tunnel ??= t;
-    }
-    if (
-      !bridge ||
-      !tunnel ||
-      bridge.fromX === undefined ||
-      bridge.toX === undefined
-    )
-      throw new Error('electric witnesses missing');
-    const wagons = electric2000uWagons();
-    await restore(
+  for (const section of ['tunnel hangers', 'bridge consoles'])
+    test(`SCN-TB09 ${renderer}: electric long train under bridge consoles and through rock-tunnel hangers (${section})`, async ({
       page,
-      renderer,
-      tunnel.chunkIndex,
-      128,
-      wagons,
-      1,
-      'electric_retro',
-    );
-    const move = async (x: number) => {
-      await page.evaluate((x) => {
-        const { ride } = window.__tunnelProbe;
-        ride.step = () => {};
-        while (ride.track.lastChunkIndex < Math.floor(x / 1024) + 3)
-          ride.track.ensureRange(ride.track.startS, ride.track.endS + 1);
-        ride.headS = ride.track.sFromLocalX(Math.floor(x / 1024), x % 1024);
-        ride.resetMotion();
-      }, x);
-      await renderedFrame(page);
-      await waitForWorldAtlases(page);
-      const state = await snapshot(page);
-      expect(state.catenary.electrified).toBe(true);
-      expect(state.consistLengthU).toBe(2000);
-      expect(state.catenary.pantographGapU ?? Infinity).toBeLessThan(0.5);
-      expect(state.catenary.outOfRange).toBe(0);
-    };
-    const from = tunnel.chunkIndex * 1024 + tunnel.fromX,
-      to = tunnel.chunkIndex * 1024 + tunnel.toX;
-    for (const x of [from + 80, from + 2400, to + 80]) {
-      await move(x);
-      const contacts = await page.evaluate(() => {
-        const { ride, scene } = window.__tunnelProbe;
-        const player = scene.children.list.find(
-          (o) => o.depth === 7 && typeof o.x === 'number',
-        );
-        if (player?.x === undefined) throw new Error('player missing');
-        const origin = ride.vehiclePose(0).centerX - player.x;
-        return scene.children.list
-          .flatMap((o) => o.list ?? [])
-          .filter((o) => o.frame?.name === 'tunnel.contact')
-          .map((o) => {
-            const px = ((o.frame?.width ?? 2) - 2) / 128;
-            const p = o
-              .getWorldTransformMatrix()
-              .transformPoint(
-                1 + 64 * px - o.displayOriginX,
-                1 + 11 * px - o.displayOriginY,
-              );
-            return { x: p.x + origin, y: p.y };
-          });
-      });
-      const near = contacts.filter(
-        (p) => p.x >= x - 240 && p.x <= x + 240 && p.x >= from && p.x <= to,
-      );
-      const expectedHangers = catenaryPoleXs(
-        1,
-        Math.max(from, x - 240),
-        Math.min(to, x + 240),
-      ).filter((at) => catenarySupport(1, at) === 'hanger');
-      expect(expectedHangers.length).toBeGreaterThan(0);
-      expect(near.map((p) => Math.round(p.x)).sort((a, b) => a - b)).toEqual(
-        expectedHangers,
-      );
-      for (const p of near) {
-        expect(catenarySupport(1, Math.round(p.x))).toBe('hanger');
-        expect(Math.abs(p.y + railYUpU(1, p.x) + 128)).toBeLessThan(0.01);
+    }) => {
+      await probeScene(page);
+      let bridge: ReturnType<typeof bridgeSite>,
+        tunnel: ReturnType<typeof tunnelSite>;
+      for (let k = 4; k < 480; k++) {
+        const b = bridgeSite(1, k),
+          t = tunnelSite(1, k);
+        if (b?.variant === 'steel') bridge ??= b;
+        if (t?.rock) tunnel ??= t;
       }
-      if (x === from + 2400)
-        expect(
-          (await snapshot(page)).tunnels.some((t) => t.train === 'inside'),
-        ).toBe(true);
-    }
-    const consoleX = catenaryPoleXs(
-      1,
-      bridge.chunkIndex * 1024 + bridge.fromX,
-      bridge.chunkIndex * 1024 + bridge.toX,
-    )[0];
-    if (consoleX === undefined)
-      throw new Error('bridge console witness missing');
-    await move(consoleX + 100);
-    const clamps = await page.evaluate(() => {
-      const { ride, scene } = window.__tunnelProbe;
-      const player = scene.children.list.find(
-        (o) => o.depth === 7 && typeof o.x === 'number',
+      if (
+        !bridge ||
+        !tunnel ||
+        bridge.fromX === undefined ||
+        bridge.toX === undefined
+      )
+        throw new Error('electric witnesses missing');
+      const wagons = electric2000uWagons();
+      await restore(
+        page,
+        renderer,
+        section === 'tunnel hangers' ? tunnel.chunkIndex : bridge.chunkIndex,
+        128,
+        wagons,
+        1,
+        'electric_retro',
       );
-      if (player?.x === undefined) throw new Error('player missing');
-      const origin = ride.vehiclePose(0).centerX - player.x;
-      return scene.children.list
-        .flatMap((o) => o.list ?? [])
-        .filter((o) => o.frame?.name === 'bridge.catenary-console')
-        .map((o) => {
-          const px = ((o.frame?.width ?? 2) - 2) / 36;
-          const p = o
-            .getWorldTransformMatrix()
-            .transformPoint(
-              1 + 27 * px - o.displayOriginX,
-              1 + 42 * px - o.displayOriginY,
+      const move = async (x: number) => {
+        await page.evaluate((x) => {
+          const { ride } = window.__tunnelProbe;
+          ride.step = () => {};
+          while (ride.track.lastChunkIndex < Math.floor(x / 1024) + 3)
+            ride.track.ensureRange(ride.track.startS, ride.track.endS + 1);
+          ride.headS = ride.track.sFromLocalX(Math.floor(x / 1024), x % 1024);
+          ride.resetMotion();
+        }, x);
+        await renderedFrame(page);
+        await waitForWorldAtlases(page);
+        const state = await snapshot(page);
+        expect(state.catenary.electrified).toBe(true);
+        expect(state.consistLengthU).toBe(2000);
+        expect(state.catenary.pantographGapU ?? Infinity).toBeLessThan(0.5);
+        expect(state.catenary.outOfRange).toBe(0);
+      };
+      if (section === 'tunnel hangers') {
+        const from = tunnel.chunkIndex * 1024 + tunnel.fromX,
+          to = tunnel.chunkIndex * 1024 + tunnel.toX;
+        for (const x of [from + 80, from + 2400, to + 80]) {
+          await move(x);
+          const contacts = await page.evaluate(() => {
+            const { ride, scene } = window.__tunnelProbe;
+            const player = scene.children.list.find(
+              (o) => o.depth === 7 && typeof o.x === 'number',
             );
-          return { x: p.x + origin, y: p.y };
+            if (player?.x === undefined) throw new Error('player missing');
+            const origin = ride.vehiclePose(0).centerX - player.x;
+            return scene.children.list
+              .flatMap((o) => o.list ?? [])
+              .filter((o) => o.frame?.name === 'tunnel.contact')
+              .map((o) => {
+                const px = ((o.frame?.width ?? 2) - 2) / 128;
+                const p = o
+                  .getWorldTransformMatrix()
+                  .transformPoint(
+                    1 + 64 * px - o.displayOriginX,
+                    1 + 11 * px - o.displayOriginY,
+                  );
+                return { x: p.x + origin, y: p.y };
+              });
+          });
+          const near = contacts.filter(
+            (p) => p.x >= x - 240 && p.x <= x + 240 && p.x >= from && p.x <= to,
+          );
+          const expectedHangers = catenaryPoleXs(
+            1,
+            Math.max(from, x - 240),
+            Math.min(to, x + 240),
+          ).filter((at) => catenarySupport(1, at) === 'hanger');
+          expect(expectedHangers.length).toBeGreaterThan(0);
+          expect(
+            near.map((p) => Math.round(p.x)).sort((a, b) => a - b),
+          ).toEqual(expectedHangers);
+          for (const p of near) {
+            expect(catenarySupport(1, Math.round(p.x))).toBe('hanger');
+            expect(Math.abs(p.y + railYUpU(1, p.x) + 128)).toBeLessThan(0.01);
+          }
+          if (x === from + 2400)
+            expect(
+              (await snapshot(page)).tunnels.some((t) => t.train === 'inside'),
+            ).toBe(true);
+        }
+      } else {
+        const consoleX = catenaryPoleXs(
+          1,
+          bridge.chunkIndex * 1024 + bridge.fromX,
+          bridge.chunkIndex * 1024 + bridge.toX,
+        )[0];
+        if (consoleX === undefined)
+          throw new Error('bridge console witness missing');
+        await move(consoleX + 100);
+        const clamps = await page.evaluate(() => {
+          const { ride, scene } = window.__tunnelProbe;
+          const player = scene.children.list.find(
+            (o) => o.depth === 7 && typeof o.x === 'number',
+          );
+          if (player?.x === undefined) throw new Error('player missing');
+          const origin = ride.vehiclePose(0).centerX - player.x;
+          return scene.children.list
+            .flatMap((o) => o.list ?? [])
+            .filter((o) => o.frame?.name === 'bridge.catenary-console')
+            .map((o) => {
+              const px = ((o.frame?.width ?? 2) - 2) / 36;
+              const p = o
+                .getWorldTransformMatrix()
+                .transformPoint(
+                  1 + 27 * px - o.displayOriginX,
+                  1 + 42 * px - o.displayOriginY,
+                );
+              return { x: p.x + origin, y: p.y };
+            });
         });
+        expect(clamps.length).toBeGreaterThan(0);
+        for (const p of clamps)
+          expect(Math.abs(p.y + railYUpU(1, p.x) + 128)).toBeLessThan(0.5);
+      }
     });
-    expect(clamps.length).toBeGreaterThan(0);
-    for (const p of clamps)
-      expect(Math.abs(p.y + railYUpU(1, p.x) + 128)).toBeLessThan(0.5);
-  });
