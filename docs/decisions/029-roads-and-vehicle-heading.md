@@ -97,8 +97,13 @@ vymazání nemění animační čas ani počítání objektů.
 Patroly bez `roadPath` ponechávají místní hodiny: mimo záběr nebo bez
 rozpočtu stojí a po návratu pokračují bez dohánění času. Regrese nad
 seedem 123 / chunkem 3 ověřuje návrat auta při rozpočtech 0/1/2, včetně
-předchozího aktéra spotřebovávajícího místo; sled seedu 1 / chunku 102
-hlídá zachování místních hodin. Generátor, katalog, save a ovládání se nemění.
+předchozího aktéra spotřebovávajícího místo. Testovací Graphics uchovává
+čáry kol a šipek i kruhy výfuku; `clear()` tuto kresbu vyprázdní. Sled
+animace → nulový rozpočet → animace vyžaduje kresbu přítomnou → prázdnou
+→ znovu přítomnou a kotvu šipky u aktuální polohy každého auta. Regrese
+odmítá chybějící vymazání při nulovém rozpočtu i vymazání až po kreslení.
+Sled seedu 1 / chunku 102 hlídá zachování místních hodin.
+Generátor, katalog, save a ovládání se nemění.
 
 ### Roads-6 — návrat orientace sáňkaře (2026-10-15)
 

@@ -136,17 +136,56 @@ it.each([0, 1, 2])(
     expect(animated.arrows).toBe(true);
     const roadGraphics = drawn.graphics.filter((g) => g.clearCalls > 0);
     expect(roadGraphics).toHaveLength(2);
+    for (const g of roadGraphics) {
+      expect(
+        g.retained.filter((c) => c.kind === 'line' && c.color === 0xe2e3df),
+      ).toHaveLength(2);
+    }
+    expect(
+      roadGraphics.flatMap((g) => g.retained).some((c) => c.kind === 'circle'),
+    ).toBe(true);
     const clears = roadGraphics.map((g) => g.clearCalls);
     expect(view.update(legSec + 0.2, undefined, 1, 0, 0, viewport)).toBe(0);
     expect(sample().worldXU).not.toBe(animated.worldXU);
     expect(sample().wheelAngleRad).toBe(animated.wheelAngleRad);
     expect(view.animatedObjectCount).toBe(0);
-    for (const [i, g] of roadGraphics.entries())
+    for (const [i, g] of roadGraphics.entries()) {
+      expect(g.retained).toHaveLength(0);
       expect(g.clearCalls).toBe((clears[i] ?? 0) + 1);
-    expect(view.update(legSec + 0.3, undefined, 1, 0, 2, viewport)).toBe(2);
+    }
+    expect(
+      view.update(
+        legSec + 0.3,
+        undefined,
+        1,
+        0,
+        2,
+        viewport,
+        'all',
+        0,
+        0,
+        true,
+      ),
+    ).toBe(2);
     expect(sample().wheelAngleRad).not.toBe(animated.wheelAngleRad);
-    for (const [i, g] of roadGraphics.entries())
+    expect(view.animatedObjectCount).toBe(2);
+    for (const [i, g] of roadGraphics.entries()) {
+      expect(
+        g.retained.filter((c) => c.kind === 'line' && c.color === 0xe2e3df),
+      ).toHaveLength(2);
+      const current = view.roadVehicles[i];
+      const arrow = g.retained.find(
+        (c) => c.kind === 'line' && c.color === 0xffaa33,
+      );
+      if (!current || arrow?.kind !== 'line')
+        throw new Error('road patrol drawing missing');
+      expect(arrow.x1).toBeCloseTo(current.worldXU - k * 1024);
+      expect(arrow.y1).toBeCloseTo(current.worldYU - 20);
       expect(g.clearCalls).toBe((clears[i] ?? 0) + 2);
+    }
+    expect(
+      roadGraphics.flatMap((g) => g.retained).some((c) => c.kind === 'circle'),
+    ).toBe(true);
     view.destroy();
   },
 );
@@ -215,6 +254,17 @@ function drawingScene() {
   const bakes: { left: number; top: number; width: number; height: number }[] =
     [];
   const object = (x = 0, y = 0, key?: string) => {
+    const retained: (
+      | {
+          kind: 'line';
+          color: number;
+          x1: number;
+          y1: number;
+          x2: number;
+          y2: number;
+        }
+      | { kind: 'circle'; x: number; y: number; radius: number }
+    )[] = [];
     let strokeColor = 0,
       strokeAlpha = 1;
     let color = 0,
@@ -231,6 +281,7 @@ function drawingScene() {
       depth: 0,
       alpha: 1,
       clearCalls: 0,
+      retained,
       frame: { width: 128, height: 128 },
     };
     const proxy = new Proxy(target, {
@@ -242,6 +293,7 @@ function drawingScene() {
         if (property === 'clear')
           return () => {
             target.clearCalls++;
+            retained.length = 0;
             return proxy;
           };
         if (property === 'setScale')
@@ -330,6 +382,7 @@ function drawingScene() {
           };
         if (property === 'lineBetween')
           return (x1: number, y1: number, x2: number, y2: number) => {
+            retained.push({ kind: 'line', color: strokeColor, x1, y1, x2, y2 });
             strokes.push({
               color: strokeColor,
               alpha: strokeAlpha,
@@ -338,6 +391,11 @@ function drawingScene() {
                 { x: x2, y: y2 },
               ],
             });
+            return proxy;
+          };
+        if (property === 'fillCircle')
+          return (x: number, y: number, radius: number) => {
+            retained.push({ kind: 'circle', x, y, radius });
             return proxy;
           };
         if (property === 'fillPoints')
