@@ -113,6 +113,12 @@ export class AudioManager {
     this.#enabled = enabled;
     if (!enabled) this.suspend();
   }
+  /** Explicit developer-menu gesture; replaces the previous audition. */
+  audition(id: string): void {
+    this.stopAll();
+    this.unlock();
+    this.play(id, 1, 100, Infinity);
+  }
   suspend(): void {
     this.#epoch += 1;
     this.#resuming = undefined;

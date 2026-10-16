@@ -151,6 +151,33 @@ function setup() {
 
 afterEach(() => vi.unstubAllGlobals());
 describe('recorded sounds / H1', () => {
+  it.each(['cow', 'sheep'])(
+    'switches a playing audition to %s without a delayed context suspension freezing it',
+    async (id) => {
+      const { audio, context, voices } = setup();
+      audio.audition('sheep');
+      await vi.waitFor(() => expect(voices).toHaveLength(1));
+
+      const suspended = deferred<void>();
+      context.suspend.mockImplementation(() =>
+        suspended.promise.then(() => {
+          context.state = 'suspended';
+        }),
+      );
+      context.suspend.mockClear();
+      audio.audition(id);
+      await vi.waitFor(() => expect(voices).toHaveLength(2));
+      suspended.resolve();
+      await suspended.promise;
+
+      expect(context.state).toBe('running');
+      expect(context.suspend).not.toHaveBeenCalled();
+      expect(voices[0]?.stop).toHaveBeenCalledOnce();
+      expect(voices[1]?.start).toHaveBeenCalledOnce();
+      expect(audio.diagnostics.active.map((voice) => voice.id)).toEqual([id]);
+      audio.dispose();
+    },
+  );
   it.each(['running', 'suspended'] as const)(
     'stopAll removes buffered tunnel echo while %s and retains context and decoded cache',
     async (state) => {

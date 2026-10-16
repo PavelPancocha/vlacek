@@ -281,10 +281,8 @@ export class AppController {
       }
       if (action === 'dev-sound-stop') this.#audio.suspend();
       if (action.startsWith('dev-sound:') && this.#ui.developerMenuOpen) {
-        this.#audio.suspend();
         this.#audio.setEnabled(session.settings.sfxEnabled);
-        this.#audio.unlock();
-        this.#audio.play(action.slice('dev-sound:'.length), 1, 100, Infinity);
+        this.#audio.audition(action.slice('dev-sound:'.length));
       }
       if (this.#ui.developerMenuOpen) {
         if (action === 'pwa-install') void this.#pwa.install();

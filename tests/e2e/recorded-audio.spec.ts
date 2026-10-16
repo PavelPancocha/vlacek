@@ -134,8 +134,22 @@ test('hidden developer Zvuky list auditions every manifest id while keeping the 
   await expect
     .poll(async () => (await snapshot(page)).audioDetails.played.at(-1))
     .toBe('sheep');
+  await tapAction(page, 'dev-sound:cow');
+  await expect
+    .poll(async () =>
+      (await snapshot(page)).audioDetails.active.map((voice) => voice.id),
+    )
+    .toEqual(['cow']);
+  expect((await snapshot(page)).audio).toBe('running');
   expect((await snapshot(page)).screen).toBe('PAUSED');
   await tapAction(page, 'dev-sound-stop');
   await expect.poll(async () => (await snapshot(page)).audio).toBe('suspended');
+  expect((await snapshot(page)).audioDetails.active).toEqual([]);
+  await tapAction(page, 'dev-sound:sheep');
+  await expect
+    .poll(async () => (await snapshot(page)).audioDetails.active.length)
+    .toBe(1);
   await tapAction(page, 'dev-close');
+  await expect.poll(async () => (await snapshot(page)).audio).toBe('suspended');
+  expect((await snapshot(page)).audioDetails.active).toEqual([]);
 });

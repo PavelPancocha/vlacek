@@ -55,7 +55,7 @@ Celkový limit **8 hlasů: ≤3 loop, ≤5 one-shot** kontroluje stávající `V
 
 ## Poslech a akceptace
 
-Skryté vývojářské volby D-020 obsahují rozbalovací seznam **Zvuky**, tlačítko pro každé manifest ID a **Zastavit**. Nový poslech nejdříve ukončí předchozí klip, takže se nahrávky v seznamu nepřekrývají. Je dosažitelný myší, dotykem i klávesnicí přes stejný InputRouter, respektuje nastavení Zvuky. V pauze tento explicitní poslech odemkne kontext pouze gestem; Zavřít a přerušení jej znovu suspendují.
+Skryté vývojářské volby D-020 obsahují rozbalovací seznam **Zvuky**, tlačítko pro každé manifest ID a **Zastavit**. Nový poslech nejdříve ukončí předchozí klip a jeho čekající požadavky bez suspendování kontextu, takže se nahrávky v seznamu nepřekrývají a opožděné dokončení suspendu nezmrazí nový klip. Je dosažitelný myší, dotykem i klávesnicí přes stejný InputRouter, respektuje nastavení Zvuky. V pauze tento explicitní poslech odemkne kontext pouze gestem; Zastavit, Zavřít a přerušení jej znovu suspendují. Save ani generátor se nemění.
 
 Kontaktní list a jednotlivé waveform/spektrogram PNG byly vytvořeny mimo repozitář: `/home/pavel/Projects/vlacek-worktrees/_runs/shots/audio/contact-sheet.png`. Vizuálně jsou průběhy konzistentní s popisem zdrojů, bez zjevného flatteningu dodaných špiček; některé originály dosahovaly 0 dBFS, což útlum nemůže zpětně opravit; vysoké chime/bird harmoniky se tlumí filtrem a gainem. Spektrogram **nepotvrzuje nepřítomnost řeči/hudby**, příjemnost ani dětskou hlasitost. Obojí, slyšitelnost spojů, kalibrace tabletu, fyzický Android, Safari/Firefox a konkrétní Tesla/firmware zůstávají **NEOVĚŘENO** do potvrzení vlastníkem.
 
