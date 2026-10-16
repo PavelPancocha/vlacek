@@ -3,7 +3,12 @@ import { gameConfig } from '../../src/config/gameConfig.ts';
 import { trainZoom } from '../../src/render/cameraFraming.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 import { vehicleArt } from '../../src/content/artManifest.ts';
-import { snapshot, tapAction, waitForWorldAtlases } from './helpers.ts';
+import {
+  snapshot,
+  tapAction,
+  waitForRideStart,
+  waitForWorldAtlases,
+} from './helpers.ts';
 
 /** First run in world 123 with this locomotive and two wagons. */
 async function departWith(page: Page, locomotive: string): Promise<void> {
@@ -81,6 +86,7 @@ test.describe('electric locomotive and catenary (doc 03 §9, TRN-08, D-016)', ()
         await expect
           .poll(async () => (await snapshot(page)).screen)
           .toBe('RIDING');
+        await waitForRideStart(page);
         await expect
           .poll(async () => (await snapshot(page)).artVehicles)
           .toBe(2);

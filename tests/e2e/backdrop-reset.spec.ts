@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { biomeAt } from '../../src/domain/world/Biomes.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, tapAction } from './helpers.ts';
+import { snapshot, tapAction, waitForRideStart } from './helpers.ts';
 
 test('R10: the first frame of a second journey shows its biome without crossfade', async ({
   page,
@@ -43,6 +43,7 @@ test('R10: the first frame of a second journey shows its biome without crossfade
   await page.goto('./?debug=1&seed=123');
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
+  await waitForRideStart(page);
   await expect
     .poll(async () => (await snapshot(page)).scenery.biome)
     .toBe(firstBiome);

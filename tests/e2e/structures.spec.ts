@@ -1,6 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, tapAction, waitForWorldAtlases } from './helpers.ts';
+import {
+  snapshot,
+  tapAction,
+  waitForRideStart,
+  waitForWorldAtlases,
+} from './helpers.ts';
 
 /**
  * A stopped electric journey in world 123 just before the bridge of
@@ -111,6 +116,7 @@ test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () =>
     // The front deep in the chunk 6 tunnel (world 6272 to 6720).
     await continueBeforeBridge(page, { chunkIndex: 6, arcOffsetU: 520 }, false);
     expect((await snapshot(page)).screen).toBe('PAUSED');
+    await waitForRideStart(page);
     const tunnelId = `g${TRACK_GENERATOR_VERSION}:chunk:6:tunnel:0`;
     await expect
       .poll(async () => {

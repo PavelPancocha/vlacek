@@ -101,9 +101,37 @@ jsou nyní přistálé. Historická atlasová báze byla `d2fff15`. Regresní `a
 
 Příkazy a výsledky integrace, paměťová a snímková tabulka patří do předání linky a vývojového návodu. Desktopový Chromium Canvas/WebGL není test fyzického tabletu ani Tesly; zařízení a firmware jsou **NEOVĚŘENO**.
 
-Atlasové E2E ponechávají API/source trace, ale průběžné JPEG/DOM snímkování při měření vypínají: GPU readback soutěží s měřeným uploadem. Obraz dokládají samostatná PNG po měřeném úseku. Farmový cold boot používá nativní hodiny; virtuální hodiny se instalují až po připravení atlasů pro následné scénové kroky. Lhůty, počet workerů a podmínky úspěchu se nemění; jedinými výjimkami jsou 15 s pro publikaci po změně měřítka a `test.slow()` testu seed 1 (viz Časové řezy).
+Atlasové E2E ponechávají API/source trace, ale průběžné JPEG/DOM snímkování při měření vypínají: GPU readback soutěží s měřeným uploadem. Obraz dokládají samostatná PNG po měřeném úseku. Farmový cold boot používá nativní hodiny; virtuální hodiny se instalují až po připravení atlasů pro následné scénové kroky. Původní atlasové výjimky jsou 15 s pro publikaci po změně měřítka a `test.slow()` testu seed 1 (viz Časové řezy); pozdější výjimku pro start a obnovu jízdy popisuje rozhodnutí integrate-6 níže.
 
-**Pravidlo testů po D-019 (rozhodnutí vlastníka integrate-5, 2026-10-16).** Kontroly vykresleného stavu čekají na publikaci pomocí existujícího `waitForWorldAtlases`; záměrný fallback bez vozidlového artu používá stejnou podmínku bez požadavku na `vehicleAtlas`. Testy „od prvních snímků“ čekají u volajícího přes `page.waitForFunction` na `hidden` clony a potom vzorkují prvních 20 snímků: clona zmizí až po `rideFramesDrawn++` a `worldDrawn()`, nikoli po pouhé přípravě artu. Sampler ani kontrola celého vlaku nečekají na počet vykreslených vozidel. Nahrazuje se pouze synchronní předpoklad D-019; akcelerace zůstává nezávislá na kresbě, `driveUntilMoving`, aserce, timeouty, retries a `test.slow` se nemění. Případy závislé pouze na zátěži při dvou workerech (integrate-4 případy 4/5/9/17/25/34/38/43/44/48) se stejně jako H0 vykazují samostatně; nepřidává se jim synchronizace a rozhoduje CI v osmi shardech.
+**Původní pravidlo testů po D-019 (rozhodnutí vlastníka integrate-5, 2026-10-16).** Kontroly vykresleného stavu čekají na publikaci pomocí existujícího `waitForWorldAtlases`; záměrný fallback bez vozidlového artu používá stejnou podmínku bez požadavku na `vehicleAtlas`. Testy „od prvních snímků“ čekají u volajícího přes `page.waitForFunction` na `hidden` clony a potom vzorkují prvních 20 snímků: clona zmizí až po `rideFramesDrawn++` a `worldDrawn()`, nikoli po pouhé přípravě artu. Sampler ani kontrola celého vlaku nečekají na počet vykreslených vozidel. Nahrazuje se pouze synchronní předpoklad D-019; akcelerace zůstává nezávislá na kresbě, `driveUntilMoving`, aserce, timeouty, retries a `test.slow` se nemění. Případy závislé pouze na zátěži při dvou workerech (integrate-4 případy 4/5/9/17/25/34/38/43/44/48) se stejně jako H0 vykazují samostatně; nepřidává se jim synchronizace a rozhoduje CI v osmi shardech.
+
+**Start a obnova jízdy (rozhodnutí vlastníka integrate-6, 2026-10-16).**
+Vlastník přijal přibližně dvousekundovou clonu po Vyjet jako cenu paměťové
+meze D-030: „Přijmout + 15 s v testech“. Měření a pokračování s přípravou
+během depa vlastní [D-032](032-startup-and-ride-performance.md).
+`tests/e2e/helpers.ts` má jedinou konstantu `RIDE_START_TIMEOUT_MS = 15_000`
+a `waitForRideStart(page)`, který čeká na skrytí `.ride-curtain` nejvýše tuto
+dobu. Nahrazuje se tím předchozí zákaz synchronizace startů citlivých na zátěž;
+nejde o čekání neomezené až celkovým timeoutem testu.
+
+Volání jsou pouze po startu/obnově a před stávající kontrolou:
+
+| Místo                                                           | Navazující kontrola                                                                                                                              |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `helpers.ts` — `startRide` po `RIDING`                          | Dosavadní skrytí clony; sdílejí i testy `ride-reveal` pro Pokračovat, rotaci a nasycený buffer.                                                  |
+| `helpers.ts` — `restoredTrain` po `resume`                      | `artVehicles === ids.length + 1`; nahrazuje dříve přidané `waitForWorldAtlases`, včetně volajících v `camera.spec.ts` a obnovy v `game.spec.ts`. |
+| `electric.spec.ts` — compact contact po `RIDING`                | `artVehicles === 2`.                                                                                                                             |
+| `effects.spec.ts` — oba bublinové výřezy po `RIDING`            | `bubbles.length > 1`.                                                                                                                            |
+| `backdrop-reset.spec.ts` — první obnova po `resume`             | `scenery.biome === firstBiome`.                                                                                                                  |
+| `oncoming.spec.ts` — `continueBeforeSecondTrack` po `RIDING`    | SCN-09, následný výjezd NPC a `secondaryTrackViews > 0`; sdílený PWA-10 ponechává svůj další fallback waiter.                                    |
+| `structures.spec.ts` — obnova uvnitř tunelu po `PAUSED`         | Stav neprůhledného tunelu s `alpha === 1`.                                                                                                       |
+| `ride-reveal.spec.ts` — mid-biome obnova po `continue` do pauzy | `backdrop.currentBiome === countryside`.                                                                                                         |
+
+Navazující polly ponechávají své původní lhůty (výchozích 5 s; SCN-09 má
+vlastní dosavadní poll výjezdu NPC). Aserce, samplery prvních snímků,
+`observeReveal`, `driveUntilMoving`, retries a `test.slow()` se nemění.
+Ostatní synchronizace z `4718efe`, včetně devíti čekání před vzorkováním
+prvních snímků, zůstávají. Další zvýšení lhůt toto rozhodnutí nepovoluje.
 
 ## Integrate-4: publikace a původní diagnostický kontrakt
 
@@ -114,5 +142,7 @@ potom vyžaduje true až do publikace. Veřejný `snapshot().backdrop` zachováv
 čtyři dosavadní pole; interní `missingFrames` dál přispívají do worldAtlases.
 Tím se zachovají přesné kontroly R10 a obnoveného pohledu.
 
-Browserové setupy, aserce, numerické timeouty a retries zůstávají beze změny.
-Izolované běhy porovnávají stejný grep na integraci a bázi 5e3385d.
+Při integrate-4 zůstaly browserové setupy, aserce, numerické timeouty a retries
+beze změny; následné testovací výjimky vlastní rozhodnutí integrate-5 a
+integrate-6 výše. Izolované běhy integrate-4 porovnávaly stejný grep na
+integraci a bázi 5e3385d.

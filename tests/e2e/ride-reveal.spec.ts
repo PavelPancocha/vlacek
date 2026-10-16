@@ -12,7 +12,7 @@ import {
   defaultSettings,
   type SaveEnvelopeV1,
 } from '../../src/platform/SaveValidation.ts';
-import { snapshot, startRide, tapAction } from './helpers.ts';
+import { snapshot, startRide, tapAction, waitForRideStart } from './helpers.ts';
 
 async function savedProfile(
   page: Page,
@@ -289,6 +289,7 @@ test('same journey preserves a paused mid-biome crossfade through the depot', as
   });
   await page.goto('./?debug=1');
   await tapAction(page, 'continue');
+  await waitForRideStart(page);
   await expect
     .poll(async () => (await snapshot(page)).backdrop?.currentBiome)
     .toBe('countryside');

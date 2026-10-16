@@ -4,6 +4,7 @@ import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts'
 import {
   snapshot,
   tapAction,
+  waitForRideStart,
   waitForWorldAtlasesWithoutVehicleArt,
 } from './helpers.ts';
 
@@ -48,6 +49,7 @@ async function continueBeforeSecondTrack(page: Page): Promise<void> {
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  await waitForRideStart(page);
 }
 
 test.describe('the oncoming train (doc 05 §6, SCN-09, D-017)', () => {

@@ -1,7 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, tapAction, waitForWorldAtlases } from './helpers.ts';
+import {
+  snapshot,
+  tapAction,
+  waitForRideStart,
+  waitForWorldAtlases,
+} from './helpers.ts';
 
 /** A stopped journey with this locomotive at the start, as a v1 save. */
 function journeySave(
@@ -144,6 +149,7 @@ for (const smallViewport of [false, true])
       await expect
         .poll(async () => (await snapshot(page)).screen)
         .toBe('RIDING');
+      await waitForRideStart(page);
       await expect
         .poll(async () => (await snapshot(page)).bubbles.length)
         .toBeGreaterThan(1);

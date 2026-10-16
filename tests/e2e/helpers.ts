@@ -5,6 +5,9 @@ import { locomotives, wagons } from '../../src/content/vehicles.ts';
 import { RideSimulation } from '../../src/domain/ride/RideSimulation.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 
+// Owner decision 2026-10-16 (D-030): allow up to 15 s for the start curtain.
+const RIDE_START_TIMEOUT_MS = 15_000;
+
 export async function snapshot(page: Page): Promise<DebugSnapshot> {
   return page.evaluate(() => {
     const api = (
@@ -56,6 +59,12 @@ export async function tapAction(page: Page, action: string): Promise<void> {
   await page.locator(`[data-action="${action}"]`).first().click();
 }
 
+export async function waitForRideStart(page: Page): Promise<void> {
+  await expect(page.locator('.ride-curtain')).toBeHidden({
+    timeout: RIDE_START_TIMEOUT_MS,
+  });
+}
+
 /** First run: choose a locomotive, add wagons and depart. */
 export async function startRide(
   page: Page,
@@ -68,7 +77,7 @@ export async function startRide(
   for (const wagon of wagons) await tapAction(page, `add:${wagon}`);
   await tapAction(page, 'depart');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
-  await expect(page.locator('.ride-curtain')).toBeHidden();
+  await waitForRideStart(page);
 }
 
 /** Holds the mouse in the world until the train is clearly moving. */
@@ -183,8 +192,7 @@ export async function restoredTrain(
   await page.goto('./?debug=1');
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
-  // D-019 published vehicle art synchronously on resume; D-030 requires publication first.
-  await waitForWorldAtlases(page);
+  await waitForRideStart(page);
   await expect
     .poll(async () => (await snapshot(page)).artVehicles)
     .toBe(ids.length + 1);
