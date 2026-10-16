@@ -130,6 +130,23 @@ it.each([0, 1, 2])(
       expect(returned.wheelAngleRad).not.toBe(initial.wheelAngleRad);
       expect(returned.frontX * initial.frontX).toBeLessThan(0);
     }
+    view.update(legSec + 0.1, undefined, 1, 0, 2, viewport, 'all', 0, 0, true);
+    const animated = sample();
+    expect(animated.exhaust).toBe(true);
+    expect(animated.arrows).toBe(true);
+    const roadGraphics = drawn.graphics.filter((g) => g.clearCalls > 0);
+    expect(roadGraphics).toHaveLength(2);
+    const clears = roadGraphics.map((g) => g.clearCalls);
+    expect(view.update(legSec + 0.2, undefined, 1, 0, 0, viewport)).toBe(0);
+    expect(sample().worldXU).not.toBe(animated.worldXU);
+    expect(sample().wheelAngleRad).toBe(animated.wheelAngleRad);
+    expect(view.animatedObjectCount).toBe(0);
+    for (const [i, g] of roadGraphics.entries())
+      expect(g.clearCalls).toBe((clears[i] ?? 0) + 1);
+    expect(view.update(legSec + 0.3, undefined, 1, 0, 2, viewport)).toBe(2);
+    expect(sample().wheelAngleRad).not.toBe(animated.wheelAngleRad);
+    for (const [i, g] of roadGraphics.entries())
+      expect(g.clearCalls).toBe((clears[i] ?? 0) + 2);
     view.destroy();
   },
 );
@@ -213,6 +230,7 @@ function drawingScene() {
       flipX: false,
       depth: 0,
       alpha: 1,
+      clearCalls: 0,
       frame: { width: 128, height: 128 },
     };
     const proxy = new Proxy(target, {
@@ -221,6 +239,11 @@ function drawingScene() {
           const value: unknown = Reflect.get(target, property);
           return value;
         }
+        if (property === 'clear')
+          return () => {
+            target.clearCalls++;
+            return proxy;
+          };
         if (property === 'setScale')
           return (x: number, y = x) => {
             target.scaleX = x;
@@ -334,6 +357,7 @@ function drawingScene() {
     });
     return proxy;
   };
+  const graphics: ReturnType<typeof object>[] = [];
   const scene = {
     game: { renderer: {} },
     add: {
@@ -353,7 +377,11 @@ function drawingScene() {
         tailFills.push({ x, y, width, height, color });
         return object(x, y);
       },
-      graphics: () => object(),
+      graphics: () => {
+        const drawing = object();
+        graphics.push(drawing);
+        return drawing;
+      },
     },
     make: { graphics: () => object() },
     textures: {
@@ -369,6 +397,7 @@ function drawingScene() {
   return {
     scene: scene as unknown as Phaser.Scene,
     images,
+    graphics,
     polygons,
     strokes,
     rectangles,

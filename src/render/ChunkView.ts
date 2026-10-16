@@ -1429,8 +1429,10 @@ export class ChunkView {
       const offset = (forward ? t : 2 - t) * patrol.rangeU - patrol.rangeU / 2;
       const x = Math.max(0, Math.min(CHUNK_WIDTH_U, prop.xU + offset));
       this.#placeProp(image, prop, x);
-      if (prop.roadPath && !visible(image)) continue;
-      if (remaining-- <= 0) continue;
+      if ((prop.roadPath && !visible(image)) || remaining-- <= 0) {
+        visual?.graphics.clear();
+        continue;
+      }
       this.#animatedLastFrame++;
       const speed = (forward ? 1 : -1) * patrol.speedUPerSec;
       const asset = roadVehicleArt[prop.kind];

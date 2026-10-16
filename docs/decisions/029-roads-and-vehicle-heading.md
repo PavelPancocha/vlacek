@@ -90,6 +90,10 @@ aktualizací poloh dalších silničních aktérů. Auto se tak po obratu vrát�
 do záběru i při stojícím vlaku a kameře. Kola, čelo a výfuk se dál
 aktualizují pouze ve viditelném rozsahu a s přiděleným animačním místem;
 samotný přepočet polohy místo nespotřebuje a nezvyšuje `animatedObjects`.
+Při přeskočení vizuální aktualizace po posunu silničního aktéra se jeho
+sourozenecká Graphics kresba vymaže, aby kola, výfuk a diagnostické šipky
+nezůstaly na starém místě. Další povolená aktualizace je znovu vykreslí;
+vymazání nemění animační čas ani počítání objektů.
 Patroly bez `roadPath` ponechávají místní hodiny: mimo záběr nebo bez
 rozpočtu stojí a po návratu pokračují bez dohánění času. Regrese nad
 seedem 123 / chunkem 3 ověřuje návrat auta při rozpočtech 0/1/2, včetně

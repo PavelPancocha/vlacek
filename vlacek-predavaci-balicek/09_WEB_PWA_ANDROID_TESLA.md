@@ -113,7 +113,7 @@ Při skrytí stránky či ztrátě fokusu pozastavit simulaci a audio, vymazat v
 
 Po návratu zobrazit pauzu a nechat dítě/dospělého potvrdit pokračování. Chybějící audio oprávnění nesmí způsobit samovolné obnovení rychlosti nebo vstupu.
 
-Implementace [D-022](../docs/decisions/022-recorded-sounds.md): jeden AudioContext, lokální fingerprintované MP3 URL bez inline audia. Fetch a `decodeAudioData` až po gestu a na vyžádání; mute nezačíná novou práci a zastaví hlasy. Pauza/skrytí suspendují kontext bez automatického resume. Selhání fetch/decode je tiché a diagnostikované. Vývojářský poslech v pauze je explicitní gesto; jeho Zavřít zvuk znovu suspenduje.
+Implementace [D-022](../docs/decisions/022-recorded-sounds.md): jeden AudioContext, lokální fingerprintované MP3 URL bez inline audia. Fetch a `decodeAudioData` v AudioManageru začínají až po gestu a na vyžádání; mute v AudioManageru nezačíná novou práci a zastaví hlasy. PWA precache po prvním snímku stahuje MP3 na pozadí spolu se zbytkem buildu pro offline hraní, i při vypnutých zvucích a bez gesta ([D-031](../docs/decisions/031-installable-offline-pwa.md)). Pauza/skrytí suspendují kontext bez automatického resume. Selhání fetch/decode je tiché a diagnostikované. Vývojářský poslech v pauze je explicitní gesto; jeho Zavřít zvuk znovu suspenduje.
 
 ## 7. Offline balík a service worker
 
