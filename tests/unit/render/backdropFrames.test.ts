@@ -20,6 +20,9 @@ it('far/mid art uses supplied landscape seasons, including farm-forest dense ban
     'backdrop.coast-mid',
   );
   expect(backdropFrames('dunes', 'winter', () => true).mid).toBe(
+    'backdrop.dunes-pines',
+  );
+  expect(backdropFrames('dunes', 'winter', () => false).mid).toBe(
     'backdrop.forest-mid',
   );
 });

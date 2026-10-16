@@ -90,14 +90,14 @@ Krajinné rozsahy výšek platí pro jádro regionu; přechody musí navazovat a
 
 ## Podhůří
 
-| ID       | Očekávaný výsledek                                                                                                            |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| SCN-FH01 | Region obsahuje nejméně tři různé obrazy FH-01 až FH-04, včetně otevřené louky a údolního nebo skalního motivu.               |
-| SCN-FH02 | Jádro dosahuje převýšení alespoň 260 u a obsahuje souvislé stoupání i klesání; jednotlivé výrazné svahy mají alespoň 1 024 u. |
-| SCN-FH03 | Cílová výška zůstává v rozsahu −260 až +260 u, běžné sklony 0,04–0,09 a místní maximum nejvýše 0,10.                          |
-| SCN-FH04 | Domy stojí na parcelách, nejsou natočené jako vozidla podle sklonu koleje.                                                    |
-| SCN-FH05 | Lanovka má souvislé lano a krajní stanice; kabina neopouští jejich trasu.                                                     |
-| SCN-FH06 | Bagr i sáňky mají bezpečný pohybový obal; sáňky končí daleko od dopravy a nejsou přítomné v létě.                             |
+| ID       | Očekávaný výsledek                                                                                                                                                                |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SCN-FH01 | Region obsahuje nejméně tři různé obrazy FH-01 až FH-04, včetně otevřené louky a údolního nebo skalního motivu.                                                                   |
+| SCN-FH02 | Jádro dosahuje převýšení alespoň 260 u a obsahuje souvislé stoupání i klesání; jednotlivé výrazné svahy mají alespoň 1 024 u.                                                     |
+| SCN-FH03 | Cílová výška zůstává v rozsahu −260 až +260 u, běžné sklony 0,04–0,09 a místní maximum nejvýše 0,10.                                                                              |
+| SCN-FH04 | Domy stojí na parcelách, nejsou natočené jako vozidla podle sklonu koleje.                                                                                                        |
+| SCN-FH05 | Lanovka má souvislé lano a krajní stanice; kabina neopouští jejich trasu. Na 1140 × 512 je čitelná v krajních polohách i uprostřed s oběma délkami vlaku; lano má alespoň 1,5 px. |
+| SCN-FH06 | Bagr i sáňky mají bezpečný pohybový obal; sáňky končí daleko od dopravy a nejsou přítomné v létě.                                                                                 |
 
 ## Hory
 
@@ -280,3 +280,61 @@ Rozměry a pivoty všech nových sezonních variant zůstávají shodné s origi
 | SCN-RD06 | Vzácnější vzdálená dálnice má dvě oddělené dvoupruhové vozovky, viditelný zelený střed a odstup celých domů 20 u; nesplňuje místní přístup vesnice. Nejvýše jeden úsek v regionu, nenuloví svědci obou motivů. |
 | SCN-RD07 | Pauza zastaví aktivity, opakovaný vstup a odchod uvolní auta i jejich detaily; krátká a maximální souprava zůstává čitelná v Canvas i WebGL.                                                                   |
 | SCN-RD08 | Okreska/dálnice ani celé rezervace nevstoupí do plánové osady či staničního span; oba přilehlé oblouky jsou za terénem vně hranice. Pojmenované settlementConnections umožní následné napojení hlavní ulice.   |
+
+Řez water-mountains-1 doplňuje SCN-LA01/02 (rybniční soubor), SCN-LA04/05
+(náhon, samostatné kolo a suchý přístup), část SCN-LA06 (lodě a přívoz) a
+SCN-LA08 (rybář a vyvázaný přívoz). Doplňuje motivy SCN-CO03 a ověřuje
+SCN-CO01/02/05/06 také s novými moly a přívozem. Moravská Sahara pokrývá
+SCN-DU01/02/04; lanovka SCN-FH05 a bagr svoji část SCN-FH06. Skalní zářezy
+navazují na profily world-core, jejich limity se tímto nemění. SCN-MO06 má
+sezónní horské horizonty, zimní hmotu tunelů však dokončuje tunnels-bridges.
+
+Testy kontrolují konkrétní podpory, jejich odstranění, mokrý břeh, zvětšený
+pohybový obal, rybniční regiony a dohledání scén. Slot stanice nebo stavby má
+přednost. Kachny/vážky v SCN-LA06/08 a sáňky v SCN-FH06 patří seasons-life;
+nové zvuky zůstávají otevřené. Podhorskou osadu ze scény FH-02 vlastní
+settlements; konstrukční scény MO-03/04 vlastní tunnels-bridges. Toto jsou
+ID scén, nikoli stejnojmenné číselné řádky SCN-FH02 a SCN-MO03/04, které
+ověřují profily world-core. Save a ovládání se nemění. Atlasové a zařízení
+brány jsou popsané v samostatné sekci water-mountains v D-025.
+
+Review water-mountains-2 doplňuje návaznost říčního údolí: přijatý scénový rozsah,
+skutečné uzavřené konce a shodný nenulový vnitřní šev. Chybějící, shodně
+uzavřené nebo neshodné pokračování validátor odmítá; 100 úplných seedových tras
+má nulové otevřené konce. SCN-FH05 nyní ověřuje jedinou instalaci ve scéně a
+vzorkování každé stanice v jejím x. SCN-DU02 má vlastní dospělé borovice, odlišné
+kuželovité mladé stromky a telefonní kontrolu barevně čitelných vřesových rohoží.
+Ovládání E2E vyžaduje skutečný posun a rychlost, dojezd po puštění a samostatnou
+pauzu; animace se ověřují běžným loopem. Všechny čtyři seedové trasy zůstávají
+pokryté po dávkách osmi chunků. Host mappings D-030, společný frame resolver a
+jediný sezónní vlastník mlýnského kola jsou dosud otevřené integrační nálezy
+2/3. Tímto se neuzavírají konstrukce, život, nové audio ani zařízení brány.
+
+Review `water-mountains-2`: cílená sada 288/288, navazující kontrola vlastníka
+lanovky 7/7, E2E obou dotčených souborů 34/34 (desktop, dva workery pod zámkem;
+Canvas/WebGL a obě délky vlaku). Úplný check 1 223/1 226; pouze tři známé
+atlasové brány D-030 zůstávají červené.
+
+Review water-mountains-3 zpřesňuje obrazovou část SCN-DU02: obě dospělé
+borovice i borový horizont mají oddělené ploché modrozelené shluky jehličí
+v horní třetině, viditelné větve a dvoubarevný kmen. Mladé borovice a vřes
+zůstávají beze změny. SCN-FH05 doplňuje kabinu 56 × 48 u, kontrastní opory
+ve stávajících rozměrech, lano 6 u a odsunutí stromů do hloubky 0,85–0,90.
+Přijatý vlastník a vzorkování podpor se nemění. Unit regrese kontroluje
+telefonní rozměr, rezervovaný obal a volnou dráhu v reprodukcích 1/100 a 1/186;
+E2E měří skutečně vykreslenou kabinu a její červené pixely v obou krajních
+polohách i uprostřed rozpětí (Canvas/WebGL, krátká/nejdelší souprava).
+Botanický tvar hodnotí také nezvětšené výřezy skutečných herních snímků.
+
+Review `water-mountains-4` navazuje na integrační sezóny a D-030. SCN-LA04/05
+používají jediného vlastníka SeasonalSceneryView a kanonické life.watermill
+díly; proudění vyžaduje konkrétní channel dependency, v efektivní zimě stojí.
+CO přívoz a jeho paže jsou hostované na pobřeží i jezerech, FH/MO zářezy
+v obou krajinách; alias jezerní lávky není společný díl. Všechny světové
+obrázky používají frameTexture a world-part; obě prostorové far/mid vrstvy
+zůstávají v okně přes přechod. Nálezy 2/3 tím mají vlastní regresní sadu,
+bez přepisu schválené grafiky borovic a lanovky.
+DEV-02/03 po skoku do dun ověřuje publikovaný atlas a nenulovou skutečnou
+kresbu overlaye; zachovává kontrolu dočasné jízdy i uložených dat.
+Finální cílené vodní případy mají 48/48, world-diagnostics 12/12; známé
+atlasové resize chyby a první široký E2E běh se vykazují samostatně.

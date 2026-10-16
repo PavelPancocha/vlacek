@@ -154,3 +154,38 @@ it('keeps valid country art when incoming forest frames are unavailable and reco
   ).toBe(true);
   expect(backdrop.state.missingFrames).toEqual([]);
 });
+
+import { setFrameResolver } from './frameTexture.ts';
+it('WM4 every backdrop and cloud uses frameTexture even with an atlas callback', () => {
+  const { backdrop, images } = setup();
+  setFrameResolver((key) => `resident:${key}`);
+  try {
+    backdrop.setAtlas('fallback', 1, () => 'callback-page');
+    const region = regionAt(1, 10000);
+    const view = {
+      left: 0,
+      worldLeft: 0,
+      top: -600,
+      width: 2200,
+      height: 1000,
+    };
+    backdrop.update(
+      view,
+      0,
+      0,
+      { from: region, to: region, progress: 0 },
+      0,
+      worldDiagnostics(1, 10000, [], 0),
+    );
+    expect(images.length).toBeGreaterThan(0);
+    for (const image of images) {
+      const key = image.frame.name;
+      if (!key) continue;
+      expect(image.texture.key).toBe(`resident:${key}`);
+      expect(image.getData('world-part')).toBe(key);
+    }
+  } finally {
+    setFrameResolver(undefined);
+    backdrop.destroy();
+  }
+});

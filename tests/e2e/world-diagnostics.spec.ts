@@ -2,7 +2,7 @@ import { gameConfig } from '../../src/config/gameConfig.ts';
 import { locomotives, wagons } from '../../src/content/vehicles.ts';
 import { parseSave, saveRules } from '../../src/platform/SaveValidation.ts';
 import { expect, test } from '@playwright/test';
-import { snapshot, tapAction } from './helpers.ts';
+import { snapshot, tapAction, waitForWorldAtlases } from './helpers.ts';
 async function openWorldMenu(page: import('@playwright/test').Page) {
   await page.clock.install();
   await page.goto('./?debug=1&seed=1');
@@ -62,13 +62,14 @@ test('DEV-02/03: scene menu and overlays work, temporary ride preserves save acr
     'data-screen',
     'RIDING',
   );
+  await waitForWorldAtlases(page);
   await expect
     .poll(async () => (await snapshot(page)).worldDebug.location?.kind)
     .toBe('dunes');
   expect((await snapshot(page)).worldDebug.temporaryRide).toBe(true);
-  expect((await snapshot(page)).worldDebug.overlayPrimitives).toBeGreaterThan(
-    0,
-  );
+  await expect
+    .poll(async () => (await snapshot(page)).worldDebug.overlayPrimitives)
+    .toBeGreaterThan(0);
   await tapAction(page, 'pause');
   expect(
     await page.evaluate(() => ({

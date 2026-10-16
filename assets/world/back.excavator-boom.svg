@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="38" height="16" viewBox="0 0 38 16">
+  <!-- Vláček, art-farm-forest-1: První kloub ramene bagru. -->
+  <defs><linearGradient id="yellow" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#d7bd67"/><stop offset="1" stop-color="#aa9143"/></linearGradient></defs>
+  <path d="M3 10 L31 2 L36 6 L7 14 Z" fill="url(#yellow)" stroke="#1d2a14" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 10 L30 5" fill="none" stroke="#f0d68c" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12 L28 8" fill="none" stroke="#69776f" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="4" cy="10" rx="2.5" ry="2.5" fill="#8c8158" stroke="#1d2a14" stroke-width=".6"/><ellipse cx="33" cy="7" rx="2.5" ry="2.5" fill="#8c8158" stroke="#1d2a14" stroke-width=".6"/>
+</svg>

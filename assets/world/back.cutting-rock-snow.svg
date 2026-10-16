@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="100" viewBox="0 0 160 100">
+  <!-- Vláček, art-water-coast-mountains-1: Vrstevnatá skála zářezu na svahu. 1 SVG jednotka = 1 u. -->
+  <defs><linearGradient id="stone" x1="0" y1="0" x2=".25" y2="1"><stop stop-color="#c0c0af"/><stop offset="1" stop-color="#8c9282"/></linearGradient></defs>
+  <path d="M1 98 L10 64 L31 57 L41 25 Q52 14 73 20 L87 8 Q105 8 120 26 L130 63 L148 69 L159 99Z" fill="url(#stone)" stroke="#354034" stroke-width="0.65" stroke-linejoin="round" stroke-linecap="round"/><path d="M42 29 L66 25 L79 31 L74 64 L36 74Z" fill="#c4c1af"/><path d="M90 15 L99 51 L129 68 L118 28Z" fill="#8d9084"/><path d="M13 71 L60 69 L88 61 M25 83 L90 80 L139 86 M89 35 L109 40 M49 46 L73 43" fill="none" stroke="#7e8477" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/><path d="M39 28 Q55 12 76 20 L86 8 Q105 7 120 25 L106 24 L99 29 L82 19 L70 27 L53 24Z M12 64 L32 57 L39 62 L31 66 L20 68Z M129 65 L147 69 L151 75 L137 73Z" fill="#eef1e8"/>
+</svg>

@@ -1,3 +1,8 @@
+import {
+  validateWaterMountainComposition,
+  validateWaterMountainScenes,
+} from './WaterMountainValidation.ts';
+import { WATER_MOUNTAIN_MOTIFS } from './WaterMountainComposition.ts';
 import { workRoadSupports } from './WorkGeometry.ts';
 import { streamBendU, streamHalfWidthU } from './StreamGeometry.ts';
 import { propScale, propFootU } from './SceneryGeometry.ts';
@@ -317,7 +322,10 @@ export function validateChunkScenery(
   const errors: string[] = [];
   const where = `seed=${seed} generator=${TRACK_GENERATOR_VERSION} region=${sc.region.id} scene=${sc.scene.id} chunk=${sc.chunkIndex}`;
   const fail = (message: string) => errors.push(`${where} ${message}`);
-  errors.push(...validateInfrastructureSurfaces(seed, sc));
+  errors.push(
+    ...validateInfrastructureSurfaces(seed, sc),
+    ...validateWaterMountainComposition(seed, sc, catalog),
+  );
   const seen = new Set<string>();
   for (const p of sc.props) {
     if (seen.has(p.id)) fail(`duplicate prop ${p.id}`);
@@ -371,7 +379,7 @@ export function validateChunkScenery(
     )
       fail(`dependency bird ${p.id} has no tree`);
     if (
-      p.kind === 'back.footbridge' &&
+      (p.kind === 'back.footbridge' || p.kind === 'back.water-footbridge') &&
       (!sc.bridge ||
         !p.dependencies?.includes(sc.bridge.id) ||
         Math.abs(
@@ -379,7 +387,10 @@ export function validateChunkScenery(
         ) > 1e-6)
     )
       fail(`dependency footbridge ${p.id} has no stream`);
-    if (p.kind === 'back.footbridge' && sc.bridge) {
+    if (
+      (p.kind === 'back.footbridge' || p.kind === 'back.water-footbridge') &&
+      sc.bridge
+    ) {
       const part = catalog[p.kind];
       if (part) {
         const foot = propFootU(
@@ -713,7 +724,13 @@ export function validateWorld(
   const errors = cases.flatMap((c) =>
     validateChunkScenery(c.seed, c.scenery, catalog),
   );
-  for (const seed of new Set(cases.map((c) => c.seed)))
+  for (const seed of new Set(cases.map((c) => c.seed))) {
+    errors.push(
+      ...validateWaterMountainScenes(
+        seed,
+        cases.filter((c) => c.seed === seed).map((c) => c.scenery),
+      ),
+    );
     errors.push(
       ...validateMotifSpacing(
         cases
@@ -721,6 +738,7 @@ export function validateWorld(
           .flatMap((c) => prominentMotifs(c.scenery)),
       ),
     );
+  }
   return errors;
 }
 export function worldDiagnostics(
@@ -796,7 +814,7 @@ export function prominentMotifs(sc: ChunkScenery): ProminentMotif[] {
   return [
     ...props,
     ...sc.water
-      .filter((w) => w.kind === 'pond')
+      .filter((w) => w.kind === 'pond' && !w.id.includes(':fishpond-group:'))
       .map((w) => ({
         id: w.id,
         regionId: sc.region.id,
@@ -873,6 +891,9 @@ export function worldMotifCoverage(
 ): Record<string, number> {
   const counts: Record<string, number> = Object.fromEntries(
     [
+      ...WATER_MOUNTAIN_MOTIFS,
+      'fishpond-group',
+      'river-valley',
       'back.rowboat',
       'back.sailboat',
       'back.fishing-boat',
@@ -964,7 +985,18 @@ export function worldMotifCoverage(
     for (const feature of sc.features)
       if (feature.kind === 'parallel-road' || feature.kind === 'highway')
         counts[feature.kind] = (counts[feature.kind] ?? 0) + 1;
+
+    if (sc.water.some((w) => w.kind === 'channel' && w.flowSpan))
+      counts['river-valley'] = (counts['river-valley'] ?? 0) + 1;
+    const ponds = sc.water.filter((w) => w.id.includes(':fishpond-group:'));
+    if (
+      ponds.length === 3 &&
+      new Set(ponds.map((w) => w.toX - w.fromX)).size === 3
+    )
+      counts['fishpond-group'] = (counts['fishpond-group'] ?? 0) + 1;
     for (const p of sc.props) {
+      if ((WATER_MOUNTAIN_MOTIFS as readonly string[]).includes(p.kind))
+        counts[p.kind] = (counts[p.kind] ?? 0) + 1;
       const motif =
         p.kind === 'back.tractor-work' && p.layer === 'near'
           ? 'farm-tractor'
@@ -1011,7 +1043,9 @@ export function worldMotifCoverage(
         counts['mill-channel'] = (counts['mill-channel'] ?? 0) + 1;
       const part = catalog[p.kind];
       if (
-        p.kind === 'back.pier' &&
+        ['back.pier', 'back.harbour-pier', 'back.harbour-quay'].includes(
+          p.kind,
+        ) &&
         part &&
         sc.water.some(
           (w) =>

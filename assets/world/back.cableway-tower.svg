@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="80" viewBox="0 0 20 80">
+  <!-- Vláček, water-mountains-3-astra, 2026-10-15: vlastní kontrastní opora; původní rozměry a kotevní bod lana. -->
+  <path d="M4 79 L7 11 H13 L16 79Z" fill="#52676b" stroke="#34474b" stroke-width="1"/>
+  <path d="M8 14 L7 74" stroke="#95a6a1" stroke-width="2"/>
+  <path d="M5 78 H15" stroke="#34474b" stroke-width="3"/>
+  <path d="M1 9 H19" stroke="#34474b" stroke-width="4"/>
+  <circle cx="4" cy="5" r="3" fill="#34474b"/>
+  <circle cx="16" cy="5" r="3" fill="#34474b"/>
+</svg>

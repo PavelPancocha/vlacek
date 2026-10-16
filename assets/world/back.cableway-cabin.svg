@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="48" viewBox="0 0 56 48">
+  <!-- Vláček, water-mountains-3-astra, 2026-10-15: vlastní červená kabina, čitelná při 15 × 13 px. -->
+  <path d="M28 2 V12 L33 16" fill="none" stroke="#303c3e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M11 14 H45 L51 22 V39 Q51 45 44 46 H12 Q5 45 5 39 V22Z" fill="#cc3527" stroke="#592f29" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M11 15 H44 L47 19 H8Z" fill="#e25a3b"/>
+  <path d="M12 21 H25 V32 H10 V25Z M30 21 H43 L46 25 V32 H30Z" fill="#bee0e7" stroke="#303e43" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M10 37 H46" stroke="#ed7654" stroke-width="2"/>
+  <path d="M13 44 H43" stroke="#912f27" stroke-width="3" stroke-linecap="round"/>
+</svg>

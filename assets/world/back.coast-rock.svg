@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="110" viewBox="0 0 180 110">
+  <!-- Vláček, art-water-coast-mountains-1: Oblá vrstevnatá pobřežní skála. 1 SVG jednotka = 1 u. -->
+  <defs><linearGradient id="rock" x1="0" y1="0" x2=".25" y2="1"><stop stop-color="#dbd3ba"/><stop offset="1" stop-color="#a59d88"/></linearGradient></defs>
+  <path d="M2 108 L12 70 Q18 60 43 62 L56 26 Q72 12 103 16 L124 29 L148 70 L165 80 L178 109Z" fill="url(#rock)" stroke="#354034" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M58 29 Q80 19 103 20 L120 33 L140 67 L117 74 L106 53Z" fill="#e0d8c0"/><path d="M104 20 L110 58 L123 78 L148 71Z" fill="#aca48f"/><path d="M18 75 L59 73 L86 64 M48 86 L117 88 L153 92 M60 39 L92 36 M58 54 L100 51" fill="none" stroke="#c7bea5" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

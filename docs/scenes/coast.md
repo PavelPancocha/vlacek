@@ -104,3 +104,11 @@ Palmy, kokosové plody a další exotická výplň nejsou součástí tohoto kat
 Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
 a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
 koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.
+
+## Implementační řez water-mountains-1
+
+CO-01 zůstává klidnou pláží. CO-02 doplní oblou pobřežní skálu a nízkou
+přední variantu. CO-03 používá skutečnou linii souvislého moře pro molo
+i nábřeží; rybářské lodě a přívoz mají ověřenou celou dráhu na vodě.
+Příď lodí se řídí světovým směrem a metadaty kresby, nikoli pohybem kamery.
+Přívoz mezi přístupy střídá pomalou plavbu a pobyt, převozník krátce mává.

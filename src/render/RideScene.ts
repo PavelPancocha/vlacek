@@ -953,6 +953,11 @@ export class RideScene extends Phaser.Scene {
    * vehicle: always 0 (doc 14 §5: the scenery never covers the train).
    * Diagnostics and E2E.
    */
+  waterMountainCheck() {
+    return [...this.#chunks.values()].flatMap(
+      (chunk) => chunk.waterMountainDiagnostics,
+    );
+  }
   farmForestCheck() {
     return [...this.#chunks.values()].flatMap((chunk) => chunk.farmDiagnostics);
   }

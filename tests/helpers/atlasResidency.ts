@@ -529,6 +529,7 @@ export function windowResidency(
  * profile (D-030). Every case of `atlasBoundCases` proves its windows and
  * peaks stay within these; content changes must recompute them.
  */
+/** WM4 adds no scratch/readback; corrected foothills hosts grow the packed world window. */
 export const ATLAS_BOUND: Readonly<
   Record<
     Quality,

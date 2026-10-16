@@ -145,10 +145,15 @@ export class Backdrop {
       if (typeof key !== 'string') continue;
       const resolved = textureFor ? textureFor(key) : texture;
       if (!resolved) {
-        image.setTexture(SKY_TEXTURE).setVisible(false);
+        image
+          .setTexture(SKY_TEXTURE)
+          .setData('world-part', key)
+          .setVisible(false);
         continue;
       }
-      image.setTexture(resolved, key);
+      image
+        .setTexture(frameTexture(key, resolved), key)
+        .setData('world-part', key);
       const part = parts[key];
       if (part) {
         const origin = frameOrigin(part.pivotU, pxPerU, image.frame);
@@ -294,7 +299,9 @@ export class Backdrop {
         : frameTexture(key, this.#texture ?? '');
       if (texture === undefined) continue;
       for (const image of layer[which]) {
-        image.setTexture(texture, key).setData('world-part', key);
+        image
+          .setTexture(frameTexture(key, texture), key)
+          .setData('world-part', key);
         const pivot = parts[key]?.pivotU;
         if (pivot) {
           const origin = frameOrigin(pivot, this.#pxPerU, image.frame);
@@ -338,7 +345,7 @@ export class Backdrop {
     while (images.length < count) {
       const part = parts[key];
       const image = this.#scene.add
-        .image(0, 0, resolved, key)
+        .image(0, 0, frameTexture(key, resolved), key)
         .setData('world-part', key)
         .setDepth(this.#depths[which] + (layer === this.#layers[1] ? 0.01 : 0));
       const origin = frameOrigin(
@@ -409,7 +416,7 @@ export class Backdrop {
         break;
       }
       const cloud = this.#scene.add
-        .image(0, 0, resolved, key)
+        .image(0, 0, frameTexture(key, resolved), key)
         .setData('world-part', key)
         .setDepth(this.#depths.clouds);
       if (part) {

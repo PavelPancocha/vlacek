@@ -1,3 +1,4 @@
+import { waterMountainBackdropKey } from './waterMountainBackdrop.ts';
 import { backdropParts } from '../content/worldArt.ts';
 import type { Biome } from '../domain/world/Biomes.ts';
 import type { Season } from '../domain/world/Regions.ts';
@@ -7,6 +8,11 @@ export function backdropFrames(
   exists: (key: string) => boolean,
   subzone = '',
 ) {
+  if (biome === 'dunes' || biome === 'mountains') {
+    const far = waterMountainBackdropKey(biome, season, 'far'),
+      mid = waterMountainBackdropKey(biome, season, 'mid');
+    if (exists(far) && exists(mid)) return { far, mid };
+  }
   const original =
     biome === 'town' &&
     exists('backdrop.town-sparse') &&

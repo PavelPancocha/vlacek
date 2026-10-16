@@ -1,3 +1,5 @@
+import { parts as lifeParts } from './world-modules/life.art.ts';
+import { waterMountainParts } from './world-modules/water-mountains.art.ts';
 import { swayAmplitudeRad } from '../render/ambientMotion.ts';
 import { farmForestParts } from './world-modules/farm-forest.art.ts';
 import { worldParts } from './worldArt.ts';
@@ -25,6 +27,19 @@ export function placementCatalog(
   const result: Record<string, PlacementPart> = {};
   for (const [key, part] of Object.entries(parts)) {
     const { widthU, heightU, pivotU } = part;
+    // The existing logical mill key now draws the taller authored body and a separate wheel.
+    const mill =
+      key === 'back.watermill' ? lifeParts['life.watermill-body'] : undefined;
+    const workBoundsU =
+      part.workBoundsU ??
+      (mill
+        ? {
+            leftU: -mill.pivotU.x,
+            rightU: mill.widthU - mill.pivotU.x,
+            topU: -mill.pivotU.y,
+            bottomU: mill.heightU - mill.pivotU.y,
+          }
+        : undefined);
     if (
       ![widthU, heightU, pivotU.x, pivotU.y].every(Number.isFinite) ||
       widthU <= 0 ||
@@ -35,8 +50,8 @@ export function placementCatalog(
       pivotU.y > heightU
     )
       throw new Error(`invalid placement art ${key}`);
-    if (part.workBoundsU) {
-      const b = part.workBoundsU;
+    if (workBoundsU) {
+      const b = workBoundsU;
       if (
         ![b.leftU, b.rightU, b.topU, b.bottomU].every(Number.isFinite) ||
         b.leftU >= b.rightU ||
@@ -49,6 +64,7 @@ export function placementCatalog(
         throw new Error(`invalid work envelope ${key}`);
     }
     const machine = farmForestParts[key];
+    const bankPart = machine ?? waterMountainParts[key];
     const contacts =
       machine?.wheels?.map((w) => ({
         xU: w.atU.x - pivotU.x,
@@ -90,27 +106,28 @@ export function placementCatalog(
       heightU,
       pivotU: Object.freeze({ xU: pivotU.x, yU: pivotU.y }),
       swayRad: swayAmplitudeRad(key),
-      ...(part.workBoundsU
-        ? { workBoundsU: Object.freeze({ ...part.workBoundsU }) }
+      ...(workBoundsU
+        ? { workBoundsU: Object.freeze({ ...workBoundsU }) }
         : {}),
       ...(contacts.length
         ? {
             workContactsU: Object.freeze(contacts.map((c) => Object.freeze(c))),
           }
         : {}),
-      ...(machine?.anchorsU?.['leftBank'] && machine.anchorsU['rightBank']
+      ...(bankPart?.anchorsU?.['leftBank'] && bankPart.anchorsU['rightBank']
         ? {
             bankAnchorsU: Object.freeze(
-              [machine.anchorsU['leftBank'], machine.anchorsU['rightBank']].map(
-                (c) => {
-                  if (![c.x, c.y].every(Number.isFinite))
-                    throw new Error(`invalid bank anchor ${key}`);
-                  return Object.freeze({
-                    xU: c.x - pivotU.x,
-                    yU: c.y - pivotU.y,
-                  });
-                },
-              ),
+              [
+                bankPart.anchorsU['leftBank'],
+                bankPart.anchorsU['rightBank'],
+              ].map((c) => {
+                if (![c.x, c.y].every(Number.isFinite))
+                  throw new Error(`invalid bank anchor ${key}`);
+                return Object.freeze({
+                  xU: c.x - pivotU.x,
+                  yU: c.y - pivotU.y,
+                });
+              }),
             ),
           }
         : {}),

@@ -252,3 +252,298 @@ pracovních dílů nyní přebírá sezónní kontrakt `ArtPart`.
 Rendererová regrese GEN-23 drží autorské pšeničné řady explicitně ve fixture
 seedu 15 / chunku 16. Výběr nové scény ve společném plánu nemění požadavek
 na kreslení a prolínání řad; původní barevná aserce zůstává.
+
+## Linka water-mountains — vodní břehy, Moravská Sahara a horský terén
+
+Datum: 2026-10-14. Tato sekce patří běhu `water-mountains-1`; předchozí
+rozhodnutí a důkazy farm-forest zůstávají beze změny.
+
+Motivy vycházejí z vlastních textů coast, lakes, dunes, foothills a mountains.
+Samostatný `water-mountains.scenes.ts` přidává příležitosti rybničního souboru,
+říčního údolí, skalnatého pobřeží, přístavu, otevřených dun, vřesového okraje,
+lomu a lanovky. Malý výběrový hook ve WorldPlan dává základním motivům pevné
+příležitosti. Stanice, mosty, tunely, vedlejší kolej a jejich rezervace mají
+nadále přednost. Nejde o další registraci pluginů ani o novou simulační smyčku.
+
+`WaterMountainComposition` přidává děti z geometrie přijaté vody a skutečného
+svahu. Rybniční soubor má tři různé šířky/hloubky, suché mezery a jednu identitu
+scénky; úmyslná skupina se nepočítá jako tři sousední náhodné dominantní rybníky.
+Její druhý chunk drží skupinu mimo infrastrukturní slot 4; u vedlejší koleje se
+hladiny přesunou za její chráněný koridor. Voda nikdy nevzniká přes hlavní trať.
+Přívoz odkazuje na svoji vodu a obě přijatá mola, rybář na suchý břeh, bagr na
+lomovou stěnu na skutečném svahu. Břehové podpory zůstávají veřejnými kotvami
+pro kachny a vážky seasons-life. Lávka využívá potok a břehovou geometrii za
+tratí; nejedná se o nový železniční most.
+
+`WaterMountainView` skládá tělo mlýna a samostatné kolo, rybáře a prut, přívoz
+a paži, bagr a jeho rameno, lanovkové opory, lano a kabinu. Kolo používá
+simulační čas (24 s/otáčku), jen při odkazovaném tekoucím náhonu mimo zimu.
+Přívoz má 12 s pobyt a 26 s plavbu v každém směru; otočení vychází z přídě
+assetu, stejně jako kontrakt roads (`front` ve světě +x pro dosavadní lodě).
+Prut má vlastní 35s fázi, paže přívozu krátkou 20s fázi, bagr 24s cyklus a
+kabina 80s návrat. V pauze je čas stálý. Žádné timery/listenery ani nový zdroj
+času; kořeny, obrázky a lano uvolní stávající vlastník chunku. Update znovu
+používá pose a bod podpory, nevyrábí pole ani pomocné objekty.
+
+Nové art mapy jsou append-only; registry vznikají projektovým generátorem.
+Značky sezón používají výhradně `atlasGroup.seasons`. Zimní a letní horský
+horizont má dvě parallax vrstvy; duny mají vlastní nízký hřbet a borový pás.
+Profil, délka soupravy, catenary a konstrukce tunnels-bridges se nemění.
+Formát save a generátorová verze zůstávají 1 / 2: jde o dokončení nevydané V2
+podle D-023, nikoli změnu již vydané geometrie.
+
+Validátor vyžaduje kladné svědky všech přidaných motivů a kontroluje jejich
+konkrétní podpory, suchý břeh, kontakt mola/nábřeží, celý obal přívozu a svah
+lomu. Samostatné mutační testy odeberou podporu nebo zvětší obal; regionový
+test kontroluje tři různé nádrže v každém sladkovodním regionu.
+
+Před integrací D-030 překračuje společný backdrop atlas při 1 px/u mez 2048²:
+29 dílů, plocha 4 304 340 px². World atlas má při 2 px/u 207 dílů a plochu
+3 929 044 px², ale shelf packing také překročí mez. Tato linka nesnižuje kresby
+ani nezvyšuje limit; podmínkou odstranění omezení je regionové/sezónní dělení
+D-030. Nových 35 klíčů má zdrojovou plochu 1 459 020 u² (5 836 080 px² při
+2 px/u); backdrops se za běhu používají nejvýše při 1 px/u.
+
+Fyzický tablet, Tesla/firmware a výkonová brána skutečného zařízení zůstávají
+NEOVĚŘENO. Zimní portály a vedlejší tunely vlastní tunnels-bridges; celkové
+sezónní mapování stromů a ambientní život vlastní seasons-life.
+
+Kompozice má deterministické číselné role a kandidáty ve stejném formátu ID
+jako world-core; nová stopa vrací i přijaté/odmítnuté děti této linky. Suchý
+přístup mlýna má konkrétní vztah `building-at-path`, který povolí jen vlastní
+rezervaci pěšiny, nikoli jiné komunikace. Numerický katalog zahrnuje skutečné
+vyšší tělo mlýna; klouby a osu samostatných dílů čte renderer z art kotev.
+Fixtury pobřežní kompozice přecházejí z 0/332 na 1/312, protože se záměrně
+mění plán místních scén; geometrické kontroly vody a obalu zůstávají stejné.
+Regrese 0/326 zachovává incoming moře a jeho regionovou identitu také v říční
+scéně. Publikované save fixtury ani katalogová ID vozidel se nemění.
+
+Říční údolí používá `WaterGeometry.flowSpan`: společné světové meze hladiny,
+návazný průřez na chunkovém švu a zaoblené skutečné konce za břehy. Otevřené
+řezy platí jen pro tekoucí údolí; ovály rybníků a souvislé moře se nemění.
+Plánovaný potok může vytvořit soutok za tratí, obal lodě nadále nesmí vstoupit
+do rezervace železničního mostu. Regrese LA-02 je seed 1, chunky 292/293.
+Rendererová regrese mlýna 1/288 odhalila desetinný počátek náhonu v `hash32`;
+odlesky a vlnky nyní používají jeho stabilní vodní ID.
+
+Kontrola kontraktu při pokračování 2026-10-15 doplnila jemný vítr pro vřes,
+mladé borovice a oba rákosové díly přes stávající sdílenou funkci; její amplitudu
+čte i numerický obal umístění. Teplé horské horizonty mají sezónní skupinu
+jaro/léto/podzim, sněhové zimu. Přívoz při pobytu drží směr posledního připlutí,
+otáčí se při odjezdu a v zimě zůstává vyvázaný. Validátor vyžaduje kladné
+pokrytí také vrb, rákosí, obou pobřežních skal a souvislého říčního údolí;
+infrastrukturní sweep zahrnuje všechny sladkovodní scény této linky.
+
+Lokální uzávěrka: cílené unit testy 51/51, browserové testy této linky a
+world-diagnostics 32/32 (Canvas/WebGL, krátká i nejdelší souprava). Úplný check
+má 980/983 úspěšných testů; tři atlasové rozpočty zůstávají červené z výše
+uvedeného důvodu D-030, bez zvýšení limitů nebo přeskočení kontrol. Při souběhu
+cílené sady s úplnou kontrolou jednou vypršel limit seedové trasy 1; opakování
+bez změny timeoutu prošlo 51/51. Snímky v obou rozměrech a s oběma délkami
+soupravy jsou mimo repozitář v `_runs/shots/water-mountains/`.
+
+### Review water-mountains-2 (2026-10-15)
+
+Nálezy 1/4/5/6/7 opravuje tento řez. Rozsah řeky a vlastník lanovky se vybírají
+nad skutečnými základními kompozicemi obou chunků scény. `baseChunkScenery`
+nevytváří děti water-mountains, takže plánování nevolá samo sebe a nezávisí na
+pořadí streamování. Přijaté fragmenty řeky sdílejí rozsah i hloubku; odmítnutý
+soused zkrátí skutečný konec a jeho 160u zúžení. Regrese 1/290→291 končí v
+x=297984 místo otevřeného technického řezu. `validateWaterMountainScenes`
+vyžaduje souseda na každém vnitřním švu, shodný rozsah a shodné nenulové
+průřezy. Chybějící, uzavřené i rozdílné pokračování mají mutační důkazy.
+Sweep 100 úplných tras obsahuje 1 188 říčních fragmentů bez otevřených konců.
+
+Lanovka má jeden scénový feature a prvního přípustného vlastníka. Obě stanice
+se vzorkují v jejich skutečných x (−35 a +365 u v lokálním prostoru sestavy),
+stejně jako věže (0 a +320 u). Výšku dodává stejný vzorek koleje jako renderer;
+kabina zůstává na laně mezi věžemi. Zakřivený profil v unit testu rozlišuje
+stanice od sousedních věží. Původní dvojice instalací 1/100 a 1/101 je jediná.
+
+Moravská Sahara používá dvě vlastní dospělé siluety `tree.sahara-pine-a/b`,
+nepravidelné patrovité tmavozelené koruny a oranžovohnědou horní kůru.
+Stávající dune props `tree.pine` se v této krajině překládají na stejné vlastní
+varianty se shodným obalem 60×120 u; společná lesní kresba se nemění. Překreslen
+je i borový horizont, kuželovitá mladá borovice a dva nízké vřesové polštáře.
+Telefonní pixelová kontrola vyžaduje nejméně 150 růžovofialových pixelů v dolní
+části scény; původní kresba měla 0 u krátkého i nejdelšího vlaku. Botanickou
+siluetu doplňuje vizuální kontrola snímků, nikoli jen názvy klíčů či barvy.
+Zelená tunelová hmota zůstává tunnels-bridges.
+
+Trasový test má 240 osmichunkových dávek místo čtyř 480chunkových případů;
+zachovává všechny čtyři seedy, všech 480 chunků a diagnostický kontext. E2E
+ověřuje THROTTLE, kladnou rychlost a posun `headS`, pak samostatný COAST a
+teprve potom pauzu. Sestavy se sledují přes běžný renderovací loop, bez přímého
+volání `ChunkView.update(t)`. Negativní browserové důkazy záměrně odpojí vstup
+nebo aktualizaci chunků: samotné přibývání ticků potom nové aserce nesplní.
+Timeouty a retries se nemění.
+
+Nálezy 2/3 zůstávají výslovně odložené na integrační pokračování. Všechny
+compound-child a backdrop/cloud frame lookupy procházejí jedinou funkcí
+`waterMountainFrame`; na této základně jen vrací existující atlas. Nevzniká
+náhradní implementace D-030 ani jeho host mappings. Tělo, kolo a animaci mlýna
+vlastní jediná funkce `assembleWatermill`, která se po rebase vymění jako celek
+za dohodnutého vlastníka seasons-life. Konkrétní flowing-water dependency se
+zachovává. `life.watermill-wheel`, `frameTexture` a `effectiveClimateAt` se zde
+nezavádějí; následná integrace musí odstranit dvojího vlastníka. Save ani
+geometrie koleje se nemění. Dvě nové borovice přidávají 14 400 px² při 1 px/u
+(57 600 při 2 px/u); tři stávající atlasové brány stále náleží D-030.
+
+Lokální kontrola review 2: 288/288 cílených unit případů (včetně všech trasových
+dávek), úplný check 1 223/1 226; selhávají pouze tři známé kapacity atlasů.
+Validace světa má 8 992 kompozic se čtyřmi pořadími dotazů a 20 792 vodních/
+silničních případů. Assety: 238 světových dílů, žádný placeholder. Nové snímky
+1140×512 jsou v `_runs/shots/water-mountains/wm-2/`, důkazy v
+`_runs/water-mountains-2/`. Telefonní vřes prošel s 662/264 barevnými pixely
+(krátká/nejdelší souprava). Orientační zahřáté generování seedu 1, 480 chunků,
+proti 85d2cf3: 1,70–1,89 → 1,34–1,69 ms/chunk na sdíleném stroji; nejde o
+výkonovou bránu zařízení ani průkaz zrychlení. Maximum zůstává 56 doménových
+rekvizit a dvě složené animace/chunk, celkem 12 750 → 12 748 rekvizit. Nové
+frame lookupy a sestavení mlýna alokují při konstrukci/přepnutí, nikoli v
+ustáleném update; heap profil a fyzická zařízení zůstávají NEOVĚŘENO.
+
+Cílené E2E `water-mountains.spec.ts` a `world-diagnostics.spec.ts` pod společným
+zámkem, projekt desktop a dva workery: 34/34 za 2,4 minuty. Obsahují Canvas
+i WebGL, krátký i nejdelší vlak, 10 běžných animačních cyklů a dvě telefonní
+pixelové kontroly vřesu. Behaviorální red/green příkazy a jejich výstupy jsou
+v `_runs/water-mountains-2/test-commands.md`. Build prošel; integrační atlasové
+a sezónní nálezy 2/3 nejsou tímto výsledkem uzavřené.
+
+### Review water-mountains-3-astra (2026-10-15)
+
+Druhý review nepotvrdil rozpoznatelnost dospělých borovic ani lanovky na
+telefonu. Tento řez mění pouze jejich kresbu a čitelnost v existující scéně.
+Borovice A/B a jejich vložené kopie v horizontu mají samostatné ploché,
+nepravidelné shluky jehličí v horní třetině, viditelné boční větve a rovný nebo
+mírně prohnutý kmen; horní kůra je oranžovohnědá, dolní šedohnědá. Zachovávají
+rozměry 60 × 120 u, pivot i způsob umístění. Mladé borovice a vřes se nemění.
+
+Kamera 1140 × 512 má 0,342 px/u pro krátký i nejdelší vlak; lanovka v hloubce
+0,55 má výsledných 0,276165 px/u. Kabina 24 × 20 u proto měla jen 6,63 × 5,52 px
+a lano 1,3 u jen 0,36 px. Nová kabina 56 × 48 u má 15,47 × 13,26 px,
+červené tělo, tmavý obrys a světlá okna. Její pivot i kotva jsou (28,2).
+Lano 6 u má 1,66 px; sloupy mají výraznější siluetu při stejných rozměrech
+a kotvách. Stanice se nemění. Stromy příslušné scény stojí v hloubce 0,85–0,90,
+aby nezasahovaly do dráhy kabiny. Počet objektů ani animací se nezvyšuje.
+
+Rozměry kabiny a kotvy jsou aktualizované v art mapě; numerický katalog je
+přebírá. Vnější obal celé sestavy (−70…400, −200…50 u) nadále zahrnuje všechny
+polohy větší kabiny i obě stanice, což kontroluje regresní test na rovné
+a šikmé reprodukci. Není důvod jej zvětšovat a měnit přípustnost podpor.
+Vlastník, vzorkování stanic/věží, trasa ani animační čas se nemění; update
+nepřidává alokace, listenery ani cache. Nevznikají nové klíče nebo moduly.
+Plocha kabiny navíc je 2 208 px² při 1 px/u, 8 832 při 2 px/u. Tři známé
+kapacitní brány atlasů zůstávají v D-030; `waterMountainFrame` a
+`assembleWatermill` zůstávají každá jedinou integrační funkcí.
+
+Save schéma, katalog vozidel a geometrie koleje jsou beze změny. Jde o
+výtvarné dokončení dosud nevydaného generátoru V2; hloubka stromů se změní
+pouze v lanovkové scéně. Fyzická zařízení a výkonová brána zůstávají NEOVĚŘENO.
+
+Lokální jednotkové ověření: 299/299 cílených případů; úplná sada v připnutém
+Node 24.21.0 má 1 228/1 231, se třemi známými kapacitními chybami D-030.
+Lint, typecheck, registry, assetový a světový validátor prošly. Světový sweep
+obsahuje 8 992 kompozic, 20 792 vodních/silničních případů a 1 188 říčních
+fragmentů bez otevřených nebo neshodných švů. Browserové a fyzické brány se
+vykazují samostatně; snímky a protokol běhu jsou v `_runs/water-mountains-3-astra/`
+a `_runs/shots/water-mountains/wm-3/` mimo repozitář.
+
+První E2E běh obou dotčených souborů pod zámkem se dvěma workery: 70/76,
+desktop i tablet-touch. Všech osm nových kontrol lanovky prošlo; šest
+stávajících případů skončilo na limitu 30 s (WebGL přívozy 1/312 a 1/293,
+WebGL bagr 1/105 a desktopový restart/nový svět). Tento běh není zelená
+E2E brána. Traces a jediné opakování neúspěšných případů se vykazují
+v protokolu běhu, bez změny timeoutů či assertions.
+
+### Integrace water-mountains-4: D-030 a jediný mlýn
+
+Datum: 2026-10-16.
+
+Rebase na 95cf68c zachovává atlasové interní moduly, integrační osady, silnice,
+sezóny a animace. Grafika b6b2288 se nemění. `SeasonalSceneryView` je jediným
+vlastníkem sestavy i animace mlýna; používá `life.watermill-body/wheel`.
+WaterMountainView přestává mlýn vytvářet a jeho dva duplicitní art klíče
+se odstraňují. Normální sezónní průchod tak není přeskočen. ChunkView předává
+konkrétní channel dependency; kolo se otáčí jen na tekoucí vodě a mimo zimu
+podle `effectiveClimateAt`. Rozpočet a lokální animační čas vlastní D-027.
+Kachny, vážky a sáňky zůstávají beze změny v seasons-life.
+
+Potomci vodních sestav používají `frameTexture` a `world-part`. D-030
+Backdrop zůstává jedinou cestou kreslení vzdálených pásů; výběr se doplňuje
+o Sahara a horské pásy. Host mapy zahrnují přívoz na pobřeží i jezerech,
+podhorské zářezy a explicitní jezerní alias lávky. Odebrán je pouze vlastní
+snapshot registrovaného modulu. Vodní sestavy nepřidávají pixelové pracovní
+plochy ani readback; stávající pečení chunku přebírá D-030 API.
+
+Rebase změnil konkrétní svědky: původní bagr 1/105 patří zimním sáňkám,
+lanovka 1/186 koliduje s integrovanými rezervacemi. Stejné nezměněné aserce
+používají 1/108 (bagr) a 1/112 (lanovka ve skutečném sklonu). Přístup mlýna
+je výslovně `style: path`, jak vyžaduje integrační rozlišení krátkého přístupu
+a průběžné komunikace; geometrie cesty ani validační aserce se nemění.
+
+Přepočet D-030 nad registrovaným modulem: scratch/readback příspěvek 0 B.
+Správné hostování zvětší nejhorší world window na 9 437 184 B low a
+20 742 144 B standard. Úplné životnostní meze jsou 94 429 648 B (90,055 MiB)
+a 133 955 048 B (127,749 MiB), tedy +2 097 152 / +98 304 B proti 95cf68c.
+Rezerva low je 5,945 MiB, rozpočty 96/192 MiB zůstávají. Stávající kompoziční
+envelope zahrnuje 1 425 408 B největší plochy a 402 192 B readback; vodní
+sestavy další plochu nepřidávají. Předchozí hodnoty 88,06/127,66 MiB jsou
+pro rebased stav nahrazené tímto přesným přepočtem.
+
+Kosmetický klíč glintů a vlnek přebírá integrační `String(basin.fromX)`,
+ne druhou lokální hash politiku. Zachované jsou `motionBoundsU` osad spolu
+s pracovními a břehovými kotvami této linky, silniční pozice a heading,
+pořadí rezervací i efektové aktualizace RideScene. Skalní/tunelové/mostní
+view ani atlasové interní moduly tento řez neupravuje. Starý lokální výpočet
+mlýnského úhlu je odstraněný; živé kolo má výhradně lokální čas D-027.
+
+Lokální kontrola tohoto řezu: 2 371/2 371 unit a integračních testů ve
+141 souborech; celý check včetně validátorů prošel. První úplná kontrola
+měla jedinou zastaralou expectation, že duny i při přítomnosti vlastních
+pásů používají forest-mid. Nová expectation vyžaduje dunes-pines; původní
+fallback při chybějících dílech má dál vlastní aserci. Čtyři atlasové matice
+mají 814 případů, navazující atlasová sada celkem 865/865. Skutečný ChunkView
+a Backdrop: 31/31, 2 100 chunků seedů 1/7/123 včetně zimních bloků.
+
+Validátor světa prošel nad 9 031 kompozicemi ve čtyřech pořadích dotazování,
+100 trasami a 1 188 říčními fragmenty bez otevřeného/nestejného švu.
+Road/water sweep má 23 458 případů a 4 748 spojů cest; release asset validátor
+365 světových dílů bez placeholderu. Sedm snímků 1140×512 (rybník s kachnami,
+pobřežní přívoz, mlýn v létě a zimě, Sahara obou délek, lanovka) má
+missingFrames prázdné a pending false; jsou mimo repo v
+`_runs/water-mountains-4-proof/`.
+
+Běžný loop/pauza se testují samostatně od přesných obrazových póz lanovky.
+Ty už nevolají ChunkView.update s absolutním časem, který by při lokálních
+hodinách D-027 nezaručil požadovaný bod. Nastaví skutečný obraz kabiny mezi
+reálnými věžemi na 0/0,5/1 a kontrolují poměr i původní pixelové/rozměrové
+limity. Po resume se testuje publikace atlasů i existence skutečné kresby
+soupravy před původními třemi kontrolovanými snímky. Timeouty a retries
+jsou beze změny.
+
+Svědek seed 1 / chunk 108 / nejdelší souprava odhaluje crossing.post-low
+přes service_crane.body. Stejný grep nad head i archivem 95cf68c selhal
+v Canvas i WebGL se všemi 12 vozidly skutečně vykreslenými. Jde o problém
+báze, nikoli vodního bagru; cizí CrossingView ani aserce se neobcházejí.
+První široký E2E běh má 147/172, není zelenou browserovou bránou; přesné
+finální cílené výsledky a A/B protokoly vlastní předání tohoto běhu.
+
+Rezidenční regrese far/mid pásů výslovně zahrnuje přechod letní Sahary
+do zimních hor i zimních hor do letní Sahary, vedle změny horské sezóny.
+
+Dev-menu regrese po skoku do dun čeká na publikaci D-030 atlasu i skutečnou
+kresbu overlaye; původní nenulový limit zůstává. Samotná změna lokace ještě
+neznamená vykreslený svět, stejně jako samotný resume neznamená kresbu vlaku.
+Původní DEV-02/03 selhal na overlay count 0 v obou projektech i na 95cf68c;
+po synchronizaci prošel celý world-diagnostics 12/12. Finální cílená sada
+vodních scén má 48/48 (32 ovládání, 8 lanovkových póz, 8 mlýnů); přidaný
+art.spec:187 selhal v obou projektech, celkem tedy 48/50. Široký běh 147/172
+se tím nepřepisuje. Timeouty, retries a původní limity asercí se nezměnily.
+
+### Integrace obou obsahových linek (integrate-4)
+
+D-026 rezervuje v seedu 2 / chunku 69 nový dlouhý tunel, proto se pozitivní
+svědek lomu přesouvá do stejného seedu / chunku 105. Priorita infrastruktury
+a kontrola přítomnosti i validního umístění zůstávají. Zrcadlené molo v
+ChunkView ukládá autorský pivot přes D-030 `setWorldPivot`, aby jej pozdní
+publikace stránky zachovala (regrese seed 1 / chunk 290). Save se nemění.

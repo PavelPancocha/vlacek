@@ -22,7 +22,8 @@ it('DEV-02: test scenes resolve within a bounded search of seeds with suitable s
         expect(context.region.landscape).toBe(kind);
       if (kind === 'autumn' || kind === 'winter')
         expect(context.season).toBe(kind);
-      if (kind === 'fishponds') expect(context.scene.templateId).toBe('pond');
+      if (kind === 'fishponds')
+        expect(context.scene.templateId).toBe('water-mountains-fishponds');
       if (kind === 'forest-work')
         expect(
           chunkScenery(

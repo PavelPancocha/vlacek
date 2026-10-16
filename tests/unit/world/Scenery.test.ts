@@ -1,3 +1,5 @@
+import { WATER_MOUNTAIN_CHILD_KINDS } from '../../../src/domain/world/WaterMountainComposition.ts';
+import { validateWaterMountainComposition } from '../../../src/domain/world/WaterMountainValidation.ts';
 import { animalParts } from '../../../src/content/worldArt.ts';
 import {
   polygonsHit,
@@ -87,14 +89,19 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
     });
   });
 
-  it('places only props of its locality: reeds by water, barns on farms', () => {
-    each((scenery) => {
+  it('places locality props and validated authored children: reeds by water, barns on farms', () => {
+    each((scenery, seed) => {
       const chosen = template(scenery.locality);
       if (!chosen || chosen.station) return;
       if (scenery.slot === chunksPerBiomeBlock - 1) return;
       const kinds = kindsOf(scenery.locality);
       if (scenery.scene.templateId.startsWith('settlements-'))
         for (const kind of SETTLEMENT_KINDS) kinds.add(kind);
+      if (scenery.region.landscape === 'dunes' && kinds.has('tree.pine')) {
+        kinds.delete('tree.pine');
+        kinds.add('tree.sahara-pine-a');
+        kinds.add('tree.sahara-pine-b');
+      }
       if (scenery.region.season === 'winter')
         for (const kind of snowField.flatMap((r) => r.kinds)) kinds.add(kind);
       for (const prop of scenery.props) {
@@ -120,8 +127,22 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
           ).toBe(true);
           continue;
         }
-        if (prop.kind === 'back.footbridge') {
+        if (
+          prop.kind === 'back.footbridge' ||
+          prop.kind === 'back.water-footbridge'
+        ) {
           expect(prop.dependencies).toEqual([scenery.bridge?.id]);
+          continue;
+        }
+        if (/:prop:rule:([1-9]\d{3,}):/.test(prop.id)) {
+          expect(WATER_MOUNTAIN_CHILD_KINDS).toContain(prop.kind);
+          expect(
+            validateWaterMountainComposition(
+              seed,
+              scenery,
+              worldPlacementCatalog,
+            ),
+          ).toEqual([]);
           continue;
         }
         expect(kinds.has(prop.kind), `${scenery.locality}: ${prop.kind}`).toBe(
@@ -167,7 +188,16 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
   it('stands houses, trees and the lighthouse on land, not in the water', () => {
     each((scenery) => {
       for (const prop of scenery.props) {
-        if (prop.layer !== 'back' || ON_WATER.has(prop.kind)) continue;
+        if (
+          prop.layer !== 'back' ||
+          ON_WATER.has(prop.kind) ||
+          prop.kind === 'back.ferry' ||
+          prop.relations?.some(
+            (r) =>
+              r.relation === 'pier-at-water' || r.relation === 'reeds-at-water',
+          )
+        )
+          continue;
         const inWater = scenery.water.some(
           (basin) =>
             prop.xU > basin.fromX + WATER_END_U / 2 &&
@@ -339,7 +369,10 @@ describe('chunkScenery: logical localities along the track (doc 14 §5)', () => 
       bridges += 1;
       const c = site.localXU;
       for (const prop of scenery.props) {
-        if (prop.kind === 'back.footbridge') {
+        if (
+          prop.kind === 'back.footbridge' ||
+          prop.kind === 'back.water-footbridge'
+        ) {
           expect(prop.layer).toBe('back');
           expect(prop.dependencies).toContain(site.id);
           expect(

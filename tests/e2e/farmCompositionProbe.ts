@@ -8,10 +8,19 @@ interface ProbeObject {
   type: string;
   name: string;
   x: number;
+  y: number;
   list?: ProbeObject[];
   texture?: { key: string };
+  frame?: { name: string | number };
   setVisible(visible: boolean): void;
-  getBounds(): { centerX: number; centerY: number };
+  getBounds(): {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    centerX: number;
+    centerY: number;
+  };
 }
 interface ProbeCamera {
   scrollX: number;
@@ -35,7 +44,7 @@ interface ProbeScene {
 declare global {
   interface Window {
     __farmScene: ProbeScene;
-    __farmChunks: Map<number, unknown>;
+    __farmChunks: Map<number, { update(timeSec: number): void }>;
   }
 }
 

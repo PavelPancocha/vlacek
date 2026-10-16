@@ -106,3 +106,31 @@ Vodní tvary se generují z geometrie; `near.pond` se nekopíruje jako univerzá
 Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
 a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
 koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.
+
+## Implementační řez water-mountains-1
+
+Rybniční soubor má tři nestejně široké geometrické nádrže v jednom plánovaném
+úseku, oddělené suchými mezerami. Hráz/stavidlo, rákosí, vrby a sedící rybář
+se odvozují od skutečného břehu konkrétní vody. Kvůli čitelnosti v telefonu je
+rybář v zadní břehové vrstvě; prut se skládá v jeho ruce. Náhon mlýna je
+tekoucí voda a samostatné kolo má osu v kotvě těla; v zimě stojí. Mlýn má
+suchý přístup; pěšina překonává plánovaný potok lávkou mimo kolej. Přívoz používá celý ověřený vodní
+obal, přístupy na obou koncích a samostatnou paži převozníka. Vodní identity
+a břehy jsou kotvy pro kachny/vážky linky seasons-life; tato linka je negeneruje.
+
+LA-02 má jednu dvouchunkovou identitu tekoucího údolí. Technické řezy neuzavírají
+hladinu; skutečné konce se stáčejí/tlumí do břehů během 160 u. Tok sleduje
+profil svahu, rybníky zůstávají vodorovné. Přívoz a dvě mola leží ve volném
+chunku vedle plánovaného mostu, nikoli v rezervaci jeho opěr.
+Při pobytu drží přívoz směr posledního připlutí a otáčí se až při odjezdu.
+V zimě zůstává u levého přístupu; rákosí se jemně naklání vlastní fází.
+
+Review water-mountains-2: přijatý rozsah říčního údolí se rozhoduje jednou nad
+rezervacemi obou chunků scény. Překážka může zkrátit skutečný tok; jeho konec
+se vždy uzavře měkkým zúžením. Technický šev uvnitř přijatého toku má na obou
+stranách stejný nenulový průřez. Chybějící pokračování je chyba světa.
+
+Review water-mountains-4 sjednocuje mlýn na `SeasonalSceneryView`: jedna
+kanonická sestava `life.watermill-body/wheel`, konkrétní tekoucí náhon a
+efektivní klima D-027. Zamrzlé zimní či chybějící proudění kolo zastaví.
+Život na rybníku zůstává v sezónním průchodu, který mlýn nepřeskakuje.

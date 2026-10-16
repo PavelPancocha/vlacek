@@ -1,4 +1,6 @@
 import { settlementScene } from './SettlementPlan.ts';
+
+import { waterMountainSceneId } from './scenes/water-mountains.scenes.ts';
 import { hash32, unitRandom } from './Hash.ts';
 import { regionAt, transitionAt, type RegionPlan } from './Regions.ts';
 import {
@@ -85,6 +87,10 @@ export function sceneAt(seed: number, worldXU: number): ScenePlan {
     chosen = templateById('mill');
   const settlement = settlementScene(r, index);
   if (settlement) chosen = templateById(`settlements-${settlement}`);
+
+  const waterMountainId = waterMountainSceneId(r, index);
+  if (waterMountainId && !(r.landscape === 'lakes' && index === millSlot))
+    chosen = templateById(waterMountainId);
   if (!chosen) throw new Error(`no scene for ${r.landscape}/${r.season}`);
   const result: ScenePlan = Object.freeze({
     id: `${r.id}:scene:${index}`,

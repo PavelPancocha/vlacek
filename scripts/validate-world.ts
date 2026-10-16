@@ -2,6 +2,7 @@ import { roadStretchesInChunk } from '../src/domain/world/RoadStretches.ts';
 import { sceneAt, templateById } from '../src/domain/world/WorldPlan.ts';
 import assert from 'node:assert/strict';
 import { worldPlacementCatalog } from '../src/content/worldPlacementCatalog.ts';
+import { validateWaterMountainScenes } from '../src/domain/world/WaterMountainValidation.ts';
 import {
   chunkScenery,
   stationFlat,
@@ -77,10 +78,22 @@ for (const seed of seeds) {
     for (
       let x = r.fromXU;
       x < r.toXU;
-      x += ['forest', 'countryside'].includes(r.landscape) ? 1024 : 2048
+      x += ['forest', 'countryside', 'lakes'].includes(r.landscape)
+        ? 1024
+        : 2048
     )
       chunks.add(Math.floor(x / 1024));
     r = regionAt(seed, r.toXU);
+  }
+  for (const k of [...chunks]) {
+    const scene = sceneAt(seed, k * 1024);
+    if (
+      ['water-mountains-river', 'water-mountains-cableway'].includes(
+        scene.templateId,
+      )
+    )
+      for (let j = scene.fromXU / 1024; j < scene.toXU / 1024; j++)
+        chunks.add(j);
   }
   const ascending = [...chunks].sort((a, b) => a - b);
   const fingerprints = new Map<number, string>();
@@ -101,6 +114,12 @@ for (const seed of seeds) {
     fingerprints.set(k, JSON.stringify(scenery));
   }
   errors.push(...validateFarmForestRegions(coverageCases));
+  errors.push(
+    ...validateWaterMountainScenes(
+      seed,
+      coverageCases.map((c) => c.scenery),
+    ),
+  );
   for (const [motif, count] of Object.entries(
     worldMotifCoverage(coverageCases, worldPlacementCatalog),
   ))
@@ -128,10 +147,12 @@ for (const [motif, count] of Object.entries(coverage))
   assert(count > 0, `zero world motif coverage: ${motif}`);
 console.log('Positive world motifs:', JSON.stringify(coverage));
 // Every road/water scene in 100 complete itineraries; no expensive decorative comparisons.
+let riverFragments = 0;
 let surfaceCases = 0,
   footpathJoins = 0;
 for (let seed = 0; seed < 100; seed++) {
   let previous: ReturnType<typeof chunkScenery> | undefined;
+  const riverChunks: ReturnType<typeof chunkScenery>[] = [];
   for (let k = 0; k < 480; k++) {
     const t = templateById(sceneAt(seed, k * 1024).templateId);
     if (
@@ -139,6 +160,7 @@ for (let seed = 0; seed < 100; seed++) {
       !t.water &&
       !t.id.startsWith('settlements-') &&
       t.biome !== 'coast' &&
+      t.biome !== 'lakes' &&
       !t.rules.some((r) => r.kinds.includes('back.car'))
     ) {
       previous = undefined;
@@ -156,9 +178,23 @@ for (let seed = 0; seed < 100; seed++) {
       footpathJoins++;
     }
     previous = scenery;
+    if (scenery.water.some((w) => w.flowSpan)) riverChunks.push(scenery);
     surfaceCases++;
   }
+  assert.deepEqual(
+    validateWaterMountainScenes(seed, riverChunks),
+    [],
+    `river continuity seed=${seed} generator=2`,
+  );
+  riverFragments += riverChunks.reduce(
+    (n, sc) => n + sc.water.filter((w) => w.flowSpan).length,
+    0,
+  );
 }
+assert(riverFragments > 0, 'river seam sweep exercised zero fragments');
+console.log(
+  `River seams: 100 complete seed cycles, ${riverFragments} fragments, zero open ends or mismatched sections`,
+);
 assert(surfaceCases > 0, 'infrastructure surface sweep exercised zero cases');
 assert(footpathJoins > 0, 'footpath join sweep exercised zero cases');
 console.log(

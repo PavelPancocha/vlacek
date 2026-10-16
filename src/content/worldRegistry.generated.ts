@@ -6,6 +6,7 @@ import * as art2 from './world-modules/life.art.ts';
 import * as art3 from './world-modules/seasons-life.art.ts';
 import * as art4 from './world-modules/settlements.art.ts';
 import * as art5 from './world-modules/tunnels-bridges.art.ts';
+import * as art6 from './world-modules/water-mountains.art.ts';
 export const additionalWorldParts = {
   ...art0.parts,
   ...art1.parts,
@@ -13,6 +14,7 @@ export const additionalWorldParts = {
   ...art3.parts,
   ...art4.parts,
   ...art5.parts,
+  ...art6.parts,
 } as const satisfies Record<string, ArtPart>;
 export const additionalWorldUsedKeys: readonly string[] = [
   ...art0.usedKeys,
@@ -21,6 +23,7 @@ export const additionalWorldUsedKeys: readonly string[] = [
   ...art3.usedKeys,
   ...art4.usedKeys,
   ...art5.usedKeys,
+  ...art6.usedKeys,
 ];
 export const additionalPartKeys: readonly string[] = [
   ...Object.keys(art0.parts),
@@ -29,4 +32,5 @@ export const additionalPartKeys: readonly string[] = [
   ...Object.keys(art3.parts),
   ...Object.keys(art4.parts),
   ...Object.keys(art5.parts),
+  ...Object.keys(art6.parts),
 ];

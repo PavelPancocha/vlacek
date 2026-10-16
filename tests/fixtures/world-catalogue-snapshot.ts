@@ -16,13 +16,7 @@ import type { WorldAtlasGroup } from '../../src/content/worldAtlasGroups.ts';
  * worldArt.ts). `worldAtlasWindow.test.ts` fails once a pending module is
  * registered here (refresh this file) or a registered part changes size.
  */
-export const CATALOGUE_SOURCES = [
-  {
-    module: 'water-mountains',
-    worktree: 'world-v2-water-mountains',
-    commit: 'b6b2288',
-  },
-] as const;
+export const CATALOGUE_SOURCES = [] as const;
 
 export interface CataloguePartSnapshot {
   module: string;
@@ -89,24 +83,6 @@ export const catalogueSnapshot: Readonly<
     heightU: 28,
     group: { landscapes: ['countryside', 'forest', 'town'] },
   },
-  'back.cableway-cabin': {
-    module: 'water-mountains',
-    widthU: 56,
-    heightU: 48,
-    group: { landscapes: ['foothills'] },
-  },
-  'back.cableway-station': {
-    module: 'water-mountains',
-    widthU: 70,
-    heightU: 45,
-    group: { landscapes: ['foothills'] },
-  },
-  'back.cableway-tower': {
-    module: 'water-mountains',
-    widthU: 20,
-    heightU: 80,
-    group: { landscapes: ['foothills'] },
-  },
   'back.car': { module: 'base', widthU: 60, heightU: 28, group: {} },
   'back.chalet': {
     module: 'base',
@@ -126,12 +102,6 @@ export const catalogueSnapshot: Readonly<
     heightU: 190,
     group: { landscapes: ['countryside', 'town'] },
   },
-  'back.coast-rock': {
-    module: 'water-mountains',
-    widthU: 180,
-    heightU: 110,
-    group: { landscapes: ['coast'] },
-  },
   'back.combine': {
     module: 'farm-forest',
     widthU: 110,
@@ -150,46 +120,7 @@ export const catalogueSnapshot: Readonly<
     heightU: 22,
     group: { landscapes: ['countryside'] },
   },
-  'back.cutting-rock': {
-    module: 'water-mountains',
-    widthU: 160,
-    heightU: 100,
-    group: {
-      landscapes: ['mountains'],
-      seasons: ['spring', 'summer', 'autumn'],
-    },
-  },
-  'back.cutting-rock-snow': {
-    module: 'water-mountains',
-    widthU: 160,
-    heightU: 100,
-    group: { landscapes: ['mountains'], seasons: ['winter'] },
-  },
   'back.dispatcher': { module: 'base', widthU: 16, heightU: 40, group: {} },
-  'back.excavator': {
-    module: 'water-mountains',
-    widthU: 100,
-    heightU: 70,
-    group: { landscapes: ['foothills'] },
-  },
-  'back.excavator-boom': {
-    module: 'water-mountains',
-    widthU: 38,
-    heightU: 16,
-    group: { landscapes: ['foothills'] },
-  },
-  'back.excavator-bucket': {
-    module: 'water-mountains',
-    widthU: 22,
-    heightU: 18,
-    group: { landscapes: ['foothills'] },
-  },
-  'back.excavator-stick': {
-    module: 'water-mountains',
-    widthU: 30,
-    heightU: 12,
-    group: { landscapes: ['foothills'] },
-  },
   'back.farmer-wave': {
     module: 'farm-forest',
     widthU: 16,
@@ -214,29 +145,11 @@ export const catalogueSnapshot: Readonly<
     heightU: 50,
     group: { landscapes: ['forest'] },
   },
-  'back.ferry': {
-    module: 'water-mountains',
-    widthU: 90,
-    heightU: 35,
-    group: { landscapes: ['lakes'] },
-  },
-  'back.ferryman-arm': {
-    module: 'water-mountains',
-    widthU: 10,
-    heightU: 12,
-    group: { landscapes: ['lakes'] },
-  },
   'back.fishing-boat': {
     module: 'base',
     widthU: 70,
     heightU: 50,
     group: { landscapes: ['coast'] },
-  },
-  'back.fishpond-sluice': {
-    module: 'water-mountains',
-    widthU: 100,
-    heightU: 35,
-    group: { landscapes: ['lakes'] },
   },
   'back.footbridge': {
     module: 'farm-forest',
@@ -261,18 +174,6 @@ export const catalogueSnapshot: Readonly<
     widthU: 120,
     heightU: 60,
     group: { landscapes: ['forest'] },
-  },
-  'back.harbour-pier': {
-    module: 'water-mountains',
-    widthU: 128,
-    heightU: 36,
-    group: { landscapes: ['coast', 'lakes'] },
-  },
-  'back.harbour-quay': {
-    module: 'water-mountains',
-    widthU: 128,
-    heightU: 40,
-    group: { landscapes: ['coast'] },
   },
   'back.harvester': {
     module: 'farm-forest',
@@ -369,21 +270,6 @@ export const catalogueSnapshot: Readonly<
     heightU: 24,
     group: { landscapes: ['countryside', 'foothills'] },
   },
-  'back.quarry-wall': {
-    module: 'water-mountains',
-    widthU: 512,
-    heightU: 180,
-    group: {
-      landscapes: ['foothills'],
-      seasons: ['spring', 'summer', 'autumn'],
-    },
-  },
-  'back.quarry-wall-snow': {
-    module: 'water-mountains',
-    widthU: 512,
-    heightU: 180,
-    group: { landscapes: ['foothills'], seasons: ['winter'] },
-  },
   'back.reeds': {
     module: 'base',
     widthU: 30,
@@ -451,28 +337,10 @@ export const catalogueSnapshot: Readonly<
     heightU: 46,
     group: { landscapes: ['countryside', 'foothills'] },
   },
-  'back.water-footbridge': {
-    module: 'water-mountains',
-    widthU: 100,
-    heightU: 35,
-    group: {},
-  },
   'back.watermill': {
     module: 'base',
     widthU: 130,
     heightU: 100,
-    group: { landscapes: ['lakes'] },
-  },
-  'back.watermill-body': {
-    module: 'water-mountains',
-    widthU: 130,
-    heightU: 100,
-    group: { landscapes: ['lakes'] },
-  },
-  'back.watermill-wheel': {
-    module: 'water-mountains',
-    widthU: 52,
-    heightU: 52,
     group: { landscapes: ['lakes'] },
   },
   'back.work-trunk': {
@@ -504,18 +372,6 @@ export const catalogueSnapshot: Readonly<
     widthU: 1020,
     heightU: 135,
     group: { landscapes: ['countryside', 'town'] },
-  },
-  'backdrop.dunes-pines': {
-    module: 'water-mountains',
-    widthU: 512,
-    heightU: 150,
-    group: { landscapes: ['dunes'] },
-  },
-  'backdrop.dunes-ridge': {
-    module: 'water-mountains',
-    widthU: 512,
-    heightU: 100,
-    group: { landscapes: ['dunes'] },
   },
   'backdrop.foothills-far': {
     module: 'base',
@@ -613,36 +469,6 @@ export const catalogueSnapshot: Readonly<
     heightU: 166,
     group: { landscapes: ['mountains'] },
   },
-  'backdrop.mountains-ridges': {
-    module: 'water-mountains',
-    widthU: 1024,
-    heightU: 320,
-    group: {
-      landscapes: ['mountains'],
-      seasons: ['spring', 'summer', 'autumn'],
-    },
-  },
-  'backdrop.mountains-ridges-snow': {
-    module: 'water-mountains',
-    widthU: 1024,
-    heightU: 320,
-    group: { landscapes: ['mountains'], seasons: ['winter'] },
-  },
-  'backdrop.mountains-slope': {
-    module: 'water-mountains',
-    widthU: 1024,
-    heightU: 180,
-    group: {
-      landscapes: ['mountains'],
-      seasons: ['spring', 'summer', 'autumn'],
-    },
-  },
-  'backdrop.mountains-slope-snow': {
-    module: 'water-mountains',
-    widthU: 1024,
-    heightU: 180,
-    group: { landscapes: ['mountains'], seasons: ['winter'] },
-  },
   'bridge.railing': { module: 'base', widthU: 160, heightU: 20, group: {} },
   'bridge.stone': { module: 'base', widthU: 160, heightU: 84, group: {} },
   'catenary.pole': { module: 'base', widthU: 30, heightU: 192, group: {} },
@@ -723,12 +549,6 @@ export const catalogueSnapshot: Readonly<
     },
   },
   'near.bush': { module: 'base', widthU: 64, heightU: 42, group: {} },
-  'near.coast-rock': {
-    module: 'water-mountains',
-    widthU: 120,
-    heightU: 38,
-    group: { landscapes: ['coast'] },
-  },
   'near.crop-rows-spring': {
     module: 'farm-forest',
     widthU: 128,
@@ -764,18 +584,6 @@ export const catalogueSnapshot: Readonly<
     widthU: 54,
     heightU: 36,
     group: { landscapes: ['forest'] },
-  },
-  'near.fisherman': {
-    module: 'water-mountains',
-    widthU: 28,
-    heightU: 30,
-    group: { landscapes: ['lakes'] },
-  },
-  'near.fishing-rod': {
-    module: 'water-mountains',
-    widthU: 40,
-    heightU: 32,
-    group: { landscapes: ['lakes'] },
   },
   'near.flowers-a': {
     module: 'base',
@@ -891,18 +699,6 @@ export const catalogueSnapshot: Readonly<
       ],
     },
   },
-  'near.heather': {
-    module: 'water-mountains',
-    widthU: 80,
-    heightU: 24,
-    group: { landscapes: ['dunes'] },
-  },
-  'near.heather-green': {
-    module: 'water-mountains',
-    widthU: 80,
-    heightU: 24,
-    group: { landscapes: ['dunes'] },
-  },
   'near.log': {
     module: 'base',
     widthU: 76,
@@ -926,18 +722,6 @@ export const catalogueSnapshot: Readonly<
     widthU: 22,
     heightU: 16,
     group: { landscapes: ['countryside'] },
-  },
-  'near.reed-clump': {
-    module: 'water-mountains',
-    widthU: 100,
-    heightU: 45,
-    group: { landscapes: ['lakes'] },
-  },
-  'near.reed-clump-autumn': {
-    module: 'water-mountains',
-    widthU: 100,
-    heightU: 45,
-    group: { landscapes: ['lakes'], seasons: ['autumn'] },
   },
   'near.reeds': {
     module: 'base',
@@ -1005,12 +789,6 @@ export const catalogueSnapshot: Readonly<
         'town',
       ],
     },
-  },
-  'near.young-pine': {
-    module: 'water-mountains',
-    widthU: 40,
-    heightU: 44,
-    group: { landscapes: ['dunes'] },
   },
   'near.young-spruce': {
     module: 'base',
@@ -1098,18 +876,6 @@ export const catalogueSnapshot: Readonly<
     heightU: 75,
     group: { landscapes: ['countryside'] },
   },
-  'tree.sahara-pine-a': {
-    module: 'water-mountains',
-    widthU: 60,
-    heightU: 120,
-    group: { landscapes: ['dunes'], seasons: ['summer'] },
-  },
-  'tree.sahara-pine-b': {
-    module: 'water-mountains',
-    widthU: 60,
-    heightU: 120,
-    group: { landscapes: ['dunes'], seasons: ['summer'] },
-  },
   'tree.spruce': {
     module: 'base',
     widthU: 50,
@@ -1132,12 +898,6 @@ export const catalogueSnapshot: Readonly<
     group: { landscapes: ['lakes'] },
   },
   'tunnel.portal': { module: 'base', widthU: 160, heightU: 240, group: {} },
-  'wheel.excavator': {
-    module: 'water-mountains',
-    widthU: 18,
-    heightU: 18,
-    group: { landscapes: ['foothills'] },
-  },
   'wheel.farm-large': {
     module: 'farm-forest',
     widthU: 24,

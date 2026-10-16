@@ -6,6 +6,7 @@ import { scenes as scene2 } from './roads.scenes.ts';
 import { scenes as scene3 } from './seasons-life.scenes.ts';
 import { scenes as scene4 } from './settlements.scenes.ts';
 import { scenes as scene5 } from './tunnels-bridges.scenes.ts';
+import { scenes as scene6 } from './water-mountains.scenes.ts';
 export const additionalScenes: readonly LocalityTemplate[] = [
   ...scene0,
   ...scene1,
@@ -13,4 +14,5 @@ export const additionalScenes: readonly LocalityTemplate[] = [
   ...scene3,
   ...scene4,
   ...scene5,
+  ...scene6,
 ];

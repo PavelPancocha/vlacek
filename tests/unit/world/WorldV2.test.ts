@@ -207,12 +207,12 @@ import {
   waterPolygon,
 } from '../../../src/domain/world/SceneryGeometry.ts';
 it('SCN-CO02: a v2 harbour has fishing boats and a pier in geometric contact with its sea', () => {
-  const sc = chunkScenery(0, 332, worldPlacementCatalog);
-  expect(sc.scene.templateId).toBe('harbour');
+  const sc = chunkScenery(1, 312, worldPlacementCatalog);
+  expect(sc.scene.templateId).toBe('water-mountains-harbour');
   expect(
     sc.props.filter((p) => p.kind === 'back.fishing-boat').length,
   ).toBeGreaterThan(0);
-  const piers = sc.props.filter((p) => p.kind === 'back.pier');
+  const piers = sc.props.filter((p) => p.kind === 'back.harbour-pier');
   expect(piers.length).toBeGreaterThan(0);
   for (const p of piers) {
     const w = sc.water.find((w) => p.dependencies?.includes(w.id));
@@ -222,8 +222,8 @@ it('SCN-CO02: a v2 harbour has fishing boats and a pier in geometric contact wit
     if (!part) throw new Error('pier catalog missing');
     expect(
       boundsHitPolygon(
-        projectedBounds(0, 332, p, part),
-        waterPolygon(0, 332, w),
+        projectedBounds(1, 312, p, part),
+        waterPolygon(1, 312, w),
       ),
     ).toBe(true);
   }
@@ -254,7 +254,7 @@ it('SCN-CO02: harbour boats and connected piers also survive an outgoing coastal
       const sc = chunkScenery(seed, k, worldPlacementCatalog);
       if (
         sc.props.some((p) => p.kind === 'back.fishing-boat') &&
-        sc.props.some((p) => p.kind === 'back.pier')
+        sc.props.some((p) => p.kind === 'back.harbour-pier')
       )
         found = { seed, sc };
     }
@@ -266,8 +266,8 @@ it('SCN-CO02: harbour boats and connected piers also survive an outgoing coastal
 });
 
 it('SCN-CO02: a harbour pier has geometric water contact, not only an x dependency', () => {
-  const sc = chunkScenery(0, 332, worldPlacementCatalog),
-    piers = sc.props.filter((p) => p.kind === 'back.pier');
+  const sc = chunkScenery(1, 312, worldPlacementCatalog),
+    piers = sc.props.filter((p) => p.kind === 'back.harbour-pier');
   expect(piers.length).toBeGreaterThan(0);
   for (const p of piers) {
     const part = worldPlacementCatalog[p.kind],
@@ -275,8 +275,8 @@ it('SCN-CO02: a harbour pier has geometric water contact, not only an x dependen
     if (!part || !water) throw new Error('pier support missing');
     expect(
       boundsHitPolygon(
-        projectedBounds(0, 332, p, part),
-        waterPolygon(0, 332, water),
+        projectedBounds(1, 312, p, part),
+        waterPolygon(1, 312, water),
       ),
     ).toBe(true);
   }

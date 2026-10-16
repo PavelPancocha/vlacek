@@ -387,19 +387,19 @@ describe('D-030 integrated catalogue snapshot', () => {
   });
 
   it('fails when a pending module lands or a registered part changes size', () => {
-    const declared = catalogueSnapshot['tree.sahara-pine-a'];
-    expect(declared?.module).toBe('water-mountains');
+    expect(catalogueSnapshot['tree.sahara-pine-a']).toBeUndefined();
+    expect(additionalPartKeys).toContain('tree.sahara-pine-a');
     expect(
       catalogueGaps(
         {
-          'water-mountains': {
+          'pending-fixture': {
             'tree.sahara-pine-a': { widthU: 60, heightU: 120 },
           },
           base: { 'near.stones': { widthU: 21, heightU: 10 } },
         },
         {
           'tree.sahara-pine-a': {
-            module: 'water-mountains',
+            module: 'pending-fixture',
             widthU: 60,
             heightU: 120,
             group: {},
@@ -411,9 +411,10 @@ describe('D-030 integrated catalogue snapshot', () => {
             group: {},
           },
         },
+        [{ module: 'pending-fixture' }],
       ),
     ).toEqual([
-      'water-mountains has landed: refresh the snapshot from the registry',
+      'pending-fixture has landed: refresh the snapshot from the registry',
       'base: near.stones is 21×10 u, snapshot 20×10 u',
     ]);
   });

@@ -484,6 +484,8 @@ export interface WaterGeometry {
   nearDepth: number;
   farDepth: number;
   shore?: SeaShore;
+  /** A planned flowing valley; chunk cuts stay open, real scene ends taper behind banks. */
+  flowSpan?: { fromXU: number; toXU: number };
 }
 export function waterLevelU(seed: number, k: number, w: WaterGeometry): number {
   let level = Infinity;
@@ -500,7 +502,7 @@ export function waterSectionU(
 ) {
   const rail = -railYUpU(seed, k * 1024 + xU);
   const top =
-    w.kind === 'sea'
+    w.kind === 'sea' || w.flowSpan
       ? rail - w.farDepth * 220
       : Math.max(levelU - w.farDepth * 220, rail - 216);
   const worldXU = k * 1024 + xU;
@@ -524,7 +526,22 @@ export function waterSectionU(
     0,
     Math.min(1, Math.min(xU - w.fromX - 10, w.toX - 10 - xU) / 62),
   );
-  const open = w.kind === 'sea' ? 1 : Math.sqrt(1 - (1 - f) ** 2),
+  const flowPresence = w.flowSpan
+    ? Math.max(
+        0,
+        Math.min(
+          1,
+          (worldXU - w.flowSpan.fromXU) / 160,
+          (w.flowSpan.toXU - worldXU) / 160,
+        ),
+      )
+    : undefined;
+  const open =
+      flowPresence !== undefined
+        ? Math.sqrt(1 - (1 - flowPresence) ** 2)
+        : w.kind === 'sea'
+          ? 1
+          : Math.sqrt(1 - (1 - f) ** 2),
     middle = top + (bottom - top) * 0.55;
   return {
     topU: middle + (top - middle) * open,

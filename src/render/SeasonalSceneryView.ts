@@ -1,3 +1,4 @@
+import type { WaterMountainDiagnostic } from './waterMountainMotion.ts';
 import { frameTexture } from './frameTexture.ts';
 import Phaser from 'phaser';
 import type { ArtPart } from '../content/artManifest.ts';
@@ -19,6 +20,8 @@ interface LifeSprite {
   scale: number;
   frames?: readonly string[];
   timeSec?: number;
+  id?: string;
+  flowing?: boolean;
 }
 /** Images belong to their chunk containers; this owner retains only visible-source data. */
 export class SeasonalSceneryView {
@@ -56,6 +59,7 @@ export class SeasonalSceneryView {
     base: Phaser.GameObjects.Image,
     container: Phaser.GameObjects.Container,
     depth: number,
+    flowing = false,
   ): void {
     const climate = effectiveClimateAt(this.seed, this.worldXU + prop.xU);
     const original = this.parts[prop.kind];
@@ -251,24 +255,13 @@ export class SeasonalSceneryView {
         frames: ['life.station-flag-a', 'life.station-flag-b'],
       });
     }
-    if (prop.kind === 'back.watermill') {
-      const wheel = this.#image(
-        'life.watermill-wheel',
-        base.x + (98 - original.pivotU.x) * scale,
-        base.y + (66 - original.pivotU.y) * scale,
-        base.scaleX,
-        false,
-      ).setDepth(base.depth + 0.01);
-      container.add(wheel);
-      this.#life.push({
-        image: wheel,
-        kind: 'wheel',
-        x: wheel.x,
-        y: wheel.y,
-        phase: (hash32(id) % 1000) / 1000,
-        scale: base.scaleX,
-      });
-    }
+    if (prop.kind === 'back.watermill')
+      this.#assembleWatermill(
+        prop,
+        base,
+        container,
+        flowing && climate.winter < 0.5,
+      );
     if (prop.kind === 'back.farmhouse')
       this.sources.push({
         id: `${id}:chimney`,
@@ -278,6 +271,52 @@ export class SeasonalSceneryView {
         depth: depth + 0.05,
         radiusU: 0,
       });
+  }
+  /** The placed life body and its only wheel share this owner and the D-027 clock. */
+  #assembleWatermill(
+    prop: SceneryProp,
+    base: Phaser.GameObjects.Image,
+    container: Phaser.GameObjects.Container,
+    flowing: boolean,
+  ): void {
+    const body = this.parts['life.watermill-body'];
+    if (!body) throw new Error('missing canonical mill body');
+    const scale = base.scaleX * this.pxPerU;
+    const wheel = this.#image(
+      'life.watermill-wheel',
+      base.x + (98 - body.pivotU.x) * scale,
+      base.y + (66 - body.pivotU.y) * scale,
+      base.scaleX,
+      false,
+    ).setDepth(base.depth + 0.01);
+    container.add(wheel);
+    this.#life.push({
+      image: wheel,
+      kind: 'wheel',
+      id: prop.id,
+      flowing,
+      x: wheel.x,
+      y: wheel.y,
+      phase: (hash32(prop.id) % 1000) / 1000,
+      scale: base.scaleX,
+    });
+  }
+  get watermillDiagnostics(): WaterMountainDiagnostic[] {
+    return this.#life
+      .filter((i) => i.kind === 'wheel')
+      .map((i) => ({
+        id: i.id ?? '',
+        kind: 'back.watermill',
+        xU: this.worldXU + i.x,
+        yU: i.y,
+        wheelAngleRad: i.image.rotation,
+        armAngleRad: null,
+        cabinXU: null,
+        ferryRatio: null,
+        moored: null,
+        direction: null,
+        frames: ['life.watermill-body', 'life.watermill-wheel'],
+      }));
   }
   addWaterSource(id: string, x: number, y: number, depth: number): void {
     this.sources.push({
@@ -304,6 +343,7 @@ export class SeasonalSceneryView {
     const wind = windAt(this.seed, timeSec);
     let animated = 0;
     for (const item of this.#life) {
+      if (item.kind === 'wheel' && !item.flowing) continue;
       if (item.x < view.left - 40 || item.x > view.right + 40) continue;
       if (animated >= budget) break;
       animated++;

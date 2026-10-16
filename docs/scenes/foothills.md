@@ -16,7 +16,7 @@ Nad hřbety se pohybují mraky a trávu lehce sjednocuje vítr.
 | Zóna           | Objekty                                                                                | Počet                   | Vztahy a závislosti                               | Zakázáno                    |
 | -------------- | -------------------------------------------------------------------------------------- | ----------------------- | ------------------------------------------------- | --------------------------- |
 | far            | `backdrop.foothills-far`, `backdrop.foothills-mid`                                     | Souvislé                | Více oblých hřbetů                                | Ostré velehorské štíty      |
-| back 0,35–0,90 | `tree.birch`, `tree.spruce`; NEW: vzdálená lanovka, sloup 20 × 80 u a kabina 24 × 20 u | 4–8 stromů, 0–1 lanovka | Kabina na souvislém laně mezi stanicemi mimo trať | Volně létající kabina       |
+| back 0,35–0,90 | `tree.birch`, `tree.spruce`; NEW: vzdálená lanovka, sloup 20 × 80 u a kabina 56 × 48 u | 4–8 stromů, 0–1 lanovka | Kabina na souvislém laně mezi stanicemi mimo trať | Volně létající kabina       |
 | bank           | Geometrie náspu, `near.stones`                                                         | Souvislé                | Kolej nad svahem                                  | Kámen v průjezdném profilu  |
 | near 0,35–0,85 | `animal.sheep`, `near.boulder`, úplný plot                                             | 2–5 ovcí, 2–4 kameny    | Pastvina s úplným okrajem                         | Ovce na prudké skalní stěně |
 
@@ -97,7 +97,12 @@ Děti se mohou sáňkovat daleko za tratí na krátké oplocené louce, jejíž 
 
 Použít vítr, luční i lesní ptáky, potok a ovce.
 Nové audio: tlumený lis, jemná hydraulika bagru; bez odstřelů a skalních pádů.
-NEW: lanovkový sloup 20 × 80 u, kabina 24 × 20 u a malá stanice 70 × 45 u; vzdálený tlumený motiv.
+NEW: lanovkový sloup 20 × 80 u, kabina 56 × 48 u a malá stanice 70 × 45 u.
+Červená kabina s tmavým obrysem, tmavé sloupy a souvislé lano tvoří jeden
+čitelný motiv. Lano má 6 u (přibližně 1,66 px na telefonu 1140 × 512),
+kabina přibližně 15,5 × 13,3 px; rozezná se u podpory i uprostřed rozpětí.
+V lanovkové scéně stojí stromy výše ve svahu (hloubka 0,85–0,90), aby jejich
+koruny a kmeny nezakrývaly lano, kabinu ani vstupy obou stanic.
 NEW: lomová stěna 512 × 180 u a bagr 100 × 70 u s odděleným ramenem.
 NEW: sáňky s dítětem 32 × 24 u; malá vzdálená zimní postava, bez jízdy k trati.
 Chalupy, seno, traktor, lesní skupiny a mosty se sdílejí; nevzniká druhá sada totožných rekvizit.
@@ -118,3 +123,18 @@ Zimní far/mid pásy mají sněhovou půdu, bílé střechy a holé listnaté v�
 jehličnany si zachovávají vlastní tmavou kresbu. Podzim ukazuje sklizená pole
 s barevným lesíkem, jaro jemné květové akcenty. Pásy a částice se prolínají
 prostorovým postupem world-core; stojící vlak sezónu nemění.
+
+## Implementační řez water-mountains-1
+
+FH-01 otevřená louka střídá lesíky, FH-03 lom a skalní zářez. Lom je
+kompozice stěny a rovné pracovní terasy na skutečném svahu; bagr má
+odkaz na stěnu a otáčí oddělené rameno. Zimní lom používá sněhovou kresbu.
+Lanovka má dvě opory, spojité lano a kabinu připojenou ke stejné dráze.
+Skalní skupiny se umísťují podél skutečného profilu a jejich základ se
+ponořuje do svahu; nic neleží v chráněném pásu.
+Lanovka má opory v zadní hloubce 0,55, aby sloupy a kabina zůstaly čitelné
+pod horizontem telefonu; výškový rozdíl obou podpor dál vychází z profilu.
+
+Review water-mountains-2: jedna scéna vlastní právě jednu přijatou instalaci
+lanovky. Obě věže a obě krajní stanice stojí ve výškách vzorkovaných v jejich
+vlastních světových x; stanice nepřebírají výšku sousední věže.

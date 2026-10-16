@@ -1,3 +1,4 @@
+import type { WaterMountainDiagnostic } from '../render/waterMountainMotion.ts';
 import type { FarmForestDiagnostic } from '../render/farmForestMotion.ts';
 import type { RoadVehicleSnapshot } from '../render/roadVehicleSnapshot.ts';
 import type { AtlasMetrics } from '../render/AtlasMetrics.ts';
@@ -100,6 +101,7 @@ export interface DebugSnapshot {
     biome: string | undefined;
     /** Localities of the chunks in view, left to right. */
     localities: string[];
+    waterMountains: readonly WaterMountainDiagnostic[];
     work: readonly (FarmForestDiagnostic & { layer: 'near' | 'back' })[];
     /** Near-meadow props in view. */
     nearProps: number;

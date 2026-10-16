@@ -1,3 +1,4 @@
+import { waterMountainComposition } from './WaterMountainComposition.ts';
 import { farmForestComposition } from './FarmForestComposition.ts';
 import { workRoadSupports } from './WorkGeometry.ts';
 import { streamBendU } from './StreamGeometry.ts';
@@ -122,6 +123,7 @@ export interface SceneryProp {
   phase: number;
   work?: PropRule['work'];
   offsetYU?: number;
+  rotationRad?: number;
   clip?: readonly import('./SceneryGeometry.ts').PointU[];
   /** Real composition ends in world u; chunk cuts never introduce a fade. */
   fadeX?: { fromU: number; toU: number; widthU: number };
@@ -263,6 +265,32 @@ const houseMemory = new WeakMap<
 
 /** Pure composition: surfaces/roads are accepted before dependent children. */
 export function chunkScenery(
+  seed: number,
+  chunkIndex: number,
+  catalog: PlacementCatalog,
+  trace?: PlacementTraceEntry[],
+): ChunkScenery {
+  const scenery = baseChunkScenery(seed, chunkIndex, catalog, trace);
+  const sceneChunks = [scenery];
+  if (
+    ['water-mountains-river', 'water-mountains-cableway'].includes(
+      scenery.scene.templateId,
+    )
+  ) {
+    for (
+      let k = scenery.scene.fromXU / 1024;
+      k < scenery.scene.toXU / 1024;
+      k++
+    )
+      if (k !== chunkIndex)
+        sceneChunks.push(baseChunkScenery(seed, k, catalog));
+    sceneChunks.sort((a, b) => a.chunkIndex - b.chunkIndex);
+  }
+  waterMountainComposition(seed, scenery, catalog, sceneChunks, trace);
+  return scenery;
+}
+
+function baseChunkScenery(
   seed: number,
   chunkIndex: number,
   catalog: PlacementCatalog,

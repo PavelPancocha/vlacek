@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="120" viewBox="0 0 60 120">
+  <!-- Vláček, water-mountains-3-astra, 2026-10-15: vlastní vektorová kresba borovice lesní pro herní měřítko. -->
+  <path d="M26 120 L27 78 L28 44 L29 12 L33 12 L33 46 L34 81 L34 120Z" fill="#bb7747"/>
+  <path d="M26 120 L27 78 L29 68 L31 80 L34 76 L34 120Z" fill="#746455"/>
+  <path d="M27 119 L29 83 M33 113 L32 94" fill="none" stroke="#514e44" stroke-width="1.5"/>
+  <path d="M31 47 L22 40 L12 39 M31 37 L43 31 L53 30 M31 30 L19 25 L9 24 M31 19 L38 12" fill="none" stroke="#bb7747" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#294b47">
+    <path d="M20 12 L22 7 L27 7 L29 3 L34 5 L38 3 L43 7 L46 8 L44 13 L35 15 L25 14Z"/>
+    <path d="M2 24 L5 20 L10 20 L12 16 L17 18 L21 17 L27 21 L26 26 L16 28 L6 27Z"/>
+    <path d="M35 30 L38 25 L43 24 L46 20 L51 22 L55 22 L59 27 L57 32 L49 34 L39 33Z"/>
+    <path d="M6 39 L9 35 L14 34 L17 31 L22 33 L27 36 L25 41 L15 43 L8 42Z"/>
+  </g>
+  <g fill="#507267">
+    <path d="M23 9 L29 6 L34 8 L38 6 L42 9 L35 11 L25 11Z"/>
+    <path d="M6 22 L12 19 L17 21 L20 20 L23 22 L16 24 L7 24Z"/>
+    <path d="M39 27 L46 23 L51 25 L55 25 L56 28 L47 29 L40 29Z"/>
+    <path d="M10 37 L17 34 L22 36 L23 38 L16 39 L11 39Z"/>
+  </g>
+</svg>

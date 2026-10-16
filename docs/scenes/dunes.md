@@ -101,3 +101,21 @@ Nevznikají kaktusy, velbloudi, palmy, oázy ani nový katalog pouštních rekvi
 Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
 a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
 koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.
+
+## Implementační řez water-mountains-1
+
+DU-01 je otevřený písek, DU-02 borový okraj s kvetoucím i zeleným vřesem
+a nízkými mladými borovicemi. Vzdálený dunový hřbet a borový pás mají
+samostatné parallax vrstvy. Klidný otevřený úsek zůstává alespoň 1 024 u.
+V incoming dunové podzóně není voda; suchý přechod zachovává písečné popředí.
+
+Review water-mountains-3: dospělá borovice má rovný nebo mírně prohnutý kmen,
+dole šedohnědý a nahoře oranžovohnědý. V horní třetině nese několik oddělených,
+plochých nepravidelných modrozelených shluků jehličí na viditelných bočních
+větvích. Varianty mění výšku a směr koruny; mezery mezi shluky zůstávají
+čitelné i při herní výšce přibližně 30–40 px na telefonu 1140 × 512.
+Stejný tvar vlastní samostatné stromy i vložené stromy borového horizontu.
+Žádné šikmé palmové listy ani jediná deštníková koruna. Mladé borovice jsou
+hustší, kuželovité a od dospělých zřetelně odlišné. Vřes tvoří nízké souvislé
+růžovofialové polštáře čitelné i při 1140 × 512. Tunelovou hmotu vlastní
+samostatná linka tunnels-bridges.

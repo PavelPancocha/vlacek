@@ -107,3 +107,11 @@ Portály, viadukt, chata a sněhové objekty se přebírají ze společných kat
 Sezónní části a činnosti používají společný [kontrakt D-027](README.md#sezónní-vzhled-a-život--d-027)
 a řádky SEA-01 až SEA-08 v [akceptaci](acceptance.md). Jedna váha podle x řídí
 koruny, podklad i intenzitu částic; stání pouze nechává pokračovat animaci.
+
+## Implementační řez water-mountains-1
+
+MO-01/02 používají nové české horské hřbety a střední zalesněný svah
+v letní a zimní kresbě. Skalní zářezy sledují skutečný profil world-core,
+letní a zimní skupiny mají oddělené klíče s atlasGroup.seasons. Okolí
+MO-03/04 respektuje rezervace tunelů, mostů a vedlejší koleje. Konstrukce
+a portály vlastní tunnels-bridges; tato linka nepřidává další masku.

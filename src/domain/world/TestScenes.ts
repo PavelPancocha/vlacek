@@ -143,7 +143,7 @@ export function locateTestScene(
         kind === 'autumn' || kind === 'winter'
           ? context.season === kind
           : kind === 'fishponds'
-            ? context.scene.templateId === 'pond'
+            ? context.scene.templateId === 'water-mountains-fishponds'
             : kind === 'fields'
               ? context.region.landscape === 'countryside' &&
                 context.scene.templateId === 'near-field'
@@ -156,8 +156,7 @@ export function locateTestScene(
                   : context.region.landscape === kind;
       if (!matches) continue;
       if (kind === 'fishponds') {
-        if (k % 8 === stationSlot(seed, Math.floor(k / 8)) || k % 2 !== 0)
-          continue;
+        if (k % 8 === stationSlot(seed, Math.floor(k / 8))) continue;
         {
           const sc = chunkScenery(seed, k, catalog);
           if (

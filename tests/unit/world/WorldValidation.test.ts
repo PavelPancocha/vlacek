@@ -174,7 +174,9 @@ import {
   validateTrackProfile,
 } from '../../../src/domain/world/WorldValidation.ts';
 it('GEN-19: positive coverage distinguishes missing motifs, and supports each dependency', () => {
-  const cases = [272, 296, 312, 328, 332, 393, 394].map((k) => ({
+  const cases = [
+    -16, -15, -9, -8, 295, 296, 327, 328, 329, 335, 336, 392, 393,
+  ].map((k) => ({
     seed: 0,
     scenery: chunkScenery(0, k, worldPlacementCatalog),
   }));

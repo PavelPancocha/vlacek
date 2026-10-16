@@ -681,6 +681,7 @@ export class AppController {
         biome: this.#scene.stats.biome,
         localities: [...this.#scene.stats.localities],
         work: this.#scene.farmForestCheck(),
+        waterMountains: this.#scene.waterMountainCheck(),
         ...this.#nearPropCheck(),
         crossingViews: this.#scene.stats.crossingViews,
         secondaryTrackViews: this.#scene.stats.secondaryTrackViews,

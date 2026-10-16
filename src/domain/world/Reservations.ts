@@ -40,6 +40,7 @@ export type AllowedRelation =
   | 'entrance-on-path'
   | 'pedestrian-on-path'
   | 'object-on-village-green'
+  | 'building-at-path'
   | 'object-on-field'
   | 'object-on-forest-floor'
   | 'bridge-over-river'
@@ -87,6 +88,9 @@ export function relationAllows(
       return purpose === 'village-road';
     case 'object-on-village-green':
       return purpose === 'village-green';
+
+    case 'building-at-path':
+      return purpose === 'work-road';
     case 'object-on-field':
       return purpose === 'field';
     case 'object-on-forest-floor':

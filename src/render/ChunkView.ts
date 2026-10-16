@@ -1,4 +1,9 @@
 import { VisibleComposition } from './VisibleComposition.ts';
+import { cablewaySupportHeights } from './waterMountainMotion.ts';
+import {
+  WaterMountainView,
+  waterMountainCompound,
+} from './WaterMountainView.ts';
 import { bakeStaticComposition } from './StaticComposition.ts';
 import {
   streamBendU,
@@ -98,7 +103,7 @@ import {
   type WaterPalette,
 } from './groundPalette.ts';
 import { glintAlpha, swayAmplitudeRad, swayAngle } from './ambientMotion.ts';
-import { frameOrigin } from './atlasPacking.ts';
+import { setWorldPivot } from './worldImage.ts';
 import { chunkCatenary, chunkCatenaryFallback } from './CatenaryView.ts';
 import {
   TUNNEL_MAST_CLEARANCE_U,
@@ -323,6 +328,12 @@ export class ChunkView {
   /** Baked ground textures, removed with the chunk. */
   readonly #textures: string[] = [];
   readonly #moving: MovingProp[] = [];
+  readonly #waterMountains: {
+    timeSec?: number;
+    view: WaterMountainView;
+    prop: SceneryProp;
+    foot: { xU: number; yU: number };
+  }[] = [];
   readonly #farm: {
     view: FarmForestView;
     prop: SceneryProp;
@@ -824,6 +835,36 @@ export class ChunkView {
     const staticLayers = new Map<string, SceneryProp[]>();
     for (const prop of propDrawOrder(scenery.props)) {
       if (parts[prop.kind] === undefined) continue;
+      if (waterMountainCompound(prop.kind)) {
+        const scale = propScale(prop);
+        const supports = cablewaySupportHeights(prop.xU, scale, (x) =>
+          this.#railAt(x),
+        );
+        const view = new WaterMountainView(
+          scene,
+          prop,
+          art.texture,
+          art.pxPerU,
+          effectiveClimateAt(seed, table.chunkIndex * 1024 + prop.xU).season,
+          supports,
+        );
+        const foot = propFootU(
+          prop,
+          prop.xU,
+          this.#railAt(prop.xU),
+          prop.layer === 'near'
+            ? bankHeightU(seed, table.chunkIndex * 1024 + prop.xU)
+            : 0,
+        );
+        view.root
+          .setPosition(foot.xU, foot.yU)
+          .setScale(scale)
+          .setDepth(paintOrder(prop));
+        (prop.layer === 'back' ? backProps : nearProps).add(view.root);
+        if (prop.layer === 'near') this.#near.push(...view.images);
+        this.#waterMountains.push({ view, prop, foot });
+        continue;
+      }
       if (prop.work) {
         const view = new FarmForestView(
           scene,
@@ -943,6 +984,9 @@ export class ChunkView {
         image,
         parent,
         prop.layer === 'back' ? depths.backProps : depths.nearProps,
+        scenery.water.some(
+          (w) => w.kind === 'channel' && prop.dependencies?.includes(w.id),
+        ),
       );
       if (prop.layer === 'near') this.#near.push(image);
       if (prop.motion) {
@@ -1281,6 +1325,15 @@ export class ChunkView {
     this.#objects.push(...this.#tunnel.containers);
   }
 
+  get waterMountainDiagnostics() {
+    return [
+      ...(this.#seasonal?.watermillDiagnostics ?? []),
+      ...this.#waterMountains.map(({ view }) => ({
+        ...view.diagnostic,
+        xU: view.root.x + this.#table.chunkIndex * 1024,
+      })),
+    ];
+  }
   get farmDiagnostics() {
     return this.#farm.map(({ view, prop }) => ({
       ...view.diagnostic,
@@ -1436,6 +1489,25 @@ export class ChunkView {
           this.#pxPerU,
         );
     }
+    for (const actor of this.#waterMountains) {
+      const { view: compound, prop, foot } = actor;
+      if (
+        compound.root.parentContainer?.visible === false ||
+        compound.root.x < view.left - 320 ||
+        compound.root.x > view.right + 320
+      )
+        continue;
+      if (remaining-- <= 0) continue;
+      this.#animatedLastFrame++;
+      const localTime = (actor.timeSec ?? timeSec - dt) + dt;
+      actor.timeSec = localTime;
+      compound.update(localTime);
+      if (prop.motion) {
+        const x = prop.xU + (compound.pose.ratio - 0.5) * prop.motion.rangeU;
+        propFootU(prop, x, this.#railAt(x), 0, foot);
+        compound.root.setPosition(foot.xU, foot.yU);
+      }
+    }
     for (const farm of this.#farm) {
       const { view: machine, prop, foot: target } = farm;
       if (
@@ -1562,6 +1634,7 @@ export class ChunkView {
     this.#moving.length = 0;
     this.#farm.length = 0;
     this.#settlementMotion.length = 0;
+    this.#waterMountains.length = 0;
     this.#near.length = 0;
     this.#swaying.length = 0;
     this.#glints.length = 0;
@@ -1625,8 +1698,13 @@ export class ChunkView {
       .setData('world-part', key)
       .setFlipX(flip);
     if (part) {
-      const origin = frameOrigin(part.pivotU, art.pxPerU, image.frame);
-      image.setOrigin(origin.x, origin.y);
+      setWorldPivot(
+        image,
+        flip
+          ? { x: part.widthU - part.pivotU.x, y: part.pivotU.y }
+          : part.pivotU,
+        art.pxPerU,
+      );
     }
     return image;
   }
@@ -1707,7 +1785,10 @@ export class ChunkView {
         ? bankHeightU(this.#seed, (this.#table.xs[0] ?? 0) + x)
         : 0,
     );
-    image.setPosition(foot.xU, foot.yU).setScale(propScale(prop) / pxPerU);
+    image
+      .setPosition(foot.xU, foot.yU)
+      .setScale(propScale(prop) / pxPerU)
+      .setRotation(prop.rotationRad ?? 0);
   }
 
   /** Rail height (world, up) at a chunk-local x. */
@@ -2497,10 +2578,11 @@ export class ChunkView {
     palette: WaterPalette,
   ): void {
     const sea = basin.kind === 'sea';
-    const from = sea
+    const continuous = sea || basin.flowSpan !== undefined;
+    const from = continuous
       ? basin.fromX - FIELD_EDGE_LEAN_U - GROUND_OVERLAP_U
       : basin.fromX + WATER_SIDE_U;
-    const to = sea
+    const to = continuous
       ? basin.toX + FIELD_EDGE_LEAN_U + GROUND_OVERLAP_U
       : basin.toX - WATER_SIDE_U;
     const level = waterLevelU(this.#seed, this.#table.chunkIndex, basin);
@@ -2512,7 +2594,9 @@ export class ChunkView {
     for (let x = from; x < to; x += 8) xs.push(x);
     xs.push(to);
     const open = (x: number) =>
-      sea ? 1 : Math.max(0, Math.min(1, Math.min(x - from, to - x) / 62));
+      continuous
+        ? 1
+        : Math.max(0, Math.min(1, Math.min(x - from, to - x) / 62));
     /** Outline between two fractions of the water (0 far edge … 1 near). */
     const outline = (t0: number, t1: number): Phaser.Math.Vector2[] => {
       const point = (x: number, t: number) => {
@@ -2526,21 +2610,33 @@ export class ChunkView {
     };
     const whole = outline(0, 1);
     g.lineStyle(9, palette.shore, 1);
-    if (sea)
+    if (continuous) {
+      if (!sea)
+        g.strokePoints(
+          xs.map((x) => new Phaser.Math.Vector2(x, far(x))),
+          false,
+          false,
+        );
       g.strokePoints(
         xs.map((x) => new Phaser.Math.Vector2(x, near(x))),
         false,
         false,
       );
-    else g.strokePoints(whole, true, true);
+    } else g.strokePoints(whole, true, true);
     g.lineStyle(4, palette.wetShore, 1);
-    if (sea)
+    if (continuous) {
+      if (!sea)
+        g.strokePoints(
+          xs.map((x) => new Phaser.Math.Vector2(x, far(x))),
+          false,
+          false,
+        );
       g.strokePoints(
         xs.map((x) => new Phaser.Math.Vector2(x, near(x))),
         false,
         false,
       );
-    else g.strokePoints(whole, true, true);
+    } else g.strokePoints(whole, true, true);
     g.fillStyle(palette.middle, 1);
     g.fillPoints(whole, true);
     g.fillStyle(palette.far, 1);

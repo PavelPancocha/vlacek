@@ -191,14 +191,14 @@ const groups: readonly { keys: readonly string[]; group: WorldAtlasGroup }[] = [
     keys: [
       'near.fisherman',
       'near.fishing-rod',
-      'back.ferry',
-      'back.ferryman-arm',
       'fx.dragonfly',
       'animal.fish',
       'back.fishpond-sluice',
       'near.reed-clump',
       'back.watermill-body',
       'back.watermill-wheel',
+      'life.watermill-body',
+      'life.watermill-wheel',
       'fx.dragonfly-mid',
       'fx.dragonfly-fold',
       'animal.duck-swim-male',
@@ -224,7 +224,10 @@ const groups: readonly { keys: readonly string[]; group: WorldAtlasGroup }[] = [
     ],
     group: { landscapes: ['coast'] },
   },
-  { keys: ['back.harbour-pier'], group: { landscapes: ['coast', 'lakes'] } },
+  {
+    keys: ['back.ferry', 'back.ferryman-arm', 'back.harbour-pier'],
+    group: { landscapes: ['coast', 'lakes'] },
+  },
   {
     keys: [
       'backdrop.dunes-ridge',
@@ -239,7 +242,9 @@ const groups: readonly { keys: readonly string[]; group: WorldAtlasGroup }[] = [
     keys: [
       'backdrop.mountains-ridges',
       'backdrop.mountains-slope',
-      'back.cutting-rock',
+      'tunnel.rock-portal',
+      'tunnel.rock-cover',
+      'tunnel.rock-cap',
     ],
     // water-mountains@2e64ad3 declares these snow-free variants for spring to autumn.
     group: {
@@ -261,9 +266,23 @@ const groups: readonly { keys: readonly string[]; group: WorldAtlasGroup }[] = [
     keys: [
       'backdrop.mountains-ridges-snow',
       'backdrop.mountains-slope-snow',
-      'back.cutting-rock-snow',
+      'tunnel.rock-portal-snow',
+      'tunnel.rock-cover-snow',
+      'tunnel.rock-cap-snow',
     ],
     group: { landscapes: ['mountains'], seasons: ['winter'] },
+  },
+  { keys: ['back.water-footbridge'], group: { landscapes: ['lakes'] } },
+  {
+    keys: ['back.cutting-rock'],
+    group: {
+      landscapes: ['foothills', 'mountains'],
+      seasons: ['spring', 'summer', 'autumn'],
+    },
+  },
+  {
+    keys: ['back.cutting-rock-snow'],
+    group: { landscapes: ['foothills', 'mountains'], seasons: ['winter'] },
   },
   {
     keys: ['bridge.snow-cap'],

@@ -1,6 +1,10 @@
 import { pointInside } from '../domain/world/SceneryGeometry.ts';
 import type Phaser from 'phaser';
 import { expect, it, vi } from 'vitest';
+import {
+  WaterMountainView,
+  waterMountainCompound,
+} from './WaterMountainView.ts';
 import { SeasonalSceneryView } from './SeasonalSceneryView.ts';
 import { worldParts } from '../content/worldArt.ts';
 import { regionAt, transitionAt } from '../domain/world/Regions.ts';
@@ -38,6 +42,12 @@ function image(key: string, x = 0) {
     depth: 4,
     frame: { width: 64, height: 12 },
     texture: { key: 'world' },
+    add() {
+      return this;
+    },
+    setName() {
+      return this;
+    },
     setVisible() {
       return this;
     },
@@ -93,6 +103,7 @@ function renderer(
   const snowPlanes: { x: number; y: number }[][] = [];
   const scene = {
     add: {
+      container: () => image('container'),
       graphics: () => ({
         ...image('roof-surface'),
         fillStyle() {
@@ -127,7 +138,7 @@ function renderer(
     parts,
   );
   const container = { add() {} } as unknown as Phaser.GameObjects.Container;
-  const add = (kind: string, x = 0, flip = false) => {
+  const add = (kind: string, x = 0, flip = false, flowing = true) => {
     const base = image(owner.frame(kind, x), x);
     owner.add(
       {
@@ -143,10 +154,11 @@ function renderer(
       base as unknown as Phaser.GameObjects.Image,
       container,
       4,
+      flowing,
     );
     return base;
   };
-  return { owner, images, add, snowPlanes };
+  return { owner, images, add, snowPlanes, scene };
 }
 function witness(season: string, transition = false) {
   for (let seed = 1; seed < 12; seed++) {
@@ -475,3 +487,49 @@ it('i3: house-c snow reaches the lower roof band inside its original eave', () =
     ).toBe(true);
   }
 });
+
+it('WM4 the two former mill paths assemble exactly one body and wheel', () => {
+  const r = renderer(1, 5000);
+  const prop: SceneryProp = {
+    kind: 'back.watermill',
+    id: 'mill',
+    xU: 0,
+    layer: 'back',
+    depth: 0.5,
+    scale: 1,
+    phase: 0,
+    flip: false,
+  };
+  if (waterMountainCompound(prop.kind))
+    new WaterMountainView(
+      r.scene as unknown as Phaser.Scene,
+      prop,
+      'world',
+      1,
+      'summer',
+      { leftStationYU: 0, rightTowerYU: 0, rightStationYU: 0 },
+    );
+  const base = r.add('back.watermill');
+  expect(r.images.filter((i) => /watermill-wheel$/.test(i.key))).toHaveLength(
+    1,
+  );
+  expect(
+    [...r.images, base].filter((i) => /watermill-body$/.test(i.key)),
+  ).toHaveLength(1);
+});
+it.each(['summer', 'winter'] as const)(
+  'WM4 canonical mill wheel needs flowing unfrozen water in %s',
+  (season) => {
+    const { seed, x } = witness(season);
+    for (const flowing of [true, false]) {
+      const r = renderer(seed, x);
+      r.add('back.watermill', 0, false, flowing);
+      const wheel = r.images.find((i) => i.key === 'life.watermill-wheel');
+      expect(wheel).toBeDefined();
+      r.owner.update(0, 1, x, 100);
+      const before = wheel?.rotation;
+      r.owner.update(0.1, 1, x, 100);
+      expect(wheel?.rotation !== before).toBe(flowing && season !== 'winter');
+    }
+  },
+);
