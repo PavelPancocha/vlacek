@@ -273,3 +273,25 @@ Zimní domy a/c mají prázdné okenní truhlíky bez letních červených a žl
 květů (polish-1). Mění se pouze kruhy květů pod okny; rozměry, pivoty,
 geometrie střech a jejich sněhové masky zůstávají. Regrese `seasonalArt.test.ts`
 porovnává oblast truhlíků s barvami květů v letních SVG. Save se nemění.
+
+## Známá pixelově mezní pozorování (2026-10-16)
+
+SEA-04, `seasonal-rendering.spec.ts:157`, má dvě oddělená předexistující
+pozorování; oba případy ponechávají podmínku sněžení **>160 pixelů**:
+
+- **Canvas / long / low / tablet-touch:** přijatý mezní vzorek **159** pixelů.
+  Tato varianta selhávala také v CI před D-030; není to výsledek pomalého
+  startovního čekání.
+- **WebGL / short / low / tablet-touch:** úplný běh integrate-5 na `4718efe`
+  naměřil v sousedních snímcích **165, potom 147** pixelů. Scéna už byla
+  připravená, automatické aktualizace vypnuté a po 180 ručních snímcích se
+  vlak pohyboval; podvozky a stopa prošly. Samostatná A/B opakování při jednom
+  i dvou workerech prošla. Stejný název
+  `[tablet-touch] seasonal-rendering.spec.ts:157 (webgl, short, low)`
+  selhal již v CI běhu **38868530679** na `5e3385d`, před
+  D-030. Jde o známé předexistující pixelově mezní pozorování po startu,
+  oddělené od varianty Canvas / long / low i od startovní latence.
+
+Test, jeho práh ani kresba se tímto záznamem nemění. Příčinu kolísání nelze
+z těchto vzorků určit; případné ladění potřebuje samostatnou reprodukci a
+obrazové ověření. Desktopový projekt `tablet-touch` není fyzický tablet.

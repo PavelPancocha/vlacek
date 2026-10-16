@@ -197,7 +197,8 @@ nezávislým a ověřitelným řezem.
 ## Přesné návrhy pro atlas lane
 
 1. **Hotovo v [D-030](030-world-atlas-region-window.md):** integrovaný start
-   dekóduje 222 SVG místo 422. Následující měření 304 → 161 jsou historická,
+   dekóduje 234 SVG místo 422 (měření integrate-5 níže; původní atlasová linka
+   měla 222). Následující měření 304 → 161 jsou historická,
    pocházejí ze staršího obsahového základu. Nepřidávat další eager preload. V identickém starším světě klesl počet decode 304 → 161 a
    standardní start o 65–75 %. Raw SVG texty lze dál fetchovat souběžně;
    problém je drahé zpracování a zdrojové textury. Znovu měřit všech 422
@@ -521,3 +522,40 @@ výkonových údajů uměl prohlížeč při programatickém scrollu na tabletu 
 část nadpisu Tunely (viewport ratio 0,984375). Původní požadavek plné
 viditelnosti ratio 1 zůstává a šest clipboard/viewport případů po opravě
 prochází v desktop i tablet-touch.
+
+## Start jízdy po Vyjet
+
+Měření integrate-5 z 2026-10-16 porovnává čistý integrovaný build
+`0.1.0+4718efe` s bází `0.1.0+5e3385d`: WebGL, desktop 1140 × 512, DPR 1,
+seed 123, stejná nejdelší souprava 13 vozidel / 2 000 u. Pět čerstvých
+browserových kontextů na build a profil, buildy se střídají. Čas běží od
+skutečného aktivačního `pointerup` na Vyjet do mutace skrývající clonu;
+nezahrnuje stavění soupravy. Sonda D-032 souhlasí do 0,7 ms.
+
+| Build     | Profil   | Medián (ms) | Minimum–maximum (ms) |
+| --------- | -------- | ----------: | -------------------: |
+| `4718efe` | low      |     1 890,1 |      1 801,4–2 058,6 |
+| `4718efe` | standard |     2 145,8 |      1 949,9–2 329,7 |
+| `5e3385d` | low      |       156,4 |          137,9–203,2 |
+| `5e3385d` | standard |       141,0 |          136,5–162,1 |
+
+Zdroj: lokální `_runs/integrate-5-proof/start-latency-summary.json`; surové
+vzorky a metoda jsou ve stejné složce. Během měření neběželo naše E2E, check
+ani build a oba sdílené zámky byly držené. Stroj však nebyl zcela nečinný:
+zatížení CPU na pozadí před sérií **12,9 %**. Je to lokální desktopové srovnání,
+nikoli měření fyzického tabletu/Tesly nebo výsledek CI.
+
+Na `5e3385d` Phaser `preload()` už během menu dekódoval celý katalog
+**422 SVG**; `ArtAtlas` držel dekódované obrázky a po Vyjet synchronně
+rastroval atlasy. Rychlý start tedy ukazoval skutečnou grafiku, fallback
+byl chybová cesta. D-030 přednačítá v menu jen SVG texty a při odjezdu
+dekóduje/publikuje startovní okno (**234 SVG** v tomto měření). Delší pobyt
+v depu tuto práci zatím nepřipraví. Dodatečných přibližně 1,7–2,0 s po Vyjet
+je skutečné zpomalení tohoto průchodu výměnou za omezenou paměť; přínos
+rychlejšího Pokračovat hned po načtení je jiný průchod než tato tabulka.
+
+**Rozhodnutí vlastníka 2026-10-16:** „Přijmout + 15 s v testech“.
+Přibližně dvousekundová clona zůstává, sdílené testovací čekání na start/obnovu
+má nejvýše 15 s podle [D-030](030-world-atlas-region-window.md).
+Následující krok je připravovat startovní svět už během pobytu v depu;
+není součástí této změny a musí zachovat paměťovou mez i první úplný snímek.
