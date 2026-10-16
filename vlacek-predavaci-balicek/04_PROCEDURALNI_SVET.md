@@ -44,6 +44,12 @@ Příklady klíčů: `terrain-boundary`, `route-template`, `major-feature`, `tre
 
 ID entity má podobu `g2:chunk:42:prop:rule:3:candidate:1`; není to náhodné UUID při každém vykreslení. Kosmetické částice mohou mít vlastní omezený generátor a neovlivňují layout ani save.
 
+Částicové efekty mají vlastní 32bitový generátor, před každým snímkem seedovaný
+z čísla cesty, klíče `effects` a simulačního ticku. Stejná posloupnost snímků,
+profilu kvality a vstupů od stejného počátečního stavu opakuje i částice;
+nejde o shodu částic při různých FPS ani o ukládání kosmetického stavu.
+Podrobnosti a obrazové regrese vlastní [D-027](../docs/decisions/027-seasons-and-life.md).
+
 ## 4. Kontinuita kolejí: profil generátoru v2
 
 Zadání [14 §6](14_UPRAVY_PRVNI_VERZE.md) mění charakter tratě: roviny a delší rovná stoupání a klesání spojená krátkými plynulými přechody, bez souvislého vlnění. Původní konstrukce tohoto oddílu (hraniční výšky `H(k)` v ±32 u a smootherstep přechody s nulovým sklonem na každé hranici chunku) zůstává jen jako generátor v0 verze 0.1. Měření ukázalo, že v ní se sklon mění na 91–95 % délky ([D-009](../docs/decisions/009-track-generator-v1.md)).

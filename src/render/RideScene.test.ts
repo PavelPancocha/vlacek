@@ -99,6 +99,17 @@ function setup(catalog: ReturnType<RideSceneHost['catalogVehicles']> = []) {
 }
 
 describe('ride presentation signal', () => {
+  it('initializes decorative effects without consuming global randomness', () => {
+    const random = vi.spyOn(Math, 'random').mockImplementation(() => {
+      throw new Error('unseeded decorative randomness');
+    });
+    try {
+      expect(() => setup()).not.toThrow();
+    } finally {
+      random.mockRestore();
+    }
+  });
+
   it('reports complete art from all three texture keys without collecting diagnostics', () => {
     const { scene } = setup();
     expect(scene.artReady).toBe(false);

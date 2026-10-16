@@ -419,18 +419,33 @@ export class RideScene extends Phaser.Scene {
   #horizonY: number | undefined;
   /** Render y the animals' feet stay above (free of the controls). */
   #freeBottomY = Infinity;
+  #effectRandomState = 0;
+  readonly #effectRandom = () => {
+    this.#effectRandomState =
+      (Math.imul(this.#effectRandomState, 1664525) + 1013904223) >>> 0;
+    return this.#effectRandomState / 2 ** 32;
+  };
   /** Decorative particles (doc 14 §4); capacity from the quality profile. */
   readonly #particles = new ParticleField(
     PARTICLE_KINDS,
     gameConfig.quality.standard.maxDecorativeParticles,
-    Math.random,
+    this.#effectRandom,
   );
   #bubblePops = 0;
-  readonly #trainEffects = new TrainEffects(this.#particles, Math.random);
+  readonly #trainEffects = new TrainEffects(
+    this.#particles,
+    this.#effectRandom,
+  );
   /** Oncoming trains' smoke, one emission state per train. */
-  readonly #npcEffects = new TrainEffectsByTrain(this.#particles, Math.random);
-  readonly #ambient = new AmbientLife(this.#particles, Math.random);
-  readonly #seasonalEffects = new SeasonalEffects(this.#particles, Math.random);
+  readonly #npcEffects = new TrainEffectsByTrain(
+    this.#particles,
+    this.#effectRandom,
+  );
+  readonly #ambient = new AmbientLife(this.#particles, this.#effectRandom);
+  readonly #seasonalEffects = new SeasonalEffects(
+    this.#particles,
+    this.#effectRandom,
+  );
   readonly #seasonalSources: SeasonalSource[] = [];
   #effectsCostMs = 0;
   #animationCostMs = 0;
@@ -1135,6 +1150,12 @@ export class RideScene extends Phaser.Scene {
   override update(time: number, delta: number): void {
     const alpha = this.#host.frame(delta / 1000, time);
     const ride = this.#host.ride();
+    // Decorative draws never consume layout randomness or browser-global state.
+    this.#effectRandomState = hash32(
+      ride?.seed ?? 0,
+      'effects',
+      ride?.simulationTick ?? 0,
+    );
     if (ride !== this.#rideRef) {
       this.#reset();
       this.#rideRef = ride;

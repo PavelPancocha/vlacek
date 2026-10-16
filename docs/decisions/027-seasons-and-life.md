@@ -295,3 +295,71 @@ pozorování; oba případy ponechávají podmínku sněžení **>160 pixelů**:
 Test, jeho práh ani kresba se tímto záznamem nemění. Příčinu kolísání nelze
 z těchto vzorků určit; případné ladění potřebuje samostatnou reprodukci a
 obrazové ověření. Desktopový projekt `tablet-touch` není fyzický tablet.
+
+## Deterministické částice (seasonal-flake-1)
+
+Reprodukce oddělila dva zdroje kolísání. `RideScene` předával `Math.random`
+částicovému poli, hráčskému i protijedoucímu vlaku, okolnímu životu a
+sezónním emiterům. Test navíc vypínal automatické aktualizace až po
+pokračování z pauzy, tedy po proměnlivém počtu skutečných snímků. Ručních
+180 snímků tak nezačínalo ze stejného ticku ani stavu kamery a emiterů.
+Částice, vítr a rozpočty již používaly simulační čas; reálný čas neřídil
+jejich stáří ani hustotu.
+
+Všech pět konzumentů sdílí lokální 32bitový LCG
+(`state = (1664525 × state + 1013904223) mod 2³²`, výstup `state / 2³²`).
+Před každým snímkem dostane seed `hash32(journeySeed, 'effects', simulationTick)`.
+Zachovává rozsahy, emise, životnosti a pool; nečerpá náhodnost layoutu ani
+globálního browseru. Stejný počáteční stav a stejná posloupnost snímků,
+kvality a vstupů opakují efekty. Rozdílné FPS mohou dál měnit kosmetický
+průběh; částice se neukládají a verze geometrie, katalogu i save se nemění.
+
+Ruční fixture nechá připravit atlasy ve skutečné pauze a vypne automatický
+update před pokračováním. Host při ručním kroku dostane čas odvozený
+z následujícího simulačního ticku, bez `performance.now()`. Pixelová regrese
+nadále měří tři sousední snímky a všechny původní prahy; nový replay test
+porovnává i celý stav částic po dvou obnovách cesty.
+Tento instrumentovaný spec blokuje service worker: druhá návštěva jinak
+může dostat nezměněný bundle z jeho cache a obejít síťový probe. Produkční
+PWA ani její samostatné akceptační testy se tím nemění.
+
+Výchozí produkční kód `6377948`, low matice 8 variant × 10 opakování se dvěma
+workery: **77 prošlo, 3 selhaly** (8,2 min). Canvas long desktop měl 155,
+Canvas short desktop 138 a Canvas long tablet-touch 138 pixelů sněžení,
+vždy proti nezměněnému >160. První měřený snímek měl tick 550–831 místo
+očekávaného 360; před ručním krokováním tak uběhlo 190–471 neřízených ticků.
+Pozorované rozsahy přes oba projekty a tři sousední snímky:
+
+| Renderer / vlak | Sněžení před opravou | Podvozky před opravou | Stopa před opravou |
+| --------------- | -------------------- | --------------------- | ------------------ |
+| Canvas / short  | 138–578              | 142–422               | 417–685            |
+| Canvas / long   | 138–576              | 390–907               | 146–354            |
+| WebGL / short   | 197–458              | 83–420                | 340–842            |
+| WebGL / long    | 198–595              | 311–974               | 67–379             |
+
+Kontrolní běh po opravě prošel všech 16 pixelových variant i oba replay
+testy (18/18). Low má následující rozsahy přes tři sousední snímky;
+desktop a tablet-touch dávají pro odpovídající snímek stejná čísla:
+
+| Renderer / vlak | Sněžení po opravě | Podvozky po opravě | Stopa po opravě |
+| --------------- | ----------------- | ------------------ | --------------- |
+| Canvas / short  | 249–263           | 228–252            | 568–648         |
+| Canvas / long   | 460–468           | 590–648            | 232–247         |
+| WebGL / short   | 254–264           | 236–254            | 572–652         |
+| WebGL / long    | 465–474           | 603–644            | 225–246         |
+
+Velikost, hustota, životnost i pool zůstaly beze změny; nebylo potřeba ladit
+čitelnost low ani spouštět `measure:perf`. Pixelové oblasti, kontrast 24 RGB,
+minima dlaždic a prahy >160 / >75 / >45 se nesnižují.
+
+Opakovaný běh všech 16 variant s `--repeat-each=10 --workers=2` prošel
+**160/160** za 17,8 min. Kontrola všech 480 záznamů potvrdila 48 skupin
+(projekt × renderer × délka × kvalita × snímek), v každé deset shodných
+počtů pixelů i dlaždic. Rozptyl mezi opakováními je tedy **0**; nenulový
+rozsah v tabulce vyjadřuje pouze pohyb mezi tickem 360, 362 a 364.
+
+Stejná matice s `--repeat-each=10 --workers=1` prošla **160/160** za
+25,4 min. Společná kontrola obou logů ověřila všech **960** záznamů:
+každá z 48 skupin má dvacet shodných výsledků pixelů i dlaždic, včetně
+shody mezi jedním a dvěma workery. Oba běhy používaly současně
+`/tmp/vlacek-playwright.lock` a `/tmp/vlacek-check.lock`, bez retries či skipů.

@@ -8,6 +8,9 @@ import {
 } from './seasonalVisual.helpers.ts';
 import { regionAt } from '../../src/domain/world/Regions.ts';
 
+// The probe must intercept bundles on both visits of the replay regression.
+test.use({ serviceWorkers: 'block' });
+
 function winterVillage() {
   for (let seed = 1; seed < 10; seed++) {
     let r = regionAt(seed, 0);
@@ -151,12 +154,36 @@ const weatherFrames = [
   'fx.snow-near',
   'fx.season-rain',
 ];
+test('seasonal particles replay identically from the restored simulation tick', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1140, height: 512 });
+  await probeScene(page);
+  const runs = [];
+  for (let run = 0; run < 2; run++) {
+    await restore(page, 'canvas', 487, 824, ['cargo_box'], 2, 'low', true);
+    expect((await snapshot(page)).simulationTick).toBe(0);
+    await page.mouse.move(700, 300);
+    await page.mouse.down();
+    await advanceSeasonalFrames(page, 180);
+    runs.push(
+      await page.evaluate(() => ({
+        tick: window.__seasonalProbe.ride.simulationTick,
+        particles: window.__seasonalProbe.field.particles(),
+      })),
+    );
+    await page.mouse.up();
+  }
+  expect(runs[0]?.particles.length).toBeGreaterThan(0);
+  expect(runs[0]?.tick).toBe(360);
+  expect(runs[1]).toEqual(runs[0]);
+});
 for (const renderer of ['canvas', 'webgl']) {
   for (const length of ['short', 'long'])
     for (const quality of ['low', 'standard'] as const)
       test(`snowfall and wheel spray contribute visible pixels across consecutive moving frames (${renderer}, ${length}, ${quality})`, async ({
         page,
-      }) => {
+      }, testInfo) => {
         await page.setViewportSize({ width: 1140, height: 512 });
         await probeScene(page);
         await restore(
@@ -171,18 +198,28 @@ for (const renderer of ['canvas', 'webgl']) {
             : ['cargo_box'],
           2,
           quality,
+          true,
         );
-        await page.evaluate(() => {
-          window.__seasonalProbe.scene.sys.setActive(false);
-        });
+        expect((await snapshot(page)).simulationTick).toBe(0);
         await page.mouse.move(700, 300);
         await page.mouse.down();
         await advanceSeasonalFrames(page, 180);
         expect((await snapshot(page)).speedUPerSec).toBeGreaterThan(400);
         for (let frame = 0; frame < 3; frame++) {
           const regions = await snowRegions(page, false);
+          const simulationTick = (await snapshot(page)).simulationTick;
+          expect(simulationTick).toBe(360 + frame * 2);
           console.log(
-            JSON.stringify({ renderer, length, quality, frame, regions }),
+            JSON.stringify({
+              project: testInfo.project.name,
+              repeat: testInfo.repeatEachIndex,
+              renderer,
+              length,
+              quality,
+              frame,
+              simulationTick,
+              regions,
+            }),
           );
           // At least 24 RGB levels: barely altered antialias pixels never count.
           // Independent regions prevent sky flakes from hiding absent wheel spray.

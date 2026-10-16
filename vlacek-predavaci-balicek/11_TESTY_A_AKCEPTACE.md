@@ -289,6 +289,13 @@ bez posunu během odečtu. Canvas/WebGL, krátký/2000u vlak, low/standard;
 po zastavení se ověřuje zánik víření. Unit regrese chrání rezervu blízkého
 sněhu před kouřem a souvislost stopy bez zvýšení emise či poolu.
 
+Regrese seasonal-flake-1 porovnává celý stav částic po dvou obnovách stejné
+cesty a 180 ručních snímcích. Fixture připraví skutečné atlasy ještě v pauze
+a vypne automatické aktualizace před pokračováním; první jízdní tick je 0.
+Čas předávaný hostu při ručním kroku vychází ze simulačního ticku, nikoli
+z hodin browseru. Pixelová matice se opakuje desetkrát s jedním i dvěma
+workery; prahy sněžení >160, podvozků >75 a stopy >45 se nemění.
+
 ### Kontaktní jiskření — sparks-1 (TRN-08, SPK-01)
 
 Unit `TrainEffects.test.ts`: četnost roste s rychlostí a plynem, rozjezd

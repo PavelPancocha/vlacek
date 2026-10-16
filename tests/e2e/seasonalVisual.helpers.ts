@@ -3,6 +3,7 @@ import type { RideSimulation } from '../../src/domain/ride/RideSimulation.ts';
 import type { ParticleField } from '../../src/render/particles/ParticleField.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 import { snapshot, tapAction } from './helpers.ts';
+import { gameConfig } from '../../src/config/gameConfig.ts';
 export interface ProbeObject {
   type: string;
   depth: number;
@@ -41,7 +42,6 @@ interface TunnelProbe {
   scene: ProbeScene;
   field: ParticleField;
   step?: RideSimulation['step'];
-  manualTime?: number;
   portalFeet?: ProbeScene['children']['list'];
 }
 
@@ -82,6 +82,7 @@ export async function restore(
   wagonIds: string[] = [],
   seed = 123,
   quality: 'standard' | 'low' = 'standard',
+  stepped = false,
 ): Promise<void> {
   const consist = {
     locomotiveId: 'steam_local',
@@ -118,9 +119,21 @@ export async function restore(
   );
   await page.goto(`./?debug=1&renderer=${renderer}&quality=${quality}`);
   await tapAction(page, 'continue');
+  if (stepped) {
+    // Prepare at tick zero; resuming before freezing admits real startup frames.
+    await page.waitForFunction(
+      () => window.__seasonalProbe?.field !== undefined,
+    );
+    await page.evaluate(() =>
+      window.__seasonalProbe.scene.sys.setActive(false),
+    );
+  }
   await tapAction(page, 'resume');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
-  await page.waitForFunction(() => window.__seasonalProbe?.field !== undefined);
+  if (!stepped)
+    await page.waitForFunction(
+      () => window.__seasonalProbe?.field !== undefined,
+    );
   expect((await snapshot(page)).renderer).toBe(renderer);
   await page.addStyleTag({ content: '#diagnostics{display:none}' });
 }
@@ -583,12 +596,16 @@ export async function snowRegions(page: Page, resume = true) {
 /** Fixed 30-Hz rendered frames through the real host/reducer/simulation. The scene
  * stays inactive between captures, so framebuffer readback cannot move the train. */
 export async function advanceSeasonalFrames(page: Page, count: number) {
-  await page.evaluate((count) => {
-    const probe = window.__seasonalProbe;
-    probe.scene.sys.setActive(false);
-    for (let i = 0; i < count; i++) {
-      probe.manualTime = (probe.manualTime ?? performance.now()) + 1000 / 30;
-      probe.scene.update(probe.manualTime, 1000 / 30);
-    }
-  }, count);
+  await page.evaluate(
+    ({ count, fixedHz }) => {
+      const probe = window.__seasonalProbe;
+      probe.scene.sys.setActive(false);
+      for (let i = 0; i < count; i++)
+        probe.scene.update(
+          (probe.ride.simulationTick * 1000) / fixedHz + 1000 / 30,
+          1000 / 30,
+        );
+    },
+    { count, fixedHz: gameConfig.simulation.fixedHz },
+  );
 }
