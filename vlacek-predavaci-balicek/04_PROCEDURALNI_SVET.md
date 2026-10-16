@@ -44,8 +44,10 @@ Příklady klíčů: `terrain-boundary`, `route-template`, `major-feature`, `tre
 
 ID entity má podobu `g2:chunk:42:prop:rule:3:candidate:1`; není to náhodné UUID při každém vykreslení. Kosmetické částice mohou mít vlastní omezený generátor a neovlivňují layout ani save.
 
-Částicové efekty mají vlastní 32bitový generátor, před každým snímkem seedovaný
-z čísla cesty, klíče `effects` a simulačního ticku. Stejná posloupnost snímků,
+Částicové efekty mají vlastní 32bitový generátor, seedovaný jednou při změně
+instance jízdy z čísla cesty, klíče `effects` a počátečního ticku nové nebo
+obnovené jízdy, před resetem okolního života. Další emise posouvají jeho stav
+bez nového hashování během snímků. Stejná posloupnost snímků,
 profilu kvality a vstupů od stejného počátečního stavu opakuje i částice;
 nejde o shodu částic při různých FPS ani o ukládání kosmetického stavu.
 Podrobnosti a obrazové regrese vlastní [D-027](../docs/decisions/027-seasons-and-life.md).

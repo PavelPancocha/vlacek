@@ -308,7 +308,11 @@ jejich stáří ani hustotu.
 
 Všech pět konzumentů sdílí lokální 32bitový LCG
 (`state = (1664525 × state + 1013904223) mod 2³²`, výstup `state / 2³²`).
-Před každým snímkem dostane seed `hash32(journeySeed, 'effects', simulationTick)`.
+Při změně instance jízdy dostane jednou seed
+`hash32(journeySeed, 'effects', initialSimulationTick)`, ještě před resetem
+okolního života. Další emise pouze posouvají stav LCG; nezměněné, pozastavené
+ani skryté snímky kvůli RNG znovu nevolají hash ani serializaci. Počáteční
+tick je tick nové nebo obnovené jízdy.
 Zachovává rozsahy, emise, životnosti a pool; nečerpá náhodnost layoutu ani
 globálního browseru. Stejný počáteční stav a stejná posloupnost snímků,
 kvality a vstupů opakují efekty. Rozdílné FPS mohou dál měnit kosmetický
@@ -337,7 +341,8 @@ Pozorované rozsahy přes oba projekty a tři sousední snímky:
 | WebGL / short   | 197–458              | 83–420                | 340–842            |
 | WebGL / long    | 198–595              | 311–974               | 67–379             |
 
-Kontrolní běh po opravě prošel všech 16 pixelových variant i oba replay
+Historický kontrolní běh seasonal-flake-1 (tehdy s reseedem každý snímek)
+prošel všech 16 pixelových variant i oba replay
 testy (18/18). Low má následující rozsahy přes tři sousední snímky;
 desktop a tablet-touch dávají pro odpovídající snímek stejná čísla:
 
@@ -363,3 +368,38 @@ Stejná matice s `--repeat-each=10 --workers=1` prošla **160/160** za
 každá z 48 skupin má dvacet shodných výsledků pixelů i dlaždic, včetně
 shody mezi jedním a dvěma workery. Oba běhy používaly současně
 `/tmp/vlacek-playwright.lock` a `/tmp/vlacek-check.lock`, bez retries či skipů.
+
+### Revidovaný životní cyklus RNG (seasonal-flake-2)
+
+Reseed přes `hash32` v každém snímku vytvářel pole argumentů a JSON řetězec
+i během pauzy a skrytého světa. Seedování se proto přesunulo do existující
+větve změny instance jízdy před `#reset()`, který inicializuje čekání okolního
+života. Generátor ani sdílený hash nepotřebují nové rozhraní. Regrese
+`RideScene.perf.test.ts` před opravou zaznamenala **120 hashů pro 120
+nezměněných snímků** (60 skrytých a 60 viditelných), po opravě **0**.
+Samostatně ověřuje jeden seed při každé změně jízdy a žádný při změně ticku
+stávající jízdy. Dotčená sada scény, částic a sezón prošla **103/103** testů.
+
+Nový souvislý stream mění konkrétní rozmístění částic, nikoli jejich parametry.
+Low výsledky přes ticky 360, 362 a 364 (oba projekty dávají stejná čísla):
+
+| Renderer / vlak | Sněžení | Podvozky | Stopa   |
+| --------------- | ------- | -------- | ------- |
+| Canvas / short  | 348–366 | 302–323  | 516–636 |
+| Canvas / long   | 203–240 | 513–557  | 94–116  |
+| WebGL / short   | 351–373 | 305–321  | 532–629 |
+| WebGL / long    | 206–239 | 530–568  | 91–110  |
+
+První běh nezměněné matice `--repeat-each=3 --workers=2` zaznamenal všech
+**144 vzorků**; 48 skupin má vždy tři stejné výsledky pixelů i dlaždic
+(rozptyl **0**). Celý test prošel 37×, dalších 11 WebGL případů vyčerpalo
+původní limit 30 s; žádná pixelová podmínka neselhala. Tento běh tedy není
+zelenou časovou bránou. Traces ukazují timeouty při odečtu framebufferu
+nebo dokončení testu; timeouty, retries ani čekání se kvůli tomu nemění.
+
+Opakování stejného příkazu bez dalších změn kódu prošlo **48/48** za 7,8 min.
+Společná kontrola obou logů ověřila **288 vzorků**, v každé z 48 skupin šest
+shodných výsledků pixelů i dlaždic, včetně ticků 360/362/364. Úplný projektový
+`check` pod `/tmp/vlacek-check.lock` se čtyřmi Vitest workery prošel včetně
+**2 493 testů / 154 souborů**, typů, lintu a všech validátorů. Velikost, hustota,
+životnost, pool i pixelové prahy zůstávají beze změny.

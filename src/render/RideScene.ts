@@ -1150,13 +1150,13 @@ export class RideScene extends Phaser.Scene {
   override update(time: number, delta: number): void {
     const alpha = this.#host.frame(delta / 1000, time);
     const ride = this.#host.ride();
-    // Decorative draws never consume layout randomness or browser-global state.
-    this.#effectRandomState = hash32(
-      ride?.seed ?? 0,
-      'effects',
-      ride?.simulationTick ?? 0,
-    );
     if (ride !== this.#rideRef) {
+      // Seed before reset initializes ambient events; draws advance this stream.
+      this.#effectRandomState = hash32(
+        ride?.seed ?? 0,
+        'effects',
+        ride?.simulationTick ?? 0,
+      );
       this.#reset();
       this.#rideRef = ride;
     }

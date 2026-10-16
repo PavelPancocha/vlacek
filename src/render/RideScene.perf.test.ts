@@ -1,12 +1,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PerformanceProbe } from '../platform/PerformanceProbe.ts';
+import { gameConfig } from '../config/gameConfig.ts';
+import { RideSimulation } from '../domain/ride/RideSimulation.ts';
+import * as hash from '../domain/world/Hash.ts';
 import { RideScene, type RideSceneHost } from './RideScene.ts';
 import {
   WorldAtlasRequests,
   type WindowRequest,
 } from './WorldAtlasRequests.ts';
 
-vi.mock('phaser', () => ({ default: { Scene: class {} } }));
+vi.mock('phaser', () => ({
+  default: {
+    Scene: class {
+      sys = { setVisible: vi.fn(), isVisible: () => true };
+    },
+  },
+}));
 
 function setup() {
   const perf = new PerformanceProbe(() => 0);
@@ -69,6 +78,7 @@ function setup() {
     requests.update(wanted, activate);
   };
   return {
+    host,
     perf,
     scene,
     now,
@@ -84,6 +94,37 @@ function setup() {
 }
 
 afterEach(() => vi.restoreAllMocks());
+
+it('seeds effects only on ride changes, without hashing unchanged visible or hidden frames', () => {
+  const h = setup();
+  const ride = () =>
+    new RideSimulation({
+      seed: 2,
+      vehicles: [{ lengthU: 156, bogieOffsetU: 46 }],
+      speedFactor: 1,
+      config: gameConfig,
+    });
+  const first = ride(),
+    second = ride();
+  h.host.ride = () => first;
+  h.host.worldHidden = () => true;
+  const hash32 = vi.spyOn(hash, 'hash32');
+  h.scene.update(0, 0);
+  expect(hash32).toHaveBeenCalledExactlyOnceWith(2, 'effects', 0);
+  hash32.mockClear();
+  for (const hidden of [true, false]) {
+    h.host.worldHidden = () => hidden;
+    for (let frame = 0; frame < 60; frame++) h.scene.update(frame * 16, 16);
+  }
+  expect(hash32).not.toHaveBeenCalled();
+  first.step('COAST');
+  hash32.mockClear();
+  h.scene.update(2000, 16);
+  expect(hash32).not.toHaveBeenCalled();
+  h.host.ride = () => second;
+  h.scene.update(2016, 16);
+  expect(hash32).toHaveBeenCalledExactlyOnceWith(2, 'effects', 0);
+});
 
 describe('D-030 atlas timing overhead', () => {
   it('does zero timing or texture-wrapper work for 60 unchanged requests, but measures new content at the same scale', async () => {
