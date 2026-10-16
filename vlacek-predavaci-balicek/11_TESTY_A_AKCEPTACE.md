@@ -281,8 +281,12 @@ cleanup, pauzu a kontext teplého hmyzu. Cílený browserový průchod:
 Desktopová emulace Canvas/WebGL nepředstavuje fyzický test Tesly.
 
 D-027 / SEA-01 a SEA-04: `seasonal-rendering.spec.ts` kontroluje každou
-viditelnou střechu a/b/c v horní, střední a spodní masce mimo komín/vikýř
-(přes 65 % bílé plochy). Nezávislé pixelové oblasti sněžení, podvozků a
+viditelnou střechu a/b/c i nové sedlové a valbové domy v horní, střední a
+spodní masce mimo komín/vikýř (přes 65 % bílé plochy). Obě střešní fixture
+obnovují jízdu v ručním režimu a před odečtem výslovně ověřují tick 0;
+sedlové a valbové střechy zachovávají obě zarovnání kamery (0 a 0,5 px).
+Tím odečet nezávisí na neřízeném pohybu aut, kouře nebo ptáků před zmrazením.
+Nezávislé pixelové oblasti sněžení, podvozků a
 stopy za vlakem vyžadují kontrast alespoň 24 RGB úrovní a prostorové pokrytí.
 Tři sousední simulační snímky běží přes skutečný host/reducer při 30 Hz,
 bez posunu během odečtu. Canvas/WebGL, krátký/2000u vlak, low/standard;

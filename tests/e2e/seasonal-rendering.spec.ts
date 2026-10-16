@@ -58,10 +58,9 @@ for (const renderer of ['canvas', 'webgl']) {
           : ['cargo_box'],
         2,
         'low',
+        true,
       );
-      await page.evaluate(() => {
-        window.__seasonalProbe.scene.sys.setActive(false);
-      });
+      expect((await snapshot(page)).simulationTick).toBe(0);
       const coverage = await roofCoverage(page);
       expect(coverage.length).toBeGreaterThanOrEqual(3);
       expect(new Set(coverage.map((c) => c.key))).toEqual(
@@ -79,10 +78,8 @@ for (const renderer of ['canvas', 'webgl']) {
   }) => {
     await page.setViewportSize({ width: 1140, height: 512 });
     await probeScene(page);
-    await restore(page, renderer, 490, 750, ['cargo_box'], 2, 'low');
-    await page.evaluate(() =>
-      window.__seasonalProbe.scene.sys.setActive(false),
-    );
+    await restore(page, renderer, 490, 750, ['cargo_box'], 2, 'low', true);
+    expect((await snapshot(page)).simulationTick).toBe(0);
     const scrollY = await page.evaluate(
       () => window.__seasonalProbe.scene.cameras.main.scrollY,
     );
