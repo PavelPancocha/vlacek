@@ -1,6 +1,8 @@
+import { locomotives } from '../content/vehicles.ts';
 import EventEmitter from 'eventemitter3';
 import { describe, expect, it, vi } from 'vitest';
 import { RideScene, type RideSceneHost } from './RideScene.ts';
+import { rebindWorldImage } from './worldImage.ts';
 
 vi.mock('phaser', () => {
   const graphics = {
@@ -40,7 +42,7 @@ vi.mock('./Backdrop.ts', () => ({
   },
 }));
 
-function setup() {
+function setup(catalog: ReturnType<RideSceneHost['catalogVehicles']> = []) {
   const worldDrawn = vi.fn();
   const host: RideSceneHost = {
     frame: () => 0,
@@ -49,8 +51,9 @@ function setup() {
     worldDrawn,
     journeyVehicles: () => [],
     journeyNpcFleet: () => undefined,
-    catalogVehicles: () => [],
+    catalogVehicles: () => catalog,
     effectsQuality: () => 'standard',
+    artQuality: () => 'standard',
   };
   const scene = new RideScene(host);
   scene.create();
@@ -90,5 +93,37 @@ describe('ride presentation signal', () => {
       expect(scene.game.renderer.listenerCount('postrender')).toBe(0);
       expect(scene.game.events.listenerCount('postrender')).toBe(0);
     },
+  );
+});
+
+it('restores a fallback prop pivot when its art becomes ready', () => {
+  const image = {
+    frame: { name: '__BASE', width: 142, height: 112 },
+    getData: () => 'back.barn',
+    setTexture: vi.fn().mockReturnThis(),
+    setOrigin: vi.fn().mockReturnThis(),
+  };
+  // Boundary fixture supplies only the image methods used by rebinding.
+  rebindWorldImage(
+    image as unknown as import('phaser').GameObjects.Image,
+    () => 'ready@1',
+    1,
+  );
+  expect(image.setTexture).toHaveBeenCalledWith('ready@1', 'back.barn');
+  expect(image.setOrigin).toHaveBeenCalledWith(0.5, 111 / 112);
+});
+
+it('does not allocate unused vehicle silhouette textures when the catalogue is available', () => {
+  const vehicle = locomotives[0];
+  if (!vehicle) throw new Error('catalogue missing');
+  const { scene } = setup([vehicle]);
+  expect(
+    // Native graphics method is inspected as a boundary spy, not called unbound.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    scene.make.graphics({}, false).generateTexture,
+  ).not.toHaveBeenCalledWith(
+    `vehicle-${vehicle.id}`,
+    expect.any(Number),
+    expect.any(Number),
   );
 });

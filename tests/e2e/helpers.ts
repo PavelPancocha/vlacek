@@ -15,6 +15,26 @@ export async function snapshot(page: Page): Promise<DebugSnapshot> {
   });
 }
 
+/**
+ * D-030: a new ride or a diagnostic jump prepares its region/season atlases
+ * asynchronously (decode on demand). Waits until they are published and every
+ * drawn world part is resident; bounded by the test timeout.
+ */
+export async function waitForWorldAtlases(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const state = (
+      window as unknown as { __vlacek?: { snapshot(): DebugSnapshot } }
+    ).__vlacek?.snapshot();
+    return (
+      state !== undefined &&
+      !state.worldAtlases.pending &&
+      state.artAtlas !== undefined &&
+      state.vehicleAtlas !== undefined &&
+      state.worldAtlases.missingFrames.length === 0
+    );
+  });
+}
+
 export async function tapAction(page: Page, action: string): Promise<void> {
   await page.locator(`[data-action="${action}"]`).first().click();
 }
@@ -31,6 +51,7 @@ export async function startRide(
   for (const wagon of wagons) await tapAction(page, `add:${wagon}`);
   await tapAction(page, 'depart');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  await expect(page.locator('.ride-curtain')).toBeHidden();
 }
 
 /** Holds the mouse in the world until the train is clearly moving. */

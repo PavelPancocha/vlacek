@@ -1,7 +1,11 @@
 import { particleRadiusU } from './particles/particleRadius.ts';
-import { backdropWindowFrames } from './backdropFrames.ts';
-import { frameTexture } from './frameTexture.ts';
+import { setFrameResolver } from './frameTexture.ts';
 import { mixColour, scenerySnowCoverage } from './groundPalette.ts';
+import { atlasProof } from './AtlasProof.ts';
+import { AtlasMetrics } from './AtlasMetrics.ts';
+import { TextureMemory } from './TextureMemory.ts';
+import { worldAtlasWindowKeys } from '../content/worldAtlasGroups.ts';
+import { worldAtlasRegions } from './worldAtlasWindow.ts';
 import { WorldOverlay } from './WorldOverlay.ts';
 import type { WorldOverlayOptions } from '../domain/world/WorldDebugGeometry.ts';
 import { transitionAt } from '../domain/world/Regions.ts';
@@ -55,7 +59,6 @@ import { bankHeightU } from '../domain/world/Terrain.ts';
 import {
   ArtAtlas,
   artSourceTextureCount,
-  preloadArt,
   type ArtAtlasInfo,
   type ArtSource,
 } from './ArtAtlas.ts';
@@ -64,6 +67,8 @@ import {
   BACKDROP_MAX_PX_PER_U,
   frameOrigin,
   journeyArtKeys,
+  profileArtScale,
+  profileBackdropScale,
 } from './atlasPacking.ts';
 import { placeAnimal } from './animalPlacement.ts';
 import { DEPTH } from './RideSceneDepth.ts';
@@ -102,6 +107,8 @@ import {
   type TrainInTunnel,
 } from './tunnelCover.ts';
 import { secondaryPortalFeet } from './SecondaryView.ts';
+import { WorldAtlasRequests } from './WorldAtlasRequests.ts';
+import { rebindWorldImage } from './worldImage.ts';
 import {
   frameLeftX,
   frameTopY,
@@ -118,6 +125,8 @@ export interface RideSceneHost {
   ride(): RideSimulation | undefined;
   /** Opaque UI coverage; the application frame must still run underneath. */
   worldHidden(): boolean;
+  /** Paused/covered preparation stays asynchronous without waiting for ride frames. */
+  worldRunning?(): boolean;
   /** A prepared ride frame has passed through Phaser's renderer. */
   worldDrawn(): void;
   /** Vehicle definitions of the current journey, locomotive first. */
@@ -126,6 +135,8 @@ export interface RideSceneHost {
   catalogVehicles(): readonly ShapedVehicle[];
   /** Effects density profile (doc 13 `quality`, reduced effects). */
   effectsQuality(): 'low' | 'standard';
+  /** Atlas residency profile; reduced motion does not reduce art resolution. */
+  artQuality(): 'low' | 'standard';
 }
 
 export interface RenderStats {
@@ -358,8 +369,18 @@ export class RideScene extends Phaser.Scene {
   #visibleObjects: VisibleObject[] = [];
   /** World art; undefined if it failed (plain shapes drawn). */
   #art: ArtAtlas | undefined;
+  readonly atlasMetrics = new AtlasMetrics();
+  readonly #textureMemory = new TextureMemory();
+  /** Created in preload with the world and backdrop atlas owners. */
+  #windowRequests = new WorldAtlasRequests(undefined, undefined);
+  readonly #worldLoadFailures: string[] = [];
+  #worldSwaps = 0;
+  #worldRegions: ReturnType<typeof worldAtlasRegions> = [];
   /** Journey vehicles and NPC fleet, independent of world art failure. */
   #vehicleArt: ArtAtlas | undefined;
+  #vehicleRequest: string | undefined;
+  #vehicleGeneration = 0;
+  #vehiclePending = false;
   /** Backdrop art; undefined if it failed (plain sky only). */
   #backdropArt: ArtAtlas | undefined;
   #backdrop: Backdrop | undefined;
@@ -382,7 +403,6 @@ export class RideScene extends Phaser.Scene {
   readonly #seasonalSources: SeasonalSource[] = [];
   #effectsCostMs = 0;
   #animationCostMs = 0;
-  #backdropWindow = '';
   readonly #weatherSample = { x: 0, y: 0 };
   readonly #weatherPortalByChunk = new Map<
     number,
@@ -400,8 +420,6 @@ export class RideScene extends Phaser.Scene {
   #lastAnimalSec: number | undefined;
   #effectsView: EffectsView | undefined;
   #effectsTexture: string | undefined;
-  /** Backdrop atlas texture the backdrop currently shows. */
-  #backdropTexture: string | undefined;
   stats: RenderStats = NO_STATS;
   rideFramesDrawn = 0;
 
@@ -450,20 +468,187 @@ export class RideScene extends Phaser.Scene {
     return this.#backdropArt?.info;
   }
 
+  /** Known RGBA8 texture copies and allocation high water, including source and buffer overlap. */
+  get worldAtlases() {
+    const atlases = [this.#art, this.#backdropArt];
+    const memory = this.#textureMemory.snapshot;
+    return {
+      pending: this.#windowRequests.pending || this.#vehiclePending,
+      failure:
+        this.#windowRequests.failure ??
+        (this.#worldLoadFailures.length
+          ? this.#worldLoadFailures.join('; ')
+          : undefined),
+      swaps: this.#worldSwaps,
+      regions: this.#worldRegions.map(({ id, landscape, season }) => ({
+        id,
+        landscape,
+        season,
+      })),
+      pages: atlases.flatMap(
+        (atlas) =>
+          atlas?.pages.map(({ key, info }) => ({ textureKey: key, ...info })) ??
+          [],
+      ),
+      textureBytes: memory.bytes,
+      memory,
+      performance: this.atlasMetrics.snapshot,
+      bufferBytes: atlases.reduce(
+        (sum, atlas) => sum + (atlas?.decodedBytes ?? 0),
+        0,
+      ),
+      liveTextures: this.textures
+        .getTextureKeys()
+        .filter((key) => key.startsWith('art@') || key.startsWith('backdrop@'))
+        .length,
+      ...this.#worldArtDiagnostics(),
+    };
+  }
+
+  #worldArtDiagnostics(): { drawnParts: number; missingFrames: string[] } {
+    const missing = new Set<string>();
+    let drawnParts = 0;
+    const visit = (object: Phaser.GameObjects.GameObject): void => {
+      if (object instanceof Phaser.GameObjects.Container) {
+        if (object.visible) object.list.forEach(visit);
+        return;
+      }
+      if (!(object instanceof Phaser.GameObjects.Image) || !object.visible)
+        return;
+      const expected: unknown = object.getData('world-part');
+      if (typeof expected !== 'string') return;
+      drawnParts++;
+      if (object.frame.name !== expected) missing.add(expected);
+    };
+    this.children.list.forEach(visit);
+    for (const frame of this.#backdrop?.state.missingFrames ?? [])
+      missing.add(frame);
+    for (const chunk of this.#chunks.values())
+      for (const frame of chunk.missingCompositionFrames) missing.add(frame);
+    return { drawnParts, missingFrames: [...missing] };
+  }
+
+  #closeAtlasProof: (() => void) | undefined;
+  async atlasProof(
+    catalogue?: import('../app/debugSnapshot.ts').AtlasProofSources,
+  ) {
+    this.#closeAtlasProof?.();
+    const proof = await atlasProof(
+      this,
+      this.#textureMemory,
+      this.atlasMetrics,
+      catalogue,
+    );
+    this.#closeAtlasProof = proof.close;
+    return { cycles: proof.cycles, performance: proof.performance };
+  }
+  closeAtlasProof(): void {
+    this.#closeAtlasProof?.();
+    this.#closeAtlasProof = undefined;
+  }
+
+  #watchTextureMemory(): void {
+    if (!this.textures) return;
+    const add = (key: string, texture: Phaser.Textures.Texture) => {
+      let canvas = 0,
+        sources = 0,
+        gpu = 0;
+      for (const source of texture.source) {
+        const image = source.image;
+        if (image instanceof HTMLCanvasElement)
+          canvas += image.width * image.height * 4;
+        else if (image instanceof HTMLImageElement)
+          sources += image.width * image.height * 4;
+        if (source.glTexture) gpu += source.width * source.height * 4;
+      }
+      const imageData: unknown = Reflect.get(texture, 'imageData');
+      this.#textureMemory.set(`texture:${key}`, {
+        canvas,
+        sources,
+        gpu,
+        imageData:
+          imageData instanceof ImageData ? imageData.data.byteLength : 0,
+      });
+    };
+    const remove = (key: string) =>
+      this.#textureMemory.remove(`texture:${key}`);
+    for (const key of Object.keys(this.textures.list))
+      add(key, this.textures.get(key));
+    this.textures.on('addtexture', add);
+    this.textures.on('removetexture', remove);
+    this.events.once('destroy', () => {
+      this.textures.off('addtexture', add);
+      this.textures.off('removetexture', remove);
+    });
+  }
+
   /** Loaded SVG sources not yet released, for diagnostics. */
   get artSourceTextures(): number {
     return artSourceTextureCount(this);
   }
 
   preload(): void {
-    preloadArt(this, ART_SOURCES, ART_MAX_PX_PER_U);
-    preloadArt(this, VEHICLE_SOURCES, ART_MAX_PX_PER_U);
-    preloadArt(this, BACKDROP_SOURCES, BACKDROP_MAX_PX_PER_U);
+    this.#watchTextureMemory();
+    try {
+      this.#art = new ArtAtlas(this, ART_SOURCES, {
+        maxPxPerU: ART_MAX_PX_PER_U,
+        texturePrefix: 'art@',
+        decodeOnDemand: true,
+        prefetchText: true,
+        yieldToFrame: () => this.#host.worldRunning?.() ?? true,
+        gpuOnly: this.game.renderer.type === 2,
+        metrics: this.atlasMetrics,
+        memory: this.#textureMemory,
+      });
+    } catch (error) {
+      this.#worldLoadFailures.push(`world: ${String(error)}`);
+      console.error(error);
+    }
+    try {
+      this.#backdropArt = new ArtAtlas(this, BACKDROP_SOURCES, {
+        maxPxPerU: BACKDROP_MAX_PX_PER_U,
+        texturePrefix: 'backdrop@',
+        decodeOnDemand: true,
+        prefetchText: true,
+        yieldToFrame: () => this.#host.worldRunning?.() ?? true,
+        gpuOnly: this.game.renderer.type === 2,
+        metrics: this.atlasMetrics,
+        memory: this.#textureMemory,
+      });
+    } catch (error) {
+      this.#worldLoadFailures.push(`backdrop: ${String(error)}`);
+      console.error(error);
+    }
+    const vehicles = () => this.#vehicleArt;
+    this.#windowRequests = new WorldAtlasRequests(
+      this.#art,
+      this.#backdropArt,
+      console.error,
+      {
+        get ready() {
+          return vehicles()?.ready ?? false;
+        },
+        get settling() {
+          return vehicles()?.settling ?? false;
+        },
+      },
+    );
+    // Every frameTexture caller resolves through the published D-030 pages.
+    setFrameResolver(
+      (frame) =>
+        this.#art?.textureFor(frame) ?? this.#backdropArt?.textureFor(frame),
+    );
+    this.events.once('destroy', () => {
+      setFrameResolver(undefined);
+      this.#art?.destroy();
+      this.#backdropArt?.destroy();
+    });
   }
 
   create(): void {
     let renderedFrames = this.rideFramesDrawn;
     const presented = () => {
+      this.atlasMetrics.frame(performance.now());
       if (this.rideFramesDrawn === renderedFrames) return;
       renderedFrames = this.rideFramesDrawn;
       this.#host.worldDrawn();
@@ -474,29 +659,47 @@ export class RideScene extends Phaser.Scene {
       renderer.off(Phaser.Renderer.Events.POST_RENDER, presented);
     };
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, stopPresenting);
+    const restore = () => {
+      this.#destroyChunks();
+      this.#destroyObjects();
+      this.#backdrop?.destroy();
+      this.#effectsView?.destroy();
+      this.#backdrop = new Backdrop(this, {
+        sky: DEPTH.sky,
+        clouds: DEPTH.clouds,
+        far: DEPTH.far,
+        mid: DEPTH.mid,
+      });
+      this.#effectsView = new EffectsView(this, DEPTH.effects);
+      this.#art?.invalidate();
+      this.#backdropArt?.invalidate();
+      this.#vehicleArt?.invalidate();
+      this.#vehicleRequest = undefined;
+      this.#vehicleGeneration++;
+      this.#vehiclePending = false;
+      this.#windowRequests.reset();
+      this.#effectsTexture = undefined;
+      for (const slot of [...this.#slots, ...this.#npcSlots])
+        slot.container.destroy();
+      this.#slots.length = 0;
+      this.#npcSlots.length = 0;
+    };
+    renderer.on('restorewebgl', restore);
+    this.events.once('destroy', () => renderer.off('restorewebgl', restore));
     this.cameras.main.setBackgroundColor('#bfe3f2');
     // A failed download must not stop the ride (PWA-10): vehicles fall
     // back to their marked placeholder silhouettes, the backdrop to sky.
     try {
-      this.#art = new ArtAtlas(this, ART_SOURCES, {
-        maxPxPerU: ART_MAX_PX_PER_U,
-        texturePrefix: 'art@',
-      });
-    } catch (error) {
-      console.error(error);
-    }
-    try {
       this.#vehicleArt = new ArtAtlas(this, VEHICLE_SOURCES, {
         maxPxPerU: ART_MAX_PX_PER_U,
         texturePrefix: 'vehicle@',
-      });
-    } catch (error) {
-      console.error(error);
-    }
-    try {
-      this.#backdropArt = new ArtAtlas(this, BACKDROP_SOURCES, {
-        maxPxPerU: BACKDROP_MAX_PX_PER_U,
-        texturePrefix: 'backdrop@',
+        singlePage: true,
+        decodeOnDemand: true,
+        prefetchText: true,
+        yieldToFrame: () => this.#host.worldRunning?.() ?? true,
+        gpuOnly: this.game.renderer.type === 2,
+        metrics: this.atlasMetrics,
+        memory: this.#textureMemory,
       });
     } catch (error) {
       console.error(error);
@@ -510,6 +713,7 @@ export class RideScene extends Phaser.Scene {
       mid: DEPTH.mid,
     });
     this.events.once('destroy', () => {
+      this.closeAtlasProof();
       stopPresenting();
       this.#worldOverlay?.destroy();
       for (const feet of this.#portalFeet.values())
@@ -517,9 +721,8 @@ export class RideScene extends Phaser.Scene {
       this.#portalFeet.clear();
       this.#backdrop?.destroy();
       this.#effectsView?.destroy();
-      this.#art?.destroy();
+      this.#windowRequests.reset();
       this.#vehicleArt?.destroy();
-      this.#backdropArt?.destroy();
     });
     let tallestU = 0;
     for (const vehicle of this.#host.catalogVehicles()) {
@@ -529,20 +732,6 @@ export class RideScene extends Phaser.Scene {
         tallestU,
         art ? art.heightU : height + vehicle.wheelRadiusU * 1.3,
       );
-      // A transparent margin keeps rotated edges smooth without MSAA.
-      const g = this.make.graphics({}, false);
-      drawShapes(
-        g,
-        vehicleShapes(vehicle),
-        PLACEHOLDER_MARGIN_PX,
-        height + PLACEHOLDER_MARGIN_PX,
-      );
-      g.generateTexture(
-        `vehicle-${vehicle.id}`,
-        Math.ceil(vehicle.lengthU) + 2 * PLACEHOLDER_MARGIN_PX,
-        Math.ceil(height) + 2 * PLACEHOLDER_MARGIN_PX,
-      );
-      g.destroy();
     }
     this.#framing = { ...gameConfig.camera, vehicleHeightU: tallestU + 8 };
     const wheel = this.make.graphics({}, false);
@@ -828,6 +1017,9 @@ export class RideScene extends Phaser.Scene {
       locomotives: [],
       wagons: [],
     };
+    this.#vehicleRequest = undefined;
+    this.#vehicleGeneration++;
+    this.#vehiclePending = false;
     this.#vehicleArt?.selectParts(journeyArtKeys(vehicles, fleet));
     this.#cameraTopY = undefined;
     this.#horizonY = undefined;
@@ -909,16 +1101,7 @@ export class RideScene extends Phaser.Scene {
     // Fixed for this journey and viewport; neither grades nor speed zoom it.
     const zoom = trainZoom(viewport, consistLengthU, framing);
     camera.setZoom(zoom);
-    if (this.#backdropArt) {
-      const keys = backdropWindowFrames(ride.seed, ride.sample(ride.headS).x);
-      const key = keys.join('/');
-      if (key !== this.#backdropWindow) {
-        this.#backdrop?.setAtlas('', 1);
-        this.#backdropArt.selectParts(keys);
-        this.#backdropWindow = key;
-      }
-    }
-    this.#updateArtScale(zoom);
+
     this.#updateVehicleArtScale(zoom);
     const viewW = this.scale.width / zoom;
     const viewH = this.scale.height / zoom;
@@ -968,6 +1151,23 @@ export class RideScene extends Phaser.Scene {
 
     const leftX = leftWorldX - 64;
     const rightX = leftWorldX + viewW + 64;
+    // A fresh ride/jump cannot bake its chunks from the preceding region's pages.
+    // Existing chunks keep rendering while their next window prepares in flight.
+    if (
+      this.#vehiclePending &&
+      (!this.#vehicleArt?.textureKey || this.#chunks.size === 0)
+    )
+      return;
+    // Cancelled vehicle decoders settle before world allocations start (D-030).
+    if (!this.#vehiclePending && !this.#vehicleArt?.settling)
+      this.#updateWorldWindow(ride.seed, leftX, rightX, zoom);
+    if (
+      this.#windowRequests.pending &&
+      (!this.#art?.textureKey ||
+        !this.#backdropArt?.textureKey ||
+        this.#chunks.size === 0)
+    )
+      return;
     this.#drawTrack(ride, leftX, rightX, timeSec);
     this.#worldOverlay?.draw(
       ride.seed,
@@ -1118,11 +1318,17 @@ export class RideScene extends Phaser.Scene {
     const pxPerU = this.#art?.info?.pxPerU;
     const art =
       texture !== undefined && pxPerU !== undefined
-        ? { texture, pxPerU }
+        ? {
+            texture,
+            pxPerU,
+            textureFor: (frame: string) =>
+              this.#art?.textureFor(frame) ?? 'object-sheep',
+          }
         : undefined;
     const animationStarted = performance.now();
     let animationBudget =
       (this.#host.effectsQuality() === 'low' ? 64 : 160) - 8;
+    const backdropAtlas = this.#backdropArt;
     for (let k = first; k <= last; k++) {
       let chunk = this.#chunks.get(k);
       if (!chunk) {
@@ -1144,10 +1350,16 @@ export class RideScene extends Phaser.Scene {
           ride.electrified,
           this.#backdropArt?.textureKey && this.#backdropArt.info
             ? {
-                texture: this.#backdropArt.textureKey,
-                pxPerU: this.#backdropArt.info.pxPerU,
+                get texture() {
+                  return backdropAtlas?.textureKey ?? 'object-sheep';
+                },
+                get pxPerU() {
+                  return backdropAtlas?.info?.pxPerU ?? 1;
+                },
+                textureFor: (frame: string) => backdropAtlas?.textureFor(frame),
               }
             : undefined,
+          this.#textureMemory,
         );
         this.#chunks.set(k, chunk);
         const site = secondarySiteOfChunk(ride.seed, k);
@@ -1674,15 +1886,17 @@ export class RideScene extends Phaser.Scene {
     key: string,
     part: { pivotU: { x: number; y: number } },
   ): Phaser.GameObjects.Image {
-    const texture = this.#art?.textureKey;
+    const texture = this.#art?.textureFor(key);
     const pxPerU = this.#art?.info?.pxPerU;
     if (texture === undefined || pxPerU === undefined)
       return this.add
         .image(0, 0, 'object-sheep')
+        .setData('world-part', key)
         .setOrigin(0.5, 1)
         .setDepth(DEPTH.objects);
     const image = this.add
-      .image(0, 0, frameTexture(key, texture), key)
+      .image(0, 0, texture, key)
+      .setData('world-part', key)
       .setDepth(DEPTH.objects);
     const origin = frameOrigin(part.pivotU, pxPerU, image.frame);
     return image.setOrigin(origin.x, origin.y);
@@ -1782,84 +1996,118 @@ export class RideScene extends Phaser.Scene {
     return image.setVisible(true);
   }
 
-  /**
-   * Re-rasterises an atlas for a zoom step; returns the replaced texture.
-   * A failure (no canvas, no texture) must not stop the ride (PWA-10): an
-   * atlas with a texture keeps it at its old scale, one without any is
-   * dropped, so placeholders and plain shapes are drawn instead.
-   */
-  #rasterise(
-    atlas: ArtAtlas | undefined,
+  /** Request once per subset/scale; promises never mutate the displayed texture. */
+  #updateWorldWindow(
+    seed: number,
+    leftXU: number,
+    rightXU: number,
     zoom: number,
-  ): { atlas: ArtAtlas | undefined; replaced: string | undefined } {
-    try {
-      return { atlas, replaced: atlas?.update(zoom) };
-    } catch (error) {
-      console.error(error);
-      if (atlas?.textureKey !== undefined)
-        return { atlas, replaced: undefined };
-      atlas?.destroy();
-      return { atlas: undefined, replaced: undefined };
-    }
+  ): void {
+    const regions = worldAtlasRegions(seed, leftXU, rightXU);
+    this.#worldRegions = regions;
+    const keys = worldAtlasWindowKeys(worldParts, regions);
+    const artScale = profileArtScale(zoom, this.#host.artQuality());
+    const backdropScale = profileBackdropScale(zoom, this.#host.artQuality());
+    this.#windowRequests.update(
+      {
+        id: `${artScale}/${backdropScale}/${keys.join(',')}`,
+        world: {
+          keys: keys.filter((key) => !isBackdropPart(key)),
+          pxPerU: artScale,
+        },
+        backdrop: { keys: keys.filter(isBackdropPart), pxPerU: backdropScale },
+      },
+      (backdrop) =>
+        this.#activateWorldAtlas(
+          backdrop ? this.#backdropArt : this.#art,
+          backdrop,
+        ),
+    );
   }
 
-  /** Re-rasterises the art for a new zoom step and moves every image over. */
-  #updateArtScale(zoom: number): void {
-    const backdropStep = this.#rasterise(this.#backdropArt, zoom);
-    this.#backdropArt = backdropStep.atlas;
-    const backdropArt = backdropStep.atlas;
-    const replacedBackdrop = backdropStep.replaced;
-    const backdropKey = backdropArt?.textureKey;
-    const backdropPxPerU = backdropArt?.info?.pxPerU;
-    if (
-      backdropKey !== undefined &&
-      backdropPxPerU !== undefined &&
-      backdropKey !== this.#backdropTexture
-    ) {
-      this.#backdrop?.setAtlas(backdropKey, backdropPxPerU);
-      this.#backdropTexture = backdropKey;
-      if (replacedBackdrop !== undefined)
-        backdropArt?.release(replacedBackdrop);
-    }
-    const artStep = this.#rasterise(this.#art, zoom);
-    this.#art = artStep.atlas;
-    const art = artStep.atlas;
-    const replaced = artStep.replaced;
-    const key = art?.textureKey;
-    const pxPerU = art?.info?.pxPerU;
-    if (
-      key !== undefined &&
-      pxPerU !== undefined &&
-      key !== this.#effectsTexture
-    ) {
-      this.#effectsView?.setAtlas(key, pxPerU);
-      this.#effectsTexture = key;
-    }
-    if (replaced === undefined || key === undefined) return;
-    // Chunks and animals are rebuilt from the new atlas on this frame's draw.
-    this.#destroyChunks();
-    this.#destroyObjects();
-
-    art?.release(replaced);
+  /** Safe boundary: no render is in progress and all images move before old pages are released. */
+  #activateWorldAtlas(atlas: ArtAtlas | undefined, backdrop: boolean): void {
+    if (!atlas?.ready) return;
+    this.atlasMetrics.measure(
+      backdrop ? 'backdropActivate' : 'worldActivate',
+      () => {
+        const previousScale = atlas.info?.pxPerU;
+        const old = atlas.commitPrepared();
+        const texture = atlas.textureKey,
+          scale = atlas.info?.pxPerU;
+        if (!texture || scale === undefined) return;
+        const textureFor = (frame: string) => atlas.textureFor(frame);
+        if (backdrop) {
+          this.#backdrop?.setAtlas(texture, scale, textureFor);
+        } else {
+          this.#worldSwaps++;
+          // A resize changes ground raster scale; region swaps preserve baked ground and objects.
+          if (previousScale !== scale) {
+            this.#destroyChunks();
+            this.#destroyObjects();
+          } else {
+            const retarget = (object: Phaser.GameObjects.GameObject): void => {
+              if (object instanceof Phaser.GameObjects.Container)
+                object.list.forEach(retarget);
+              if (!(object instanceof Phaser.GameObjects.Image)) return;
+              rebindWorldImage(object, textureFor, scale);
+            };
+            this.children.list.forEach(retarget);
+          }
+          this.#effectsView?.setAtlas(texture, scale, textureFor);
+          this.#effectsTexture = texture;
+        }
+        old.forEach((key) => atlas.release(key));
+      },
+    );
   }
 
   /** Vehicle scale changes never rebuild world chunks or world textures. */
   #updateVehicleArtScale(zoom: number): void {
-    const step = this.#rasterise(this.#vehicleArt, zoom);
-    this.#vehicleArt = step.atlas;
-    const key = step.atlas?.textureKey;
-    const replaced = step.replaced;
-    if (replaced === undefined || key === undefined) return;
+    // Vehicle, world and backdrop preparation have disjoint allocation
+    // lifetimes, including decoder work of cancelled builds; the request
+    // owner decides when the vehicle raster starts.
+    if (!this.#vehicleArt) return;
+    const atlas = this.#vehicleArt;
+    const artScale = profileArtScale(zoom, this.#host.artQuality());
+    const request = `${this.#vehicleGeneration}/${artScale}`;
+    if (request !== this.#vehicleRequest) {
+      this.#vehicleRequest = request;
+      this.#windowRequests.requestVehicles({
+        id: request,
+        prepare: () => {
+          this.#vehiclePending = true;
+          return atlas.prepareSelected(artScale).then(
+            () => {
+              if (this.#vehicleRequest === request)
+                this.#vehiclePending = false;
+            },
+            (error: unknown) => {
+              if (this.#vehicleRequest === request)
+                this.#vehiclePending = false;
+              throw error;
+            },
+          );
+        },
+      });
+    }
+    if (!atlas.ready) return;
+    const replaced = atlas.commitPrepared();
+    const key = atlas.textureKey;
+    if (!key) return;
     for (const slot of [...this.#slots, ...this.#npcSlots]) {
       slot.images.forEach((image, i) => {
         const shown = slot.frames[i];
-        if (!shown?.startsWith(`${replaced}/`)) return;
-        const frame = shown.slice(replaced.length + 1);
+        const old = replaced.find((texture) =>
+          shown?.startsWith(`${texture}/`),
+        );
+        if (!shown || !old) return;
+        const frame = shown.slice(old.length + 1);
         image.setTexture(key, frame);
         slot.frames[i] = `${key}/${frame}`;
       });
     }
-    step.atlas?.release(replaced);
+    replaced.forEach((texture) => atlas.release(texture));
   }
 
   /**
@@ -1952,12 +2200,33 @@ export class RideScene extends Phaser.Scene {
     return layers.length;
   }
 
+  /** Allocate a silhouette only when a vehicle actually needs fallback art. */
+  #placeholder(vehicle: ShapedVehicle): void {
+    if (this.textures.exists(`vehicle-${vehicle.id}`)) return;
+    const height = PLACEHOLDER_BODY_HEIGHT_U;
+    // A transparent margin keeps rotated edges smooth without MSAA.
+    const g = this.make.graphics({}, false);
+    drawShapes(
+      g,
+      vehicleShapes(vehicle),
+      PLACEHOLDER_MARGIN_PX,
+      height + PLACEHOLDER_MARGIN_PX,
+    );
+    g.generateTexture(
+      `vehicle-${vehicle.id}`,
+      Math.ceil(vehicle.lengthU) + 2 * PLACEHOLDER_MARGIN_PX,
+      Math.ceil(height) + 2 * PLACEHOLDER_MARGIN_PX,
+    );
+    g.destroy();
+  }
+
   /** Marked placeholder silhouette with two turning wheels. */
   #drawPlaceholderVehicle(
     slot: VehicleSlot,
     vehicle: ShapedVehicle,
     distanceU: number,
   ): number {
+    this.#placeholder(vehicle);
     const lift = vehicle.wheelRadiusU * 1.3;
     this.#image(slot, 0, `vehicle-${vehicle.id}`)
       .setOrigin(

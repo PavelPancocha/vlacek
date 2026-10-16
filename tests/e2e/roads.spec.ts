@@ -9,6 +9,7 @@ import {
   snapshot,
   startRide,
   tapAction,
+  waitForWorldAtlases,
 } from './helpers.ts';
 
 type MeasuredFrame = RoadMotionSnapshot;
@@ -61,6 +62,8 @@ async function headingFixture(page: Page, renderer: string) {
   );
   await page.goto(`./?debug=1&renderer=${renderer}`);
   await tapAction(page, 'continue');
+  // D-030: the restored ride opens paused while its atlases are published.
+  await waitForWorldAtlases(page);
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60000));
   for (let i = 0; i < 5; i++) await tapAction(page, 'dev-build');
   await page.getByText('Svět — překryvy', { exact: true }).click();
@@ -217,6 +220,8 @@ async function roadScene(page: Page, kind: string, renderer: string) {
   await page.clock.resume();
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
   await expect.poll(async () => (await snapshot(page)).renderer).toBe(renderer);
+  // D-030: the jump publishes its region atlases asynchronously.
+  await waitForWorldAtlases(page);
 }
 for (const renderer of ['canvas', 'webgl']) {
   test(`SCN-RD02/03/04: still camera, world/front arrows and both lanes (${renderer})`, async ({

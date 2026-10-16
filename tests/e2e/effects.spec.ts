@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, tapAction } from './helpers.ts';
+import { snapshot, tapAction, waitForWorldAtlases } from './helpers.ts';
 
 /** A stopped journey with this locomotive at the start, as a v1 save. */
 function journeySave(
@@ -51,6 +51,8 @@ async function continueJourney(page: Page, save: string): Promise<void> {
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  // D-030: particles draw once the world atlases are published.
+  await waitForWorldAtlases(page);
 }
 
 test.describe('particles and small animations (doc 14 §4, D-014)', () => {

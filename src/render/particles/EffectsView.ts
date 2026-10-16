@@ -22,6 +22,7 @@ export class EffectsView {
   readonly #frames: string[] = [];
   #texture: string | undefined;
   #pxPerU = 1;
+  #textureFor: ((frame: string) => string | undefined) | undefined;
 
   constructor(scene: Phaser.Scene, depth: number) {
     this.#scene = scene;
@@ -29,12 +30,29 @@ export class EffectsView {
   }
 
   /** Uses a (re-rasterised) atlas; the pooled images move over to it. */
-  setAtlas(texture: string, pxPerU: number): void {
+  setAtlas(
+    texture: string,
+    pxPerU: number,
+    textureFor?: (frame: string) => string | undefined,
+  ): void {
+    this.#textureFor = textureFor;
     this.#texture = texture;
     this.#pxPerU = pxPerU;
-    for (const image of this.#images) image.destroy();
-    this.#images.length = 0;
-    this.#frames.length = 0;
+    this.#images.forEach((image, i) => {
+      const key = this.#frames[i];
+      if (!key) return;
+      const resolved = textureFor ? textureFor(key) : texture;
+      if (!resolved) {
+        image.setTexture('object-sheep').setVisible(false);
+        return;
+      }
+      image.setTexture(resolved, key);
+      const part = parts[key];
+      if (part) {
+        const origin = frameOrigin(part.pivotU, pxPerU, image.frame);
+        image.setOrigin(origin.x, origin.y);
+      }
+    });
   }
 
   draw(
@@ -50,10 +68,15 @@ export class EffectsView {
       for (const particle of particles) {
         const frame = field.frameOf(particle);
         const part = frame === undefined ? undefined : parts[frame];
-        if (frame === undefined || !part) continue;
+        if (
+          frame === undefined ||
+          !part ||
+          (this.#textureFor && !this.#textureFor(frame))
+        )
+          continue;
         const image = this.#image(
           used,
-          frameTexture(frame, texture),
+          this.#textureFor?.(frame) ?? frameTexture(frame, texture),
           frame,
           part,
         );
@@ -108,16 +131,19 @@ export class EffectsView {
     part: ArtPart,
   ): Phaser.GameObjects.Image {
     let image = this.#images[index];
+    const changed =
+      this.#frames[index] !== frame || image?.texture.key !== texture;
     if (!image) {
       image = this.#scene.add.image(0, 0, texture, frame).setDepth(this.#depth);
       this.#images[index] = image;
-    } else if (this.#frames[index] !== `${texture}/${frame}`) {
+    } else if (changed) {
       image.setTexture(texture, frame);
     }
-    if (this.#frames[index] !== `${texture}/${frame}`) {
+    if (changed) {
       const origin = frameOrigin(part.pivotU, this.#pxPerU, image.frame);
       image.setOrigin(origin.x, origin.y);
-      this.#frames[index] = `${texture}/${frame}`;
+      image.setData('world-part', frame);
+      this.#frames[index] = frame;
     }
     return image;
   }

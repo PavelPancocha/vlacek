@@ -81,10 +81,12 @@ export class Backdrop {
   readonly #layers: [Layer, Layer];
   #texture: string | undefined;
   #pxPerU = 1;
+  #textureFor: ((frame: string) => string | undefined) | undefined;
   /** 0 … 1: how far the incoming layer (index 1) has faded in. */
   #fade = 1;
   #groundTopY = 0;
   #world: WorldDiagnostics | undefined;
+  readonly #missing = new Set<string>();
 
   constructor(scene: Phaser.Scene, depths: BackdropDepths) {
     this.#scene = scene;
@@ -127,18 +129,32 @@ export class Backdrop {
   }
 
   /** Uses a (re-rasterised) backdrop atlas; images move over to it. */
-  setAtlas(texture: string, pxPerU: number): void {
+  setAtlas(
+    texture: string,
+    pxPerU: number,
+    textureFor?: (frame: string) => string | undefined,
+  ): void {
+    this.#textureFor = textureFor;
     this.#texture = texture;
     this.#pxPerU = pxPerU;
-    for (const cloud of this.#clouds) cloud.destroy();
-    this.#clouds.length = 0;
-    for (const layer of this.#layers) {
-      for (const image of [...layer.far, ...layer.mid]) image.destroy();
-      layer.far.length = 0;
-      layer.mid.length = 0;
-      layer.biome = undefined;
+    for (const image of [
+      ...this.#clouds,
+      ...this.#layers.flatMap((layer) => [...layer.far, ...layer.mid]),
+    ]) {
+      const key: unknown = image.getData('world-part');
+      if (typeof key !== 'string') continue;
+      const resolved = textureFor ? textureFor(key) : texture;
+      if (!resolved) {
+        image.setTexture(SKY_TEXTURE).setVisible(false);
+        continue;
+      }
+      image.setTexture(resolved, key);
+      const part = parts[key];
+      if (part) {
+        const origin = frameOrigin(part.pivotU, pxPerU, image.frame);
+        image.setOrigin(origin.x, origin.y);
+      }
     }
-    this.#fade = 1;
   }
 
   /** Clears journey state while reusing the atlas and its images. */
@@ -158,6 +174,7 @@ export class Backdrop {
       incomingBiome: this.#layers[1].biome,
       fade: this.#fade,
       world: this.#world,
+      missingFrames: [...this.#missing],
     };
   }
 
@@ -206,6 +223,7 @@ export class Backdrop {
       )
       .setFillStyle(wash.color)
       .setAlpha(wash.alpha);
+    this.#missing.clear();
     const texture = this.#texture;
     if (texture === undefined) return;
     this.#placeClouds(texture, view, timeSec);
@@ -252,26 +270,38 @@ export class Backdrop {
       (key) => parts[key] !== undefined,
       subzone,
     );
+    // A band that is not resident yet keeps the previous valid layer (D-030).
+    let missing = false;
+    for (const key of [keys.far, keys.mid]) {
+      if (this.#textureFor && !this.#textureFor(key)) {
+        this.#missing.add(key);
+        missing = true;
+      }
+    }
     if (
-      layer.biome === biome &&
-      layer.keys?.far === keys.far &&
-      layer.keys.mid === keys.mid
+      missing ||
+      (layer.biome === biome &&
+        layer.keys?.far === keys.far &&
+        layer.keys.mid === keys.mid)
     )
       return;
     layer.biome = biome;
     layer.keys = keys;
-    for (const which of ['far', 'mid'] as const)
+    for (const which of ['far', 'mid'] as const) {
+      const key = keys[which];
+      const texture = this.#textureFor
+        ? this.#textureFor(key)
+        : frameTexture(key, this.#texture ?? '');
+      if (texture === undefined) continue;
       for (const image of layer[which]) {
-        image.setTexture(
-          frameTexture(keys[which], this.#texture ?? ''),
-          keys[which],
-        );
-        const pivot = parts[keys[which]]?.pivotU;
+        image.setTexture(texture, key).setData('world-part', key);
+        const pivot = parts[key]?.pivotU;
         if (pivot) {
           const origin = frameOrigin(pivot, this.#pxPerU, image.frame);
           image.setOrigin(origin.x, origin.y);
         }
       }
+    }
     layer.fill.setFillStyle(
       seasonalColour(
         BACKDROP_FILL[biome],
@@ -298,10 +328,18 @@ export class Backdrop {
     if (texture === undefined || biome === undefined) return images;
     const key = layer.keys?.[which];
     if (!key) return images;
+    const resolved = this.#textureFor
+      ? this.#textureFor(key)
+      : frameTexture(key, texture);
+    if (resolved === undefined) {
+      this.#missing.add(key);
+      return [];
+    }
     while (images.length < count) {
       const part = parts[key];
       const image = this.#scene.add
-        .image(0, 0, frameTexture(key, texture), key)
+        .image(0, 0, resolved, key)
+        .setData('world-part', key)
         .setDepth(this.#depths[which] + (layer === this.#layers[1] ? 0.01 : 0));
       const origin = frameOrigin(
         part?.pivotU ?? { x: 0, y: 0 },
@@ -363,8 +401,16 @@ export class Backdrop {
       const i = this.#clouds.length;
       const key = cloudParts[i % cloudParts.length] ?? 'cloud.a';
       const part = parts[key];
+      const resolved = this.#textureFor
+        ? this.#textureFor(key)
+        : frameTexture(key, texture);
+      if (resolved === undefined) {
+        this.#missing.add(key);
+        break;
+      }
       const cloud = this.#scene.add
-        .image(0, 0, frameTexture(key, texture), key)
+        .image(0, 0, resolved, key)
+        .setData('world-part', key)
         .setDepth(this.#depths.clouds);
       if (part) {
         const origin = frameOrigin(part.pivotU, this.#pxPerU, cloud.frame);

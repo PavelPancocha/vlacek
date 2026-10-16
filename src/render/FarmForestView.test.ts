@@ -46,6 +46,10 @@ class Drawing {
     this.key = key;
     return this;
   }
+  /** D-030 tags every world part for rebinding and missing-frame diagnostics. */
+  setData() {
+    return this;
+  }
   add() {
     return this;
   }

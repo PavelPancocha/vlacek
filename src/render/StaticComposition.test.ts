@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { afterEach, expect, it, vi } from 'vitest';
 import { bakeStaticComposition } from './StaticComposition.ts';
+import { TextureMemory } from './TextureMemory.ts';
 import type { SceneryProp } from '../domain/world/Scenery.ts';
 
 vi.mock('./frameTexture.ts', () => ({
@@ -37,20 +38,21 @@ it.each([
   vi.stubGlobal('document', { createElement: () => new Canvas() });
   const pages: string[] = [];
   const scene = {
+    game: { renderer: {} },
     textures: {
-      get: (texture: string) => {
+      // D-030 reads one resolved frame (atlasFramePixels) and publishes immutably.
+      getFrame: (texture: string, frame: string) => {
         pages.push(texture);
         return {
-          get: () => ({
-            source: { image: new Canvas() },
-            cutX: 0,
-            cutY: 0,
-            cutWidth: 64,
-            cutHeight: 64,
-          }),
+          name: frame,
+          source: { image: new Canvas() },
+          cutX: 0,
+          cutY: 0,
+          cutWidth: 64,
+          cutHeight: 64,
         };
       },
-      addCanvas: () => true,
+      create: () => ({ add() {} }),
     },
     add: {
       image: () => ({
@@ -86,6 +88,7 @@ it.each([
     { texture: 'fallback', pxPerU: 1 },
     { texture: 'forest-fallback', pxPerU: 1 },
     1,
+    new TextureMemory(),
   );
   expect(pages).toEqual([`page:${kind}`]);
 });

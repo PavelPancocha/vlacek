@@ -19,12 +19,14 @@ import {
   secondarySiteOfChunk,
 } from '../domain/world/SecondaryTrack.ts';
 import { frameOrigin } from './atlasPacking.ts';
+import { setWorldPivot } from './worldImage.ts';
 import { portalFootPoints } from './tunnelCover.ts';
 import { trackTilePlacements } from './trackTiles.ts';
 
 const { chunkWidthU, secondaryTrackOffsetU } = gameConfig.world;
 
 export interface SecondaryArt {
+  textureFor?: (frame: string) => string | undefined;
   texture: string;
   pxPerU: number;
 }
@@ -64,12 +66,9 @@ export function chunkSecondaryTrack(
     TRACK_TILE_STEP_U,
   )) {
     const part = worldParts[tile.part];
-    const image = scene.add.image(
-      0,
-      0,
-      frameTexture(tile.part, art.texture),
-      tile.part,
-    );
+    const image = scene.add
+      .image(0, 0, frameTexture(tile.part, art.texture), tile.part)
+      .setData('world-part', tile.part);
     const origin = frameOrigin(part.pivotU, art.pxPerU, image.frame);
     track.add(
       image
@@ -89,15 +88,15 @@ export function chunkSecondaryTrack(
       [secondaryParts.hill, hills],
     ] as const) {
       const part = worldParts[key];
-      const image = scene.add.image(x, y, frameTexture(key, art.texture), key);
+      const image = scene.add
+        .image(x, y, frameTexture(key, art.texture), key)
+        .setData('world-part', key);
       // A mirrored image keeps its origin: mirror the pivot as well.
       const pivot = mirrored
         ? { x: part.widthU - part.pivotU.x, y: part.pivotU.y }
         : part.pivotU;
-      const origin = frameOrigin(pivot, art.pxPerU, image.frame);
       layer.add(
-        image
-          .setOrigin(origin.x, origin.y)
+        setWorldPivot(image, pivot, art.pxPerU)
           .setFlipX(mirrored)
           .setRotation(
             -Math.atan(

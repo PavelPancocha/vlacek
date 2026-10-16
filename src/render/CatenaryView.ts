@@ -63,7 +63,9 @@ export function chunkCatenary(
     key: typeof catenaryParts.pole | typeof catenaryParts.span,
   ) => {
     const part = worldParts[key];
-    const object = scene.add.image(0, 0, frameTexture(key, art.texture), key);
+    const object = scene.add
+      .image(0, 0, frameTexture(key, art.texture), key)
+      .setData('world-part', key);
     const origin = frameOrigin(part.pivotU, art.pxPerU, object.frame);
     return object.setOrigin(origin.x, origin.y);
   };

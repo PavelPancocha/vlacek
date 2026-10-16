@@ -1,3 +1,4 @@
+import { VisibleComposition } from './VisibleComposition.ts';
 import { bakeStaticComposition } from './StaticComposition.ts';
 import {
   streamBendU,
@@ -23,6 +24,8 @@ import { roadPositionAt } from '../domain/world/SceneryGeometry.ts';
 import { transitionAt } from '../domain/world/Regions.ts';
 import { ROAD_BRIDGE_EDGE_U } from '../domain/world/SettlementScenery.ts';
 import { nearGroundRuns, nearGroundTailStrips } from './groundLayout.ts';
+import { immutableTexture } from './immutableTexture.ts';
+import { TextureMemory } from './TextureMemory.ts';
 import {
   clipPolygonX,
   propFootU,
@@ -229,6 +232,7 @@ const parts: Readonly<Record<string, ArtPart | undefined>> = worldParts;
 
 /** Atlas the chunk's art is drawn from. */
 export interface ChunkArt {
+  textureFor?: (frame: string) => string | undefined;
   texture: string;
   pxPerU: number;
 }
@@ -306,6 +310,7 @@ export class ChunkView {
   readonly #objects: (
     Phaser.GameObjects.Container | Phaser.GameObjects.Graphics
   )[] = [];
+  readonly #compositions: VisibleComposition[] = [];
   readonly #decorativeGroups: {
     object: Phaser.GameObjects.Container | Phaser.GameObjects.Image;
     leftU: number;
@@ -368,6 +373,7 @@ export class ChunkView {
     depths: ChunkDepths,
     electrified = false,
     forestArt?: ChunkArt,
+    readonly memory = new TextureMemory(),
   ) {
     this.#scene = scene;
     this.#table = table;
@@ -803,6 +809,7 @@ export class ChunkView {
           art.texture,
           art.pxPerU,
           contextAt(seed, table.chunkIndex * 1024 + prop.xU).season,
+          art.textureFor,
         );
         const root = view.root;
         const foot = propFootU(
@@ -942,24 +949,47 @@ export class ChunkView {
     for (const [layer, props] of staticLayers) {
       const first = props[0];
       if (!first) continue;
-      const { image, key } = bakeStaticComposition(
-        scene,
-        seed,
-        table.chunkIndex,
-        props,
-        art,
-        forestArt,
-        groundScale,
+      this.#compositions.push(
+        new VisibleComposition(
+          () => {
+            const { image, key } = bakeStaticComposition(
+              scene,
+              seed,
+              table.chunkIndex,
+              props,
+              art,
+              forestArt,
+              groundScale,
+              this.memory,
+            );
+            image.setName(`composition:${table.chunkIndex}:${layer}`);
+            image.setDepth(paintOrder(first));
+            const parent = first.layer === 'back' ? backProps : nearProps;
+            parent.add(image);
+            parent.sort('depth');
+            return () => {
+              image.destroy();
+              const source = scene.textures.get(key).getSourceImage();
+              scene.textures.remove(key);
+              if (source instanceof HTMLCanvasElement)
+                source.width = source.height = 1;
+              this.memory.remove(`texture:${key}`);
+            };
+          },
+          () =>
+            props.flatMap((prop) => {
+              const source = prop.kind.startsWith('backdrop.')
+                ? forestArt
+                : art;
+              const texture =
+                source?.textureFor?.(prop.kind) ?? source?.texture;
+              return texture &&
+                scene.textures.getFrame(texture, prop.kind)?.name === prop.kind
+                ? []
+                : [prop.kind];
+            }),
+        ),
       );
-      this.#textures.push(key);
-      image.setName(`composition:${table.chunkIndex}:${layer}`);
-      image.setDepth(paintOrder(first));
-      (first.layer === 'back' ? backProps : nearProps).add(image);
-      this.#decorativeGroups.push({
-        object: image,
-        leftU: image.x,
-        rightU: image.x + image.displayWidth,
-      });
     }
     if (art)
       for (const fence of scenery.fences)
@@ -1245,8 +1275,16 @@ export class ChunkView {
     this.#crossing?.setX(x);
   }
 
-  /** Chunk-local viewport; hide only decorative groups, keeping their lifetime and simulation identity. */
+  /** Chunk-local viewport; composed art is clipped to this chunk and owns pixels only while visible. */
+  get missingCompositionFrames(): readonly string[] {
+    return this.#compositions.flatMap(
+      (composition) => composition.missingFrames,
+    );
+  }
+
   setVisibleRange(leftU: number, rightU: number): void {
+    for (const composition of this.#compositions)
+      composition.setVisible(rightU >= 0 && leftU <= CHUNK_WIDTH_U);
     for (const group of this.#decorativeGroups)
       group.object.setVisible(group.rightU >= leftU && group.leftU <= rightU);
   }
@@ -1477,11 +1515,21 @@ export class ChunkView {
     this.#crossing?.destroy();
     this.#crossing = undefined;
     this.#tunnel = undefined;
+    this.#compositions.forEach((composition) => composition.destroy());
+    this.#compositions.length = 0;
     this.#decorativeGroups.length = 0;
     this.#seasonal = undefined;
     for (const object of this.#objects) object.destroy();
     this.#objects.length = 0;
-    for (const key of this.#textures) this.#scene.textures.remove(key);
+    for (const key of this.#textures) {
+      const source = this.#scene.textures.get(key).getSourceImage();
+      this.#scene.textures.remove(key);
+      if (source instanceof HTMLCanvasElement) {
+        source.width = 1;
+        source.height = 1;
+      }
+      this.memory.remove(`texture:${key}`);
+    }
     this.#textures.length = 0;
     this.#moving.length = 0;
     this.#farm.length = 0;
@@ -1508,12 +1556,22 @@ export class ChunkView {
     g.setScale(scale);
     bakedSerial += 1;
     const key = `ground:${this.#table.chunkIndex}:${bakedSerial}`;
-    g.generateTexture(
-      key,
-      Math.max(1, Math.ceil((bounds.right - bounds.left) * scale)),
-      Math.max(1, Math.ceil((bounds.bottom - bounds.top) * scale)),
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.ceil((bounds.right - bounds.left) * scale));
+    canvas.height = Math.max(
+      1,
+      Math.ceil((bounds.bottom - bounds.top) * scale),
     );
-    g.destroy();
+    this.memory.set(`canvas:${key}`, {
+      canvas: canvas.width * canvas.height * 4,
+    });
+    try {
+      g.generateTexture(canvas, canvas.width, canvas.height);
+      immutableTexture(scene, key, canvas, this.memory);
+    } finally {
+      g.destroy();
+      this.memory.remove(`canvas:${key}`);
+    }
     this.#textures.push(key);
     const image = scene.add
       .image(bounds.left, bounds.top, key)
@@ -1531,6 +1589,7 @@ export class ChunkView {
     const part = parts[key];
     const image = scene.add
       .image(0, 0, frameTexture(key, art.texture), key)
+      .setData('world-part', key)
       .setFlipX(flip);
     if (part) {
       const origin = frameOrigin(part.pivotU, art.pxPerU, image.frame);

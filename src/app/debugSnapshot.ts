@@ -1,5 +1,9 @@
 import type { FarmForestDiagnostic } from '../render/farmForestMotion.ts';
 import type { RoadVehicleSnapshot } from '../render/roadVehicleSnapshot.ts';
+import type { AtlasMetrics } from '../render/AtlasMetrics.ts';
+import type { TextureMemory } from '../render/TextureMemory.ts';
+import type { Biome } from '../domain/world/Biomes.ts';
+import type { Season } from '../domain/world/Regions.ts';
 import type { TestSceneLocation } from '../domain/world/TestScenes.ts';
 import type { WorldOverlayOptions } from '../domain/world/WorldDebugGeometry.ts';
 import type { WorldDiagnostics } from '../domain/world/WorldValidation.ts';
@@ -29,6 +33,26 @@ export interface DebugSnapshot {
   /** Rendered vehicles drawn from their art (doc 14 §3). */
   artVehicles: number;
   /** The world art atlas (D-019); undefined if this atlas failed. */
+  worldAtlases: {
+    pending: boolean;
+    failure: string | undefined;
+    swaps: number;
+    regions: { id: string; landscape: Biome; season: Season }[];
+    pages: {
+      textureKey: string;
+      width: number;
+      height: number;
+      frames: number;
+      pxPerU: number;
+    }[];
+    textureBytes: number;
+    memory: TextureMemory['snapshot'];
+    performance: AtlasMetrics['snapshot'];
+    bufferBytes: number;
+    liveTextures: number;
+    drawnParts: number;
+    missingFrames: string[];
+  };
   artAtlas:
     | {
         width: number;
@@ -196,4 +220,12 @@ export interface DebugSnapshot {
     covered: number;
   };
   audio: string;
+}
+
+/** Debug fixture input is plain metadata; importing it must not pull Phaser into E2E types. */
+export interface AtlasProofSources {
+  world: { key: string; url: string; widthU: number; heightU: number }[];
+  backdrop: { key: string; url: string; widthU: number; heightU: number }[];
+  /** Raster scales of the probe pages; default 2 (world) and 1 (backdrop) px/u. */
+  pxPerU?: { world: number; backdrop: number };
 }

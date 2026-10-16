@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { worldParts } from '../../content/worldArt.ts';
 import { EffectsView } from './EffectsView.ts';
 import { ParticleField } from './ParticleField.ts';
@@ -7,6 +7,15 @@ import { PARTICLE_KINDS, kindIndex } from './particleKinds.ts';
 import { TrainEffects, type TrainEffectsInput } from './TrainEffects.ts';
 
 class ImageDouble {
+  texture = { key: 'test' };
+  setData(): this {
+    return this;
+  }
+  setTexture(texture: string): this {
+    this.texture.key = texture;
+    return this;
+  }
+
   frame = { width: 26, height: 26 };
   scale = 0;
   destroyed = false;
@@ -215,4 +224,37 @@ it('sparks-2: contact glow and streaks retain readable CSS sizes at both camera 
     expect(images).toHaveLength(3);
   }
   view.destroy();
+});
+
+it('retargets a pooled particle when its next frame belongs to a different page', () => {
+  const image = {
+    frame: { width: 50, height: 50 },
+    texture: { key: 'page-smoke' },
+    setDepth: vi.fn().mockReturnThis(),
+    setOrigin: vi.fn().mockReturnThis(),
+    setVisible: vi.fn().mockReturnThis(),
+    setPosition: vi.fn().mockReturnThis(),
+    setDisplaySize: vi.fn().mockReturnThis(),
+    setRotation: vi.fn().mockReturnThis(),
+    setAlpha: vi.fn().mockReturnThis(),
+    setScale: vi.fn().mockReturnThis(),
+    setFlipX: vi.fn().mockReturnThis(),
+    setData: vi.fn().mockReturnThis(),
+    setFrame: vi.fn().mockReturnThis(),
+    setTexture: vi.fn().mockReturnThis(),
+    destroy: vi.fn(),
+  };
+  // Boundary fixture supplies only the image API used by EffectsView.
+  const scene = { add: { image: () => image } } as unknown as Phaser.Scene;
+  const view = new EffectsView(scene, 10);
+  view.setAtlas('page-smoke', 1, (frame) =>
+    frame === 'fx.smoke' ? 'page-smoke' : 'page-spark',
+  );
+  const field = new ParticleField(PARTICLE_KINDS, 1, () => 0.5);
+  field.emit(kindIndex('smoke'), 0, 0, 1);
+  view.draw(field, 0);
+  field.clear();
+  field.emit(kindIndex('spark'), 0, 0, 1);
+  view.draw(field, 0);
+  expect(image.setTexture).toHaveBeenCalledWith('page-spark', 'fx.spark');
 });

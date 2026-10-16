@@ -17,6 +17,9 @@ import {
   type Reservation,
 } from './Reservations.ts';
 
+/** Low plants and stones along a long station's service path, alternating. */
+export const STATION_SERVICE_KINDS = ['near.bush', 'near.stones'] as const;
+
 /** Platform tiles stay at 1 u/u; perspective must not shorten usable length. */
 export function stationScenery(
   seed: number,
@@ -252,8 +255,8 @@ export function stationScenery(
           id: `g2:chunk:${k}:prop:station:candidate:${candidate++}`,
           kind:
             Math.floor((x - site.fromXU) / 320) % 2 === 0
-              ? 'near.bush'
-              : 'near.stones',
+              ? STATION_SERVICE_KINDS[0]
+              : STATION_SERVICE_KINDS[1],
           layer: 'near',
           xU: x - x0,
           depth: 0.62,

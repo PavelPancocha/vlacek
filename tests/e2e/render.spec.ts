@@ -5,7 +5,7 @@ import {
   profileGrade,
   TRACK_GENERATOR_VERSION,
 } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, tapAction } from './helpers.ts';
+import { snapshot, tapAction, waitForWorldAtlases } from './helpers.ts';
 
 const SEED = 123;
 const WAGONS = [
@@ -99,6 +99,9 @@ async function standingTrain(
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  // D-030: a restored journey publishes its atlases asynchronously; the
+  // art-fallback run has no atlases to wait for.
+  if (!placeholders) await waitForWorldAtlases(page);
   // Let the camera settle on the standing train.
   await page.waitForTimeout(1500);
   const state = await snapshot(page);

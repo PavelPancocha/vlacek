@@ -8,7 +8,7 @@ import {
 } from '../content/world-modules/farm-forest.art.ts';
 import { worldParts } from '../content/worldArt.ts';
 import type { ArtPart } from '../content/artManifest.ts';
-import { frameOrigin } from './atlasPacking.ts';
+import { setWorldPivot } from './worldImage.ts';
 import {
   farmMachineFlip,
   forestWorkPose,
@@ -43,7 +43,7 @@ export class FarmForestView {
     stacked: false,
   };
   readonly #front: 'left' | 'right';
-  readonly #texture: string;
+  readonly #textureFor: (key: string) => string;
   #wheelAngle = 0;
 
   constructor(
@@ -52,9 +52,10 @@ export class FarmForestView {
     texture: string,
     pxPerU: number,
     season: Season,
+    textureFor?: (key: string) => string | undefined,
   ) {
     this.#prop = prop;
-    this.#texture = texture;
+    this.#textureFor = (key) => textureFor?.(key) ?? frameTexture(key, texture);
     this.root = scene.add.container(0, 0).setName(prop.id);
     const machine: FarmForestPart | undefined = farmForestParts[prop.kind];
     if (!machine) throw new Error(`missing compound ${prop.kind}`);
@@ -63,10 +64,11 @@ export class FarmForestView {
       const part = parts[key];
       if (!part || !pivot) throw new Error(`missing compound child ${key}`);
       const im = scene.add
-        .image(0, 0, frameTexture(key, texture), key)
+        .image(0, 0, this.#textureFor(key), key)
+        .setData('world-part', key)
         .setName(`${prop.id}:${key}`);
-      const origin = frameOrigin(pivot, pxPerU, im.frame);
-      im.setOrigin(origin.x, origin.y).setScale(1 / pxPerU);
+      // The authored pivot (e.g. the trunk's grip) survives a late page.
+      setWorldPivot(im, pivot, pxPerU).setScale(1 / pxPerU);
       this.images.push(im);
       return im;
     };
@@ -175,6 +177,9 @@ export class FarmForestView {
     }
     this.update(0);
   }
+  #setFrame(image: Phaser.GameObjects.Image, key: string): void {
+    image.setTexture(this.#textureFor(key), key).setData('world-part', key);
+  }
   get diagnostic(): FarmForestDiagnostic {
     return {
       id: this.#prop.id,
@@ -236,11 +241,8 @@ export class FarmForestView {
       ?.setRotation(0.025 * Math.sin(timeSec * 0.7 + p.phase * 6));
     if (p.work === 'farmer') {
       const wave = (timeSec + p.phase * 24) % 24 > 21;
-      this.#body.setTexture(
-        frameTexture(
-          wave ? 'back.farmer-wave' : 'back.farmer-work',
-          this.#texture,
-        ),
+      this.#setFrame(
+        this.#body,
         wave ? 'back.farmer-wave' : 'back.farmer-work',
       );
     }
@@ -276,13 +278,11 @@ export class FarmForestView {
     boom.setRotation(first);
     stick.setRotation(second);
     gripper.setRotation(angle - first - second);
-    this.#gripper?.setTexture(
-      frameTexture(
+    if (this.#gripper)
+      this.#setFrame(
+        this.#gripper,
         pose.open ? 'back.harvester-gripper-open' : 'back.harvester-gripper',
-        this.#texture,
-      ),
-      pose.open ? 'back.harvester-gripper-open' : 'back.harvester-gripper',
-    );
+      );
     this.#trunk?.setVisible(pose.holding);
     this.#pickup?.setVisible(!pose.holding && !pose.stacked);
     this.#stack?.setVisible(!pose.holding && pose.stacked);

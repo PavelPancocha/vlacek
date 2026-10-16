@@ -46,6 +46,7 @@ export interface CrossingState {
 }
 
 export interface CrossingArt {
+  textureFor?: (frame: string) => string | undefined;
   texture: string;
   pxPerU: number;
 }
@@ -336,12 +337,9 @@ export class CrossingView {
     scale: number,
     depth: number,
   ): Phaser.GameObjects.Image {
-    const image = this.#scene.add.image(
-      this.#chunkX + x,
-      y,
-      frameTexture(key, this.#art.texture),
-      key,
-    );
+    const image = this.#scene.add
+      .image(this.#chunkX + x, y, frameTexture(key, this.#art.texture), key)
+      .setData('world-part', key);
     const part = parts[key];
     if (part) {
       const origin = frameOrigin(part.pivotU, this.#art.pxPerU, image.frame);

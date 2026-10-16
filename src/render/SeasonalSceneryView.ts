@@ -7,7 +7,7 @@ import { effectiveClimateAt, windAt } from '../domain/world/Seasons.ts';
 import { hash32 } from '../domain/world/Hash.ts';
 import type { SceneryProp } from '../domain/world/Scenery.ts';
 import { DECIDUOUS, opaqueSeasonalFrame } from './seasonalArt.ts';
-import { frameOrigin } from './atlasPacking.ts';
+import { setWorldPivot } from './worldImage.ts';
 import type { SeasonalSource } from './particles/SeasonalEffects.ts';
 
 interface LifeSprite {
@@ -321,13 +321,17 @@ export class SeasonalSceneryView {
             (localTime + item.phase * 20) % 20 < 3;
           const frame = item.frames?.[alert && item.frames.length > 1 ? 1 : 0];
           if (frame)
-            item.image.setTexture(frameTexture(frame, this.texture), frame);
+            item.image
+              .setTexture(frameTexture(frame, this.texture), frame)
+              .setData('world-part', frame);
         }
         if (item.kind === 'ripple') {
           const frame =
             item.frames?.[Math.floor(localTime * 1.5 + item.phase * 2) % 2];
           if (frame)
-            item.image.setTexture(frameTexture(frame, this.texture), frame);
+            item.image
+              .setTexture(frameTexture(frame, this.texture), frame)
+              .setData('world-part', frame);
           item.image.setAlpha(
             (0.3 + 0.15 * Math.sin(localTime * 1.7 + item.phase * 6)) * motion,
           );
@@ -344,7 +348,9 @@ export class SeasonalSceneryView {
         const frame =
           item.frames?.[Math.floor(localTime * 2 + item.phase * 2) % 2];
         if (frame)
-          item.image.setTexture(frameTexture(frame, this.texture), frame);
+          item.image
+            .setTexture(frameTexture(frame, this.texture), frame)
+            .setData('world-part', frame);
         item.image.setRotation(
           wind * 0.001 * Math.sin(localTime * 2 + item.phase * 6) * motion,
         );
@@ -364,16 +370,15 @@ export class SeasonalSceneryView {
   ): Phaser.GameObjects.Image {
     const part = this.parts[key];
     if (!part) throw new Error(`missing seasonal art ${key}`);
-    const image = this.scene.add.image(
-      x,
-      y,
-      frameTexture(key, this.texture),
-      key,
-    );
+    // Tagged so a D-030 page swap rebinds it (RideScene rebindWorldImage).
+    const image = this.scene.add
+      .image(x, y, frameTexture(key, this.texture), key)
+      .setData('world-part', key);
     const pivot = flip
       ? { x: part.widthU - part.pivotU.x, y: part.pivotU.y }
       : part.pivotU;
-    const origin = frameOrigin(pivot, this.pxPerU, image.frame);
-    return image.setOrigin(origin.x, origin.y).setScale(scale).setFlipX(flip);
+    return setWorldPivot(image, pivot, this.pxPerU)
+      .setScale(scale)
+      .setFlipX(flip);
   }
 }

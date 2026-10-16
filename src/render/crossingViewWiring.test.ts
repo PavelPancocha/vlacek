@@ -2,7 +2,7 @@ import { roadVehicleArt } from '../content/roadVehicleArt.ts';
 import { hash32 } from '../domain/world/Hash.ts';
 import { pointInside, waterSectionU } from '../domain/world/SceneryGeometry.ts';
 import type Phaser from 'phaser';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { crossingParts } from '../content/worldArt.ts';
 import type { ArcLengthTable } from '../domain/world/ArcLengthTable.ts';
 import type { ChunkScenery } from '../domain/world/Scenery.ts';
@@ -43,6 +43,7 @@ vi.mock('phaser', () => ({
 }));
 
 type Point = { x: number; y: number };
+afterEach(() => vi.unstubAllGlobals());
 
 it('SCN-RD06: seed 1/x 16896 draws separated motorway carriageways around a green median', () => {
   const sc = chunkScenery(1, 16, worldPlacementCatalog),
@@ -76,6 +77,13 @@ it('SCN-RD06: seed 1/x 16896 draws separated motorway carriageways around a gree
 
 /** Record drawing output; Phaser's browser/texture boundary is the only fake. */
 function drawingScene() {
+  class Canvas {
+    width = 0;
+    height = 0;
+  }
+  vi.stubGlobal('HTMLCanvasElement', Canvas);
+  vi.stubGlobal('document', { createElement: () => new Canvas() });
+  const textures = new Map<string, HTMLCanvasElement>();
   const images: {
     key: string | undefined;
     x: number;
@@ -184,7 +192,11 @@ function drawingScene() {
             return proxy;
           };
         if (property === 'generateTexture')
-          return (_key: string, width: number, height: number) => {
+          return (
+            _canvas: HTMLCanvasElement,
+            width: number,
+            height: number,
+          ) => {
             bakes.push({ left: -translateX, top: -translateY, width, height });
             return proxy;
           };
@@ -234,6 +246,7 @@ function drawingScene() {
     return proxy;
   };
   const scene = {
+    game: { renderer: {} },
     add: {
       image: (x: number, y: number, _texture: string, key?: string) => {
         const image = object(x, y, key);
@@ -254,7 +267,14 @@ function drawingScene() {
       graphics: () => object(),
     },
     make: { graphics: () => object() },
-    textures: { remove: () => undefined },
+    textures: {
+      create: (key: string, canvas: HTMLCanvasElement) => {
+        textures.set(key, canvas);
+        return { add() {} };
+      },
+      get: (key: string) => ({ getSourceImage: () => textures.get(key) }),
+      remove: (key: string) => textures.delete(key),
+    },
   };
   // This test double implements only the scene drawing surface used by ChunkView.
   return {

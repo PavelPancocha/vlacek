@@ -143,6 +143,8 @@ export function settlementRoadConnection(
     ),
   };
 }
+/** Kinds placed on road stretches, which run beside the track in any landscape. */
+export const ROAD_STRETCH_KINDS = ['back.car'] as const;
 /** Existing patrol descriptors in two lanes; no new simulation. */
 export function roadStretchCars(road: RoadStretch, k: number): SceneryProp[] {
   return [-1, 1].map((direction) => {
@@ -153,7 +155,7 @@ export function roadStretchCars(road: RoadStretch, k: number): SceneryProp[] {
     const p = roadStretchPoint(road, x);
     return {
       id: `g2:chunk:${k}:prop:road:${road.kind}:candidate:${direction < 0 ? 0 : 1}`,
-      kind: 'back.car',
+      kind: ROAD_STRETCH_KINDS[0],
       layer: 'back',
       xU,
       depth:

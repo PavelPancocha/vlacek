@@ -1,3 +1,4 @@
+import { worldAtlasWindowKeys } from '../../src/content/worldAtlasGroups.ts';
 import { expect, test } from '@playwright/test';
 import { isBackdropPart, worldParts } from '../../src/content/worldArt.ts';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
@@ -11,9 +12,6 @@ import {
   tapAction,
 } from './helpers.ts';
 
-const worldKeys = Object.keys(worldParts);
-const MAIN_FRAMES = worldKeys.filter((key) => !isBackdropPart(key)).length;
-const BACKDROP_FRAMES = worldKeys.filter(isBackdropPart).length;
 const CHUNK_WIDTH_U = gameConfig.world.chunkWidthU;
 
 test.describe('landscape (doc 14 §5, D-013)', () => {
@@ -25,8 +23,24 @@ test.describe('landscape (doc 14 §5, D-013)', () => {
     await startRide(page, ['cargo_box'], '?debug=1&seed=123');
     await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(2);
     const state = await snapshot(page);
-    expect(state.artAtlas?.frames).toBe(MAIN_FRAMES);
-    expect(state.backdropAtlas?.frames).toBe(BACKDROP_FRAMES);
+    expect(
+      state.worldAtlases.pages
+        .filter((page) => page.textureKey.startsWith('art@'))
+        .reduce((sum, page) => sum + page.frames, 0),
+    ).toBe(
+      worldAtlasWindowKeys(worldParts, state.worldAtlases.regions).filter(
+        (key) => !isBackdropPart(key),
+      ).length,
+    );
+    expect(
+      state.worldAtlases.pages
+        .filter((page) => page.textureKey.startsWith('backdrop@'))
+        .reduce((sum, page) => sum + page.frames, 0),
+    ).toBe(
+      worldAtlasWindowKeys(worldParts, state.worldAtlases.regions).filter(
+        isBackdropPart,
+      ).length,
+    );
     for (const atlas of [state.artAtlas, state.backdropAtlas]) {
       expect(atlas?.width).toBeLessThanOrEqual(2048);
       expect(atlas?.height).toBeLessThanOrEqual(2048);
@@ -151,6 +165,7 @@ test.describe('landscape (doc 14 §5, D-013)', () => {
     await tapAction(page, 'continue');
     await tapAction(page, 'resume');
     await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+    await expect(page.locator('.ride-curtain')).toBeHidden();
     await page.mouse.move(700, 300);
     await page.mouse.down();
     // Every frame: the mid hills' tile offset and the chunk of the front.

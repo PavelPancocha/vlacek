@@ -69,6 +69,10 @@ function image(key: string, x = 0) {
       this.y = y;
       return this;
     },
+    // D-030 tags each pooled particle with its world part.
+    setData() {
+      return this;
+    },
     setFrame(key: string) {
       this.key = key;
       return this;

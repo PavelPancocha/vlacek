@@ -7,6 +7,7 @@ import { tunnelParts, worldParts } from '../content/worldArt.ts';
 import { TUNNEL_MAST_CLEARANCE_U } from '../domain/world/Catenary.ts';
 import type { TunnelSite } from '../domain/world/Structures.ts';
 import { frameOrigin } from './atlasPacking.ts';
+import { setWorldPivot } from './worldImage.ts';
 import {
   portalMasonryPoint,
   vehicleInCover,
@@ -16,6 +17,7 @@ import {
 const { chunkWidthU, catenaryContactHeightU } = gameConfig.world;
 
 export interface TunnelArt {
+  textureFor?: (frame: string) => string | undefined;
   texture: string;
   pxPerU: number;
 }
@@ -374,19 +376,19 @@ export class TunnelView {
       [toX, true],
     ] as const) {
       if (!art) break;
-      const image = scene.add.image(
-        x,
-        ground.railY(x),
-        frameTexture(tunnelParts.portal, art.texture),
-        tunnelParts.portal,
-      );
+      const image = scene.add
+        .image(
+          x,
+          ground.railY(x),
+          frameTexture(tunnelParts.portal, art.texture),
+          tunnelParts.portal,
+        )
+        .setData('world-part', tunnelParts.portal);
       const pivot = mirrored
         ? { x: portal.widthU - portal.pivotU.x, y: portal.pivotU.y }
         : portal.pivotU;
-      const origin = frameOrigin(pivot, art.pxPerU, image.frame);
       cover.add(
-        image
-          .setOrigin(origin.x, origin.y)
+        setWorldPivot(image, pivot, art.pxPerU)
           .setFlipX(mirrored)
           .setScale(1 / art.pxPerU),
       );
@@ -396,12 +398,14 @@ export class TunnelView {
         const winter = appearance?.climateAt(x).winter ?? 0;
         if (winter <= 0) continue;
         const snow = worldParts['snow.roof-64'];
-        const cap = scene.add.image(
-          x - 78,
-          ground.railY(x) - 228,
-          frameTexture('snow.roof-64', art.texture),
-          'snow.roof-64',
-        );
+        const cap = scene.add
+          .image(
+            x - 78,
+            ground.railY(x) - 228,
+            frameTexture('snow.roof-64', art.texture),
+            'snow.roof-64',
+          )
+          .setData('world-part', 'snow.roof-64');
         const origin = frameOrigin(snow.pivotU, art.pxPerU, cap.frame);
         cover.add(
           cap

@@ -3,8 +3,8 @@ import { artParts, vehicleArt } from '../../../src/content/artManifest.ts';
 import { vehicleArtLayers } from '../../../src/content/artLayers.ts';
 import { locomotives, wagons } from '../../../src/content/vehicles.ts';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
-import { describe, expect, it } from 'vitest';
-import { isBackdropPart, worldParts } from '../../../src/content/worldArt.ts';
+import { describe, expect, it, vi } from 'vitest';
+import { worldParts } from '../../../src/content/worldArt.ts';
 import {
   ART_MAX_PX_PER_U,
   BACKDROP_MAX_PX_PER_U,
@@ -13,9 +13,12 @@ import {
   MAX_ATLAS_EDGE_PX,
   artAtlasItems,
   artScaleFor,
+  profileArtScale,
+  profileBackdropScale,
   frameOrigin,
   framesWithMargin,
   packAtlas,
+  packWorldPages,
   journeyArtKeys,
 } from '../../../src/render/atlasPacking.ts';
 
@@ -213,7 +216,7 @@ describe('vehicle art atlas', () => {
   });
 
   for (const fixture of worstJourneyCases) {
-    it(`fits ${fixture.name} and the separate world atlas at ART_MAX_PX_PER_U`, () => {
+    it(`fits ${fixture.name} in one journey atlas at ART_MAX_PX_PER_U`, () => {
       expect(fixture.vehicles).toHaveLength(
         fixture.name.startsWith('legal') ? 10 : 8,
       );
@@ -232,10 +235,9 @@ describe('vehicle art atlas', () => {
           (fixture.vehicles.length - 1) * gameConfig.train.couplerGapU;
         expect(lengthU).toBeLessThanOrEqual(gameConfig.train.maxConsistLengthU);
       }
-      const world = Object.fromEntries(
-        Object.entries(worldParts).filter(([key]) => !isBackdropPart(key)),
-      );
-      for (const parts of [world, fixture.parts]) {
+      // The integrated world catalogue no longer fits one page: D-030 packs
+      // region/season windows into at most two (tests/unit/render/atlasBound.*).
+      for (const parts of [fixture.parts]) {
         const items = artAtlasItems(parts, ART_MAX_PX_PER_U);
         const atlas = packAtlas(items, {
           maxSize: MAX_ATLAS_EDGE_PX,
@@ -358,4 +360,50 @@ describe('journeyArtKeys (H0, D-019)', () => {
       }),
     ).toEqual([]);
   });
+});
+it('bounds low-profile residency even beyond 4096 CSS px while retaining the standard scale', () => {
+  expect(profileArtScale(1.23, 'low')).toBe(1.25);
+  expect(profileArtScale(1.54, 'low')).toBe(1.25);
+  expect(profileArtScale(4, 'low')).toBe(1.25);
+  expect(profileArtScale(1.54, 'standard')).toBe(1.75);
+  expect(profileArtScale(4, 'standard')).toBe(2);
+  expect(profileArtScale(0.576, 'low')).toBe(0.75);
+});
+
+it('caps the low-profile backdrop raster at 0.75 px/u and keeps 1 px/u on standard', () => {
+  // D-028 zoom = 0.6 × CSS width / 2000 u at DPR 1 (low): 1140, 1920 and 4096 CSS px.
+  expect(profileBackdropScale(0.342, 'low')).toBe(0.5);
+  expect(profileBackdropScale(0.576, 'low')).toBe(0.75);
+  expect(profileBackdropScale(1.23, 'low')).toBe(0.75);
+  expect(profileBackdropScale(1.23, 'standard')).toBe(1);
+  expect(profileBackdropScale(0.576, 'standard')).toBe(0.75);
+});
+
+it('packs world pages identically under Czech and English collation', () => {
+  // Equal sizes leave the order to the key tie-break; Czech sorts "ch" after "h".
+  const items = ['back.hra', 'back.cha', 'back.chb', 'back.ib'].map((key) => ({
+    key,
+    width: 900,
+    height: 300,
+  }));
+  const packUnder = (locale: string) => {
+    const collation = vi
+      .spyOn(String.prototype, 'localeCompare')
+      .mockImplementation(function (this: string, that: string) {
+        return new Intl.Collator(locale).compare(this, that);
+      });
+    try {
+      return packWorldPages(items).map((page) => [...page.plan.frames]);
+    } finally {
+      collation.mockRestore();
+    }
+  };
+  expect(packUnder('cs')).toEqual(packUnder('en'));
+  // Plain UTF-16 code-unit order: "back.cha" < "back.chb" < "back.hra" < "back.ib".
+  expect(packUnder('cs')[0]?.map(([key]) => key)).toEqual([
+    'back.cha',
+    'back.chb',
+    'back.hra',
+    'back.ib',
+  ]);
 });

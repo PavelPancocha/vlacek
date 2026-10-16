@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { gameConfig } from '../config/gameConfig.ts';
 import {
   catenaryAnchors,
@@ -12,6 +12,11 @@ import {
 } from '../domain/world/ArcLengthTable.ts';
 import { catenaryPoleXs, catenarySupport } from '../domain/world/Catenary.ts';
 import { chunkCatenary } from './CatenaryView.ts';
+import { setFrameResolver } from './frameTexture.ts';
+
+// RideScene installs the resident D-030 page resolver behind frameTexture.
+beforeEach(() => setFrameResolver((key) => `page:${key}`));
+afterEach(() => setFrameResolver(undefined));
 
 // Replace only the platform; retain frame margins and all image transforms.
 vi.mock('phaser', () => {
@@ -23,14 +28,24 @@ vi.mock('phaser', () => {
     scaleX = 1;
     scaleY = 1;
     rotation = 0;
+    texture: { key: string };
+    readonly data = new Map<string, unknown>();
+    setData(key: string, value: unknown) {
+      this.data.set(key, value);
+      return this;
+    }
+    getData(key: string) {
+      return this.data.get(key);
+    }
     frame: { width: number; height: number; name: string };
     constructor(
       _scene: unknown,
       _x: number,
       _y: number,
-      _texture: string,
+      texture: string,
       key: keyof typeof worldParts,
     ) {
+      this.texture = { key: texture };
       const part = worldParts[key];
       this.frame = {
         width: part.widthU * 2 + 2,
@@ -149,6 +164,8 @@ describe('CatenaryView art geometry (TRN-08)', () => {
           throw new Error('pole image missing');
         const x = masts[index];
         if (x === undefined) throw new Error('mast missing');
+        expect(object.getData('world-part')).toBe(catenaryParts.pole);
+        expect(object.texture.key).toBe(`page:${catenaryParts.pole}`);
         const clamp = drawnPoint(object, catenaryAnchors.contact);
         expect(clamp.x).toBeCloseTo(x - x0, 9);
         expect(clamp.y).toBeCloseTo(
@@ -167,6 +184,8 @@ describe('CatenaryView art geometry (TRN-08)', () => {
           x + 2 * catenaryPoleSpacingU,
         )[0];
         if (next === undefined) throw new Error('next support missing');
+        expect(object.getData('world-part')).toBe(catenaryParts.span);
+        expect(object.texture.key).toBe(`page:${catenaryParts.span}`);
         const start = drawnPoint(object, span.pivotU);
         const end = drawnPoint(object, { x: span.widthU, y: span.pivotU.y });
         expect(start.x).toBeCloseTo(x - x0, 9);

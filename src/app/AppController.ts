@@ -143,6 +143,11 @@ export class AppController {
             simulationTick: this.#session.ride?.simulationTick ?? 0,
             cars: this.#scene.roadVehicles,
           }),
+          resetAtlasMetrics: () => this.#scene.atlasMetrics.reset(),
+          atlasProof: (
+            catalogue?: import('./debugSnapshot.ts').AtlasProofSources,
+          ) => this.#scene.atlasProof(catalogue),
+          closeAtlasProof: () => this.#scene.closeAtlasProof(),
         },
       });
     }
@@ -152,6 +157,7 @@ export class AppController {
       worldOverlays: () => this.#worldOverlays,
       frame: (deltaSec, nowMs) => this.#frame(deltaSec, nowMs),
       ride: () => this.#session.ride,
+      worldRunning: () => this.#session.screen.name === 'RIDING',
       worldHidden: () =>
         worldHidden(
           this.#session.screen,
@@ -172,6 +178,10 @@ export class AppController {
       journeyVehicles: () => this.#vehiclesOfJourney(),
       journeyNpcFleet: () => this.#session.journeyNpcFleet,
       catalogVehicles: () => [...locomotives, ...wagons],
+      artQuality: () =>
+        (options.qualityOverride ?? this.#session.settings.quality) === 'low'
+          ? 'low'
+          : 'standard',
       // Reduced effects or the low profile halve the particles (doc 07 §9).
       effectsQuality: () =>
         renderProfile(
@@ -657,6 +667,7 @@ export class AppController {
       renderedVehicles: this.#scene.stats.renderedVehicles,
       artVehicles: this.#scene.stats.artVehicles,
       artAtlas: this.#scene.artAtlas,
+      worldAtlases: this.#scene.worldAtlases,
       vehicleAtlas: this.#scene.vehicleAtlas,
       effects: this.#scene.effectsStats,
       backdropAtlas: this.#scene.backdropAtlas,

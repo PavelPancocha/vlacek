@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { snapshot, tapAction } from './helpers.ts';
+import { snapshot, tapAction, waitForWorldAtlases } from './helpers.ts';
 
 for (const renderer of ['webgl', 'canvas'])
   for (const kind of [
@@ -33,6 +33,8 @@ for (const renderer of ['webgl', 'canvas'])
       await expect
         .poll(async () => (await snapshot(page)).worldDebug.location?.kind)
         .toBe(kind);
+      // D-030: the jump publishes its region atlases asynchronously.
+      await waitForWorldAtlases(page);
       const state = await snapshot(page);
       expect(state.renderer).toBe(renderer);
       expect(state.worldDebug.temporaryRide).toBe(true);

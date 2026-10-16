@@ -27,7 +27,19 @@ async function locate(page: import('@playwright/test').Page, kind: string) {
   for (let i = 0; i < 5; i++) await tapAction(page, 'dev-build');
   await page.getByText('Testovací scény', { exact: true }).click();
   await tapAction(page, `dev-world-scene:${kind}`);
-  await page.clock.fastForward(80);
+  // A diagnostic jump now prepares region/vehicle atlases asynchronously. Pump
+  // the frozen renderer until publication; a fixed virtual 80 ms is not completion.
+  let state: Awaited<ReturnType<typeof snapshot>>;
+  do {
+    await page.clock.fastForward(80);
+    state = await snapshot(page);
+    expect(state.worldAtlases.failure).toBeUndefined();
+  } while (
+    state.worldAtlases.pending ||
+    !state.vehicleAtlas ||
+    state.worldAtlases.missingFrames.length > 0 ||
+    (await page.locator('.ride-curtain').isVisible())
+  );
 }
 /** Keep real Phaser/input/fixed-step updates without rendering 60 redundant frames/s. */
 async function advanceRide(
@@ -69,7 +81,6 @@ for (const renderer of ['canvas', 'webgl'])
             errors.push(message.text());
         });
         await probeFarmScene(page);
-        await page.clock.install();
         const query = `?debug=1&seed=1&renderer=${renderer}`;
         const consist = long
           ? longestMixedConsist('steam_local')
@@ -109,6 +120,8 @@ for (const renderer of ['canvas', 'webgl'])
           .toBe(consist.wagons.length + 1);
         expect((await snapshot(page)).artAtlas).toBeDefined();
         expect((await snapshot(page)).backdropAtlas).toBeDefined();
+        // Cold SVG loading uses native scheduling; only the scene cycles need a clock.
+        await page.clock.install();
       });
       test.afterAll(async () => {
         await page?.close();
