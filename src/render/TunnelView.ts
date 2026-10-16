@@ -1,13 +1,20 @@
+import { frameTexture } from './frameTexture.ts';
+import type { EffectiveClimate } from '../domain/world/Seasons.ts';
+import { effectiveClimateAt } from '../domain/world/Seasons.ts';
+import type { TextureMemory } from './TextureMemory.ts';
 import Phaser from 'phaser';
+import { RockTunnelView } from './RockTunnelView.ts';
 import { gameConfig } from '../config/gameConfig.ts';
 import { tunnelParts, worldParts } from '../content/worldArt.ts';
 import { TUNNEL_MAST_CLEARANCE_U } from '../domain/world/Catenary.ts';
 import type { TunnelSite } from '../domain/world/Structures.ts';
+import { regionAt } from '../domain/world/Regions.ts';
+import { BACK_PALETTE, mixColour } from './groundPalette.ts';
 import { frameOrigin } from './atlasPacking.ts';
+import { setWorldPivot } from './worldImage.ts';
 import {
-  nextCoverAlpha,
-  trainInTunnel,
-  tunnelCoverTarget,
+  portalMasonryPoint,
+  vehicleInCover,
   type TrainInTunnel,
 } from './tunnelCover.ts';
 
@@ -28,6 +35,11 @@ export interface TunnelGround {
 export type Bake = (
   paint: (g: Phaser.GameObjects.Graphics) => void,
   bounds: { left: number; top: number; right: number; bottom: number },
+  compose?: (
+    canvas: HTMLCanvasElement,
+    memory: TextureMemory,
+    owner: string,
+  ) => void,
 ) => Phaser.GameObjects.Container;
 
 /**
@@ -45,7 +57,6 @@ export interface TunnelDepths {
 const CEILING_U = 186;
 const HILL_TOP_U = 290;
 const FLANK_U = 170;
-const HILL_TONE = 0x6eae43;
 const FLOWER_STEP_U = 23;
 const SHRUB_STEP_U = 53;
 /**
@@ -64,22 +75,26 @@ const SHADE_ALPHA = 0.42;
 /** Samples of baked outlines along x, u. */
 const STEP_U = 16;
 
+function shortTunnelHostAt(seed: number, portalXU: number) {
+  return {
+    ...regionAt(seed, portalXU),
+    season: effectiveClimateAt(seed, portalXU).season,
+  };
+}
+
 /**
  * A short tunnel of the main track (doc 03 §8, doc 14 §2): stone portals
  * at both ends, the hill over the track in front of the train and its
  * flanks behind it, the dark inside with lamps. While the train is in or
- * at the tunnel the cover turns see-through and a darkening band shows
- * which vehicles are inside, each by its own position (TRN-06). The cover
- * fades in simulation time. Chunk-local, owned by its ChunkView.
+ * at the tunnel the opaque cover hides each vehicle progressively by its
+ * own position (TRN-06). Chunk-local, owned by its ChunkView.
  */
 export class TunnelView {
   readonly id: string;
   readonly containers: Phaser.GameObjects.Container[];
-  readonly #cover: Phaser.GameObjects.Container;
   readonly #worldFrom: number;
   readonly #worldTo: number;
-  /** Unset until the first update, which puts it right at its target. */
-  #alpha: number | undefined;
+  readonly #coveredPoint: (point: { x: number; y: number }) => boolean;
   #train: TrainInTunnel = 'outside';
 
   constructor(
@@ -91,12 +106,52 @@ export class TunnelView {
     bake: Bake,
     depths: TunnelDepths,
     /** Chunk-local x of the ceiling hangers of an electric journey's wire. */
-    hangerXs: readonly number[] = [],
+    hangerXs: readonly number[],
+    seed: number,
+    appearance?: {
+      climateAt(xU: number): EffectiveClimate;
+      sandAt(xU: number): boolean;
+    },
   ) {
     this.id = site.id;
     const { fromX, toX } = site;
     this.#worldFrom = site.chunkIndex * chunkWidthU + fromX;
     this.#worldTo = site.chunkIndex * chunkWidthU + toX;
+    if (site.rock) {
+      const fragment = new RockTunnelView(
+        scene,
+        art,
+        site,
+        ground,
+        bake,
+        depths,
+        hangerXs,
+        site.season === 'winter',
+      );
+      this.containers = fragment.containers;
+      this.#coveredPoint = fragment.coversPoint;
+      return;
+    }
+    const host = shortTunnelHostAt(seed, this.#worldFrom);
+    const snow = host.season === 'winter';
+    const dunes = host.landscape === 'dunes';
+    const coast = host.landscape === 'coast';
+    const mountain = ['mountains', 'foothills'].includes(host.landscape);
+    const meadowSurface = !snow && !dunes && !coast && !mountain;
+    const tone = snow
+      ? BACK_PALETTE.snow.base
+      : dunes
+        ? 0xe4c58b
+        : meadowSurface
+          ? 0x6eae43
+          : 0x96958b;
+    const edge = snow
+      ? BACK_PALETTE.snow.edge
+      : dunes
+        ? 0xb99a67
+        : meadowSurface
+          ? 0x3f7326
+          : 0x737a79;
     const middle = (fromX + toX) / 2;
     const halfSpan = (toX - fromX) / 2 + FLANK_U;
     /**
@@ -123,6 +178,21 @@ export class TunnelView {
      * the rail and a shared grid, so the flanks and the cover join
      * without a seam.
      */
+    const toneAt = (x: number) => {
+      const c = appearance?.climateAt(x);
+      const autumn = c?.autumn ?? 0;
+      const winter = c?.winter ?? 0;
+      return {
+        base: mixColour(
+          mixColour(tone, 0xb39355, autumn * 0.7),
+          0xf1f6fa,
+          winter,
+        ),
+        shade: mixColour(edge, 0xbfd0de, winter),
+        winter,
+        flowers: 1 - Math.max(autumn, winter),
+      };
+    };
     const paintHill = (
       g: Phaser.GameObjects.Graphics,
       from: number,
@@ -131,30 +201,57 @@ export class TunnelView {
       bottom: (x: number) => number,
     ) => {
       const upper = xs(from, to).map((x) => point(x, top(x)));
-      g.fillStyle(HILL_TONE, 1);
+      const surface = toneAt(fromX);
+      g.fillStyle(surface.base, 1);
       g.fillPoints([...upper, ...lower], true);
-      // Mown stripes, darker towards the foot.
-      g.lineStyle(5, 0x3f7326, 0.18);
-      for (let i = 1; i < 7; i++) {
+      // Broad, soft bands give bare sand/rock/snow a lit ridge and a shaded foot.
+      const bands = meadowSurface ? 7 : 16;
+      for (let i = 1; i < bands; i++) {
         const stripe = (x: number) =>
-          top(x) + (ground.railY(x) - top(x)) * (i / 7);
-        const line = xs(from + 8, to - 8);
+          top(x) + (ground.railY(x) - top(x)) * (i / bands);
+        const line = meadowSurface ? xs(from + 8, to - 8) : xs(from, to);
         for (let j = 1; j < line.length; j++) {
           const a = line[j - 1] ?? from;
           const b = line[j] ?? to;
-          if (stripe(a) < bottom(a) - 3 && stripe(b) < bottom(b) - 3)
+          const width = meadowSurface
+            ? 5
+            : Math.min(ground.railY(a) - top(a), ground.railY(b) - top(b)) /
+                bands +
+              1;
+          const margin = width / 2 + 0.5;
+          g.lineStyle(
+            width,
+            !meadowSurface && i < 4 ? 0xffffff : surface.shade,
+            meadowSurface
+              ? 0.18
+              : i < 4
+                ? 0.12 * (1 - i / 4)
+                : (0.4 * i) / bands,
+          );
+          if (
+            (meadowSurface ||
+              (stripe(a) > top(a) + margin && stripe(b) > top(b) + margin)) &&
+            stripe(a) < bottom(a) - margin &&
+            stripe(b) < bottom(b) - margin
+          )
             g.lineBetween(a, stripe(a), b, stripe(b));
         }
       }
-      g.lineStyle(1.4, 0x2f5a1c, 1);
-      g.strokePoints(upper, false, false);
+      g.lineStyle(1.4, surface.shade, 1);
+      for (let i = 1; i < upper.length; i++) {
+        const a = upper[i - 1],
+          b = upper[i];
+        if (a && b && bottom(a.x) > a.y + 1 && bottom(b.x) > b.y + 1)
+          g.lineBetween(a.x, a.y, b.x, b.y);
+      }
+      if (!meadowSurface) return;
       for (
         let x = Math.ceil((from + 12) / FLOWER_STEP_U) * FLOWER_STEP_U;
         x < to - 12;
         x += FLOWER_STEP_U
       ) {
         const y = top(x) + 10 + ((x * 7) % 31);
-        if (y > bottom(x) - 6) continue;
+        if (y > bottom(x) - 6 || toneAt(x).flowers < 0.4) continue;
         g.fillStyle(
           [0xf4d03f, 0xffffff, 0xe74c3c][Math.round(x) % 3] ?? 0xffffff,
           1,
@@ -181,7 +278,7 @@ export class TunnelView {
             continue;
           }
           const size = 0.8 + ((n * 7) % 5) / 10;
-          g.fillStyle(0x3f7326, 0.35);
+          g.fillStyle(surface.shade, 0.35);
           g.fillEllipse(sx + 1, y + 4 * size, 20 * size, 5 * size);
           for (const [dx, dy, r, tone] of [
             [-5, 0, 5.5, 0x3d7a28],
@@ -190,7 +287,7 @@ export class TunnelView {
             [-2, -7, 2.4, 0x7bbd52],
             [5, -5, 2, 0x86c65c],
           ] as const) {
-            g.fillStyle(tone, 1);
+            g.fillStyle(mixColour(tone, 0xf1f6fa, toneAt(sx).winter), 1);
             g.fillCircle(sx + dx * size, y + dy * size, r * size);
           }
         }
@@ -348,6 +445,63 @@ export class TunnelView {
         ),
       bounds(flankFrom, flankTo, coverBottom),
     );
+    // All new plants fit inside the existing opaque silhouette and its bounds.
+    if (art && !meadowSurface) {
+      for (
+        let x = Math.ceil((flankFrom + 40) / 80) * 80;
+        x < flankTo - 40;
+        x += 80
+      ) {
+        const pine = dunes && Math.round(x / 80) % 3 === 0;
+        const key = pine
+          ? snow
+            ? 'tree.pine-snow'
+            : 'tree.pine'
+          : mountain
+            ? snow
+              ? 'tree.spruce-snow'
+              : 'tree.spruce'
+            : snow
+              ? 'near.snow-bush'
+              : coast
+                ? 'near.dune-grass'
+                : 'near.bush';
+        const part = worldParts[key];
+        const scale = pine || mountain ? 0.7 : 0.65;
+        const half = (part.widthU * scale) / 2 + 2;
+        const roof = Math.max(top(x - half), top(x), top(x + half));
+        const foot = roof + part.heightU * scale + 6;
+        if (
+          foot + 4 >
+          Math.min(coverBottom(x - half), coverBottom(x), coverBottom(x + half))
+        )
+          continue;
+        const plant = scene.add
+          .image(x, foot, frameTexture(key, art.texture), key)
+          .setData('world-part', key);
+        const origin = frameOrigin(part.pivotU, art.pxPerU, plant.frame);
+        cover.add(
+          plant.setOrigin(origin.x, origin.y).setScale(scale / art.pxPerU),
+        );
+        if (dunes && !snow && !pine) {
+          const flowers = scene.add.image(
+            x,
+            foot - 6,
+            frameTexture('near.flowers-b', art.texture),
+            'near.flowers-b',
+          );
+          flowers.setData('world-part', 'near.flowers-b');
+          const pivot = frameOrigin(
+            worldParts['near.flowers-b'].pivotU,
+            art.pxPerU,
+            flowers.frame,
+          );
+          cover.add(
+            flowers.setOrigin(pivot.x, pivot.y).setScale(0.8 / art.pxPerU),
+          );
+        }
+      }
+    }
     const portal = worldParts[tunnelParts.portal];
     for (const [x, mirrored] of [
       [fromX, false],
@@ -357,47 +511,90 @@ export class TunnelView {
       const image = scene.add.image(
         x,
         ground.railY(x),
-        art.texture,
+        frameTexture(tunnelParts.portal, art.texture),
         tunnelParts.portal,
       );
+      image.setData('world-part', tunnelParts.portal);
       const pivot = mirrored
         ? { x: portal.widthU - portal.pivotU.x, y: portal.pivotU.y }
         : portal.pivotU;
-      const origin = frameOrigin(pivot, art.pxPerU, image.frame);
       cover.add(
-        image
-          .setOrigin(origin.x, origin.y)
+        setWorldPivot(image, pivot, art.pxPerU)
           .setFlipX(mirrored)
           .setScale(1 / art.pxPerU),
       );
     }
+    if (art)
+      for (const x of [fromX, toX]) {
+        const winter = appearance?.climateAt(x).winter ?? 0;
+        if (winter <= 0) continue;
+        const snow = worldParts['snow.roof-64'];
+        const cap = scene.add
+          .image(
+            x - 78,
+            ground.railY(x) - 228,
+            frameTexture('snow.roof-64', art.texture),
+            'snow.roof-64',
+          )
+          .setData('world-part', 'snow.roof-64');
+        const origin = frameOrigin(snow.pivotU, art.pxPerU, cap.frame);
+        cover.add(
+          cap
+            .setOrigin(origin.x, origin.y)
+            .setScale(156 / 64 / art.pxPerU, 0.45 / art.pxPerU)
+            .setAlpha(winter),
+        );
+      }
     cover.setDepth(depths.cover);
-    this.#cover = cover;
+    this.#coveredPoint = (point) => {
+      const x = point.x - site.chunkIndex * chunkWidthU;
+      if (
+        art &&
+        [fromX, toX].some((portalX) =>
+          portalMasonryPoint(
+            x - portalX,
+            point.y - ground.railY(portalX),
+            74,
+            222,
+            58,
+            128,
+          ),
+        )
+      )
+        return true;
+      return (
+        x >= flankFrom &&
+        x <= flankTo &&
+        point.y >= top(x) &&
+        point.y <= coverBottom(x)
+      );
+    };
     this.containers = [flanks, interior, shade, cover];
   }
 
-  /** Opacity of the cover (1 opaque … see-through while the train passes). */
+  /** Rock stays opaque, including the first restored or paused frame. */
   get alpha(): number {
-    return this.#alpha ?? 1;
+    return 1;
   }
 
-  /** Where the train was at the last update. */
+  /** Fully covered core; the open portal mouths stay visible at its ends. */
+  get coverRange(): { fromX: number; toX: number } {
+    return {
+      fromX: this.#worldFrom + COVER_INSET_U,
+      toX: this.#worldTo - COVER_INSET_U,
+    };
+  }
+
+  /** True behind the hill silhouette or portal masonry, with the arches open. */
+  coversPoint(point: { x: number; y: number }): boolean {
+    return this.#coveredPoint(point);
+  }
+
   get train(): TrainInTunnel {
     return this.#train;
   }
 
-  /**
-   * Fades the cover towards see-through while the train (its world x
-   * interval) is in or at the tunnel; `dtSec` is simulation time.
-   */
-  update(
-    train: { minX: number; maxX: number } | undefined,
-    dtSec: number,
-  ): void {
-    const tunnel = { fromX: this.#worldFrom, toX: this.#worldTo };
-    this.#train = train ? trainInTunnel(train, tunnel) : 'outside';
-    const target = train ? tunnelCoverTarget(train, tunnel) : 1;
-    this.#alpha = nextCoverAlpha(this.#alpha, target, dtSec);
-    this.#cover.setAlpha(this.#alpha);
+  update(train: { minX: number; maxX: number } | undefined): void {
+    this.#train = train ? vehicleInCover(train, [this.coverRange]) : 'outside';
   }
 }

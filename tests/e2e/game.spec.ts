@@ -1,9 +1,13 @@
 import { expect, test } from '@playwright/test';
+import { gameConfig } from '../../src/config/gameConfig.ts';
+import { locomotives, wagons } from '../../src/content/vehicles.ts';
+import { parseSave, saveRules } from '../../src/platform/SaveValidation.ts';
 import {
   buildLongestTrain,
   driveUntilMoving,
   expectWholeTrainInView,
   snapshot,
+  restoredTrain,
   startRide,
   tapAction,
   trainBoxesOverFrames,
@@ -76,11 +80,11 @@ test.describe('user path', () => {
     await page.goto('./?debug=1');
     await tapAction(page, 'loco:steam_local');
     await tapAction(page, 'to-depot');
-    // 156 u locomotive + 7 × (8 u coupler + 188 u container) = 1528 u of
-    // 1600 u; the shortest wagon (144 u) no longer fits.
+    // 156 u locomotive + 9 × (8 u coupler + 188 u container) = 1920 u of
+    // 2000 u; the shortest wagon (144 u) no longer fits.
     const container = page.locator('[data-action="add:cargo_container"]');
     while (await container.isEnabled()) await container.click();
-    await expect(page.locator('.count')).toHaveText('7');
+    await expect(page.locator('.count')).toHaveText('9');
     for (const card of await page.locator('[data-action^="add:"]').all())
       await expect(card).toBeDisabled();
     await expect(page.locator('.full-text')).toBeVisible();
@@ -89,9 +93,9 @@ test.describe('user path', () => {
       '96',
     );
     // Removing one makes room again; nothing was dropped.
-    await tapAction(page, 'wagon:w7');
+    await tapAction(page, 'wagon:w9');
     await tapAction(page, 'remove');
-    await expect(page.locator('.count')).toHaveText('6');
+    await expect(page.locator('.count')).toHaveText('8');
     await expect(container).toBeEnabled();
   });
 
@@ -339,6 +343,11 @@ test.describe('user path', () => {
   }) => {
     await buildLongestTrain(page);
     await tapAction(page, 'depart');
+    // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+    );
     await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
     const state = await snapshot(page);
     expect(state.renderedVehicles).toBe(state.vehicles);
@@ -352,6 +361,11 @@ test.describe('user path', () => {
     test.setTimeout(60_000);
     await buildLongestTrain(page, '?debug=1&seed=77');
     await tapAction(page, 'depart');
+    // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+    );
     await driveUntilMoving(page, 60);
     // ~8 s at full speed crosses several grade changes of seed 77.
     const boxes = [];
@@ -365,21 +379,49 @@ test.describe('user path', () => {
     await page.setViewportSize({ width: 1024, height: 600 });
     await expect.poll(async () => (await snapshot(page)).screen).toBe('PAUSED');
     await tapAction(page, 'resume');
-    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 10));
+    // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+    );
+    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
     expect((await snapshot(page)).vehicles).toBe(vehicles);
   });
 
   test('doc 14 §2: after a reload Pokračovat shows the whole train at once', async ({
     page,
   }) => {
-    await buildLongestTrain(page);
-    await tapAction(page, 'depart');
-    await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+    // Picker assembly has its own tests; exercise the actual save/reload here.
+    await restoredTrain(page, true);
+    expect((await snapshot(page)).consistLengthU).toBe(2000);
     await tapAction(page, 'pause');
+    const saved = await page.evaluate(() =>
+      localStorage.getItem('vlacek.save.v1'),
+    );
+    expect(saved).not.toBeNull();
     await page.reload();
+    const reloaded = await page.evaluate(() =>
+      localStorage.getItem('vlacek.save.v1'),
+    );
+    if (saved === null || reloaded === null) throw new Error('save missing');
+    const rules = saveRules(gameConfig, locomotives, wagons);
+    const before = parseSave(saved, rules);
+    const after = parseSave(reloaded, rules);
+    if (before.status !== 'valid' || after.status !== 'valid')
+      throw new Error('invalid saved ride');
+    // pagehide refreshes the timestamp; every other saved field must survive.
+    expect(after.save).toEqual({
+      ...before.save,
+      savedAtIso: after.save.savedAtIso,
+    });
     await tapAction(page, 'continue');
     await tapAction(page, 'resume');
-    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 10));
+    // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+    );
+    await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
   });
 
   test('UI-04: a depot copy from pause keeps the journey until Vyjet', async ({

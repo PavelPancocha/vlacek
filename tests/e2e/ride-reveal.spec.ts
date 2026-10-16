@@ -1,3 +1,10 @@
+import { regionAt } from '../../src/domain/world/Regions.ts';
+import {
+  buildArcLengthTable,
+  arcAtX,
+} from '../../src/domain/world/ArcLengthTable.ts';
+import { generateTrackProfile } from '../../src/domain/world/TrackProfile.ts';
+import type { TrackCursor } from '../../src/domain/world/TrackWindow.ts';
 import { expect, test, type Page } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
@@ -5,12 +12,13 @@ import {
   defaultSettings,
   type SaveEnvelopeV1,
 } from '../../src/platform/SaveValidation.ts';
-import { snapshot, startRide, tapAction } from './helpers.ts';
+import { snapshot, startRide, tapAction, waitForRideStart } from './helpers.ts';
 
 async function savedProfile(
   page: Page,
   quality: 'standard' | 'low',
   journey = false,
+  head: TrackCursor = { chunkIndex: 7, arcOffsetU: 100 },
 ): Promise<void> {
   const consist = { locomotiveId: 'steam_local', wagons: [] };
   const save: SaveEnvelopeV1 = {
@@ -26,7 +34,7 @@ async function savedProfile(
       seed: 123,
       generatorVersion: TRACK_GENERATOR_VERSION,
       consist,
-      head: { chunkIndex: 7, arcOffsetU: 100 },
+      head,
       simulationTick: 0,
       activeEntities: [],
     };
@@ -69,6 +77,7 @@ async function observeReveal(
           covered,
           drawn: state.rideFramesDrawn,
         });
+        return state.rideFramesDrawn;
       };
       if (action) {
         const button = document.querySelector<HTMLButtonElement>(
@@ -86,9 +95,10 @@ async function observeReveal(
       let observationFrames = 0;
       while (observationFrames < 30) {
         await new Promise(requestAnimationFrame);
-        record();
+        const drawn = record();
         if (innerWidth >= innerHeight) landscapeObserved = true;
-        if (landscapeObserved) observationFrames++;
+        // Keep cold-start samples; count the window from the first world draw.
+        if (landscapeObserved && (before > 0 || drawn > 0)) observationFrames++;
       }
       return { before, samples };
     },
@@ -112,6 +122,14 @@ function expectReady(
       'an opaque cover must remain until the returning world draws',
     ).toBeGreaterThan(result.before);
   }
+}
+
+/** Only returning from opaque UI needs a fresh draw; pause is translucent. */
+async function startPausedRide(page: Page): Promise<void> {
+  await page.goto('./?debug=1');
+  await tapAction(page, 'to-depot');
+  expectReady(await observeReveal(page, 'depart'), 'RIDING');
+  await tapAction(page, 'pause');
 }
 
 async function openDeveloperPanel(page: Page): Promise<void> {
@@ -147,9 +165,7 @@ for (const quality of ['standard', 'low'] as const) {
     test('developer panel hides the ride and close draws before uncovering pause', async ({
       page,
     }) => {
-      await startRide(page, []);
-      await tapAction(page, 'pause');
-      expectReady(await observeReveal(page), 'PAUSED');
+      await startPausedRide(page);
       await openDeveloperPanel(page);
       await expectPanelHidden(page);
       expectReady(await observeReveal(page, 'dev-close'), 'PAUSED');
@@ -159,9 +175,7 @@ for (const quality of ['standard', 'low'] as const) {
       test(`developer panel stays hidden through rotation, close in ${closeInPortrait ? 'portrait' : 'landscape'}`, async ({
         page,
       }) => {
-        await startRide(page, []);
-        await tapAction(page, 'pause');
-        expectReady(await observeReveal(page), 'PAUSED');
+        await startPausedRide(page);
         await openDeveloperPanel(page);
         const landscape = page.viewportSize();
         if (!landscape) throw new Error('viewport missing');
@@ -195,9 +209,7 @@ for (const quality of ['standard', 'low'] as const) {
     test('developer panel stays hidden after failed apply and close reveals a fresh pause frame', async ({
       page,
     }) => {
-      await startRide(page, []);
-      await tapAction(page, 'pause');
-      expectReady(await observeReveal(page), 'PAUSED');
+      await startPausedRide(page);
       await openDeveloperPanel(page);
       await page.evaluate(() => {
         Object.defineProperty(Storage.prototype, 'setItem', {
@@ -267,16 +279,24 @@ for (const quality of ['standard', 'low'] as const) {
 test('same journey preserves a paused mid-biome crossfade through the depot', async ({
   page,
 }) => {
-  await savedProfile(page, 'standard', true);
+  const region = regionAt(123, 0);
+  const x = region.toXU - 8192 + 8192 * 0.35;
+  const k = Math.floor(x / 1024);
+  const table = buildArcLengthTable(generateTrackProfile(123, k), k, 1024, 8);
+  await savedProfile(page, 'standard', true, {
+    chunkIndex: k,
+    arcOffsetU: arcAtX(table, x),
+  });
   await page.goto('./?debug=1');
   await tapAction(page, 'continue');
+  await waitForRideStart(page);
   await expect
     .poll(async () => (await snapshot(page)).backdrop?.currentBiome)
     .toBe('countryside');
   await tapAction(page, 'resume');
   await page.keyboard.down('ArrowRight');
   // Pause from the browser RAF that observes the midpoint, so automation
-  // channel latency cannot let the 1.2 s crossfade finish before the pause.
+  // channel latency cannot move the train past the spatial transition window.
   const paused = await page.evaluate(async () => {
     const api = (
       window as unknown as { __vlacek: { snapshot(): DebugSnapshot } }

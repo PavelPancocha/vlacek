@@ -1,3 +1,4 @@
+import { gameConfig } from '../../../src/config/gameConfig.ts';
 import { describe, expect, it } from 'vitest';
 import {
   addWagon,
@@ -56,6 +57,20 @@ const order = (draft: ConsistDraft) =>
   draft.consist.wagons.map((w) => w.definitionId);
 
 describe('ConsistEditor', () => {
+  it('D-028: the 2000 u boundary accepts the last wagon exactly, then blocks additions', () => {
+    expect(gameConfig.train.maxConsistLengthU).toBe(2000);
+    const boundaryRules = rules(gameConfig.train.maxConsistLengthU);
+    // 156 + 11 × (144 + 8) + (164 + 8) = 2000, using shipped lengths.
+    let draft = withWagons(
+      ...Array.from({ length: 11 }, () => 'passenger_open'),
+    );
+    expect(canAddWagon(draft, 'cargo_box', boundaryRules)).toBe(true);
+    draft = addWagon(draft, 'cargo_box', boundaryRules).draft;
+    expect(consistLengthU(draft.consist, boundaryRules)).toBe(2000);
+    expect(canAddWagon(draft, 'passenger_open', boundaryRules)).toBe(false);
+    expect(isOverLimit(draft, boundaryRules)).toBe(false);
+  });
+
   it('starts with the chosen locomotive and no wagons (Vyjet works with zero)', () => {
     const draft = createDraft('steam_local');
     expect(draft.consist).toEqual({ locomotiveId: 'steam_local', wagons: [] });

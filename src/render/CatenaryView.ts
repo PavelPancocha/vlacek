@@ -1,3 +1,4 @@
+import { frameTexture } from './frameTexture.ts';
 import Phaser from 'phaser';
 import { gameConfig } from '../config/gameConfig.ts';
 import {
@@ -11,10 +12,16 @@ import {
   type ArcLengthTable,
 } from '../domain/world/ArcLengthTable.ts';
 import { catenaryPoleXs, catenarySupport } from '../domain/world/Catenary.ts';
+import { bridgeSite } from '../domain/world/Structures.ts';
 import { frameOrigin } from './atlasPacking.ts';
 
 const { chunkWidthU, catenaryPoleSpacingU, catenaryContactHeightU } =
   gameConfig.world;
+
+/** Vertical scale of the mast and its messenger separation (D-016). */
+export const CATENARY_ART_SCALE_Y =
+  (catenaryContactHeightU - CATENARY_POLE_DEPTH_U) /
+  (worldParts[catenaryParts.pole].pivotU.y - catenaryAnchors.contact.y);
 
 export interface CatenaryArt {
   texture: string;
@@ -54,10 +61,15 @@ export function chunkCatenary(
   const poles = scene.add.container(0, 0).setDepth(depths.poles);
   const wires = scene.add.container(0, 0).setDepth(depths.wires);
   const image = (
-    key: typeof catenaryParts.pole | typeof catenaryParts.span,
+    key:
+      | typeof catenaryParts.pole
+      | typeof catenaryParts.span
+      | 'bridge.catenary-console',
   ) => {
     const part = worldParts[key];
-    const object = scene.add.image(0, 0, art.texture, key);
+    const object = scene.add
+      .image(0, 0, frameTexture(key, art.texture), key)
+      .setData('world-part', key);
     const origin = frameOrigin(part.pivotU, art.pxPerU, object.frame);
     return object.setOrigin(origin.x, origin.y);
   };
@@ -70,14 +82,27 @@ export function chunkCatenary(
     // at a tunnel its ceiling holds the wire (TunnelView draws the hanger).
     if (catenarySupport(seed, x) === 'mast') {
       masts += 1;
-      poles.add(
-        image(catenaryParts.pole)
-          .setPosition(
-            local - (catenaryAnchors.contact.x - pole.pivotU.x),
-            railY - CATENARY_POLE_DEPTH_U,
-          )
-          .setScale(1 / art.pxPerU),
-      );
+      const bridge = bridgeSite(seed, table.chunkIndex);
+      const onBridge =
+        bridge?.fromX !== undefined &&
+        bridge.toX !== undefined &&
+        local >= bridge.fromX &&
+        local <= bridge.toX;
+      if (onBridge)
+        poles.add(
+          image('bridge.catenary-console')
+            .setPosition(local, railY)
+            .setScale(1 / art.pxPerU),
+        );
+      else
+        poles.add(
+          image(catenaryParts.pole)
+            .setPosition(
+              local - (catenaryAnchors.contact.x - pole.pivotU.x),
+              railY - CATENARY_POLE_DEPTH_U,
+            )
+            .setScale(1 / art.pxPerU, CATENARY_ART_SCALE_Y / art.pxPerU),
+        );
     }
     const next = catenaryPoleXs(seed, x + 1, x + 2 * catenaryPoleSpacingU)[0];
     if (next === undefined) continue;
@@ -86,7 +111,10 @@ export function chunkCatenary(
     wires.add(
       image(catenaryParts.span)
         .setPosition(x - x0, railY - catenaryContactHeightU)
-        .setScale(Math.hypot(dx, dy) / span.widthU / art.pxPerU, 1 / art.pxPerU)
+        .setScale(
+          Math.hypot(dx, dy) / span.widthU / art.pxPerU,
+          CATENARY_ART_SCALE_Y / art.pxPerU,
+        )
         .setRotation(Math.atan2(dy, dx)),
     );
   }
@@ -114,7 +142,8 @@ export function chunkCatenaryFallback(
   bake: Bake,
 ): ChunkCatenary {
   const x0 = table.chunkIndex * chunkWidthU;
-  const poleHeightU = worldParts[catenaryParts.pole].heightU;
+  const poleHeightU =
+    worldParts[catenaryParts.pole].heightU * CATENARY_ART_SCALE_Y;
   const xs = catenaryPoleXs(seed, x0, x0 + chunkWidthU);
   const next = catenaryPoleXs(
     seed,

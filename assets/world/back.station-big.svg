@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="146" viewBox="0 0 320 146">
+  <!-- Vlastní vektorová kresba projektu Vláček, art-village-town-station-1. -->
+  <defs>
+    <linearGradient id="wall" x2=".8" y2="1">
+      <stop stop-color="#eed899" />
+      <stop offset="1" stop-color="#cbb475" />
+    </linearGradient>
+    <linearGradient id="roof" x2=".2" y2="1">
+      <stop stop-color="#b2543d" />
+      <stop offset="1" stop-color="#72372a" />
+    </linearGradient>
+    <linearGradient id="wood" x2=".3" y2="1">
+      <stop stop-color="#c49a6c" />
+      <stop offset="1" stop-color="#805c3f" />
+    </linearGradient>
+    <linearGradient id="metal" x2=".7" y2="1">
+      <stop stop-color="#a1acac" />
+      <stop offset="1" stop-color="#53666c" />
+    </linearGradient>
+  </defs>
+  <ellipse cx="160.0" cy="144.3" rx="147.20000000000002" ry="1.6" fill="#27351e" opacity=".15" />
+  <rect x="12" y="55" width="296" height="88" rx="0" fill="url(#wall)" stroke="#374333" stroke-width="0.6" />
+  <rect x="12" y="131" width="296" height="12" rx="0" fill="#afa083" stroke="#374333" stroke-width="0.6" />
+  <clipPath id="roof-clip">
+    <path d="M3 55 L16 29 L304 29 L317 55 Z" />
+  </clipPath>
+  <path d="M3 55 L16 29 L304 29 L317 55 Z" fill="url(#roof)" stroke="#374333" stroke-width="0.6" stroke-linejoin="round" />
+  <g clip-path="url(#roof-clip)">
+    <path d="M0 33 H320 M0 37 H320 M0 41 H320 M0 45 H320 M0 49 H320 M0 53 H320" fill="none" stroke="#663427" stroke-width="0.38" stroke-linejoin="round" />
+    <path d="M4 30 v3 M13 30 v3 M22 30 v3 M31 30 v3 M40 30 v3 M49 30 v3 M58 30 v3 M67 30 v3 M76 30 v3 M85 30 v3 M94 30 v3 M103 30 v3 M112 30 v3 M121 30 v3 M130 30 v3 M139 30 v3 M148 30 v3 M157 30 v3 M166 30 v3 M175 30 v3 M184 30 v3 M193 30 v3 M202 30 v3 M211 30 v3 M220 30 v3 M229 30 v3 M238 30 v3 M247 30 v3 M256 30 v3 M265 30 v3 M274 30 v3 M283 30 v3 M292 30 v3 M301 30 v3 M310 30 v3 M319 30 v3 M8 34 v3 M17 34 v3 M26 34 v3 M35 34 v3 M44 34 v3 M53 34 v3 M62 34 v3 M71 34 v3 M80 34 v3 M89 34 v3 M98 34 v3 M107 34 v3 M116 34 v3 M125 34 v3 M134 34 v3 M143 34 v3 M152 34 v3 M161 34 v3 M170 34 v3 M179 34 v3 M188 34 v3 M197 34 v3 M206 34 v3 M215 34 v3 M224 34 v3 M233 34 v3 M242 34 v3 M251 34 v3 M260 34 v3 M269 34 v3 M278 34 v3 M287 34 v3 M296 34 v3 M305 34 v3 M314 34 v3 M4 38 v3 M13 38 v3 M22 38 v3 M31 38 v3 M40 38 v3 M49 38 v3 M58 38 v3 M67 38 v3 M76 38 v3 M85 38 v3 M94 38 v3 M103 38 v3 M112 38 v3 M121 38 v3 M130 38 v3 M139 38 v3 M148 38 v3 M157 38 v3 M166 38 v3 M175 38 v3 M184 38 v3 M193 38 v3 M202 38 v3 M211 38 v3 M220 38 v3 M229 38 v3 M238 38 v3 M247 38 v3 M256 38 v3 M265 38 v3 M274 38 v3 M283 38 v3 M292 38 v3 M301 38 v3 M310 38 v3 M319 38 v3 M8 42 v3 M17 42 v3 M26 42 v3 M35 42 v3 M44 42 v3 M53 42 v3 M62 42 v3 M71 42 v3 M80 42 v3 M89 42 v3 M98 42 v3 M107 42 v3 M116 42 v3 M125 42 v3 M134 42 v3 M143 42 v3 M152 42 v3 M161 42 v3 M170 42 v3 M179 42 v3 M188 42 v3 M197 42 v3 M206 42 v3 M215 42 v3 M224 42 v3 M233 42 v3 M242 42 v3 M251 42 v3 M260 42 v3 M269 42 v3 M278 42 v3 M287 42 v3 M296 42 v3 M305 42 v3 M314 42 v3 M4 46 v3 M13 46 v3 M22 46 v3 M31 46 v3 M40 46 v3 M49 46 v3 M58 46 v3 M67 46 v3 M76 46 v3 M85 46 v3 M94 46 v3 M103 46 v3 M112 46 v3 M121 46 v3 M130 46 v3 M139 46 v3 M148 46 v3 M157 46 v3 M166 46 v3 M175 46 v3 M184 46 v3 M193 46 v3 M202 46 v3 M211 46 v3 M220 46 v3 M229 46 v3 M238 46 v3 M247 46 v3 M256 46 v3 M265 46 v3 M274 46 v3 M283 46 v3 M292 46 v3 M301 46 v3 M310 46 v3 M319 46 v3 M8 50 v3 M17 50 v3 M26 50 v3 M35 50 v3 M44 50 v3 M53 50 v3 M62 50 v3 M71 50 v3 M80 50 v3 M89 50 v3 M98 50 v3 M107 50 v3 M116 50 v3 M125 50 v3 M134 50 v3 M143 50 v3 M152 50 v3 M161 50 v3 M170 50 v3 M179 50 v3 M188 50 v3 M197 50 v3 M206 50 v3 M215 50 v3 M224 50 v3 M233 50 v3 M242 50 v3 M251 50 v3 M260 50 v3 M269 50 v3 M278 50 v3 M287 50 v3 M296 50 v3 M305 50 v3 M314 50 v3" fill="none" stroke="#663427" stroke-width="0.35" stroke-linejoin="round" />
+  </g>
+  <rect x="115.0" y="46" width="90" height="97" rx="0" fill="url(#wall)" stroke="#374333" stroke-width="0.6" />
+  <path d="M110.0 51 L160.0 9 L210.0 51 Z" fill="url(#roof)" stroke="#374333" stroke-width="0.6" stroke-linejoin="round" />
+  <path d="M118.0 49 L160.0 17 L202.0 49 Z" fill="#f4edda" stroke="#374333" stroke-width="0.6" stroke-linejoin="round" />
+  <circle cx="160.0" cy="41" r="5.7" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <path d="M160.0 41 v-4 M160.0 41 l3 1" fill="none" stroke="#5f6356" stroke-width="0.7" stroke-linejoin="round" />
+  <rect x="23" y="69" width="16" height="25" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="24" y="70" width="14" height="23" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M25 91 L31.700000000000003 71 H34.92 L27.64 91 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M31.0 70 V93 M24 80.35 H38" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="22" y="94" width="18" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="49" y="69" width="16" height="25" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="50" y="70" width="14" height="23" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M51 91 L57.7 71 H60.92 L53.64 91 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M57.0 70 V93 M50 80.35 H64" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="48" y="94" width="18" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="75" y="69" width="16" height="25" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="76" y="70" width="14" height="23" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M77 91 L83.7 71 H86.92 L79.64 91 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M83.0 70 V93 M76 80.35 H90" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="74" y="94" width="18" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="281" y="69" width="16" height="25" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="282" y="70" width="14" height="23" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M283 91 L289.7 71 H292.92 L285.64 91 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M289.0 70 V93 M282 80.35 H296" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="280" y="94" width="18" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="255" y="69" width="16" height="25" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="256" y="70" width="14" height="23" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M257 91 L263.7 71 H266.92 L259.64 91 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M263.0 70 V93 M256 80.35 H270" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="254" y="94" width="18" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="229" y="69" width="16" height="25" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="230" y="70" width="14" height="23" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M231 91 L237.7 71 H240.92 L233.64 91 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M237.0 70 V93 M230 80.35 H244" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="228" y="94" width="18" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="126.0" y="63" width="20" height="23" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="127.0" y="64" width="18" height="21" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M128.0 83 L136.9 65 H141.04 L131.68 83 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M136.0 64 V85 M127.0 73.45 H145.0" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="125.0" y="86" width="22" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="171.0" y="63" width="20" height="23" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="172.0" y="64" width="18" height="21" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M173.0 83 L181.9 65 H186.04 L176.68 83 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M181.0 64 V85 M172.0 73.45 H190.0" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="170.0" y="86" width="22" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="147.0" y="102" width="26" height="41" rx="1" fill="#75553d" stroke="#374333" stroke-width="0.6" />
+  <path d="M160.0 103 V142 M149.0 128.65 H171.0" fill="none" stroke="#b5916c" stroke-width="0.4" stroke-linejoin="round" />
+  <circle cx="170.0" cy="126.6" r="0.65" fill="#c4ad68" stroke="#374333" stroke-width="0.2" />
+  <rect x="142.0" y="99" width="36" height="3" rx="0" fill="#a29b84" stroke="#374333" stroke-width="0.6" />
+  <path d="M101.0 98 H219.0 L215.0 103 H97.0 Z" fill="#6b817b" stroke="#374333" stroke-width="0.6" stroke-linejoin="round" />
+  <path d="M103.0 103 V143 M215.0 103 V143" fill="none" stroke="#53685f" stroke-width="1.5" stroke-linejoin="round" />
+  <rect x="249.60000000000002" y="20" width="7" height="18" rx="0" fill="#9b644c" stroke="#374333" stroke-width="0.6" />
+</svg>

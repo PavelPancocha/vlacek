@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="12" viewBox="0 0 128 12">
+  <!-- Vláček, art-water-coast-mountains-1: Tunelový stropní nosník a závěs kontaktu. 1 SVG jednotka = 1 u. -->
+  <defs></defs>
+  <rect x="0" y="0" width="128" height="3" rx="0" fill="#6e786e"/><rect x="0" y="0" width="128" height="0.8" rx="0" fill="#a6b19e"/><rect x="61" y="2" width="6" height="6" rx="1" fill="#b9bdaa"/><rect x="59" y="4" width="10" height="1" rx="0" fill="#7a8676"/><path d="M64 8 V11 M0 11 H128" fill="none" stroke="#424d44" stroke-width="0.85" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

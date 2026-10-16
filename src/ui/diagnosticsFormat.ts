@@ -38,6 +38,7 @@ export function diagnosticGroups(s: Partial<DebugSnapshot>): DiagnosticGroup[] {
     value
       ? `${value.width} × ${value.height} px · ${value.frames} snímků · ${value.pxPerU} px/u`
       : 'Není načten';
+  const world = s.backdrop?.world;
   return [
     {
       title: 'Výkon',
@@ -55,6 +56,51 @@ export function diagnosticGroups(s: Partial<DebugSnapshot>): DiagnosticGroup[] {
         ],
       ],
     },
+    ...(s.perf
+      ? [
+          {
+            title: 'Načítání',
+            rows: [
+              [
+                'Úvod od navigace',
+                `${number(s.perf.startInteractiveMs, 1)} ms`,
+              ],
+              [
+                'Jízda / všechna grafika od požadavku',
+                `${number(s.perf.ride?.firstFrameMs, 1)} / ${number(s.perf.ride?.artReadyMs, 1)} ms`,
+              ],
+              [
+                'SVG načtené / zpracované',
+                `${s.perf.svg.fetchCount} / ${s.perf.svg.decodeCount}`,
+              ],
+              [
+                'SVG fetch / zpracování (součty)',
+                `${number(s.perf.svg.fetchMs, 1)} / ${number(s.perf.svg.decodeMs, 1)} ms`,
+              ],
+              [
+                'Atlas balení a kresba / upload CPU',
+                `${number(s.perf.atlas.packRasterMs, 1)} / ${number(s.perf.atlas.uploadMs, 1)} ms`,
+              ],
+              [
+                'Prvních 12 úseků generování / pečení',
+                `${number(
+                  s.perf.chunks.reduce((sum, c) => sum + c.generationMs, 0),
+                  1,
+                )} / ${number(
+                  s.perf.chunks.reduce((sum, c) => sum + c.bakeMs, 0),
+                  1,
+                )} ms`,
+              ],
+              [
+                'Dlouhé úlohy >50 ms za prvních 15 s jízdy',
+                s.perf.longTasks.supported
+                  ? `${s.perf.longTasks.count} / ${number(s.perf.longTasks.totalMs, 1)} ms`
+                  : 'Prohlížeč neměří',
+              ],
+            ] as const,
+          },
+        ]
+      : []),
     {
       title: 'Svět',
       rows: [
@@ -67,6 +113,24 @@ export function diagnosticGroups(s: Partial<DebugSnapshot>): DiagnosticGroup[] {
         ],
         ['Poloha hlavy po trati', `${number(s.headS, 1)} u`],
         ['Simulační tick', number(s.simulationTick)],
+        [
+          'Region / scéna',
+          `${world?.regionId ?? '—'} / ${world?.sceneId ?? '—'}`,
+        ],
+        [
+          'Krajina / podzóna',
+          `${world?.landscape ?? '—'} / ${world?.subzone ?? '—'}`,
+        ],
+        [
+          'Sezóna / počasí',
+          `${world?.season ?? '—'} / ${world?.weather ?? '—'}`,
+        ],
+        ['Přechod', number(world?.transitionProgress, 3)],
+        [
+          'Prvky / fragmenty / rekvizity / animované',
+          `${number(world?.logicalFeatures)} / ${number(world?.renderedFragments)} / ${number(world?.props)} / ${number(world?.animatedObjects)}`,
+        ],
+        ['Dočasná testovací jízda', s.worldDebug?.temporaryRide ? 'Ano' : 'Ne'],
       ],
     },
     {
@@ -98,7 +162,7 @@ export function diagnosticGroups(s: Partial<DebugSnapshot>): DiagnosticGroup[] {
             (crossing) =>
               [
                 crossing.id,
-                `${PHASE[crossing.phase] ?? crossing.phase} · ${crossing.occupied ? 'Obsazený' : 'Volný'} · čekají ${crossing.waiting} · projelo ${crossing.crossed}`,
+                `${PHASE[crossing.phase] ?? crossing.phase} · ${crossing.occupied ? 'Obsazený' : 'Volný'} · čekají ${crossing.waiting} · projelo ${crossing.crossed} · svět ${number(crossing.worldX, 1)} u · obraz ${number(crossing.screenX, 1)} px · konec vlaku ${number(crossing.tailX, 1)} u · závora ${number(crossing.barrier, 2)} · fáze ${crossing.phases.join(' → ')}`,
               ] as const,
           )
         : [['V okolí', 'Žádné']],
@@ -112,12 +176,65 @@ export function diagnosticGroups(s: Partial<DebugSnapshot>): DiagnosticGroup[] {
         ['Zdrojové textury', number(s.artSourceTextures)],
       ],
     },
+    ...(s.tunnels === undefined
+      ? []
+      : [
+          {
+            title: 'Tunely',
+            rows: s.tunnels.length
+              ? s.tunnels.map(
+                  (tunnel) =>
+                    [
+                      tunnel.id,
+                      `${tunnel.alpha === 1 ? 'Neprůhledný' : `Průhlednost ${number(tunnel.alpha, 2)}`} · ${tunnel.train} · vozidla ${tunnel.vehicles.join(', ')}`,
+                    ] as const,
+                )
+              : [['V okolí', 'Žádné'] as const],
+          },
+        ]),
+    ...(s.catenary === undefined
+      ? []
+      : [
+          {
+            title: 'Trolejové vedení',
+            rows: [
+              ['Elektrifikace', s.catenary.electrified ? 'Ano' : 'Ne'],
+              ['Sloupy', number(s.catenary.poles)],
+              [
+                'Odchylka pantografu',
+                `${number(s.catenary.pantographGapU, 3)} u`,
+              ],
+              ['Mimo dosah (outOfRange)', number(s.catenary.outOfRange)],
+            ] as const,
+          },
+        ]),
     ...(s.audio === undefined
       ? []
       : [
           {
             title: 'Zvuk',
-            rows: [['Stav', AUDIO[s.audio] ?? s.audio] as const],
+            rows: [
+              ['Stav', AUDIO[s.audio] ?? s.audio],
+              [
+                'Načtené / čekající nahrávky',
+                `${number(s.audioDetails?.loaded)} / ${number(s.audioDetails?.pending)}`,
+              ],
+              ['Čekající vrstvy', number(s.audioDetails?.pendingLayers)],
+              [
+                'Aktivní hlasy',
+                s.audioDetails?.active
+                  .map((voice) => `${voice.id} (${voice.kind}, ${voice.key})`)
+                  .join(', ') || 'Žádné',
+              ],
+              ['Poslední zvuky', s.audioDetails?.played.join(', ') || 'Žádné'],
+              ['Zakrytí tunelem', number(s.audioDetails?.covered, 3)],
+              [
+                'Chyby',
+                s.audioDetails?.failures
+                  .map((failure) => `${failure.file}: ${failure.reason}`)
+                  .join(', ') || 'Žádné',
+              ],
+            ] as const,
           },
         ]),
   ];

@@ -35,7 +35,7 @@ describe('second track (doc 04 §6–7)', () => {
         const site = secondarySite(seed, b);
         if (!site) continue;
         found += 1;
-        expect(site.id).toBe(`g1:block:${b}:secondary:0`);
+        expect(site.id).toBe(`g2:block:${b}:secondary:0`);
         const first = b * chunksPerBiomeBlock + 4;
         expect(site.fromX).toBe(first * chunkWidthU);
         expect(site.toX).toBe((first + 3) * chunkWidthU);

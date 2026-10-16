@@ -1,6 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
+import { gameConfig } from '../../src/config/gameConfig.ts';
+import { trainZoom } from '../../src/render/cameraFraming.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, tapAction } from './helpers.ts';
+import { vehicleArt } from '../../src/content/artManifest.ts';
+import {
+  snapshot,
+  tapAction,
+  waitForRideStart,
+  waitForWorldAtlases,
+} from './helpers.ts';
 
 /** First run in world 123 with this locomotive and two wagons. */
 async function departWith(page: Page, locomotive: string): Promise<void> {
@@ -11,6 +19,8 @@ async function departWith(page: Page, locomotive: string): Promise<void> {
     await tapAction(page, `add:${wagon}`);
   await tapAction(page, 'depart');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  // D-019 drew contact synchronously on depart; D-030 must publish the art first.
+  await waitForWorldAtlases(page);
 }
 
 /** Restore world 123 before its chunk 4 bridge and chunk 6 tunnel. */
@@ -54,6 +64,8 @@ async function continueBeforeBridge(
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  // D-019 drew contact synchronously on resume; D-030 must publish the art first.
+  await waitForWorldAtlases(page);
 }
 
 test.describe('electric locomotive and catenary (doc 03 §9, TRN-08, D-016)', () => {
@@ -62,6 +74,63 @@ test.describe('electric locomotive and catenary (doc 03 §9, TRN-08, D-016)', ()
     'electric_modern',
     'electric_mountain',
   ]) {
+    for (const renderer of ['canvas', 'webgl']) {
+      test(`TRN-08 compact contact: ${locomotive}, ${renderer}`, async ({
+        page,
+      }) => {
+        await page.goto(`./?debug=1&seed=123&renderer=${renderer}`);
+        await tapAction(page, `loco:${locomotive}`);
+        await tapAction(page, 'to-depot');
+        await tapAction(page, 'add:passenger_double');
+        await tapAction(page, 'depart');
+        await expect
+          .poll(async () => (await snapshot(page)).screen)
+          .toBe('RIDING');
+        await waitForRideStart(page);
+        await expect
+          .poll(async () => (await snapshot(page)).artVehicles)
+          .toBe(2);
+        const state = await snapshot(page);
+        expect(state.renderer).toBe(renderer);
+        expect(state.catenary).toHaveProperty('outOfRange', 0);
+        expect(state.catenary.pantographGapU ?? Infinity).toBeLessThan(0.5);
+        const box = state.trainBox;
+        if (!box) throw new Error('train box missing');
+        // Flat start: camera includes the wire plus 8 u and 4 u below rail.
+        const heightLimitU =
+          1.25 *
+            Math.max(
+              ...Object.values(vehicleArt).map((art) => {
+                if (!art) throw new Error('Catalog art missing');
+                return art.heightU;
+              }),
+            ) +
+          12;
+        const viewport = page.viewportSize();
+        if (!viewport) throw new Error('viewport missing');
+        const zoom = trainZoom(
+          {
+            widthPx: viewport.width,
+            heightPx: viewport.height,
+            reservedTopPx: 0,
+            reservedBottomPx: 0,
+          },
+          state.consistLengthU,
+          { ...gameConfig.camera, vehicleHeightU: heightLimitU },
+        );
+        const [firstEdge, secondEdge] = state.chunkEdges;
+        if (firstEdge === undefined || secondEdge === undefined)
+          throw new Error('camera chunk edges missing');
+        expect(zoom).toBeCloseTo(
+          (secondEdge - firstEdge) / gameConfig.world.chunkWidthU,
+          9,
+        );
+        expect((box.bottom - box.top) / zoom).toBeLessThanOrEqual(heightLimitU);
+        await page.screenshot({
+          path: test.info().outputPath(`${locomotive}-${renderer}-contact.png`),
+        });
+      });
+    }
     test(`TRN-08: ${locomotive} touches the wire over the bridge, tunnel and chunk seam`, async ({
       page,
     }) => {
@@ -119,8 +188,31 @@ test.describe('electric locomotive and catenary (doc 03 §9, TRN-08, D-016)', ()
       electrified: false,
       poles: 0,
       pantographGapU: undefined,
+      outOfRange: 0,
     });
   });
+
+  for (const renderer of ['canvas', 'webgl']) {
+    test(`TRN-08: fallback wire meets the electric head at the same compact height, ${renderer}`, async ({
+      page,
+    }) => {
+      await page.route(/track\.tile-a-[^/]*\.svg$/, (route) => route.abort());
+      await page.goto(`./?debug=1&seed=123&renderer=${renderer}`);
+      await tapAction(page, 'loco:electric_modern');
+      await tapAction(page, 'to-depot');
+      await tapAction(page, 'add:passenger_double');
+      await tapAction(page, 'depart');
+      await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(2);
+      const state = await snapshot(page);
+      expect(state.renderer).toBe(renderer);
+      expect(state.artAtlas).toBeUndefined();
+      expect(state.catenary.poles).toBeGreaterThan(0);
+      expect(state.catenary.pantographGapU ?? Infinity).toBeLessThan(0.5);
+      await page.screenshot({
+        path: test.info().outputPath(`fallback-wire-${renderer}.png`),
+      });
+    });
+  }
 
   test('a restored electric journey keeps its catenary', async ({ page }) => {
     await continueBeforeBridge(page, 'electric_retro');

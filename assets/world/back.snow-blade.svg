@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="36" height="22" viewBox="0 0 36 22">
+  <!-- Vláček, art-farm-forest-1: Přední radlice pro zimní cestu. -->
+  <defs><linearGradient id="blade" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#d9c768"/><stop offset="1" stop-color="#a38b3a"/></linearGradient></defs>
+  <ellipse cx="18.0" cy="21" rx="15.48" ry="1" fill="#1d2a14" opacity=".16"/><path d="M1 12 L11 12 M9 5 Q20 2 34 5 L33 19 Q20 21 9 18 Z" fill="url(#blade)" stroke="#1d2a14" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 17 Q20 20 33 18" fill="none" stroke="#677b86" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 5 Q13 10 11 17" fill="none" stroke="#eff2e8" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

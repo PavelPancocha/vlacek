@@ -20,8 +20,27 @@ export interface ArtPart {
   heightU: number;
   /** Point the part is placed and rotated by, part units from top left. */
   pivotU: ArtPoint;
+  /** Conservative painted rectangle in part units; omit to use the full frame. */
+  paintedBoundsU?: readonly {
+    leftU: number;
+    topU: number;
+    rightU: number;
+    bottomU: number;
+  }[];
   /** Second joint of a rod (connecting rod small end), part units. */
   endU?: ArtPoint;
+  /** Full animated silhouette relative to the pivot, in u; ground contact stays unchanged. */
+  motionBoundsU?: {
+    leftU: number;
+    rightU: number;
+    topU: number;
+    bottomU: number;
+  };
+  /** Region atlas selection; seasonal parts are loaded only for these presets. */
+  atlasGroup?: {
+    landscapes?: readonly string[];
+    seasons?: readonly ('spring' | 'summer' | 'autumn' | 'winter')[];
+  };
 }
 
 export const artParts = {
@@ -94,15 +113,15 @@ export const artParts = {
   },
   'electric_retro.pantograph': {
     file: 'electric_retro.pantograph.svg',
-    widthU: 40,
-    heightU: 60,
-    pivotU: { x: 20, y: 60 },
+    widthU: 56,
+    heightU: 34,
+    pivotU: { x: 28, y: 34 },
   },
   'electric_retro.pantograph-head': {
     file: 'electric_retro.pantograph-head.svg',
-    widthU: 48,
-    heightU: 8,
-    pivotU: { x: 24, y: 8 },
+    widthU: 40,
+    heightU: 6,
+    pivotU: { x: 20, y: 6 },
   },
   'magic_stars.body': {
     file: 'magic_stars.body.svg',
@@ -200,12 +219,19 @@ export const artParts = {
     widthU: 188,
     heightU: 84,
     pivotU: { x: 94, y: 84 },
+    // Hoses including their stroke end at y=68.7; the rest below is transparent.
+    paintedBoundsU: [{ leftU: 0, topU: 0, rightU: 188, bottomU: 69 }],
   },
   'service_crane.overlay': {
     file: 'service_crane.overlay.svg',
     widthU: 188,
     heightU: 84,
     pivotU: { x: 94, y: 84 },
+    // The two bogies leave a transparent gap beneath the machinery house.
+    paintedBoundsU: [
+      { leftU: 11, topU: 56, rightU: 61, bottomU: 83 },
+      { leftU: 127, topU: 56, rightU: 177, bottomU: 83 },
+    ],
   },
   'fun_balloons.body': {
     file: 'fun_balloons.body.svg',
@@ -744,7 +770,7 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       yU: 6,
       arms: 'electric_retro.pantograph',
       head: 'electric_retro.pantograph-head',
-      headContactU: 7,
+      headContactU: 5,
     },
   },
   magic_stars: {
@@ -872,7 +898,7 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       yU: 14,
       arms: 'electric_retro.pantograph',
       head: 'electric_retro.pantograph-head',
-      headContactU: 7,
+      headContactU: 5,
     },
   },
   electric_mountain: {
@@ -890,7 +916,7 @@ export const vehicleArt: Readonly<Partial<Record<string, VehicleArt>>> = {
       yU: 14,
       arms: 'electric_retro.pantograph',
       head: 'electric_retro.pantograph-head',
-      headContactU: 7,
+      headContactU: 5,
     },
   },
   steam_express: {

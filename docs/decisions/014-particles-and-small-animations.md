@@ -22,7 +22,7 @@ Emitery mají sedět na modelu se sklonem a vypuštěné částice se nesmí poh
 
    Scéna pole posouvá o simulační čas (ticky / `fixedHz`). V pauze se tick nemění, takže částice stojí a po pokračování letí dál.
 
-   Částice žijí ve světových souřadnicích, takže kouř zůstává ve vzduchu a za jedoucím vlakem se táhne doleva. Kreslí je `EffectsView` z poolu obrázků z atlasu světa, ve vrstvě 10 dokumentu 07. Vozidla používají samostatný atlas jedné jízdy podle [D-019](019-journey-atlas-and-npc-fleet.md).
+   Částice žijí ve světových souřadnicích, takže kouř zůstává ve vzduchu a za jedoucím vlakem se táhne doleva. Kreslí je `EffectsView` z poolu obrázků z atlasu světa, podle zdroje: okolní život ve vrstvě 10 dokumentu 07, hráčovy částice 7,55 a NPC částice 4,32, vždy nad vlastním vlakem a pod jeho neprůhledným krytem ([D-018](018-bridges-and-tunnels.md)). Zakrytí bubliny stejnou geometrií vyloučí její hit-test, prasknutí a hlášení ve snapshotu; odkrytý dotyk nadále současně pohání vlak. Prasknutí bubliny zachová vrstvu původní bubliny; znovupoužitý záznam nepřebírá vrstvu minulého zdroje. Vozidla používají samostatný atlas jedné jízdy podle [D-019](019-journey-atlas-and-npc-fleet.md).
 
 2. **Emitery v manifestu.** `VehicleArt.emitters` určuje bod v rámu kresby:
    - hlavu komína parní mašinky;
@@ -45,6 +45,7 @@ Emitery mají sedět na modelu se sklonem a vypuštěné částice se nesmí poh
    - **Prasknutí bubliny:** jedna drobná SVG částice `bubble-pop` v místě zásahu žije 0,25–0,45 s. Nahrazuje odstraněnou bublinu, takže nepřekročí společný dekorativní strop; v úsporném profilu má poloviční velikost. Krátký syntetický zvuk (sinus 900 → 300 Hz, 0,12 s) používá stávající audio manager, ztišení efektů a rozpočet hlasů. Prasknutí nemá vlastní timer ani uložený stav.
    - **Jiskry:** jen při brzdění nad 30 % nejvyšší rychlosti. Jsou to nejvýš čtyři krátké záblesky za sekundu u náhodného kola, žádný ohňostroj.
    - **Sníh a listí:** víří je přední kola, ale jen při jízdě nad 40 u/s. Sníh na sněhovém podkladu blízké louky, listí na lesním.
+   - **Tunelové kryty (tunnel-1).** Každý zdroj se posuzuje ve světových souřadnicích vůči vlastnímu krytu. Uvnitř skály emise nevznikne, v otevřeném ústí může pokračovat; časování běží i při potlačení emise. Vrstvení zakryje i dříve vzniklé částice přesně kresbou krytu v Canvas i WebGL. Pole, kapacita a životnost zůstávají společné; žádné nové emitery ani timery po chunkech.
 4. **Občasný život.** `AmbientLife` pustí po 14–28 s simulačního času malé hejno ptáků přes oblohu, nebo nad loukou dva motýly. Nikdy nespustí dvě události najednou.
 5. **Drobné stálé pohyby** (`ambientMotion.ts`, čisté funkce času):
    - tráva, květiny, rákosí a kapradí se houpou o několik stupňů, stromy jen nepatrně, stavby a kameny vůbec;

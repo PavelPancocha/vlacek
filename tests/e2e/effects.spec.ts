@@ -1,7 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, tapAction } from './helpers.ts';
+import {
+  snapshot,
+  tapAction,
+  waitForRideStart,
+  waitForWorldAtlases,
+} from './helpers.ts';
 
 /** A stopped journey with this locomotive at the start, as a v1 save. */
 function journeySave(
@@ -51,6 +56,8 @@ async function continueJourney(page: Page, save: string): Promise<void> {
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  // D-030: particles draw once the world atlases are published.
+  await waitForWorldAtlases(page);
 }
 
 test.describe('particles and small animations (doc 14 §4, D-014)', () => {
@@ -127,64 +134,99 @@ test.describe('particles and small animations (doc 14 §4, D-014)', () => {
   });
 });
 
-test('a bubble touch pops once while throttle keeps the train moving (H3, INP-05)', async ({
-  page,
-}, testInfo) => {
-  await page.goto('./?debug=1&seed=123');
-  await tapAction(page, 'loco:magic_bubbles');
-  await tapAction(page, 'to-depot');
-  await tapAction(page, 'depart');
-  await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
-  await expect
-    .poll(async () => (await snapshot(page)).bubbles.length)
-    .toBeGreaterThan(0);
-  // Read and press in the same browser task: the small drifting target
-  // must not move between the diagnostic sample and the DOM input event.
-  const { before, bubble } = await page.evaluate((hasTouch) => {
-    const api = (
-      window as unknown as { __vlacek: { snapshot(): DebugSnapshot } }
-    ).__vlacek;
-    const before = api.snapshot();
-    const bubble = before.bubbles.at(-1);
-    if (!bubble) throw new Error('visible bubble missing');
-    const target = document.elementFromPoint(bubble.x, bubble.y);
-    if (!target) throw new Error('bubble outside the viewport');
-    target.dispatchEvent(
-      new PointerEvent('pointerdown', {
-        bubbles: true,
-        pointerId: 101,
-        pointerType: hasTouch ? 'touch' : 'mouse',
-        isPrimary: true,
-        button: 0,
-        buttons: 1,
-        clientX: bubble.x,
-        clientY: bubble.y,
-      }),
-    );
-    return { before, bubble };
-  }, testInfo.project.use.hasTouch ?? false);
-  const after = await snapshot(page);
-  expect(after.bubbles.some((candidate) => candidate.id === bubble.id)).toBe(
-    false,
+for (const smallViewport of [false, true])
+  test(
+    smallViewport
+      ? 'camera-1: a readable bubble has a 64px touch target on 568x320 and still drives'
+      : 'a bubble touch pops once while throttle keeps the train moving (H3, INP-05)',
+    async ({ page }, testInfo) => {
+      if (smallViewport)
+        await page.setViewportSize({ width: 568, height: 320 });
+      await page.goto('./?debug=1&seed=123');
+      await tapAction(page, 'loco:magic_bubbles');
+      await tapAction(page, 'to-depot');
+      await tapAction(page, 'depart');
+      await expect
+        .poll(async () => (await snapshot(page)).screen)
+        .toBe('RIDING');
+      await waitForRideStart(page);
+      await expect
+        .poll(async () => (await snapshot(page)).bubbles.length)
+        .toBeGreaterThan(1);
+      // Read and press in the same browser task: the small drifting target
+      // must not move between the diagnostic sample and the DOM input event.
+      const { before, bubble } = await page.evaluate(
+        ({ hasTouch, offsetCssPx }) => {
+          const api = (
+            window as unknown as { __vlacek: { snapshot(): DebugSnapshot } }
+          ).__vlacek;
+          const before = api.snapshot();
+          // Either side keeps the 20px offset in an earlier bubble's own target.
+          const bubble = before.bubbles
+            .slice(0, -1)
+            .flatMap((candidate) =>
+              [offsetCssPx, -offsetCssPx].map((offset) => ({
+                ...candidate,
+                x: candidate.x + offset,
+              })),
+            )
+            .find((candidate) =>
+              before.bubbles.every(
+                (other) =>
+                  other.id === candidate.id ||
+                  Math.hypot(candidate.x - other.x, candidate.y - other.y) >
+                    Math.abs(offsetCssPx),
+              ),
+            );
+          if (!bubble) throw new Error('earlier nearest bubble missing');
+          const clickX = bubble.x;
+          const target = document.elementFromPoint(clickX, bubble.y);
+          if (!target) throw new Error('bubble outside the viewport');
+          target.dispatchEvent(
+            new PointerEvent('pointerdown', {
+              bubbles: true,
+              pointerId: 101,
+              pointerType: hasTouch ? 'touch' : 'mouse',
+              isPrimary: true,
+              button: 0,
+              buttons: 1,
+              clientX: clickX,
+              clientY: bubble.y,
+            }),
+          );
+          return { before, bubble };
+        },
+        {
+          hasTouch: testInfo.project.use.hasTouch ?? false,
+          offsetCssPx: smallViewport ? 20 : 0,
+        },
+      );
+      expect(bubble.id).not.toBe(before.bubbles.at(-1)?.id);
+      if (smallViewport)
+        expect(bubble.radiusCssPx).toBeGreaterThanOrEqual(6 - 1e-9);
+      const after = await snapshot(page);
+      expect(
+        after.bubbles.some((candidate) => candidate.id === bubble.id),
+      ).toBe(false);
+      expect(after.effects.bubblePops).toBe(before.effects.bubblePops + 1);
+      expect(after.intent).toBe('THROTTLE');
+      expect(after.pointers).toBe(1);
+      await expect
+        .poll(async () => (await snapshot(page)).headS)
+        .toBeGreaterThan(before.headS);
+      expect((await snapshot(page)).speedUPerSec).toBeGreaterThan(0);
+      await page.evaluate(({ x, y }) => {
+        document.elementFromPoint(x, y)?.dispatchEvent(
+          new PointerEvent('pointerup', {
+            bubbles: true,
+            pointerId: 101,
+            button: 0,
+            buttons: 0,
+            clientX: x,
+            clientY: y,
+          }),
+        );
+      }, bubble);
+      expect((await snapshot(page)).intent).toBe('COAST');
+    },
   );
-  expect(after.effects.bubblePops).toBe(before.effects.bubblePops + 1);
-  expect(after.intent).toBe('THROTTLE');
-  expect(after.pointers).toBe(1);
-  await expect
-    .poll(async () => (await snapshot(page)).headS)
-    .toBeGreaterThan(before.headS);
-  expect((await snapshot(page)).speedUPerSec).toBeGreaterThan(0);
-  await page.evaluate(({ x, y }) => {
-    document.elementFromPoint(x, y)?.dispatchEvent(
-      new PointerEvent('pointerup', {
-        bubbles: true,
-        pointerId: 101,
-        button: 0,
-        buttons: 0,
-        clientX: x,
-        clientY: y,
-      }),
-    );
-  }, bubble);
-  expect((await snapshot(page)).intent).toBe('COAST');
-});

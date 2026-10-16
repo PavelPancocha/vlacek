@@ -1,3 +1,5 @@
+import type { SaveEnvelopeV1 } from '../../src/platform/SaveValidation.ts';
+import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -412,14 +414,14 @@ describe('GameSession: restoring a saved depot draft', () => {
 
 describe('GameSession: a longer train saved by version 0.1', () => {
   /** A real 0.1 save (schema 1) whose journey has 60 box wagons. */
-  function legacyStorage(): MemoryStorage {
+  function legacyStorage(count = 60): MemoryStorage {
     const save = JSON.parse(
       readFileSync(
         resolve(import.meta.dirname, '../fixtures/save/v1-journey.json'),
         'utf8',
       ),
     ) as { journey: { consist: { wagons: unknown[] } }; lastConsist: unknown };
-    save.journey.consist.wagons = Array.from({ length: 60 }, (_, i) => ({
+    save.journey.consist.wagons = Array.from({ length: count }, (_, i) => ({
       instanceId: `w${i + 1}`,
       definitionId: 'cargo_box',
       visualSeed: i,
@@ -429,6 +431,24 @@ describe('GameSession: a longer train saved by version 0.1', () => {
     storage.data.set(PRIMARY_KEY, JSON.stringify(save));
     return storage;
   }
+
+  it('D-028: restores an old 1876 u ride over the old limit without changing its cursor or wagons', () => {
+    const storage = legacyStorage(10);
+    const save = JSON.parse(
+      storage.data.get(PRIMARY_KEY) ?? '{}',
+    ) as SaveEnvelopeV1;
+    if (!save.journey) throw new Error('fixture journey missing');
+    save.journey.generatorVersion = TRACK_GENERATOR_VERSION;
+    storage.data.set(PRIMARY_KEY, JSON.stringify(save));
+    const session = createSession(storage);
+    expect(session.notices).not.toContain('train-too-long');
+    expect(session.journeyConsist?.wagons).toHaveLength(10);
+    expect(session.ride?.headCursor()).toEqual(save.journey.head);
+    expect(session.ride?.simulationTick).toBe(save.journey.simulationTick);
+    tap(session, 'continue');
+    expect(session.screen).toEqual({ name: 'PAUSED', reason: 'restore' });
+    expect(session.ride?.speedUPerSec).toBe(0);
+  });
 
   it('keeps every wagon, tells why, and does not ride a train that cannot be seen', () => {
     const storage = legacyStorage();
@@ -467,32 +487,35 @@ describe('GameSession: a longer train saved by version 0.1', () => {
   });
 });
 
-describe('GameSession: a journey from track generator v0 (version 0.1)', () => {
-  it('keeps the train and world number and starts the new track with a notice', () => {
-    const storage = new MemoryStorage();
-    storage.data.set(
-      PRIMARY_KEY,
-      readFileSync(
-        resolve(import.meta.dirname, '../fixtures/save/v1-journey.json'),
-        'utf8',
-      ),
-    );
-    const session = createSession(storage);
-    expect(session.screen).toEqual({ name: 'HOME' });
-    expect(session.notices).toContain('track-changed');
-    expect(session.journeySeed).toBe(3141592653);
-    expect(
-      session.journeyConsist?.wagons.map((wagon) => wagon.definitionId),
-    ).toEqual(['cargo_box', 'fun_balloons']);
-    // Not at the v0 position (chunk 7): a fresh start on the new track.
-    expect(session.ride?.headCursor().chunkIndex).toBe(
-      gameConfig.world.spawnChunkIndex,
-    );
-    tap(session, 'continue');
-    tap(session, 'resume');
-    expect(session.screen.name).toBe('RIDING');
-  });
-});
+describe.each(['v1-journey.json', 'released-v1-journey.json'])(
+  'GameSession: older-generator journey %s',
+  (fixtureName) => {
+    it('keeps the train and world number and starts the new track with a notice', () => {
+      const storage = new MemoryStorage();
+      storage.data.set(
+        PRIMARY_KEY,
+        readFileSync(
+          resolve(import.meta.dirname, '../fixtures/save', fixtureName),
+          'utf8',
+        ),
+      );
+      const session = createSession(storage);
+      expect(session.screen).toEqual({ name: 'HOME' });
+      expect(session.notices).toContain('track-changed');
+      expect(session.journeySeed).toBe(3141592653);
+      expect(
+        session.journeyConsist?.wagons.map((wagon) => wagon.definitionId),
+      ).toEqual(['cargo_box', 'fun_balloons']);
+      // Not at the v0 position (chunk 7): a fresh start on the new track.
+      expect(session.ride?.headCursor().chunkIndex).toBe(
+        gameConfig.world.spawnChunkIndex,
+      );
+      tap(session, 'continue');
+      tap(session, 'resume');
+      expect(session.screen.name).toBe('RIDING');
+    });
+  },
+);
 
 describe('GameSession: bubble touch routing (H3, INP-05)', () => {
   it('pops once through the world hit boundary, emits sound feedback once and leaves throttle/coast/brake priority intact', () => {

@@ -32,7 +32,7 @@ describe('bridges and tunnels (doc 04 §6, doc 03 §8)', () => {
         }
         if (b === 0) expect(site).toBeDefined();
         if (!site) continue;
-        expect(site.id).toBe(`g1:chunk:${k}:bridge:0`);
+        expect(site.id).toBe(`g2:chunk:${k}:bridge:0`);
         expect(bridgeSite(seed, k)).toEqual(site);
         expect(site.localXU - BRIDGE_RESERVE_U).toBeGreaterThan(0);
         expect(site.localXU + BRIDGE_RESERVE_U).toBeLessThan(chunkWidthU);
@@ -87,7 +87,7 @@ describe('bridges and tunnels (doc 04 §6, doc 03 §8)', () => {
       const first = tunnelSite(seed, 6);
       expect(first).toBeDefined();
       if (!first) continue;
-      expect(first.id).toBe('g1:chunk:6:tunnel:0');
+      expect(first.id).toBe('g2:chunk:6:tunnel:0');
       expect(first.toX - first.fromX).toBeGreaterThanOrEqual(384);
       expect(first.fromX).toBeGreaterThan(64);
       expect(first.toX).toBeLessThan(chunkWidthU - 64);

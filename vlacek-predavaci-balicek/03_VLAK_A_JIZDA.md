@@ -12,7 +12,7 @@ Doménový svět má osu `x` doprava, `y` nahoru. Phaser má obrazovou osu `y` d
 
 Nepoužívat rigid-body fyziku, pružinová spřáhla ani výpočet tažné síly podle hmotnosti. Vlak je geometricky vedená souprava. Neexistuje prokluz, vykolejení, zlomení spřáhla ani neschopnost vyjet kopec.
 
-Základní hodnoty (dokument 14 §6): maximální rychlost 480 u/s, rozjezd 160 u/s², dojezdové zpomalení 96 u/s², brzda 480 u/s². Rozjezd na plnou rychlost trvá 3 s, prostý dojezd 5 s a aktivní brzda 1 s. Na obrazovce to odpovídá asi 0,22 šířky za sekundu na každém zařízení, protože měřítko vychází z nejdelší soupravy ([D-008](../docs/decisions/008-whole-train-in-view.md)); obrazovku vlak přejede asi za 4,6 s. Verze 0.1 měla 180 u/s při větším měřítku (0,14 šířky za sekundu na 16:9). Hodnoty jsou laditelné; jejich zamýšlený pocit hlídá test `gameConfig` (0,18–0,30 šířky/s, rozjezd 2–4 s, dojezd 4–7 s).
+Základní hodnoty (dokument 14 §6): maximální rychlost 480 u/s, rozjezd 160 u/s², dojezdové zpomalení 96 u/s², brzda 480 u/s². Rozjezd na plnou rychlost trvá 3 s, prostý dojezd 5 s a aktivní brzda 1 s. Na obrazovce to odpovídá 0,216 šířky/s pro soupravy do 1 600 u a 0,173 šířky/s pro 2 000 u; kratší vlaky zachovávají původní měřítko ([D-028](../docs/decisions/028-longer-consist.md)). Verze 0.1 měla 180 u/s při větším měřítku (0,14 šířky za sekundu na 16:9). Hodnoty jsou laditelné; jejich zamýšlený pocit hlídá test `gameConfig` (0,216 / 0,1728 šířky/s podle délky jízdy, rozjezd 2–4 s, dojezd 4–7 s).
 
 ### Aktualizace rychlosti
 
@@ -79,17 +79,17 @@ Chyba vzorkování do 0.5 u a šev mezi chunky do 0.1 u jsou akceptační cíle.
 
 ## 6. Dlouhé soupravy a inicializace
 
-Limit je délkový (dokument 14 §2, [D-008](../docs/decisions/008-whole-train-in-view.md)): `train.maxConsistLengthU` (výchozí 1600 u) od čela lokomotivy po konec posledního vagonku včetně spřáhel, spočítaný stejným rozložením jako jízda. V depu lze přidat jen vagonek, který se vejde. Původní limit 100 vagonků neplatí. Výkonový profil nesmí tiše zahodit část vagonků nebo zkrátit vlak; delší souprava ze starší uložené hry zůstane celá v depu a vyjede až po ubrání.
+Limit je délkový (dokument 14 §2, [D-008](../docs/decisions/008-whole-train-in-view.md)): `train.maxConsistLengthU` (výchozí 2000 u, [D-028](../docs/decisions/028-longer-consist.md)) od čela lokomotivy po konec posledního vagonku včetně spřáhel, spočítaný stejným rozložením jako jízda. V depu lze přidat jen vagonek, který se vejde. Původní limit 100 vagonků neplatí. Výkonový profil nesmí tiše zahodit část vagonků nebo zkrátit vlak; souprava nad 2 000 u ze starší uložené hry zůstane celá v depu a vyjede až po ubrání. Cesta mezi původním limitem 1 600 u a novým 2 000 u se nyní obnoví jako zastavená jízda se všemi vozy; při stejné verzi generátoru zachová polohu i tick.
 
 Na nové cestě se hlava umístí do chunku 0. **Před zobrazením** se vygeneruje dostatečná trať i za ní, včetně záporných indexů chunků. Celá souprava existuje od prvního snímku. Nesmí být nejprve vidět vagonky ve vzduchu a později pro ně přibýt koleje.
 
-V depu se simuluje rovná kolej, nikoli celá krajina. Náhled celé soupravy je posuvný. Měřítko jízdy je pro danou obrazovku pevné a vychází z nejdelší povolené soupravy; nemění se podle aktuální délky vlaku.
+V depu se simuluje rovná kolej, nikoli celá krajina. Náhled celé soupravy je posuvný. Měřítko jízdy je pevné pro danou sestavu a obrazovku podle [D-028](../docs/decisions/028-longer-consist.md): souprava má střed na 46 % šířky a měřítko podle 2 000u reference, pevné pro celou jízdu.
 
 ## 7. Kamera
 
-Od prvního snímku je vidět celá souprava (dokument 14 §2, [D-008](../docs/decisions/008-whole-train-in-view.md)). Nejdelší povolená souprava zabere `camera.trainWidthFraction` (0.72) šířky, za koncem zůstává `camera.rearMarginFraction` (0.06) a čelo krátkého vlaku stojí nejméně na `camera.minFrontFraction` (0.35) šířky. Vodorovné sledování je přesné. Svislé vedení zná výšku koleje pod celou soupravou a vede její střed plynule (`camera.verticalFollowPerSec`) do `camera.bandAnchor` pásu volného od tlačítek v rozích a brzdy; hranice pásu mají přednost, takže vlak nikdy nezajede pod ovládání ani mimo obraz. Výpočet je čistý modul `src/render/cameraFraming.ts` s jednotkovými testy.
+Od prvního snímku je vidět celá souprava (dokument 14 §2, [D-008](../docs/decisions/008-whole-train-in-view.md)). Měřítko je pevné pro danou jízdu a velikost obrazovky: `0.60 × šířka / max(2000, délka soupravy)` ([D-028, camera-1](../docs/decisions/028-longer-consist.md)). Střed soupravy stojí na `camera.trainCenterFraction` (0.46), mírně vlevo pro větší výhled dopředu. Nejdelší povolená souprava zabere `camera.trainWidthFraction` (0.60) šířky; geometrická rezerva je 16 % za koncem a 24 % před čelem. Kratší soupravy mají více místa po obou stranách. Vodorovné sledování je přesné. Svislé vedení zná výšku koleje pod celou soupravou a vede její střed plynule (`camera.verticalFollowPerSec`) do `camera.bandAnchor` pásu volného od tlačítek v rozích a brzdy; hranice pásu mají přednost, takže vlak nikdy nezajede pod ovládání ani mimo obraz. Výpočet je čistý modul `src/render/cameraFraming.ts` s jednotkovými testy.
 
-Žádné třesení při houkání či průjezdu mostem. Žádné automatické zoomování při přidávání vagonků. Objekty musí být rozpoznatelné při běžném měřítku. Na širokém displeji je vlak větší a zabírá stejný podíl šířky; na užším (4:3) je menší, ale celý.
+Žádné třesení při houkání či průjezdu mostem. Za jízdy žádné zoomování podle polohy či rychlosti; změna sestavy se projeví až při nové jízdě. Objekty musí být rozpoznatelné při běžném měřítku. Na širokém displeji je vlak větší a zabírá stejný podíl šířky; na užším (4:3) je menší, ale celý.
 
 Za jízdy nejsou gesta kamery. To je vědomý rozdíl proti dřívějšímu návrhu: levé gesto je brzda a běžný dotyk je plyn. Celou soupravu dítě vidí v depu.
 
@@ -121,16 +121,16 @@ Vedení má pravidelný rozestup podpěr, který respektuje společnou globáln�
 
 Drát sleduje výšku koleje s konstantní přibližnou výškou kontaktu. Pantograf má jednoduchou animaci a dosáhne na drát i na mírném zlomu sklonu. Rozdíl sklonu lokomotivy a lokálního vedení řešit omezeným přizpůsobením délky pantografu. Ve vzorkovacím bodě kontaktu nesmí viditelně končit pod drátem.
 
-Výchozí rozteč běžných podpěr je 256 u a kontakt vedení 160 u nad kolejí. Konkrétní konzoly a tunelové závěsy se přizpůsobí infrastruktuře; výška kontaktu u lokomotivy zůstává konzistentní. Tyto hodnoty patří do společné konfigurace, ne do každého assetu zvlášť.
+Výchozí rozteč běžných podpěr je 256 u a kontakt vedení 128 u nad kolejí. Konkrétní konzoly a tunelové závěsy se přizpůsobí infrastruktuře; výška kontaktu u lokomotivy zůstává konzistentní. Tyto hodnoty patří do společné konfigurace, ne do každého assetu zvlášť.
 
 Parní, naftové a fantazijní lokomotivy vedení ve V1 automaticky nedostávají. Na jejich druhé koleji proto generovat parní či naftový protijedoucí vlak. V elektrifikované jízdě může být elektrifikovaná i souběžná trať. Geometrie ani seed krajiny se změnou pohonu jinak nemění.
 
 Implementace ([D-016](../docs/decisions/016-electric-locomotive-and-catenary.md)):
 
-- Jízda za `electric_retro` je elektrifikovaná celá, i po obnově ze save.
+- Jízda za kteroukoli ze tří elektrických lokomotiv je elektrifikovaná celá, i po obnově ze save.
 - Stožáry stojí v globální fázi po 256 u. Stožár, který by padl na silnici přejezdu, se posune 48 u vedle ní.
-- Drát vede rovně mezi stožáry, u každého 160 u nad kolejí. Od této výšky se odchyluje nejvýš o 3,2 u.
-- Pantograf natahuje ramena k drátu v bodě dotyku, v mezích 0,07–1,6 násobku kresby. V depu leží sklopený.
+- Drát vede rovně mezi stožáry, u každého 128 u nad kolejí. Test hlídá odchylku od kontaktu nejvýše 6 u na přechodu sklonů. Nejvyšší rám vozidla včetně nákladu je 108 u; config vyžaduje alespoň 20 u rezervy. Patrový vůz má 100 u, přepravník aut i složený bagr 96 u. Stožáry i nosné lano mají společné svislé měřítko odvozené z kontaktu.
+- Pantograf má nízká široká ramena 56 × 34 u a nenatahovanou hlavu 40 × 6 u. Pracovní dosah od paty je 34–59,4 u, na rovině 42 / 52 / 46 u pro retro / moderní / horskou elektriku. Drát mimo dosah je chyba vedení: výpočet omezí dosah na pracovní interval a vrátí diagnostický příznak `outOfRange`, bez výjimky z vykreslovací smyčky a bez dalšího natahování. Přechod rovina ↔ svah přes 192 u podporuje sklon 12 %; přímý obrat +sklon ↔ −sklon má ověřenou mez 9,8 % ([D-016](../docs/decisions/016-electric-locomotive-and-catenary.md)). V depu leží sběrač sklopený (7,38 u nad patou); přední sklopený sběrač zůstává v kresbě vozidla.
 - Stožár se drží 80 u od středu potoka pod mostem. V tunelu a méně než 60 u od portálů drží drát závěs ze stropu; na hranici a za ní stojí stožár na původním místě ([D-018](../docs/decisions/018-bridges-and-tunnels.md), oprava R6). Klasifikace a kreslení sdílejí tutéž hranici, polohy podpěr se nemění.
 - Portálové podpěry ve stanicích zatím chybějí.
 

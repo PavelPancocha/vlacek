@@ -1,7 +1,8 @@
 import { writeFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { longestMixedConsist } from './perfConsist.ts';
-import { snapshot, tapAction } from './helpers.ts';
+import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
+import { snapshot, tapAction, waitForRideStart } from './helpers.ts';
 
 const SECONDS = Number(process.env['PERF_SECONDS'] ?? 60);
 /** Locomotive of the measured train; `electric_retro` adds the catenary. */
@@ -35,7 +36,7 @@ test('measure a ride with the longest allowed train', async ({
     lastConsist: consist,
     journey: {
       seed: 20261009,
-      generatorVersion: 0,
+      generatorVersion: TRACK_GENERATOR_VERSION,
       consist,
       head: { chunkIndex: 0, arcOffsetU: 512 },
       simulationTick: 0,
@@ -62,6 +63,9 @@ test('measure a ride with the longest allowed train', async ({
   await page.goto('./?debug=1');
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
+  // D-030 publishes the restored ride under the curtain; measure from its
+  // first presented frame (owner decision 2026-10-16, 15 s start bound).
+  await waitForRideStart(page);
   await page.evaluate(() =>
     (window as unknown as { __frames: number[] }).__frames.splice(0),
   );
@@ -96,6 +100,7 @@ test('measure a ride with the longest allowed train', async ({
     maxLiveChunks,
     headChunkAtEnd: final.headChunk,
     frames: frames.length,
+    medianFrameMs: at(0.5),
     medianFps: 1000 / at(0.5),
     p95FrameMs: at(0.95),
     worstFrameMs: frames.at(-1) ?? 0,

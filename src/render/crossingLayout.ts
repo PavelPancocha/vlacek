@@ -11,6 +11,8 @@ import { NEAR_FOOT_OFFSET_U } from './groundLayout.ts';
 export interface RoadFrame {
   railY: number;
   meadowY: number;
+  /** Render dy/dx of the straight track at the common crossing point. */
+  railSlope?: number;
 }
 
 /** Half road width at the track: the train's conflict zone, u. */
@@ -24,15 +26,31 @@ const FAR_SPAN_U = -ROAD_FAR_END_U - ROAD_CONFLICT_U;
  * head to the bank foot; in front it runs down the near meadow like the
  * near props (doc 05 §4, D-013 depths).
  */
-export function roadPointY(frame: RoadFrame, roadU: number): number {
-  if (roadU <= -ROAD_CONFLICT_U) return frame.railY + roadU;
+export function roadPointY(
+  frame: RoadFrame,
+  roadU: number,
+  offsetXU = 0,
+): number {
   const nearTop = frame.meadowY + NEAR_FOOT_OFFSET_U;
-  if (roadU < ROAD_CONFLICT_U) {
-    const t = (roadU + ROAD_CONFLICT_U) / (2 * ROAD_CONFLICT_U);
-    const top = frame.railY - ROAD_CONFLICT_U;
-    return top + (nearTop - top) * t;
-  }
-  return nearTop + (roadU - ROAD_CONFLICT_U);
+  // Streams share the older depth profile; only crossings supply a rail grade.
+  if (
+    frame.railSlope === undefined &&
+    roadU > -ROAD_CONFLICT_U &&
+    roadU < ROAD_CONFLICT_U
+  )
+    return (
+      frame.railY -
+      ROAD_CONFLICT_U +
+      ((nearTop - frame.railY + ROAD_CONFLICT_U) * (roadU + ROAD_CONFLICT_U)) /
+        (2 * ROAD_CONFLICT_U)
+    );
+  const slopeY = (frame.railSlope ?? 0) * offsetXU;
+  if (roadU <= 0) return frame.railY + roadU + slopeY;
+  if (roadU < ROAD_CONFLICT_U)
+    return (
+      frame.railY + ((nearTop - frame.railY) * roadU) / ROAD_CONFLICT_U + slopeY
+    );
+  return nearTop + (roadU - ROAD_CONFLICT_U) + slopeY;
 }
 
 /**
@@ -52,6 +70,19 @@ export function roadHalfWidthU(
     halfAtTrackU *
     nearDepthScale((roadU - ROAD_CONFLICT_U) / NEAR_DEPTH_RANGE_U)
   );
+}
+
+/** Road positions painted on either ground layer; the deck covers their join. */
+export function crossingRoadRange(
+  part: 'back' | 'near',
+  nearEndRoadU: number,
+): {
+  fromRoadU: number;
+  toRoadU: number;
+} {
+  return part === 'back'
+    ? { fromRoadU: ROAD_FAR_END_U, toRoadU: 0 }
+    : { fromRoadU: 0, toRoadU: nearEndRoadU };
 }
 
 /** Drawing scale of a car or bike at a road position. */

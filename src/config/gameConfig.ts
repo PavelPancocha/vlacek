@@ -1,3 +1,4 @@
+import type { Biome } from '../domain/world/Biomes.ts';
 import { worstClearingSeconds } from '../domain/interaction/roadTraffic.ts';
 
 /**
@@ -22,7 +23,7 @@ export interface SimulationConfig {
 export interface TrainConfig {
   /**
    * Longest train, locomotive front to last wagon end with couplers (doc 14
-   * §2). The camera fits this length into its share of the screen width.
+   * §2, D-028). Each longer ride fits its own length; short rides keep scale.
    */
   maxConsistLengthU: number;
   maxVehicleLengthU: number;
@@ -60,6 +61,19 @@ export interface TrackProfileConfig {
   lengthStepU: number;
 }
 
+/** Region-specific v2 envelope; lengths before parabolic shoulders (D-023). */
+export type LandscapeProfileConfig = Pick<
+  TrackProfileConfig,
+  | 'maxHeightU'
+  | 'blockHeightRangeU'
+  | 'flatMinU'
+  | 'flatMaxU'
+  | 'slopeMinU'
+  | 'slopeMaxU'
+  | 'gradeRangeMin'
+  | 'gradeRangeMax'
+>;
+
 /** Ground around the track (`src/domain/world/Terrain.ts`). */
 export interface TerrainConfig {
   /** Spacing of the seeded height nodes; heights blend between them. */
@@ -77,6 +91,11 @@ export interface WorldConfig {
   /** Absolute grade bound for validation and the motion model. */
   maxTrackGrade: number;
   profile: TrackProfileConfig;
+  /** Compact pantograph supports flat-to-slope grades up to 0.12 (CNT-03). */
+  pantographMaxTrackGrade: number;
+  /** Direct opposing slopes across the 192-u vertical curve (CNT-03). */
+  pantographMaxReversingGrade: number;
+  landscapeProfiles: Readonly<Record<Biome, LandscapeProfileConfig>>;
   terrain: TerrainConfig;
   /** Tries per scenery prop before it is left out (doc 04 §6). */
   maxPlacementAttempts: number;
@@ -129,12 +148,10 @@ export interface SaveConfig {
 
 /** Ride camera framing (doc 14 §2); see `src/render/cameraFraming.ts`. */
 export interface CameraConfig {
-  /** Share of the screen width the longest allowed train fills. */
+  /** Share of the screen width a 2000 u reference train fills. */
   trainWidthFraction: number;
-  /** Room behind the last wagon, share of the width. */
-  rearMarginFraction: number;
-  /** A short train's front stays at least this far right. */
-  minFrontFraction: number;
+  /** Train middle, slightly left of screen centre to see more ahead. */
+  trainCenterFraction: number;
   /** Train middle within the band free of controls (0 top, 1 bottom). */
   bandAnchor: number;
   /** Vertical follow rate, 1/s. */
@@ -149,6 +166,8 @@ export interface CrossingConfig {
    */
   roadClearanceSeconds: number;
   warningSeconds: number;
+  maxWarningSeconds: number;
+  openHysteresisSeconds: number;
   closingSeconds: number;
   openingSeconds: number;
   safetySeconds: number;
@@ -158,9 +177,8 @@ export interface CrossingConfig {
 }
 
 /**
- * Dclose (doc 05 §4): how far ahead of the conflict zone a crossing
- * starts closing, derived from the top speed so a train that sets off at
- * full throttle can never reach an open crossing.
+ * Dclose (doc 05 §4): conservative streaming horizon and full-speed road
+ * hold distance. Phase deadlines use earliest arrival (D-021).
  */
 export function crossingCloseDistanceU(
   crossing: CrossingConfig,
@@ -191,6 +209,12 @@ export interface QualityConfig {
   standard: QualityProfile;
 }
 
+export interface StationConfig {
+  stopSpeedThresholdUPerSec: number;
+  stopDetectionSeconds: number;
+  sceneCooldownSeconds: number;
+}
+
 export interface GameConfig {
   simulation: SimulationConfig;
   save: SaveConfig;
@@ -201,10 +225,16 @@ export interface GameConfig {
   input: InputConfig;
   quality: QualityConfig;
   crossing: CrossingConfig;
+  station: StationConfig;
 }
 
 export const gameConfig: GameConfig = {
   simulation: { fixedHz: 60, maxCatchUpSteps: 5 },
+  station: {
+    stopSpeedThresholdUPerSec: 4,
+    stopDetectionSeconds: 0.5,
+    sceneCooldownSeconds: 12,
+  },
   save: {
     schemaVersion: 1,
     intervalSeconds: 5,
@@ -223,10 +253,10 @@ export const gameConfig: GameConfig = {
     npcTrainMaxSpeedUPerSec: 160,
   },
   train: {
-    maxConsistLengthU: 1600,
+    maxConsistLengthU: 2000,
     maxVehicleLengthU: 220,
     couplerGapU: 8,
-    // ≈ 0.22 screen widths per second at the doc 14 §2 scale (doc 14 §6).
+    // ≈ 0.144 screen widths per second at the D-028 camera scale (doc 14 §6).
     maxSpeedUPerSec: 480,
     accelerationUPerSec2: 160,
     coastDecelerationUPerSec2: 96,
@@ -241,6 +271,90 @@ export const gameConfig: GameConfig = {
     chunksPerBiomeBlock: 8,
     blocksPerRouteCycle: 8,
     maxTrackGrade: 0.12,
+    pantographMaxTrackGrade: 0.12,
+    pantographMaxReversingGrade: 0.098,
+    landscapeProfiles: {
+      countryside: {
+        maxHeightU: 100,
+        blockHeightRangeU: 50,
+        flatMinU: 768,
+        flatMaxU: 1536,
+        slopeMinU: 1024,
+        slopeMaxU: 2304,
+        gradeRangeMin: 0.015,
+        gradeRangeMax: 0.035,
+      },
+      forest: {
+        maxHeightU: 160,
+        blockHeightRangeU: 80,
+        flatMinU: 512,
+        flatMaxU: 1280,
+        slopeMinU: 1024,
+        slopeMaxU: 2560,
+        gradeRangeMin: 0.025,
+        gradeRangeMax: 0.06,
+      },
+      lakes: {
+        maxHeightU: 60,
+        blockHeightRangeU: 30,
+        flatMinU: 1024,
+        flatMaxU: 1792,
+        slopeMinU: 1024,
+        slopeMaxU: 2560,
+        gradeRangeMin: 0.01,
+        gradeRangeMax: 0.025,
+      },
+      foothills: {
+        maxHeightU: 260,
+        blockHeightRangeU: 180,
+        flatMinU: 512,
+        flatMaxU: 1024,
+        slopeMinU: 1024,
+        slopeMaxU: 3072,
+        gradeRangeMin: 0.04,
+        gradeRangeMax: 0.09,
+      },
+      mountains: {
+        maxHeightU: 380,
+        blockHeightRangeU: 320,
+        flatMinU: 768,
+        flatMaxU: 960,
+        slopeMinU: 1536,
+        slopeMaxU: 3072,
+        gradeRangeMin: 0.08,
+        gradeRangeMax: 0.1,
+      },
+      coast: {
+        maxHeightU: 60,
+        blockHeightRangeU: 30,
+        flatMinU: 1024,
+        flatMaxU: 1792,
+        slopeMinU: 1024,
+        slopeMaxU: 2560,
+        gradeRangeMin: 0.01,
+        gradeRangeMax: 0.025,
+      },
+      dunes: {
+        maxHeightU: 100,
+        blockHeightRangeU: 50,
+        flatMinU: 768,
+        flatMaxU: 1536,
+        slopeMinU: 1024,
+        slopeMaxU: 2560,
+        gradeRangeMin: 0.015,
+        gradeRangeMax: 0.04,
+      },
+      town: {
+        maxHeightU: 120,
+        blockHeightRangeU: 60,
+        flatMinU: 1024,
+        flatMaxU: 1792,
+        slopeMinU: 1024,
+        slopeMaxU: 2560,
+        gradeRangeMin: 0.01,
+        gradeRangeMax: 0.03,
+      },
+    },
     profile: {
       blockChunks: 8,
       maxHeightU: 400,
@@ -250,7 +364,7 @@ export const gameConfig: GameConfig = {
       slopeMinU: 768,
       slopeMaxU: 2304,
       gradeRangeMin: 0.03,
-      gradeRangeMax: 0.08,
+      gradeRangeMax: 0.1,
       transitionU: 192,
       lengthStepU: 64,
     },
@@ -258,11 +372,11 @@ export const gameConfig: GameConfig = {
     maxPlacementAttempts: 8,
     arcSampleSpacingU: 8,
     geometryLookAheadU: 2048,
-    geometryTailMarginU: 1024,
+    geometryTailMarginU: 1600,
     spawnChunkIndex: 0,
     spawnLocalXU: 512,
     catenaryPoleSpacingU: 256,
-    catenaryContactHeightU: 160,
+    catenaryContactHeightU: 128,
     secondaryTrackOffsetU: 64,
     secondaryRailProbability: 1 / 3,
     forcedSecondaryBiomeBlock: 1,
@@ -270,10 +384,9 @@ export const gameConfig: GameConfig = {
     npcHiddenPathMarginU: 256,
   },
   camera: {
-    trainWidthFraction: 0.72,
-    rearMarginFraction: 0.06,
-    minFrontFraction: 0.35,
-    bandAnchor: 0.55,
+    trainWidthFraction: 0.6,
+    trainCenterFraction: 0.46,
+    bandAnchor: 0.5,
     verticalFollowPerSec: 3,
   },
   input: {
@@ -291,6 +404,8 @@ export const gameConfig: GameConfig = {
   crossing: {
     roadClearanceSeconds: 2,
     warningSeconds: 1.2,
+    maxWarningSeconds: 4,
+    openHysteresisSeconds: 0.5,
     closingSeconds: 0.8,
     openingSeconds: 0.8,
     safetySeconds: 0.5,
@@ -308,7 +423,16 @@ const positive = (value: number) => Number.isFinite(value) && value > 0;
 
 /** Returns the paths of invalid values; an empty list means valid. */
 export function validateGameConfig(config: GameConfig): string[] {
-  const { simulation, save, interaction, train, world, camera, input } = config;
+  const {
+    simulation,
+    save,
+    interaction,
+    train,
+    world,
+    camera,
+    input,
+    station,
+  } = config;
   const profile = (name: keyof QualityConfig): Check[] => {
     const q = config.quality[name];
     return [
@@ -323,6 +447,12 @@ export function validateGameConfig(config: GameConfig): string[] {
   const fraction = (value: number) =>
     Number.isFinite(value) && value >= 0 && value < 1;
   const checks: Check[] = [
+    [
+      'station.stopSpeedThresholdUPerSec',
+      positive(station.stopSpeedThresholdUPerSec),
+    ],
+    ['station.stopDetectionSeconds', positive(station.stopDetectionSeconds)],
+    ['station.sceneCooldownSeconds', positive(station.sceneCooldownSeconds)],
     ['simulation.fixedHz', positiveInteger(simulation.fixedHz)],
     ['simulation.maxCatchUpSteps', positiveInteger(simulation.maxCatchUpSteps)],
     ['save.schemaVersion', save.schemaVersion === 1],
@@ -394,14 +524,47 @@ export function validateGameConfig(config: GameConfig): string[] {
     [
       'camera.trainWidthFraction',
       // It sets the zoom, so 0 would divide the viewport by zero.
-      positive(camera.trainWidthFraction) &&
-        camera.trainWidthFraction + camera.rearMarginFraction < 1,
+      positive(camera.trainWidthFraction) && camera.trainWidthFraction < 1,
     ],
-    ['camera.rearMarginFraction', fraction(camera.rearMarginFraction)],
-    ['camera.minFrontFraction', fraction(camera.minFrontFraction)],
+    [
+      'camera.trainCenterFraction',
+      fraction(camera.trainCenterFraction) &&
+        camera.trainCenterFraction >= camera.trainWidthFraction / 2 &&
+        camera.trainCenterFraction + camera.trainWidthFraction / 2 < 1,
+    ],
     ['camera.bandAnchor', fraction(camera.bandAnchor)],
     ['camera.verticalFollowPerSec', positive(camera.verticalFollowPerSec)],
     ['world.maxTrackGrade', positive(world.maxTrackGrade)],
+    [
+      'world.pantographMaxTrackGrade',
+      positive(world.pantographMaxTrackGrade) &&
+        world.pantographMaxTrackGrade <= 0.12 &&
+        world.pantographMaxTrackGrade <= world.maxTrackGrade,
+    ],
+    [
+      'world.pantographMaxReversingGrade',
+      positive(world.pantographMaxReversingGrade) &&
+        world.pantographMaxReversingGrade <= 0.098 &&
+        world.pantographMaxReversingGrade <= world.pantographMaxTrackGrade,
+    ],
+    ...Object.entries(world.landscapeProfiles).map(([name, p]): Check => [
+      `world.landscapeProfiles.${name}`,
+      Object.values(p).every(positive) &&
+        p.maxHeightU <= world.profile.maxHeightU &&
+        p.blockHeightRangeU < p.maxHeightU &&
+        p.gradeRangeMin <= p.gradeRangeMax &&
+        p.gradeRangeMax <=
+          Math.min(world.maxTrackGrade, world.pantographMaxTrackGrade) &&
+        p.flatMinU >= world.profile.transitionU &&
+        p.flatMaxU >= p.flatMinU &&
+        p.slopeMinU >= world.profile.transitionU &&
+        p.slopeMaxU >= p.slopeMinU &&
+        p.flatMaxU +
+          p.flatMinU +
+          world.profile.lengthStepU +
+          Math.max(p.slopeMinU, (2 * p.blockHeightRangeU) / p.gradeRangeMax) <=
+          world.chunkWidthU * world.profile.blockChunks,
+    ]),
     ['world.profile.blockChunks', positiveInteger(world.profile.blockChunks)],
     [
       'world.profile.maxHeightU',
@@ -453,7 +616,11 @@ export function validateGameConfig(config: GameConfig): string[] {
       Number.isFinite(world.geometryLookAheadU) &&
         world.geometryLookAheadU >= 2048,
     ],
-    ['world.geometryTailMarginU', positive(world.geometryTailMarginU)],
+    [
+      'world.geometryTailMarginU',
+      Number.isFinite(world.geometryTailMarginU) &&
+        world.geometryTailMarginU >= 1600,
+    ],
     ['world.spawnChunkIndex', Number.isSafeInteger(world.spawnChunkIndex)],
     [
       'world.spawnLocalXU',
@@ -464,7 +631,12 @@ export function validateGameConfig(config: GameConfig): string[] {
       positiveInteger(world.catenaryPoleSpacingU) &&
         world.chunkWidthU % world.catenaryPoleSpacingU === 0,
     ],
-    ['world.catenaryContactHeightU', positive(world.catenaryContactHeightU)],
+    [
+      'world.catenaryContactHeightU',
+      Number.isFinite(world.catenaryContactHeightU) &&
+        // Pure config cannot import art; the catalog test guards this envelope.
+        world.catenaryContactHeightU >= 108 + 20,
+    ],
     ['world.secondaryTrackOffsetU', positive(world.secondaryTrackOffsetU)],
     [
       'world.secondaryRailProbability',
@@ -499,6 +671,8 @@ export function validateGameConfig(config: GameConfig): string[] {
     ...(
       [
         'warningSeconds',
+        'maxWarningSeconds',
+        'openHysteresisSeconds',
         'closingSeconds',
         'openingSeconds',
         'safetySeconds',
@@ -510,6 +684,10 @@ export function validateGameConfig(config: GameConfig): string[] {
     [
       'crossing.roadClearanceSeconds',
       config.crossing.roadClearanceSeconds >= worstClearingSeconds(),
+    ],
+    [
+      'crossing.maxWarningSeconds',
+      config.crossing.maxWarningSeconds >= config.crossing.warningSeconds,
     ],
     ['crossing.maxQueuedCars', positiveInteger(config.crossing.maxQueuedCars)],
     [

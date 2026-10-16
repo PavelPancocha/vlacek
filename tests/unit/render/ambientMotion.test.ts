@@ -63,3 +63,14 @@ describe('ambient motion of the scenery (doc 14 §4: grass, branches, water)', (
     }
   });
 });
+
+it('SEA-06: grazing steps are rare, phased and stay inside the original footprint', async () => {
+  const { grazingStep } = await import('../../../src/render/ambientMotion.ts');
+  expect(grazingStep('cow', 2, 0, 60)).toBeGreaterThan(0);
+  expect(grazingStep('cow', 12, 0, 60)).toBe(0);
+  expect(grazingStep('dog', 2, 0, 60)).toBe(0);
+  for (let t = 0; t < 90; t += 0.1)
+    expect(Math.abs(grazingStep('sheep', t, 0.3, 60))).toBeLessThanOrEqual(
+      60 * 0.025,
+    );
+});

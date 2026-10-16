@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { gameConfig } from '../../src/config/gameConfig.ts';
-import { soundTones, type Tone } from '../../src/content/soundTones.ts';
+import { soundManifest } from '../../src/content/soundManifest.ts';
 import { locomotives } from '../../src/content/vehicles.ts';
 import {
   generateTrackProfile,
@@ -8,69 +8,6 @@ import {
 } from '../../src/domain/world/TrackProfile.ts';
 import { TrackWindow } from '../../src/domain/world/TrackWindow.ts';
 import { snapshot } from './helpers.ts';
-
-interface Voice {
-  type: OscillatorType;
-  frequencyHz: number;
-  startSec: number;
-  stopSec: number;
-  state: AudioContextState;
-  glideHz: number | null;
-}
-
-declare global {
-  interface Window {
-    __hornVoices: Voice[];
-  }
-}
-
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    window.__hornVoices = [];
-    // Observe native Web Audio; DOM input, unlock, selection and synthesis stay real.
-    const NativeAudioContext = window.AudioContext;
-    window.AudioContext = class extends NativeAudioContext {
-      override createOscillator(): OscillatorNode {
-        const oscillator = super.createOscillator();
-        let startSec = 0;
-        let frequencyHz = 0;
-        let glideHz: number | null = null;
-        const set = oscillator.frequency.setValueAtTime.bind(
-          oscillator.frequency,
-        );
-        oscillator.frequency.setValueAtTime = (value, time) => {
-          frequencyHz = value;
-          return set(value, time);
-        };
-        const ramp = oscillator.frequency.exponentialRampToValueAtTime.bind(
-          oscillator.frequency,
-        );
-        oscillator.frequency.exponentialRampToValueAtTime = (value, time) => {
-          glideHz = value;
-          return ramp(value, time);
-        };
-        const start = oscillator.start.bind(oscillator);
-        oscillator.start = (when = 0) => {
-          startSec = when;
-          start(when);
-        };
-        const stop = oscillator.stop.bind(oscillator);
-        oscillator.stop = (when = 0) => {
-          window.__hornVoices.push({
-            type: oscillator.type,
-            frequencyHz,
-            startSec,
-            stopSec: when,
-            state: this.state,
-            glideHz,
-          });
-          stop(when);
-        };
-        return oscillator;
-      }
-    };
-  });
-});
 
 async function gesture(page: Page, action: string): Promise<void> {
   const control = page.locator(`[data-action="${action}"]`).first();
@@ -83,29 +20,25 @@ async function gesture(page: Page, action: string): Promise<void> {
   );
 }
 
-async function voices(page: Page): Promise<Voice[]> {
-  return page.evaluate(() => window.__hornVoices);
+async function voices(page: Page): Promise<string[]> {
+  const ids = (await snapshot(page)).audioDetails.played.filter((id) =>
+    id.startsWith('audio.horn.'),
+  );
+  const before = await page.evaluate(() =>
+    Number(document.documentElement.dataset['audioBefore'] ?? 0),
+  );
+  return ids.slice(before);
 }
-
 async function clearVoices(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    window.__hornVoices = [];
-  });
+  const count = (await snapshot(page)).audioDetails.played.filter((id) =>
+    id.startsWith('audio.horn.'),
+  ).length;
+  await page.evaluate((count) => {
+    document.documentElement.dataset['audioBefore'] = String(count);
+  }, count);
 }
-
-function expectTone(actual: Voice[], tone: Tone | undefined): void {
-  if (!tone) throw new Error('Chybí očekávaný tón');
-  expect(actual.map((voice) => voice.frequencyHz)).toEqual(tone.frequencies);
-  for (const voice of actual) {
-    expect(voice.type).toBe(tone.type);
-    expect(voice.state).toBe('running');
-    expect(voice.startSec).toBe(actual[0]?.startSec);
-    expect(voice.stopSec - voice.startSec).toBeCloseTo(
-      tone.durationSec + 0.02,
-      6,
-    );
-    expect(voice.glideHz).toBe(tone.glideTo ?? null);
-  }
+function expectClip(actual: string[], id: string): void {
+  expect(actual).toEqual([id]);
 }
 
 async function depart(page: Page, id: string): Promise<void> {
@@ -119,7 +52,7 @@ async function depart(page: Page, id: string): Promise<void> {
 }
 
 for (const locomotive of locomotives) {
-  const tone = soundTones[locomotive.hornAudio];
+  const tone = soundManifest[locomotive.hornAudio];
   if (!tone) throw new Error(`Chybí tón ${locomotive.hornAudio}`);
 
   test(`H1: náhled ${locomotive.id} odemkne a přehraje vlastní píšťalu`, async ({
@@ -129,13 +62,11 @@ for (const locomotive of locomotives) {
     expect((await snapshot(page)).audio).toBe('locked');
     expect(await voices(page)).toEqual([]);
     await gesture(page, `loco:${locomotive.id}`);
-    await expect
-      .poll(async () => (await voices(page)).length)
-      .toBe(tone.frequencies.length);
-    expectTone(await voices(page), tone);
+    await expect.poll(async () => (await voices(page)).length).toBe(1);
+    expectClip(await voices(page), locomotive.hornAudio);
   });
 
-  test(`H1: hráč ${locomotive.id} houká původním tónem po změně návrhu a obnovení gestem`, async ({
+  test(`H1: hráč ${locomotive.id} houká původním klipem po změně návrhu a obnovení gestem`, async ({
     page,
   }) => {
     await depart(page, locomotive.id);
@@ -156,15 +87,13 @@ for (const locomotive of locomotives) {
     await expect.poll(async () => (await snapshot(page)).audio).toBe('running');
     await clearVoices(page);
     await gesture(page, 'horn');
-    await expect
-      .poll(async () => (await voices(page)).length)
-      .toBe(tone.frequencies.length);
-    expectTone(await voices(page), tone);
+    await expect.poll(async () => (await voices(page)).length).toBe(1);
+    expectClip(await voices(page), locomotive.hornAudio);
   });
 }
 
 for (const muted of [false, true]) {
-  test(`H1: protijedoucí vlak ${muted ? 'při vypnutých zvucích mlčí' : 'odpoví přesným tónem vlastní lokomotivy hráčově elektrické'}`, async ({
+  test(`H1: protijedoucí vlak ${muted ? 'při vypnutých zvucích mlčí' : 'odpoví přesným klipem vlastní lokomotivy hráčově elektrické'}`, async ({
     page,
   }) => {
     const consist = { locomotiveId: 'electric_retro', wagons: [] };
@@ -237,7 +166,7 @@ for (const muted of [false, true]) {
     if (!npc || !locomotive)
       throw new Error('Chybí lokomotiva protijedoucího vlaku');
     expect(['steam', 'diesel']).toContain(locomotive.power);
-    const replyTone = soundTones[locomotive.hornAudio];
+    const replyTone = soundManifest[locomotive.hornAudio];
     if (!replyTone) throw new Error('Chybí tón protijedoucí lokomotivy');
     if (muted) await gesture(page, 'sound');
     await gesture(page, 'horn');
@@ -251,12 +180,12 @@ for (const muted of [false, true]) {
       expect(await voices(page)).toEqual([]);
       return;
     }
-    const scheduled = await voices(page);
+    // Clip decoding finishes asynchronously; the contract is both exact identities.
+    await expect
+      .poll(async () => (await voices(page)).sort())
+      .toEqual(['audio.horn.electric_retro', locomotive.hornAudio].sort());
     expect(afterHorn.oncoming.trains[0]?.id).toBe(npc.id);
     expect(afterHorn.oncoming.trains[0]?.locomotiveId).toBe(locomotive.id);
-    expect(scheduled).toHaveLength(2 + replyTone.frequencies.length);
-    expectTone(scheduled.slice(0, 2), soundTones['audio.horn.electric_retro']);
-    expectTone(scheduled.slice(2), replyTone);
   });
 }
 
@@ -276,6 +205,6 @@ test('H1: vypnutí zvuků umlčí hráče i náhled a zapnutí obnoví přehráv
   await gesture(page, 'depart');
   await gesture(page, 'sound');
   await gesture(page, 'horn');
-  await expect.poll(async () => (await voices(page)).length).toBe(3);
-  expectTone(await voices(page), soundTones['audio.horn.diesel_mainline']);
+  await expect.poll(async () => (await voices(page)).length).toBe(1);
+  expectClip(await voices(page), 'audio.horn.diesel_mainline');
 });

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="60" viewBox="0 0 160 60">
+  <!-- Vlastní vektorová kresba projektu Vláček, art-village-town-station-1. -->
+  <defs>
+    <linearGradient id="wall" x2=".8" y2="1">
+      <stop stop-color="#eee0bd" />
+      <stop offset="1" stop-color="#c5b592" />
+    </linearGradient>
+    <linearGradient id="roof" x2=".2" y2="1">
+      <stop stop-color="#b2543d" />
+      <stop offset="1" stop-color="#72372a" />
+    </linearGradient>
+    <linearGradient id="wood" x2=".3" y2="1">
+      <stop stop-color="#c49a6c" />
+      <stop offset="1" stop-color="#805c3f" />
+    </linearGradient>
+    <linearGradient id="metal" x2=".7" y2="1">
+      <stop stop-color="#a1acac" />
+      <stop offset="1" stop-color="#53666c" />
+    </linearGradient>
+  </defs>
+  <path d="M20 15 V58 M80 15 V58 M140 15 V58" fill="none" stroke="#556d65" stroke-width="2" stroke-linejoin="round" />
+  <path d="M20 17 L32 29 M20 17 L8 29 M80 17 L92 29 M80 17 L68 29 M140 17 L152 29 M140 17 L128 29" fill="none" stroke="#6d8579" stroke-width="1" stroke-linejoin="round" />
+  <rect x="16" y="58" width="8" height="2" rx="0" fill="#8c9583" stroke="#374333" stroke-width="0.3" />
+  <rect x="76" y="58" width="8" height="2" rx="0" fill="#8c9583" stroke="#374333" stroke-width="0.3" />
+  <rect x="136" y="58" width="8" height="2" rx="0" fill="#8c9583" stroke="#374333" stroke-width="0.3" />
+</svg>

@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="180" viewBox="0 0 220 180">
+  <!-- Vlastní vektorová kresba projektu Vláček, art-village-town-station-1. -->
+  <defs>
+    <linearGradient id="wall" x2=".8" y2="1">
+      <stop stop-color="#ddded0" />
+      <stop offset="1" stop-color="#b5bbac" />
+    </linearGradient>
+    <linearGradient id="roof" x2=".2" y2="1">
+      <stop stop-color="#7b827a" />
+      <stop offset="1" stop-color="#5b655e" />
+    </linearGradient>
+    <linearGradient id="wood" x2=".3" y2="1">
+      <stop stop-color="#c49a6c" />
+      <stop offset="1" stop-color="#805c3f" />
+    </linearGradient>
+    <linearGradient id="metal" x2=".7" y2="1">
+      <stop stop-color="#a1acac" />
+      <stop offset="1" stop-color="#53666c" />
+    </linearGradient>
+  </defs>
+  <ellipse cx="110.0" cy="178.3" rx="101.2" ry="1.6" fill="#27351e" opacity=".15" />
+  <rect x="8" y="14" width="204" height="162" rx="0" fill="url(#wall)" stroke="#374333" stroke-width="0.6" />
+  <rect x="8" y="14" width="204" height="20" rx="0" fill="#b8c4b4" stroke="#374333" stroke-width="0.6" />
+  <rect x="8" y="161" width="204" height="15" rx="0" fill="#9da99b" stroke="#374333" stroke-width="0.6" />
+  <rect x="5" y="10" width="210" height="5" rx="0" fill="#768477" stroke="#374333" stroke-width="0.6" />
+  <rect x="181" y="21" width="23" height="151" rx="0" fill="#b2c2af" stroke="#374333" stroke-width="0.6" />
+  <rect x="18" y="37" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="19" y="38" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M20 54 L28.35 39 H32.26 L23.42 54 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M27.5 38 V56 M19 46.1 H36" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="17" y="57" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="49" y="37" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="50" y="38" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M51 54 L59.35 39 H63.26 L54.42 54 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M58.5 38 V56 M50 46.1 H67" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="48" y="57" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="80" y="37" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="81" y="38" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M82 54 L90.35 39 H94.26 L85.42 54 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M89.5 38 V56 M81 46.1 H98" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="79" y="57" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="115" y="37" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="116" y="38" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M117 54 L125.35 39 H129.26 L120.42 54 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M124.5 38 V56 M116 46.1 H133" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="114" y="57" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="147" y="37" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="148" y="38" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M149 54 L157.35 39 H161.26 L152.42 54 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M156.5 38 V56 M148 46.1 H165" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="146" y="57" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="183" y="36" width="18" height="21" rx="0" fill="#748d89" stroke="#374333" stroke-width="0.4" />
+  <rect x="180" y="51" width="24" height="9" rx="0" fill="#d1d8ca" stroke="#374333" stroke-width="0.4" />
+  <path d="M182 52 H202" fill="none" stroke="#6f7e74" stroke-width="0.6" stroke-linejoin="round" />
+  <rect x="18" y="69" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="19" y="70" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M20 86 L28.35 71 H32.26 L23.42 86 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M27.5 70 V88 M19 78.1 H36" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="17" y="89" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="49" y="69" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="50" y="70" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M51 86 L59.35 71 H63.26 L54.42 86 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M58.5 70 V88 M50 78.1 H67" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="48" y="89" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="80" y="69" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="81" y="70" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M82 86 L90.35 71 H94.26 L85.42 86 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M89.5 70 V88 M81 78.1 H98" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="79" y="89" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="115" y="69" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="116" y="70" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M117 86 L125.35 71 H129.26 L120.42 86 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M124.5 70 V88 M116 78.1 H133" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="114" y="89" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="147" y="69" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="148" y="70" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M149 86 L157.35 71 H161.26 L152.42 86 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M156.5 70 V88 M148 78.1 H165" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="146" y="89" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="183" y="68" width="18" height="21" rx="0" fill="#748d89" stroke="#374333" stroke-width="0.4" />
+  <rect x="180" y="83" width="24" height="9" rx="0" fill="#d1d8ca" stroke="#374333" stroke-width="0.4" />
+  <path d="M182 84 H202" fill="none" stroke="#6f7e74" stroke-width="0.6" stroke-linejoin="round" />
+  <rect x="18" y="101" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="19" y="102" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M20 118 L28.35 103 H32.26 L23.42 118 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M27.5 102 V120 M19 110.1 H36" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="17" y="121" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="49" y="101" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="50" y="102" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M51 118 L59.35 103 H63.26 L54.42 118 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M58.5 102 V120 M50 110.1 H67" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="48" y="121" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="80" y="101" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="81" y="102" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M82 118 L90.35 103 H94.26 L85.42 118 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M89.5 102 V120 M81 110.1 H98" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="79" y="121" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="115" y="101" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="116" y="102" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M117 118 L125.35 103 H129.26 L120.42 118 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M124.5 102 V120 M116 110.1 H133" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="114" y="121" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="147" y="101" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="148" y="102" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M149 118 L157.35 103 H161.26 L152.42 118 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M156.5 102 V120 M148 110.1 H165" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="146" y="121" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="183" y="100" width="18" height="21" rx="0" fill="#748d89" stroke="#374333" stroke-width="0.4" />
+  <rect x="180" y="115" width="24" height="9" rx="0" fill="#d1d8ca" stroke="#374333" stroke-width="0.4" />
+  <path d="M182 116 H202" fill="none" stroke="#6f7e74" stroke-width="0.6" stroke-linejoin="round" />
+  <rect x="18" y="133" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="19" y="134" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M20 150 L28.35 135 H32.26 L23.42 150 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M27.5 134 V152 M19 142.1 H36" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="17" y="153" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="49" y="133" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="50" y="134" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M51 150 L59.35 135 H63.26 L54.42 150 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M58.5 134 V152 M50 142.1 H67" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="48" y="153" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="80" y="133" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="81" y="134" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M82 150 L90.35 135 H94.26 L85.42 150 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M89.5 134 V152 M81 142.1 H98" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="79" y="153" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="115" y="133" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="116" y="134" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M117 150 L125.35 135 H129.26 L120.42 150 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M124.5 134 V152 M116 142.1 H133" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="114" y="153" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="147" y="133" width="19" height="20" rx="0" fill="#f4edda" stroke="#374333" stroke-width="0.6" />
+  <rect x="148" y="134" width="17" height="18" rx="0" fill="#3d5a6c" stroke="#374333" stroke-width="0.35" />
+  <path d="M149 150 L157.35 135 H161.26 L152.42 150 Z" fill="#bacfcd" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".4" />
+  <path d="M156.5 134 V152 M148 142.1 H165" fill="none" stroke="#f4edda" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="146" y="153" width="21" height="1.5" rx="0" fill="#ab9b81" stroke="#374333" stroke-width="0.4" />
+  <rect x="183" y="132" width="18" height="21" rx="0" fill="#748d89" stroke="#374333" stroke-width="0.4" />
+  <rect x="180" y="147" width="24" height="9" rx="0" fill="#d1d8ca" stroke="#374333" stroke-width="0.4" />
+  <path d="M182 148 H202" fill="none" stroke="#6f7e74" stroke-width="0.6" stroke-linejoin="round" />
+  <rect x="101" y="151" width="16" height="25" rx="1" fill="#75553d" stroke="#374333" stroke-width="0.6" />
+  <path d="M109.0 152 V175 M103 167.25 H115" fill="none" stroke="#b5916c" stroke-width="0.4" stroke-linejoin="round" />
+  <circle cx="114" cy="166.0" r="0.65" fill="#c4ad68" stroke="#374333" stroke-width="0.2" />
+  <path d="M44 15 V161 M108 15 V151 M174 15 V161" fill="none" stroke="#9caa9d" stroke-width="0.4" stroke-linejoin="round" />
+</svg>

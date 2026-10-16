@@ -1,5 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
+import { gameConfig } from '../../src/config/gameConfig.ts';
+import { locomotives, wagons } from '../../src/content/vehicles.ts';
+import { RideSimulation } from '../../src/domain/ride/RideSimulation.ts';
+import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
+
+// Owner decision 2026-10-16 (D-030): allow up to 15 s for the start curtain.
+const RIDE_START_TIMEOUT_MS = 15_000;
 
 export async function snapshot(page: Page): Promise<DebugSnapshot> {
   return page.evaluate(() => {
@@ -11,8 +18,51 @@ export async function snapshot(page: Page): Promise<DebugSnapshot> {
   });
 }
 
+/**
+ * D-030: a new ride or a diagnostic jump prepares its region/season atlases
+ * asynchronously (decode on demand). Waits until they are published and every
+ * drawn world part is resident; bounded by the test timeout.
+ */
+export async function waitForWorldAtlases(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const state = (
+      window as unknown as { __vlacek?: { snapshot(): DebugSnapshot } }
+    ).__vlacek?.snapshot();
+    return (
+      state !== undefined &&
+      !state.worldAtlases.pending &&
+      state.artAtlas !== undefined &&
+      state.vehicleAtlas !== undefined &&
+      state.worldAtlases.missingFrames.length === 0
+    );
+  });
+}
+
+export async function waitForWorldAtlasesWithoutVehicleArt(
+  page: Page,
+): Promise<void> {
+  // D-019 loaded world art before the ride; D-030 publishes it even after vehicle art fails.
+  await page.waitForFunction(() => {
+    const state = (
+      window as unknown as { __vlacek?: { snapshot(): DebugSnapshot } }
+    ).__vlacek?.snapshot();
+    return (
+      state !== undefined &&
+      !state.worldAtlases.pending &&
+      state.artAtlas !== undefined &&
+      state.worldAtlases.missingFrames.length === 0
+    );
+  });
+}
+
 export async function tapAction(page: Page, action: string): Promise<void> {
   await page.locator(`[data-action="${action}"]`).first().click();
+}
+
+export async function waitForRideStart(page: Page): Promise<void> {
+  await expect(page.locator('.ride-curtain')).toBeHidden({
+    timeout: RIDE_START_TIMEOUT_MS,
+  });
 }
 
 /** First run: choose a locomotive, add wagons and depart. */
@@ -27,6 +77,7 @@ export async function startRide(
   for (const wagon of wagons) await tapAction(page, `add:${wagon}`);
   await tapAction(page, 'depart');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  await waitForRideStart(page);
 }
 
 /** Holds the mouse in the world until the train is clearly moving. */
@@ -92,4 +143,69 @@ export async function expectWholeTrainInView(
     expect(box.top).toBeGreaterThanOrEqual(corner.y + corner.height - 1);
     expect(box.bottom).toBeLessThanOrEqual(brake.y + 1);
   }
+}
+
+/** A real saved ride in world 123; camera tests share the exact 2000 u consist. */
+export async function restoredTrain(
+  page: Page,
+  longest: boolean,
+  chunkIndex = 3,
+): Promise<RideSimulation> {
+  const ids = longest
+    ? [...Array.from({ length: 11 }, () => 'passenger_open'), 'cargo_box']
+    : ['cargo_box', 'passenger_open', 'cargo_coal'];
+  const consist = {
+    locomotiveId: 'steam_local',
+    wagons: ids.map((definitionId, i) => ({
+      instanceId: `w${i + 1}`,
+      definitionId,
+      visualSeed: i,
+    })),
+  };
+  const head = { chunkIndex, arcOffsetU: 650 };
+  const save = {
+    schemaVersion: 1,
+    contentVersion: 1,
+    savedAtIso: '2026-10-13T00:00:00.000Z',
+    appBuildId: 'camera-test',
+    settings: {
+      sfxEnabled: false,
+      musicEnabled: false,
+      reducedEffects: false,
+      maxSpeedFactor: 1,
+      quality: 'standard',
+    },
+    lastConsist: consist,
+    journey: {
+      seed: 123,
+      generatorVersion: TRACK_GENERATOR_VERSION,
+      consist,
+      head,
+      simulationTick: 0,
+      activeEntities: [],
+    },
+  };
+  await page.addInitScript((json) => {
+    if (localStorage.getItem('vlacek.save.v1') === null)
+      localStorage.setItem('vlacek.save.v1', json);
+  }, JSON.stringify(save));
+  await page.goto('./?debug=1');
+  await tapAction(page, 'continue');
+  await tapAction(page, 'resume');
+  await waitForRideStart(page);
+  await expect
+    .poll(async () => (await snapshot(page)).artVehicles)
+    .toBe(ids.length + 1);
+  const vehicles = [consist.locomotiveId, ...ids].map((id) => {
+    const vehicle = [...locomotives, ...wagons].find((v) => v.id === id);
+    if (!vehicle) throw new Error(id);
+    return vehicle;
+  });
+  return new RideSimulation({
+    seed: 123,
+    vehicles,
+    speedFactor: 1,
+    config: gameConfig,
+    head,
+  });
 }

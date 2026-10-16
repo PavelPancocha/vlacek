@@ -110,7 +110,11 @@ test('fullscreen: pause stays paused, external exit updates the button, D-008 ke
   expect((await snapshot(page)).headS).toBe(before.headS);
   expect((await snapshot(page)).pointers).toBe(0);
   await tapAction(page, 'resume');
-  await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 3));
+  // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+  await page.waitForFunction(
+    () => document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+  );
+  await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
   await page.evaluate(() => document.exitFullscreen());
   await expect.poll(async () => (await snapshot(page)).screen).toBe('PAUSED');
   // Chromium cannot resize its native window while fullscreen is active.
@@ -129,7 +133,11 @@ test('fullscreen: pause stays paused, external exit updates the button, D-008 ke
     .toBe(true);
   expect((await snapshot(page)).screen).toBe('PAUSED');
   await tapAction(page, 'resume');
-  await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 3));
+  // D-019 drew synchronously; D-030's hidden curtain marks the first presented frame.
+  await page.waitForFunction(
+    () => document.querySelector<HTMLElement>('.ride-curtain')?.hidden === true,
+  );
+  await expectWholeTrainInView(page, await trainBoxesOverFrames(page, 20));
 });
 
 test('PWA-08: denial leaves a playable window without another request', async ({

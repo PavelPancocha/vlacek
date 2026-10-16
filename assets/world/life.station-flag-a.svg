@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="16" viewBox="0 0 20 16">
+  <!-- Vlastní vektorová kresba projektu Vláček, art-village-town-station-1. -->
+  <path d="M2 15 V1" fill="none" stroke="#837b60" stroke-width="1" stroke-linejoin="round" />
+  <path d="M2 2 Q8 0 18 3 L15 9 Q8 6 2 8 Z" fill="#b58661" stroke="#374333" stroke-width="0.35" stroke-linejoin="round" />
+  <path d="M3 3 Q8 2 15 4" fill="none" stroke="#d8b98d" stroke-width="0.5" stroke-linejoin="round" />
+</svg>

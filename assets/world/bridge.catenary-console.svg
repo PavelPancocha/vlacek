@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="36" height="170" viewBox="0 0 36 170">
+  <!-- Vláček, art-water-coast-mountains-1: Mostní konzola troleje. 1 SVG jednotka = 1 u. -->
+  <defs></defs>
+  <rect x="6" y="8" width="5" height="160" rx="0" fill="#6d7872"/><rect x="6" y="8" width="1.2" height="160" rx="0" fill="#b9c1ad"/><path d="M8 27 H34 M8 65 L31 28" fill="none" stroke="#6d7872" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="25" y="29" width="4" height="9" rx="1" fill="#b4b8a3"/><rect x="22" y="31" width="10" height="1" rx="0" fill="#727c6e"/><path d="M27 38 V42 H35" fill="none" stroke="#424e46" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/><rect x="2" y="160" width="14" height="10" rx="0" fill="#acae9a"/>
+</svg>

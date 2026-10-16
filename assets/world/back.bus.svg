@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="40" viewBox="0 0 100 40">
+  <!-- Vlastní vektorová kresba projektu Vláček, art-village-town-station-1. -->
+  <defs>
+    <linearGradient id="wall" x2=".8" y2="1">
+      <stop stop-color="#e4e3ce" />
+      <stop offset="1" stop-color="#b5b7a8" />
+    </linearGradient>
+    <linearGradient id="roof" x2=".2" y2="1">
+      <stop stop-color="#b2543d" />
+      <stop offset="1" stop-color="#72372a" />
+    </linearGradient>
+    <linearGradient id="wood" x2=".3" y2="1">
+      <stop stop-color="#c49a6c" />
+      <stop offset="1" stop-color="#805c3f" />
+    </linearGradient>
+    <linearGradient id="metal" x2=".7" y2="1">
+      <stop stop-color="#a1acac" />
+      <stop offset="1" stop-color="#53666c" />
+    </linearGradient>
+  </defs>
+  <ellipse cx="50.0" cy="38.3" rx="46.0" ry="1.6" fill="#27351e" opacity=".15" />
+  <path d="M5 31 V12 Q5 5 12 5 H86 Q94 5 96 12 L98 28 V33 H90 A7 7 0 0 0 76 33 H26 A7 7 0 0 0 12 33 H5 Z" fill="url(#wall)" stroke="#374333" stroke-width="0.6" stroke-linejoin="round" />
+  <path d="M5 26 H98 V31 H90 A7 7 0 0 0 76 33 H26 A7 7 0 0 0 12 33 H5 Z" fill="#527b79" stroke="#374333" stroke-width="0.6" stroke-linejoin="round" />
+  <rect x="9" y="8" width="76" height="14" rx="1" fill="#3d5a6c" stroke="#374333" stroke-width="0.4" />
+  <path d="M85 8 H91 L95 21 H85 Z" fill="#3d5a6c" stroke="#374333" stroke-width="0.6" stroke-linejoin="round" />
+  <path d="M22 8 V22 M35 8 V22 M48 8 V22 M61 8 V22 M74 8 V22" fill="none" stroke="#b4c9c5" stroke-width="1" stroke-linejoin="round" />
+  <path d="M11 20 L20 9 H23 L14 20 Z" fill="#a8c8cc" stroke="none" stroke-width="0" stroke-linejoin="round" opacity=".45" />
+  <rect x="58" y="9" width="15" height="23" rx="0" fill="none" stroke="#374333" stroke-width="0.65" />
+  <path d="M65.5 9 V32" fill="none" stroke="#d6dfd4" stroke-width="0.7" stroke-linejoin="round" />
+  <rect x="92" y="27" width="4" height="2" rx="0" fill="#e8dba6" stroke="#374333" stroke-width="0.3" />
+  <rect x="5" y="28" width="2" height="3" rx="0" fill="#b9654d" stroke="#374333" stroke-width="0.3" />
+  <path d="M28 29 H49" fill="none" stroke="#8dada7" stroke-width="0.8" stroke-linejoin="round" />
+  <rect x="42" y="3" width="20" height="2" rx="0" fill="#9baba5" stroke="#374333" stroke-width="0.3" />
+</svg>

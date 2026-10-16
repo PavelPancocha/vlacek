@@ -1,3 +1,6 @@
+import { trainZoom } from '../../../src/render/cameraFraming.ts';
+import { vehicleArt } from '../../../src/content/artManifest.ts';
+import { locomotives, wagons } from '../../../src/content/vehicles.ts';
 import { describe, expect, it } from 'vitest';
 import {
   crossingCloseDistanceU,
@@ -5,6 +8,12 @@ import {
   validateGameConfig,
   type GameConfig,
 } from '../../../src/config/gameConfig.ts';
+
+const catalogArt = [...locomotives, ...wagons].map(({ id }) => {
+  const art = vehicleArt[id];
+  if (!art) throw new Error(`Catalog art missing: ${id}`);
+  return { id, art };
+});
 
 describe('gameConfig', () => {
   it('carries the doc 13 input defaults', () => {
@@ -18,15 +27,24 @@ describe('gameConfig', () => {
     });
   });
 
-  it('doc 14 §6: the ride feels snappy on screen yet easy to follow', () => {
+  it('camera-1: the wider fixed scale changes screen speed while preserving motion', () => {
     const { train, camera } = gameConfig;
-    // Screen widths per second at full speed: the scale fits the longest
-    // train into trainWidthFraction of the width on every screen.
-    const widthsPerSecond =
-      (train.maxSpeedUPerSec * camera.trainWidthFraction) /
-      train.maxConsistLengthU;
-    expect(widthsPerSecond).toBeGreaterThanOrEqual(0.18);
-    expect(widthsPerSecond).toBeLessThanOrEqual(0.3);
+    const framing = { ...camera, vehicleHeightU: 150 };
+    const view = {
+      widthPx: 1280,
+      heightPx: 800,
+      reservedTopPx: 0,
+      reservedBottomPx: 0,
+    };
+    // Camera-1 keeps one fixed wider scale for every allowed ride.
+    expect(
+      (train.maxSpeedUPerSec * trainZoom(view, 1600, framing)) / view.widthPx,
+    ).toBeCloseTo(0.144, 9);
+    expect(
+      (train.maxSpeedUPerSec *
+        trainZoom(view, train.maxConsistLengthU, framing)) /
+        view.widthPx,
+    ).toBeCloseTo(0.144, 9);
     // Smooth start and coast: seconds from standstill to full speed and back.
     const toFull = train.maxSpeedUPerSec / train.accelerationUPerSec2;
     const coast = train.maxSpeedUPerSec / train.coastDecelerationUPerSec2;
@@ -40,7 +58,30 @@ describe('gameConfig', () => {
 
   it('carries the doc 13 catenary spacing and contact height (doc 03 §9)', () => {
     expect(gameConfig.world.catenaryPoleSpacingU).toBe(256);
-    expect(gameConfig.world.catenaryContactHeightU).toBe(160);
+    expect(gameConfig.world.catenaryContactHeightU).toBe(128);
+  });
+
+  it('TRN-08: clears every catalog roof and load by 20 u without towering over the train', () => {
+    const tallest = Math.max(...catalogArt.map(({ art }) => art.heightU));
+    for (const { id, art } of catalogArt)
+      expect(
+        gameConfig.world.catenaryContactHeightU - art.heightU,
+        id,
+      ).toBeGreaterThanOrEqual(20);
+    expect(gameConfig.world.catenaryContactHeightU).toBeLessThanOrEqual(
+      1.25 * tallest,
+    );
+  });
+
+  it('TRN-08: rejects a config that would leave less than 20 u above a catalog roof or load', () => {
+    const tallest = Math.max(...catalogArt.map(({ art }) => art.heightU));
+    for (const height of [tallest, tallest + 19.9, NaN, Infinity])
+      expect(
+        validateGameConfig({
+          ...gameConfig,
+          world: { ...gameConfig.world, catenaryContactHeightU: height },
+        }),
+      ).toContain('world.catenaryContactHeightU');
   });
 
   it('rejects poles that would not keep one phase across chunks', () => {
@@ -134,6 +175,8 @@ describe('gameConfig', () => {
     expect(gameConfig.crossing).toEqual({
       roadClearanceSeconds: 2,
       warningSeconds: 1.2,
+      maxWarningSeconds: 4,
+      openHysteresisSeconds: 0.5,
       closingSeconds: 0.8,
       openingSeconds: 0.8,
       safetySeconds: 0.5,
@@ -202,6 +245,13 @@ describe('gameConfig', () => {
     expect(validateGameConfig(broken)).toEqual(['camera.trainWidthFraction']);
   });
 
+  it('camera-1: rejects a centre that clips the reference train', () => {
+    const camera = { ...gameConfig.camera, trainCenterFraction: 0.1 };
+    expect(validateGameConfig({ ...gameConfig, camera })).toEqual([
+      'camera.trainCenterFraction',
+    ]);
+  });
+
   it('rejects a terrain without lattice or with a negative embankment', () => {
     const broken: GameConfig = {
       ...gameConfig,
@@ -231,4 +281,58 @@ describe('gameConfig', () => {
     };
     expect(validateGameConfig(broken)).toEqual(['world.geometryLookAheadU']);
   });
+
+  it('camera-2: rejects a tail reserve below the wider view or an unbounded reserve', () => {
+    for (const geometryTailMarginU of [1024, 1599, Infinity, NaN]) {
+      expect(
+        validateGameConfig({
+          ...gameConfig,
+          world: { ...gameConfig.world, geometryTailMarginU },
+        }),
+      ).toEqual(['world.geometryTailMarginU']);
+    }
+  });
+});
+
+it('rejects invalid crossing deadlines and a maximum warning shorter than the minimum', () => {
+  for (const maxWarningSeconds of [
+    0,
+    NaN,
+    Infinity,
+    gameConfig.crossing.warningSeconds - 0.1,
+  ]) {
+    expect(
+      validateGameConfig({
+        ...gameConfig,
+        crossing: { ...gameConfig.crossing, maxWarningSeconds },
+      }),
+    ).toContain('crossing.maxWarningSeconds');
+  }
+  for (const openHysteresisSeconds of [0, NaN, Infinity]) {
+    expect(
+      validateGameConfig({
+        ...gameConfig,
+        crossing: { ...gameConfig.crossing, openHysteresisSeconds },
+      }),
+    ).toContain('crossing.openHysteresisSeconds');
+  }
+});
+
+it('D-024: station reaction defaults follow document 13 and invalid timing is rejected', () => {
+  expect(gameConfig.station).toEqual({
+    stopSpeedThresholdUPerSec: 4,
+    stopDetectionSeconds: 0.5,
+    sceneCooldownSeconds: 12,
+  });
+  for (const key of [
+    'stopSpeedThresholdUPerSec',
+    'stopDetectionSeconds',
+    'sceneCooldownSeconds',
+  ] as const)
+    expect(
+      validateGameConfig({
+        ...gameConfig,
+        station: { ...gameConfig.station, [key]: 0 },
+      }),
+    ).toContain(`station.${key}`);
 });

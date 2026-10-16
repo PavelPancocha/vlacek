@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="20" viewBox="0 0 60 20">
+  <!-- Vláček, art-farm-forest-1: Pozinkované napajedlo s viditelnou vodou. -->
+  <defs><linearGradient id="zinc" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#c7d0c7"/><stop offset="1" stop-color="#82978c"/></linearGradient></defs>
+  <ellipse cx="30.0" cy="19" rx="25.8" ry="1" fill="#1d2a14" opacity=".16"/><path d="M3 6 Q3 1 30 1 Q57 1 57 6 L55 16 Q30 20 5 16 Z" fill="url(#zinc)" stroke="#1d2a14" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="30" cy="6" rx="26" ry="4" fill="#536d69" stroke="#1d2a14" stroke-width=".6"/><ellipse cx="30" cy="5.8" rx="23.5" ry="2.8" fill="#83b7c2" stroke="none" stroke-width=".6"/><path d="M11 5 Q18 3 28 4 M33 7 H44" fill="none" stroke="#d6edf0" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 17 V19 M51 17 V19" fill="none" stroke="#6b786d" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

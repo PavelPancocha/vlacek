@@ -536,6 +536,13 @@ h1 {
   }
 }
 
+/* Keep the scrolling catalog clear of the floating departure button. */
+@media (max-height: 500px) and (min-width: 761px) {
+  .builder > .catalog {
+    margin-right: 104px;
+  }
+}
+
 /* Narrower phones held sideways (e.g. 667 × 375, 568 × 320): the two control
    rows no longer fit side by side, so stack them. Vyjet joins the edit row
    and the train/catalog area scrolls in the height that is left. */
@@ -594,6 +601,8 @@ h1 {
 
 /* The parent gate keeps the existing small build line's appearance. */
 button.build-id {
+  min-height: 44px;
+  margin-block: calc((1lh - 44px) / 2);
   padding: 0;
   border: 0;
   background: none;
@@ -642,6 +651,26 @@ button.build-id {
   outline-offset: 3px;
 }
 
+.dev-world-sections {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+.dev-world-sections details {
+  margin-block: 8px;
+}
+.dev-world-sections summary {
+  min-height: 44px;
+  cursor: pointer;
+}
+.dev-world-sections pre {
+  max-width: 100%;
+  overflow: auto;
+  max-height: 320px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.75rem;
+}
+
 .dev-menu[hidden] {
   display: none;
 }
@@ -677,6 +706,7 @@ button.build-id {
 }
 
 .diagnostics-groups h2 {
+  scroll-margin-block: 4px;
   margin: 0;
   font-size: 1.1rem;
 }

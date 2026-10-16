@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="40" viewBox="0 0 16 40">
+  <!-- Vlastní vektorová kresba projektu Vláček, art-village-town-station-1. -->
+  <defs>
+    <linearGradient id="wall" x2=".8" y2="1">
+      <stop stop-color="#eee0bd" />
+      <stop offset="1" stop-color="#c5b592" />
+    </linearGradient>
+    <linearGradient id="roof" x2=".2" y2="1">
+      <stop stop-color="#b2543d" />
+      <stop offset="1" stop-color="#72372a" />
+    </linearGradient>
+    <linearGradient id="wood" x2=".3" y2="1">
+      <stop stop-color="#c49a6c" />
+      <stop offset="1" stop-color="#805c3f" />
+    </linearGradient>
+    <linearGradient id="metal" x2=".7" y2="1">
+      <stop stop-color="#a1acac" />
+      <stop offset="1" stop-color="#53666c" />
+    </linearGradient>
+  </defs>
+  <ellipse cx="8.0" cy="38.3" rx="7.36" ry="1.6" fill="#27351e" opacity=".15" />
+  <path d="M4 38 L4.5 25 H7.3 L7 38 Z M9 38 L8.7 25 H11.5 L12 38 Z" fill="#655b4d" stroke="#374333" stroke-width="0.4" stroke-linejoin="round" />
+  <path d="M3 39 H7 M9 39 H13" fill="none" stroke="#39413d" stroke-width="1.6" stroke-linejoin="round" />
+  <path d="M3.7 25 Q3.5 14 7.8 12 Q12.1 14 12 25 Z" fill="#728c77" stroke="#374333" stroke-width="0.45" stroke-linejoin="round" />
+  <path d="M4.3 15 Q1.8 19 2.2 25" fill="none" stroke="#728c77" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" />
+  <circle cx="2.2" cy="25" r="1.1" fill="#f0c9a5" stroke="#374333" stroke-width="0.2" />
+  <rect x="6.7" y="9" width="2.3" height="4" rx="0" fill="#f0c9a5" stroke="#374333" stroke-width="0" />
+  <circle cx="7.8" cy="6.4" r="3.5" fill="#f0c9a5" stroke="#374333" stroke-width="0.35" />
+  <path d="M4.4 7 Q2.8 1 7.8 2 Q12 2 11.2 7 L10 4 Q6 3 4.4 7 Z" fill="#76654c" stroke="#374333" stroke-width="0.25" stroke-linejoin="round" />
+  <path d="M5 13 L8 16 L10.8 13" fill="none" stroke="#d5c6a4" stroke-width="1" stroke-linejoin="round" />
+  <rect x="1" y="27" width="4" height="7" rx="0.7" fill="#b09068" stroke="#374333" stroke-width="0.4" />
+  <path d="M2 27 V25 H4 V27" fill="none" stroke="#705c45" stroke-width="0.6" stroke-linejoin="round" />
+</svg>

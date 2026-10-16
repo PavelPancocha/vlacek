@@ -4,6 +4,8 @@ Datum: 2026-10-10. Stav: přijato. Nahrazuje limit 100 vagonků z dokumentů 01,
 
 Zadání [14 §2](../../vlacek-predavaci-balicek/14_UPRAVY_PRVNI_VERZE.md) požaduje, aby byla od prvního snímku po Vyjet vidět lokomotiva i poslední vagonek, a to i ve stoupání, po zastavení, po obnovení a po změně velikosti okna. Verze 0.1 držela lokomotivu na 30 % šířky v pevném měřítku 720 u na výšku obrazovky. Už druhý ze tří vagonků proto začínal mimo obraz a u 100 vagonků byl vidět jen začátek vlaku.
 
+**Aktualizace 2026-10-13:** [D-028](028-longer-consist.md) nahrazuje původní limit 1 600 u, pravidlo měřítka a rámování i chování obnovy cest mezi starým a novým limitem. Aktualizace `camera-1` v D-028 vystřeďuje vlak na 46 % a rozšiřuje výřez podle 2 000u reference na 60 % šířky. Následující původní rozhodnutí zachovává historické odůvodnění.
+
 **Rozhodnutí.**
 
 - **Délkový limit, ne počet vozů.** `train.maxConsistLengthU = 1600` u měří od čela lokomotivy po konec posledního vagonku včetně spřáhel. Počítá jej stejná funkce `layoutConsist` jako jízda (`consistLengthU` v `ConsistEditor`). Limit odpovídá lokomotivě a zhruba 8 průměrným vagonkům, nebo 9 krátkým. V depu lze přidat jen vagonek, který se vejde, takže kratší druh se někdy ještě vejde, když delší už ne. Stav naznačuje proužek délky a text „Vláček je plný“, bez dialogu.

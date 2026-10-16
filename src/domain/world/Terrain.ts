@@ -1,13 +1,12 @@
 import { gameConfig } from '../../config/gameConfig.ts';
 import { unitRandom } from './Hash.ts';
 import { valleyDepthU } from './Structures.ts';
-import { TRACK_GENERATOR_VERSION } from './TrackProfile.ts';
 
 const { latticeU, maxEmbankmentU } = gameConfig.world.terrain;
 
 /** Seeded height at lattice node `i`; low banks are more common. */
 function embankmentNodeU(seed: number, i: number): number {
-  const roll = unitRandom(seed, TRACK_GENERATOR_VERSION, 'embankment', i);
+  const roll = unitRandom(seed, 1, 'embankment', i);
   return maxEmbankmentU * roll * roll;
 }
 

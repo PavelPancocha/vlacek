@@ -1,5 +1,7 @@
+import { crossingSite } from './Crossings.ts';
 import { unitRandom } from './Hash.ts';
 import { TRACK_GENERATOR_VERSION } from './TrackProfile.ts';
+import { sceneAt, templateById } from './WorldPlan.ts';
 
 /** Interactive placeholder object of generator v0 (one per chunk, M0). */
 export interface ChunkObject {
@@ -10,17 +12,20 @@ export interface ChunkObject {
 }
 
 export function chunkObjects(seed: number, chunkIndex: number): ChunkObject[] {
-  const roll = unitRandom(
-    seed,
-    TRACK_GENERATOR_VERSION,
-    'object-position',
-    chunkIndex,
-  );
+  const roll = unitRandom(seed, 1, 'object-position', chunkIndex);
+  const crossing = crossingSite(seed, chunkIndex);
+  const range = templateById(sceneAt(seed, chunkIndex * 1024).templateId)
+    .animalX ?? [128, 896];
+  const candidateXU = range[0] + (range[1] - range[0]) * roll;
+  const localXU =
+    crossing && Math.abs(candidateXU - crossing.localXU) < 120
+      ? crossing.localXU + (candidateXU >= crossing.localXU ? 120 : -120)
+      : candidateXU;
   return [
     {
       id: `g${TRACK_GENERATOR_VERSION}:chunk:${chunkIndex}:object:0`,
       chunkIndex,
-      localXU: 128 + 768 * roll,
+      localXU,
     },
   ];
 }

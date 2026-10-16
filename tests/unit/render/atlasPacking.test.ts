@@ -1,9 +1,10 @@
+import { backdropWindowFrames } from '../../../src/render/backdropFrames.ts';
 import { artParts, vehicleArt } from '../../../src/content/artManifest.ts';
 import { vehicleArtLayers } from '../../../src/content/artLayers.ts';
 import { locomotives, wagons } from '../../../src/content/vehicles.ts';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
-import { describe, expect, it } from 'vitest';
-import { isBackdropPart, worldParts } from '../../../src/content/worldArt.ts';
+import { describe, expect, it, vi } from 'vitest';
+import { worldParts } from '../../../src/content/worldArt.ts';
 import {
   ART_MAX_PX_PER_U,
   BACKDROP_MAX_PX_PER_U,
@@ -12,9 +13,12 @@ import {
   MAX_ATLAS_EDGE_PX,
   artAtlasItems,
   artScaleFor,
+  profileArtScale,
+  profileBackdropScale,
   frameOrigin,
   framesWithMargin,
   packAtlas,
+  packWorldPages,
   journeyArtKeys,
 } from '../../../src/render/atlasPacking.ts';
 
@@ -44,7 +48,7 @@ const legal = ranked.filter(isLocomotive).slice(0, 1);
 let lengthU = legal.reduce((sum, v) => sum + v.lengthU, 0);
 for (const v of ranked.filter((v) => !isLocomotive(v))) {
   const nextU = lengthU + gameConfig.train.couplerGapU + v.lengthU;
-  if (nextU > gameConfig.train.maxConsistLengthU) break;
+  if (nextU > gameConfig.train.maxConsistLengthU) continue;
   legal.push(v);
   lengthU = nextU;
 }
@@ -138,6 +142,65 @@ describe('packAtlas (one texture for all vehicle parts, doc 07 §4/§10)', () =>
 });
 
 describe('vehicle art atlas', () => {
+  it('D-028: a conservative envelope of every legal distinct journey plus NPC fits at maximum scale', () => {
+    // The shortest locomotive and shortest distinct wagons bound the count.
+    let lengthU = Math.min(...locomotives.map((v) => v.lengthU));
+    let distinctWagons = 0;
+    for (const wagon of [...wagons].sort((a, b) => a.lengthU - b.lengthU)) {
+      lengthU += wagon.lengthU + gameConfig.train.couplerGapU;
+      if (lengthU > gameConfig.train.maxConsistLengthU) break;
+      distinctWagons++;
+    }
+    expect(distinctWagons).toBe(11);
+    // Each ranked-height slot dominates its real frame in both dimensions.
+    // Includes every auxiliary part, even those no single ride could need.
+    const partsByKey: Readonly<
+      Record<string, { widthU: number; heightU: number }>
+    > = artParts;
+    const envelope: Record<string, { widthU: number; heightU: number }> = {};
+    for (const [catalog, count] of [
+      [locomotives, 3],
+      [wagons, distinctWagons + 6],
+    ] as const) {
+      const heights = catalog
+        .map((v) => {
+          const body = partsByKey[`${v.id}.body`];
+          if (!body) throw new Error(v.id);
+          return body.heightU;
+        })
+        .sort((a, b) => b - a);
+      const widthU = Math.max(
+        ...locomotives.map((v) => v.lengthU),
+        ...wagons.map((v) => v.lengthU),
+      );
+      for (let i = 0; i < count; i++) {
+        const heightU = heights[i];
+        if (heightU === undefined) throw new Error('missing envelope slot');
+        for (const layer of ['body', 'overlay'])
+          envelope[`${catalog === wagons ? 'wagon' : 'loco'}-${i}.${layer}`] = {
+            widthU,
+            heightU,
+          };
+      }
+      for (const v of catalog) {
+        const body = partsByKey[`${v.id}.body`];
+        const overlay = partsByKey[`${v.id}.overlay`];
+        expect(overlay?.widthU).toBe(body?.widthU);
+        expect(overlay?.heightU).toBe(body?.heightU);
+        expect(body?.widthU).toBeLessThanOrEqual(widthU);
+      }
+    }
+    for (const [key, part] of Object.entries(artParts))
+      if (!key.endsWith('.body') && !key.endsWith('.overlay'))
+        envelope[key] = part;
+    const atlas = packAtlas(artAtlasItems(envelope, ART_MAX_PX_PER_U), {
+      maxSize: MAX_ATLAS_EDGE_PX,
+      paddingPx: ATLAS_PADDING_PX,
+    });
+    expect(atlas.width).toBeLessThanOrEqual(2048);
+    expect(atlas.height).toBeLessThanOrEqual(2048);
+  });
+
   it('rasterises at the next scale step at or above the camera zoom', () => {
     // 1280 px wide window: zoom 0.576 → 0.75; 1920: 0.864 → 1.
     expect(artScaleFor(0.576)).toBe(0.75);
@@ -153,8 +216,10 @@ describe('vehicle art atlas', () => {
   });
 
   for (const fixture of worstJourneyCases) {
-    it(`fits ${fixture.name} and the separate world atlas at ART_MAX_PX_PER_U`, () => {
-      expect(fixture.vehicles).toHaveLength(8);
+    it(`fits ${fixture.name} in one journey atlas at ART_MAX_PX_PER_U`, () => {
+      expect(fixture.vehicles).toHaveLength(
+        fixture.name.startsWith('legal') ? 10 : 8,
+      );
       expect(
         fixture.fleet.filter((v) => v.kind === 'steam' || v.kind === 'diesel'),
       ).toHaveLength(2);
@@ -170,10 +235,9 @@ describe('vehicle art atlas', () => {
           (fixture.vehicles.length - 1) * gameConfig.train.couplerGapU;
         expect(lengthU).toBeLessThanOrEqual(gameConfig.train.maxConsistLengthU);
       }
-      const world = Object.fromEntries(
-        Object.entries(worldParts).filter(([key]) => !isBackdropPart(key)),
-      );
-      for (const parts of [world, fixture.parts]) {
+      // The integrated world catalogue no longer fits one page: D-030 packs
+      // region/season windows into at most two (tests/unit/render/atlasBound.*).
+      for (const parts of [fixture.parts]) {
         const items = artAtlasItems(parts, ART_MAX_PX_PER_U);
         const atlas = packAtlas(items, {
           maxSize: MAX_ATLAS_EDGE_PX,
@@ -186,18 +250,21 @@ describe('vehicle art atlas', () => {
     });
   }
 
-  it('fits the backdrops and clouds into their own atlas at 1 px/u', () => {
-    const backdrops = Object.fromEntries(
-      Object.entries(worldParts).filter(([key]) => isBackdropPart(key)),
-    );
-    expect(Object.keys(backdrops).length).toBe(15);
-    const items = artAtlasItems(backdrops, BACKDROP_MAX_PX_PER_U);
-    expect(
-      packAtlas(items, {
-        maxSize: MAX_ATLAS_EDGE_PX,
-        paddingPx: ATLAS_PADDING_PX,
-      }).frames.size,
-    ).toBe(15);
+  it('fits each active backdrop window into its own atlas at 1 px/u', () => {
+    for (const seed of [1, 2, 3, 4])
+      for (const x of [5000, 117136, 493968, 1232896]) {
+        const keys = backdropWindowFrames(seed, x);
+        const backdrops = Object.fromEntries(
+          Object.entries(worldParts).filter(([key]) => keys.includes(key)),
+        );
+        const items = artAtlasItems(backdrops, BACKDROP_MAX_PX_PER_U);
+        expect(
+          packAtlas(items, {
+            maxSize: MAX_ATLAS_EDGE_PX,
+            paddingPx: ATLAS_PADDING_PX,
+          }).frames.size,
+        ).toBe(keys.length);
+      }
   });
 
   it('gives every frame a transparent margin for smooth edges without MSAA (D-013)', () => {
@@ -293,4 +360,50 @@ describe('journeyArtKeys (H0, D-019)', () => {
       }),
     ).toEqual([]);
   });
+});
+it('bounds low-profile residency even beyond 4096 CSS px while retaining the standard scale', () => {
+  expect(profileArtScale(1.23, 'low')).toBe(1.25);
+  expect(profileArtScale(1.54, 'low')).toBe(1.25);
+  expect(profileArtScale(4, 'low')).toBe(1.25);
+  expect(profileArtScale(1.54, 'standard')).toBe(1.75);
+  expect(profileArtScale(4, 'standard')).toBe(2);
+  expect(profileArtScale(0.576, 'low')).toBe(0.75);
+});
+
+it('caps the low-profile backdrop raster at 0.75 px/u and keeps 1 px/u on standard', () => {
+  // D-028 zoom = 0.6 × CSS width / 2000 u at DPR 1 (low): 1140, 1920 and 4096 CSS px.
+  expect(profileBackdropScale(0.342, 'low')).toBe(0.5);
+  expect(profileBackdropScale(0.576, 'low')).toBe(0.75);
+  expect(profileBackdropScale(1.23, 'low')).toBe(0.75);
+  expect(profileBackdropScale(1.23, 'standard')).toBe(1);
+  expect(profileBackdropScale(0.576, 'standard')).toBe(0.75);
+});
+
+it('packs world pages identically under Czech and English collation', () => {
+  // Equal sizes leave the order to the key tie-break; Czech sorts "ch" after "h".
+  const items = ['back.hra', 'back.cha', 'back.chb', 'back.ib'].map((key) => ({
+    key,
+    width: 900,
+    height: 300,
+  }));
+  const packUnder = (locale: string) => {
+    const collation = vi
+      .spyOn(String.prototype, 'localeCompare')
+      .mockImplementation(function (this: string, that: string) {
+        return new Intl.Collator(locale).compare(this, that);
+      });
+    try {
+      return packWorldPages(items).map((page) => [...page.plan.frames]);
+    } finally {
+      collation.mockRestore();
+    }
+  };
+  expect(packUnder('cs')).toEqual(packUnder('en'));
+  // Plain UTF-16 code-unit order: "back.cha" < "back.chb" < "back.hra" < "back.ib".
+  expect(packUnder('cs')[0]?.map(([key]) => key)).toEqual([
+    'back.cha',
+    'back.chb',
+    'back.hra',
+    'back.ib',
+  ]);
 });

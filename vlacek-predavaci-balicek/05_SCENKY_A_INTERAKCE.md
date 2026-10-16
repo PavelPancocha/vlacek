@@ -60,26 +60,29 @@ Pro hráče používat **celý interval `[tailS, frontS]`**, nikoli jen polohy v
 
 ### Včasné zavření
 
-Výchozí bezpečný předstih je odvozen z maximální rychlosti, ne jen aktuální nulové rychlosti:
+Rozhodování používá nejkratší možný čas příjezdu `tArr` čela každého relevantního vlaku k bližšímu okraji rozšířené zóny. Z aktuální polohy a rychlosti předpokládá maximální zrychlení až po rychlostní limit; nezrychlující protijedoucí vlak používá svoji stálou rychlost a směr. U hráče je zrychlení konzervativně nejvyšší možné i při klesání. Vzdálenost v x je nejvýš délka dráhy, proto výpočet nemůže odhadnout příjezd později než skutečnost. Obsazení má `tArr = 0`, projetý vlak nekonečno.
 
 ```text
-Dclose = Vmax * (TclearRoad + Twarning + Tclosing + Tsafety) + distanceMargin
-       = 180 * (2.0 + 1.2 + 0.8 + 0.5) + 80
-       = 890 u
+Tmargin = distanceMarginU / Vmax
+Thold = TclearRoad + Twarning + Tclosing + Tsafety + Tmargin
+Tlower = Tclosing + Tsafety + Tmargin
+Dclose = Vmax * Thold = 480 * (2.0 + 1.2 + 0.8 + 0.5) + 80 = 2240 u
 ```
 
-Aktér se může ihned rozjet, proto se detekce nesmí odkládat jen kvůli aktuálně stojícímu vlaku. Přejezd i jeho kolej musí být v logické simulaci dříve, než se čelo vlaku přiblíží na Dclose. Při změně rodičovského rychlostního limitu přepočítat horizont; standardní limit nelze překročit.
+`Dclose` zůstává konzervativním dosahem logické simulace a vzdáleností blokování silnice při plné rychlosti, není pevnou spouštěcí vzdáleností celého zavírání. I stojící vlak má konečný čas příjezdu, může-li se rozjet. Přejezd i jeho kolej existují před vstupem do tohoto dosahu, nezávisle na kameře. Rodičovský nižší limit se zahrne do predikce.
 
 ### Automat
 
-| Stav       | Co se děje                                                                            | Přechod                                                          |
-| ---------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `OPEN`     | Závory nahoře, auta a kola mohou projet.                                              | Přibližuje se vlak do Dclose.                                    |
-| `CLEARING` | Nový silniční vjezd je zablokován; stávající účastník dokončí průjezd, začnou světla. | Konfliktní prostor je prázdný, nejvýše 2 s podle zvolených cest. |
-| `WARNING`  | Světla a tiché výstražné zvonění, silnice prázdná.                                    | Uplyne 1.2 s.                                                    |
-| `CLOSING`  | Závory se 0.8 s plynule sklápějí.                                                     | Závory dole.                                                     |
-| `CLOSED`   | Vlaky projíždějí nebo stojí v blízkosti.                                              | Žádný vlak neobsazuje zónu a žádný se neblíží v Dclose.          |
-| `OPENING`  | Závory se zvedají; silnice stále čeká.                                                | Úplně otevřeno, pak vypustit provoz.                             |
+| Stav       | Co se děje                                                                                   | Přechod                                                                              |
+| ---------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `OPEN`     | Závory nahoře, auta a kola mohou projet.                                                     | Některý vlak obsazuje zónu nebo má `tArr ≤ Thold`.                                   |
+| `CLEARING` | Nové překročení stop čáry je zablokováno, světla blikají; již rozjetý aktér dokončí průjezd. | Žádný aktér není za stop čárou na cestě přes konflikt; vyklizení trvá nejvýš 2 s.    |
+| `WARNING`  | Červená světla a výstražné zvonění, závory nahoře.                                           | Uplynulo alespoň 1,2 s a některý `tArr ≤ Tlower`, nebo výstraha trvá 4 s.            |
+| `CLOSING`  | Závory se 0,8 s plynule sklápějí před vlakem, při běžné jízdě již v záběru.                  | Závory dole.                                                                         |
+| `CLOSED`   | Vlaky projíždějí nebo stojí v blízkosti.                                                     | Žádný vlak neobsazuje zónu a všechny `tArr > Thold + openHysteresisSeconds` (0,5 s). |
+| `OPENING`  | Závory se zvedají, silnice stále čeká.                                                       | Úplně otevřeno, pak vypustit provoz; při novém `tArr ≤ Thold` znovu `CLOSING`.       |
+
+Nejkratší čas příjezdu při platném pohybu klesá nejvýš o délku simulačního kroku. Proto od blokování silnice zbývá celý čas vyklizení, minimální výstrahy, zavření a rezervy; od spuštění závor zbývá zavření a nejméně `Tsafety`. Rezerva 80 u při 480 u/s (0,167 s) pokrývá i přechody automatu po jednotlivých 1/60s krocích. Maximální výstraha pouze zavře dříve. Hystereze odlišuje opětovné otevření od spouštěcího prahu, aby zpomalující vlak u hranice závory nepřeklápěl. Podrobnosti: [D-021](../docs/decisions/021-crossing-closes-in-view.md).
 
 Blikání přejezdových světel je lokální klidná signalizace, nikoli celoplošný intenzivní záblesk. V úsporném režimu nelze signalizaci vypnout, jen zjednodušit její kresbu.
 
@@ -98,9 +101,10 @@ Pokud dlouhý vlak stojí přes silnici nebo těsně před ní, auta čekají li
 Implementace ([D-015](../docs/decisions/015-level-crossings.md)):
 
 - Automat `LevelCrossing` počítá obsazení z celé soupravy. Konfliktní zóna má ±30 u podél koleje a rezervu 32 u.
-- Při nynější nejvyšší rychlosti 480 u/s (dokument 14) vychází Dclose 2 240 u.
+- Při nynější nejvyšší rychlosti 480 u/s (dokument 14) vychází konzervativní dosah Dclose 2 240 u; fáze řídí časy příjezdu z D-021.
 - Stop čára je 40 u za tratí a 56 u před ní, u paty náspu.
 - Aktér za stop čárou opustí zónu nejpozději za 2,0 s, i když jede za nejpomalejším. Validace konfigurace odmítne `roadClearanceSeconds` kratší než tato doba.
+- Silnice je souvisle vykreslená přes celou patu náspu; za tratí a před tratí se její vrstvy setkávají na `roadU = 0`, ve společném bodě koleje. Kraje vozovky, stop čáry, dráhy aut a paty zařízení respektují sklon v místě křížení.
 - Výstražník za tratí je vysoký, před tratí nízký, aby nezakryl vlak. Polovinová břevna zavírají pravý pruh přijíždějících.
 - Červená světla se střídají po půl sekundě, bílé bliká při volném přejezdu, obojí v simulačním čase.
 
@@ -172,3 +176,16 @@ Po stání několik minut se nemá nahromadit fronta všech „zmeškaných“ a
 Uložit jen relevantní runtime záznamy aktuálně zachovaných scén: stav balónků, cooldowny, stavy aktivních aktérů a ovladačů přejezdů. Zvukové přehrávače, DOM elementy a částice do save nepatří.
 
 Dlouho neviditelná zvířata lze přestat animovat; jejich počáteční layout zůstává reprodukovatelný. Bezpečnostní automat přejezdu pod dlouhou soupravou se naopak nesmí vypnout podle viditelnosti kamery.
+
+### Světový směr okolních vozidel (D-029)
+
+Auta, pracovní stroje a lodě určují čelo ze své nenulové světové rychlosti,
+případně tečny se znaménkem postupu. Při zastavení zachovají poslední platný
+směr a při rozjezdu znovu vedou předkem. Kamera se orientace neúčastní.
+Exportovanou funkci `vehicleHeading` sdílí boční patrola i přejezdové pohledy;
+metadata každého assetu určují jeho výchozí předek. Kola aut a drobný výfuk
+prozrazují vlastní pohyb; pauza zastaví jejich simulační čas.
+[Silniční scénky](../docs/scenes/roads.md) rozšiřují stávající deskriptory patroly
+a dopravu přejezdu. Nezavádějí druhou simulaci ani navigaci. Okreska má auta
+v obou pruzích/směrech, dálnice lehký vzdálený provoz. Přejezd dál respektuje
+stopčáry, poslední vůz a všechny relevantní vlaky podle D-021.

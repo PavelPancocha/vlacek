@@ -44,7 +44,7 @@ export function diagnosticsView(snapshot: DebugSnapshot): HTMLElement {
       'div',
       { class: 'row' },
       actionButton('dev-copy-json', 'Kopírovat JSON', ['Kopírovat JSON']),
-      actionButton('dev-details-close', 'Zpět', ['Zpět']),
+      actionButton('dev-details-close', 'Zavřít', ['Zavřít']),
     ),
   );
 }

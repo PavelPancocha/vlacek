@@ -1,3 +1,5 @@
+import { additionalWorldUsedKeys } from './worldRegistry.generated.ts';
+import { FENCE_PARTS } from '../domain/world/Fences.ts';
 import { STATION_KINDS } from '../domain/world/Scenery.ts';
 import { LOCALITIES } from '../domain/world/sceneryTemplates.ts';
 import {
@@ -27,6 +29,8 @@ export function worldUsedKeys(): string[] {
       ...Object.values(trackTileSets).flat(),
       ...LOCALITIES.flatMap((t) => t.rules.flatMap((rule) => rule.kinds)),
       ...STATION_KINDS,
+      ...additionalWorldUsedKeys,
+      ...Object.values(FENCE_PARTS).flatMap((parts) => Object.values(parts)),
       ...Object.values(animalParts),
       ...Object.values(backdropParts).flatMap((b) => [b.far, b.mid]),
       ...cloudParts,

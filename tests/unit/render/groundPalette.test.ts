@@ -46,3 +46,14 @@ describe('near ground blend (soft style edges)', () => {
     expect(new Set(cuts).size).toBe(cuts.length);
   });
 });
+
+it('SEA-02: distant seasonal wash blends with the same positional progress in both renderers', async () => {
+  const { seasonalBackdropWash } =
+    await import('../../../src/render/groundPalette.ts');
+  expect(seasonalBackdropWash('winter', 'winter', 0).alpha).toBe(0.22);
+  expect(seasonalBackdropWash('summer', 'summer', 0).alpha).toBe(0);
+  expect(seasonalBackdropWash('winter', 'autumn', 0.5).alpha).toBeCloseTo(0.21);
+  expect(seasonalBackdropWash('winter', 'autumn', 0.5).color).not.toBe(
+    seasonalBackdropWash('winter', 'autumn', 0).color,
+  );
+});

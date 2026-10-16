@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="76" viewBox="0 0 256 76">
+  <!-- Vláček, art-water-coast-mountains-1: Horní výřez stejného periodického skalního krytu. 1 SVG jednotka = 1 u. -->
+  <defs></defs>
+  <path d="M0 14 C32 14 38 0 64 0 C98 0 103 19 128 19 C158 19 165 3 192 3 C220 3 232 14 256 14 V290 H0Z" fill="#8e9686"/><path d="M0 88 C42 88 51 54 83 54 C125 54 129 115 165 115 C211 115 218 88 256 88 V290 H0Z" fill="#7e8979"/><path d="M0 184 C59 184 56 153 101 153 C152 153 172 213 208 198 C229 190 235 184 256 184 V290 H0Z" fill="#6b7868"/><path d="M37 72 L62 58 L88 65 M124 135 L151 126 L174 134 M25 234 L63 226 L86 230 M185 254 L222 245" fill="none" stroke="#a3aa94" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/><path d="M0 14 C32 14 38 0 64 0 C98 0 103 19 128 19 C158 19 165 3 192 3 C220 3 232 14 256 14 L256 26 C225 26 219 16 192 16 C165 16 155 32 128 32 C96 32 93 13 64 13 C38 13 34 26 0 26Z" fill="#edf1e8"/><path d="M35 73 L62 59 L88 66 L82 71 L60 68 L45 79Z M123 136 L151 127 L175 135 L167 139 L150 135 L131 140Z" fill="#e0e6da"/>
+</svg>

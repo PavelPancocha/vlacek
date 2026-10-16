@@ -1,9 +1,19 @@
+import { backdropFrames, backdropTileStepU } from './backdropFrames.ts';
+import { sceneAt } from '../domain/world/WorldPlan.ts';
+import type { Season } from '../domain/world/Regions.ts';
+import { frameTexture } from './frameTexture.ts';
+import type { RegionTransition } from '../domain/world/Regions.ts';
+import type { WorldDiagnostics } from '../domain/world/WorldValidation.ts';
 import Phaser from 'phaser';
 import type { ArtPart } from '../content/artManifest.ts';
-import { backdropParts, cloudParts, worldParts } from '../content/worldArt.ts';
+import { cloudParts, worldParts } from '../content/worldArt.ts';
 import type { Biome } from '../domain/world/Biomes.ts';
 import { frameOrigin } from './atlasPacking.ts';
-import { BACKDROP_FILL } from './groundPalette.ts';
+import {
+  BACKDROP_FILL,
+  seasonalBackdropWash,
+  seasonalColour,
+} from './groundPalette.ts';
 
 /** Visible world rectangle, render coordinates (y down). */
 export interface ViewRect {
@@ -38,7 +48,6 @@ const BACKDROP_WIDTH_U = 1020;
  * through as a light vertical seam.
  */
 const TILE_OVERLAP_U = 2;
-const CROSSFADE_SEC = 1.2;
 const CLOUDS = 6;
 const CLOUD_DRIFT_U_PER_SEC = 5;
 const SKY_TEXTURE = 'sky-gradient';
@@ -48,6 +57,7 @@ const parts: Readonly<Record<string, ArtPart | undefined>> = worldParts;
 interface Layer {
   /** Biome shown by the tiles, or undefined while unused. */
   biome: Biome | undefined;
+  keys?: { far: string; mid: string };
   far: Phaser.GameObjects.Image[];
   mid: Phaser.GameObjects.Image[];
   fill: Phaser.GameObjects.Rectangle;
@@ -64,15 +74,19 @@ export class Backdrop {
   readonly #scene: Phaser.Scene;
   readonly #depths: BackdropDepths;
   readonly #sky: Phaser.GameObjects.Image;
+  readonly #seasonWash: Phaser.GameObjects.Rectangle;
   readonly #clouds: Phaser.GameObjects.Image[] = [];
   /** Diagnostics: the first mid tile's x from the view's left edge, u. */
   #midOffsetU = 0;
   readonly #layers: [Layer, Layer];
   #texture: string | undefined;
   #pxPerU = 1;
+  #textureFor: ((frame: string) => string | undefined) | undefined;
   /** 0 … 1: how far the incoming layer (index 1) has faded in. */
   #fade = 1;
   #groundTopY = 0;
+  #world: WorldDiagnostics | undefined;
+  readonly #missing = new Set<string>();
 
   constructor(scene: Phaser.Scene, depths: BackdropDepths) {
     this.#scene = scene;
@@ -96,6 +110,11 @@ export class Backdrop {
       .image(0, 0, SKY_TEXTURE)
       .setOrigin(0, 0)
       .setDepth(depths.sky);
+    this.#seasonWash = scene.add
+      .rectangle(0, 0, 1, 1, 0xffffff)
+      .setOrigin(0, 0)
+      .setDepth(depths.mid + 0.03)
+      .setAlpha(0);
     const layer = (offset: number): Layer => ({
       biome: undefined,
       far: [],
@@ -110,18 +129,37 @@ export class Backdrop {
   }
 
   /** Uses a (re-rasterised) backdrop atlas; images move over to it. */
-  setAtlas(texture: string, pxPerU: number): void {
+  setAtlas(
+    texture: string,
+    pxPerU: number,
+    textureFor?: (frame: string) => string | undefined,
+  ): void {
+    this.#textureFor = textureFor;
     this.#texture = texture;
     this.#pxPerU = pxPerU;
-    for (const cloud of this.#clouds) cloud.destroy();
-    this.#clouds.length = 0;
-    for (const layer of this.#layers) {
-      for (const image of [...layer.far, ...layer.mid]) image.destroy();
-      layer.far.length = 0;
-      layer.mid.length = 0;
-      layer.biome = undefined;
+    for (const image of [
+      ...this.#clouds,
+      ...this.#layers.flatMap((layer) => [...layer.far, ...layer.mid]),
+    ]) {
+      const key: unknown = image.getData('world-part');
+      if (typeof key !== 'string') continue;
+      const resolved = textureFor ? textureFor(key) : texture;
+      if (!resolved) {
+        image
+          .setTexture(SKY_TEXTURE)
+          .setData('world-part', key)
+          .setVisible(false);
+        continue;
+      }
+      image
+        .setTexture(frameTexture(key, resolved), key)
+        .setData('world-part', key);
+      const part = parts[key];
+      if (part) {
+        const origin = frameOrigin(part.pivotU, pxPerU, image.frame);
+        image.setOrigin(origin.x, origin.y);
+      }
     }
-    this.#fade = 1;
   }
 
   /** Clears journey state while reusing the atlas and its images. */
@@ -130,6 +168,8 @@ export class Backdrop {
     this.#fade = 1;
     this.#midOffsetU = 0;
     this.#groundTopY = 0;
+    this.#world = undefined;
+    this.#seasonWash.setAlpha(0);
   }
 
   /** Biomes actually drawn by both layers and their crossfade progress. */
@@ -138,6 +178,8 @@ export class Backdrop {
       currentBiome: this.#layers[0].biome,
       incomingBiome: this.#layers[1].biome,
       fade: this.#fade,
+      world: this.#world,
+      missingFrames: [...this.#missing],
     };
   }
 
@@ -157,9 +199,9 @@ export class Backdrop {
     view: ViewRect,
     horizonY: number,
     groundTopY: number,
-    biome: Biome,
+    transition: RegionTransition,
     timeSec: number,
-    deltaSec: number,
+    world: WorldDiagnostics,
   ): void {
     // Only down to the mid backdrop's foot: the ground covers the rest
     // (fill rate on low-end GPUs, D-013).
@@ -172,32 +214,53 @@ export class Backdrop {
       .setPosition(view.left, view.top)
       .setDisplaySize(view.width, Math.max(1, skyBottom - view.top));
     this.#groundTopY = groundTopY;
+    this.#world = world;
+    const wash = seasonalBackdropWash(
+      transition.from.season,
+      transition.to.season,
+      transition.progress,
+    );
+    this.#seasonWash
+      .setPosition(view.left, view.top)
+      .setDisplaySize(
+        view.width,
+        Math.max(1, Math.min(view.height, groundTopY - view.top)),
+      )
+      .setFillStyle(wash.color)
+      .setAlpha(wash.alpha);
+    this.#missing.clear();
     const texture = this.#texture;
     if (texture === undefined) return;
     this.#placeClouds(texture, view, timeSec);
     const [current, incoming] = this.#layers;
-    if (current.biome === undefined) this.#show(current, biome);
-    else if (biome !== (this.#fade < 1 ? incoming.biome : current.biome)) {
-      // A new biome ahead: fade it in over whatever is shown now.
-      if (this.#fade < 1 && incoming.biome !== undefined)
-        this.#show(current, incoming.biome);
-      this.#show(incoming, biome);
-      this.#fade = 0;
-    }
-    if (this.#fade < 1) {
-      this.#fade = Math.min(1, this.#fade + deltaSec / CROSSFADE_SEC);
-      if (this.#fade >= 1 && incoming.biome !== undefined) {
-        this.#show(current, incoming.biome);
-        this.#hide(incoming);
-      }
-    }
+    const from = transition.from.landscape,
+      to = transition.to.landscape;
+    this.#show(
+      current,
+      from,
+      transition.from.season,
+      sceneAt(world.seed, Math.min(world.worldXU, transition.from.toXU - 1))
+        .subzone,
+    );
+    this.#fade = transition.progress === 0 ? 1 : transition.progress;
     this.#placeLayer(current, view, horizonY, 1);
-    if (this.#fade < 1) this.#placeLayer(incoming, view, horizonY, this.#fade);
-    else this.#hide(incoming);
+    if (
+      transition.progress > 0 &&
+      (from !== to || transition.from.season !== transition.to.season)
+    ) {
+      this.#show(
+        incoming,
+        to,
+        transition.to.season,
+        sceneAt(world.seed, transition.to.fromXU).subzone,
+      );
+      this.#placeLayer(incoming, view, horizonY, transition.progress);
+    } else this.#hide(incoming);
   }
 
   destroy(): void {
     this.#sky.destroy();
+    this.#seasonWash.destroy();
     for (const cloud of this.#clouds) cloud.destroy();
     for (const layer of this.#layers) {
       for (const image of [...layer.far, ...layer.mid]) image.destroy();
@@ -205,12 +268,54 @@ export class Backdrop {
     }
   }
 
-  #show(layer: Layer, biome: Biome): void {
+  #show(layer: Layer, biome: Biome, season: Season, subzone: string): void {
+    const keys = backdropFrames(
+      biome,
+      season,
+      (key) => parts[key] !== undefined,
+      subzone,
+    );
+    // A band that is not resident yet keeps the previous valid layer (D-030).
+    let missing = false;
+    for (const key of [keys.far, keys.mid]) {
+      if (this.#textureFor && !this.#textureFor(key)) {
+        this.#missing.add(key);
+        missing = true;
+      }
+    }
+    if (
+      missing ||
+      (layer.biome === biome &&
+        layer.keys?.far === keys.far &&
+        layer.keys.mid === keys.mid)
+    )
+      return;
     layer.biome = biome;
-    const keys = backdropParts[biome];
-    for (const image of layer.far) image.setFrame(keys.far);
-    for (const image of layer.mid) image.setFrame(keys.mid);
-    layer.fill.setFillStyle(BACKDROP_FILL[biome]);
+    layer.keys = keys;
+    for (const which of ['far', 'mid'] as const) {
+      const key = keys[which];
+      const texture = this.#textureFor
+        ? this.#textureFor(key)
+        : frameTexture(key, this.#texture ?? '');
+      if (texture === undefined) continue;
+      for (const image of layer[which]) {
+        image
+          .setTexture(frameTexture(key, texture), key)
+          .setData('world-part', key);
+        const pivot = parts[key]?.pivotU;
+        if (pivot) {
+          const origin = frameOrigin(pivot, this.#pxPerU, image.frame);
+          image.setOrigin(origin.x, origin.y);
+        }
+      }
+    }
+    layer.fill.setFillStyle(
+      seasonalColour(
+        BACKDROP_FILL[biome],
+        season,
+        biome === 'coast' || biome === 'dunes',
+      ),
+    );
   }
 
   #hide(layer: Layer): void {
@@ -228,11 +333,20 @@ export class Backdrop {
     const texture = this.#texture;
     const biome = layer.biome;
     if (texture === undefined || biome === undefined) return images;
-    const key = backdropParts[biome][which];
+    const key = layer.keys?.[which];
+    if (!key) return images;
+    const resolved = this.#textureFor
+      ? this.#textureFor(key)
+      : frameTexture(key, texture);
+    if (resolved === undefined) {
+      this.#missing.add(key);
+      return [];
+    }
     while (images.length < count) {
       const part = parts[key];
       const image = this.#scene.add
-        .image(0, 0, texture, key)
+        .image(0, 0, frameTexture(key, resolved), key)
+        .setData('world-part', key)
         .setDepth(this.#depths[which] + (layer === this.#layers[1] ? 0.01 : 0));
       const origin = frameOrigin(
         part?.pivotU ?? { x: 0, y: 0 },
@@ -251,22 +365,27 @@ export class Backdrop {
     horizonY: number,
     alpha: number,
   ): void {
-    const count = Math.ceil(view.width / BACKDROP_WIDTH_U) + 2;
     for (const [which, base] of [
       ['far', FAR_BASE_U],
       ['mid', MID_BASE_U],
     ] as const) {
+      const key = layer.keys?.[which] ?? '';
+      const width = backdropTileStepU(
+        key,
+        parts[key]?.widthU ?? BACKDROP_WIDTH_U,
+      );
+      const count = Math.ceil(view.width / width) + 2;
       const shift = view.worldLeft * PARALLAX[which];
-      const first = Math.floor(shift / BACKDROP_WIDTH_U);
+      const first = Math.floor(shift / width);
       if (which === 'mid' && alpha > 0)
-        this.#midOffsetU = first * BACKDROP_WIDTH_U - shift;
+        this.#midOffsetU = first * width - shift;
       this.#tiles(layer, which, count).forEach((image, i) => {
-        const x = view.left + (first + i) * BACKDROP_WIDTH_U - shift;
+        const x = view.left + (first + i) * width - shift;
         image
           .setVisible(true)
           .setAlpha(alpha)
           .setScale(
-            (1 + TILE_OVERLAP_U / BACKDROP_WIDTH_U) / this.#pxPerU,
+            (1 + TILE_OVERLAP_U / width) / this.#pxPerU,
             1 / this.#pxPerU,
           )
           .setPosition(x, horizonY - base);
@@ -289,8 +408,16 @@ export class Backdrop {
       const i = this.#clouds.length;
       const key = cloudParts[i % cloudParts.length] ?? 'cloud.a';
       const part = parts[key];
+      const resolved = this.#textureFor
+        ? this.#textureFor(key)
+        : frameTexture(key, texture);
+      if (resolved === undefined) {
+        this.#missing.add(key);
+        break;
+      }
       const cloud = this.#scene.add
-        .image(0, 0, texture, key)
+        .image(0, 0, frameTexture(key, resolved), key)
+        .setData('world-part', key)
         .setDepth(this.#depths.clouds);
       if (part) {
         const origin = frameOrigin(part.pivotU, this.#pxPerU, cloud.frame);

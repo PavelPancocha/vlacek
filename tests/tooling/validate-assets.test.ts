@@ -1,3 +1,4 @@
+import { worldParts } from '../../src/content/worldArt.ts';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -12,8 +13,11 @@ describe('validate:assets', () => {
       encoding: 'utf8',
     });
     expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain(
+      `${Object.keys(worldParts).length} world parts`,
+    );
     expect(result.stdout).toMatch(
-      /42 vehicles valid \(42 with art, 103 art parts\), 156 world parts, 0 placeholders/,
+      /42 vehicles valid \(42 with art, 103 art parts\), \d+ world parts, 0 placeholders/,
     );
   });
 

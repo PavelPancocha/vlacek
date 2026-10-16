@@ -30,13 +30,15 @@ Nynější chyba: po stisknutí „Vyjeď“ vlak není vidět. Oprav skutečnou
 
 Vlak může být menší než v současné verzi, ale musí zůstat rozpoznatelný a detailní. Navrhni společné stabilní měřítko a maximální délku soupravy podle skutečně dostupné herní plochy. Neřeš to neomezeným zmenšováním při každém přidaném voze.
 
-Výchozí kompoziční cíl: nejdelší povolená souprava zabere přibližně **70–75 % využitelné šířky**, aby zůstalo místo před lokomotivou na krajinu a interakce a malá rezerva za posledním vozem. Toto je ladicí výchozí hodnota, ne povinnost vynucovat stejné procento na každém zařízení.
+Aktuální délkový limit je **2 000 u** ([D-028](../docs/decisions/028-longer-consist.md)), dříve 1 600 u. Aktualizace `camera-1` rámuje střed soupravy na 46 % šířky a používá pevné měřítko `0.60 × šířka / max(2000, délka soupravy)`. Nejdelší vlak zabírá 60 % šířky, za ním je geometricky 16 % a před ním 24 %. Resize přepočítá zobrazení se stejným pravidlem.
+
+Výchozí kompoziční cíl: nejdelší povolená souprava zabere přibližně **60 % využitelné šířky** podle aktualizace `camera-1` v D-028, aby zůstal prostor pro krajinu a interakce před lokomotivou i za posledním vozem. Toto je ladicí výchozí hodnota, ne povinnost vynucovat stejné procento na každém zařízení.
 
 Limit odvozuj od délky konkrétní lokomotivy, všech zvolených vagonků, spřáhel a mezer. Nestačí univerzální počet vozů, jestliže mají různou délku. V depu dovol přidat pouze vagonek, který se do limitu vejde. Dosažení limitu naznač jednoduše a bez chybového dialogu; existující soupravu nemaž.
 
 Kamera musí zohledňovat i výškový rozsah soupravy na svahu a místo zabrané ovládáním. Pohybuj s ní plynule; žádné cukání nebo výrazné přibližování a oddalování na každém hrbolu. Po změně velikosti okna přepočítej zobrazení. Na nepoužitelně úzkém displeji raději pozastav hru a nabídni otočení na šířku, než abys vlak ořízl nebo změnil na tečky. Uložené vagonky nikdy tiše neodstraňuj.
 
-Trať musí existovat pod celou soupravou už při startu a nesmí se odstraňovat před průjezdem posledního vozu. V tunelu použij čitelný průřez nebo zprůhlednění zakrývající vrstvy, aby dítě neztratilo svůj vlak.
+Trať musí existovat pod celou soupravou už při startu a nesmí se odstraňovat před průjezdem posledního vozu. Podle zadání world v2 z 2026-10-13 a D-018 je tunel neprůhledný: vozidla postupně mizí za portálem a vystupují u výjezdu. Pokračování jízdy ukazuje pohyb kamery a otevřené ústí; žádný nový ovládací režim. Tento požadavek nahrazuje původní průřez nebo zprůhlednění.
 
 ## 3. Grafika je hlavní priorita této iterace
 

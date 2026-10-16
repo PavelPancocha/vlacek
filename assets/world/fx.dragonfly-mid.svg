@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="10" viewBox="0 0 16 10">
+  <!-- Vláček, art-seasons-life-1: Vážka, fáze křídel mid. 1 SVG jednotka = 1 u. -->
+<ellipse cx="5" cy="3.8" rx="3.5" ry=".95" fill="#dce5d4" opacity=".85"/><ellipse cx="11" cy="3.8" rx="3.5" ry=".95" fill="#dce5d4" opacity=".85"/><ellipse cx="5.2" cy="5.8" rx="3" ry=".8" fill="#cbd9cf" opacity=".9"/><ellipse cx="10.8" cy="5.8" rx="3" ry=".8" fill="#cbd9cf" opacity=".9"/><path d="M8 2 V9" fill="none" stroke="#507e78" stroke-width="1.1" stroke-linecap="round"/><circle cx="8" cy="2" r="1.2" fill="#425c4c"/>
+</svg>

@@ -2,6 +2,8 @@
 
 Datum: 2026-10-10. Stav: přijato.
 
+Časování fází, predikci více vlaků a návaznost silnice na společný bod koleje aktualizuje [D-021](021-crossing-closes-in-view.md); níže popsaný pevný spouštěcí Dclose je historický.
+
 Dokument 14 §5 chce přejezdy s blikající výstrahou a závorami, které zůstanou zavřené, dokud neprojede poslední vagon. Dokument 05 §4 k tomu dává pravidla:
 
 - závory jsou skutečný stavový automat, ne dekorace;
@@ -60,6 +62,6 @@ Dokument 04 §6 přejezdu dává slot 3 bloku biomu.
 ## Dočasná omezení a podmínky odstranění
 
 - **Protijedoucí vlak** ([D-017](017-second-track-and-oncoming-train.md)) přejezdem neprojíždí. Druhá kolej vede ve slotech 4–6 a přejezd ve slotu 3 se drží mimo její portálový kopec. Až souběh povede přes přejezd, přidá se jeho souprava do obsazení podle dokumentu 05 §4.
-- **Výstražné zvonění** zatím chybí; hra má jen dočasné syntetizované zvuky. Přidá se s finálními zvuky.
+- **Výstražné zvonění** doplněno v [D-022](022-recorded-sounds.md): tichý lokální nahraný belgický zvonek ve fázích WARNING/CLOSING/CLOSED, ztichne při zvedání závor. Poslech a kalibrace zařízení NEOVĚŘENO.
 - **Dotyk na auto nebo kolo** (zamávání, klakson) zatím nic nedělá. Přijde se scénkami dokumentu 05 §5 a nesmí aktéra zastavit v zóně.
 - **Fyzická zařízení:** NEOVĚŘENO.

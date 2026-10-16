@@ -1,13 +1,18 @@
+import type { Season } from './Regions.ts';
 import { gameConfig } from '../../config/gameConfig.ts';
 import { biomeAt, type Biome } from './Biomes.ts';
 import { chunkObjects } from './ChunkObjects.ts';
 import { hash32, unitRandom } from './Hash.ts';
 import { secondarySite } from './SecondaryTrack.ts';
+import {
+  longTunnelRange,
+  largeBridgeRange,
+} from './scenes/tunnels-bridges.scenes.ts';
 import { TRACK_GENERATOR_VERSION } from './TrackProfile.ts';
 
 const { chunkWidthU } = gameConfig.world;
 
-/** Bridge in slot 4, short tunnel in slot 6 (doc 04 §6). */
+/** Logical bridge owner in slot 4, tunnel owner in slot 6 (D-026). */
 const BRIDGE_SLOT = 4;
 const TUNNEL_SLOT = 6;
 /** Half the stream's width where it passes under the track, u. */
@@ -23,11 +28,12 @@ const ANIMAL_CLEARANCE_U = BRIDGE_RESERVE_U + 96;
  * (track bed above the near meadow), easing out over VALLEY_EASE_U.
  */
 export const VALLEY_DEPTH_U = 56;
+export const LARGE_VALLEY_DEPTH_U = 180;
 const VALLEY_FLAT_HALF_U = BRIDGE_HALF_U + 8;
-const VALLEY_EASE_U = 220;
+export const VALLEY_EASE_U = 220;
 /** A short tunnel; it stays clear of the chunk's ends. */
 const TUNNEL_LENGTH_U = 448;
-const EDGE_U = 96;
+export const EDGE_U = 96;
 const STEP_U = 32;
 /** How often a block without a second track gets its tunnel. */
 const TUNNEL_SHARE: Readonly<Record<Biome, number>> = {
@@ -37,6 +43,8 @@ const TUNNEL_SHARE: Readonly<Record<Biome, number>> = {
   foothills: 0.9,
   mountains: 1,
   coast: 0.3,
+  dunes: 0.3,
+  town: 0.3,
 };
 
 /** A stone bridge over a stream across the track (doc 03 §8). */
@@ -46,16 +54,21 @@ export interface BridgeSite {
   chunkIndex: number;
   /** Chunk-local x of the stream's middle. */
   localXU: number;
+  variant?: 'stone' | 'steel' | 'viaduct';
+  fromX?: number;
+  toX?: number;
 }
 
-/** A short tunnel through a hill over the track (doc 03 §8). */
+/** One tunnel through a hill; every queried chunk carries its full extent (D-026). */
 export interface TunnelSite {
-  /** Stable id `g<version>:chunk:<k>:tunnel:0`. */
+  /** Stable id `g<version>:chunk:<owner-slot-6>:tunnel:0`. */
   id: string;
   chunkIndex: number;
-  /** Chunk-local x of its two portals. */
+  /** Full portal positions relative to chunkIndex; may extend outside this chunk. */
   fromX: number;
   toX: number;
+  rock?: boolean;
+  season?: Season;
 }
 
 /** Slot 4 or 6 of a block without a second track, or undefined. */
@@ -76,6 +89,15 @@ export function bridgeSite(
 ): BridgeSite | undefined {
   if (!freeSlot(seed, chunkIndex, BRIDGE_SLOT)) return undefined;
   const animal = chunkObjects(seed, chunkIndex)[0]?.localXU;
+  const large = largeBridgeRange(seed, chunkIndex, animal);
+  if (large)
+    return {
+      id: `g${TRACK_GENERATOR_VERSION}:chunk:${chunkIndex}:bridge:0`,
+      chunkIndex,
+      localXU:
+        (large.fromX + large.toX) / 2 + (large.variant === 'viaduct' ? 80 : 0),
+      ...large,
+    };
   const candidates: number[] = [];
   for (
     let x = EDGE_U + BRIDGE_RESERVE_U;
@@ -86,8 +108,7 @@ export function bridgeSite(
       candidates.push(x);
   const pick =
     candidates[
-      hash32(seed, TRACK_GENERATOR_VERSION, 'bridge', chunkIndex) %
-        Math.max(1, candidates.length)
+      hash32(seed, 1, 'bridge', chunkIndex) % Math.max(1, candidates.length)
     ];
   if (pick === undefined) return undefined;
   return {
@@ -105,21 +126,39 @@ export function tunnelSite(
   seed: number,
   chunkIndex: number,
 ): TunnelSite | undefined {
+  // Query any fragment directly; no reference to the entrance ChunkView is needed.
+  const block = Math.floor(chunkIndex / 8);
+  for (const b of [block - 1, block]) {
+    const owner = b * 8 + TUNNEL_SLOT;
+    if (!freeSlot(seed, owner, TUNNEL_SLOT)) continue;
+    const range = longTunnelRange(seed, owner);
+    if (!range) continue;
+    const from = owner * chunkWidthU + range.fromX;
+    const to = owner * chunkWidthU + range.toX;
+    if (
+      (chunkIndex + 1) * chunkWidthU > from - 170 &&
+      chunkIndex * chunkWidthU < to + 170
+    )
+      return {
+        id: `g${TRACK_GENERATOR_VERSION}:chunk:${owner}:tunnel:0`,
+        chunkIndex,
+        fromX: from - chunkIndex * chunkWidthU,
+        toX: to - chunkIndex * chunkWidthU,
+        rock: true,
+        season: range.season,
+      };
+  }
   const place = freeSlot(seed, chunkIndex, TUNNEL_SLOT);
   if (!place) return undefined;
   if (
     place.block !== 0 &&
-    unitRandom(seed, TRACK_GENERATOR_VERSION, 'tunnel', place.block) >=
-      TUNNEL_SHARE[place.biome]
+    unitRandom(seed, 1, 'tunnel', place.block) >= TUNNEL_SHARE[place.biome]
   )
     return undefined;
   const room = chunkWidthU - 2 * EDGE_U - TUNNEL_LENGTH_U;
   const steps = Math.floor(room / STEP_U);
   const fromX =
-    EDGE_U +
-    STEP_U *
-      (hash32(seed, TRACK_GENERATOR_VERSION, 'tunnel-at', chunkIndex) %
-        (steps + 1));
+    EDGE_U + STEP_U * (hash32(seed, 1, 'tunnel-at', chunkIndex) % (steps + 1));
   return {
     id: `g${TRACK_GENERATOR_VERSION}:chunk:${chunkIndex}:tunnel:0`,
     chunkIndex,
@@ -139,10 +178,24 @@ export function valleyDepthU(seed: number, worldX: number): number {
   for (const chunk of [k - 1, k, k + 1]) {
     const site = bridgeSite(seed, chunk);
     if (!site) continue;
-    const distance = Math.abs(worldX - (chunk * chunkWidthU + site.localXU));
-    if (distance <= VALLEY_FLAT_HALF_U) return VALLEY_DEPTH_U;
-    const t = 1 - (distance - VALLEY_FLAT_HALF_U) / VALLEY_EASE_U;
-    if (t > 0) depth = Math.max(depth, VALLEY_DEPTH_U * t * t * (3 - 2 * t));
+    const center =
+      site.fromX !== undefined && site.toX !== undefined
+        ? (site.fromX + site.toX) / 2
+        : site.localXU;
+    const distance = Math.abs(worldX - (chunk * chunkWidthU + center));
+    const half =
+      site.fromX === undefined || site.toX === undefined
+        ? VALLEY_FLAT_HALF_U
+        : (site.toX - site.fromX) / 2 + 8;
+    const low =
+      site.variant === 'viaduct'
+        ? LARGE_VALLEY_DEPTH_U
+        : site.variant === 'steel'
+          ? 110
+          : VALLEY_DEPTH_U;
+    if (distance <= half) return low;
+    const t = 1 - (distance - half) / VALLEY_EASE_U;
+    if (t > 0) depth = Math.max(depth, low * t * t * (3 - 2 * t));
   }
   return depth;
 }

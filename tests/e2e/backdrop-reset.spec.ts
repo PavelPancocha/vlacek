@@ -1,14 +1,16 @@
+import { regionAt } from '../../src/domain/world/Regions.ts';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { biomeAt } from '../../src/domain/world/Biomes.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, tapAction } from './helpers.ts';
+import { snapshot, tapAction, waitForRideStart } from './helpers.ts';
 
 test('R10: the first frame of a second journey shows its biome without crossfade', async ({
   page,
 }) => {
-  const firstBiome = biomeAt(123, 9).biome;
+  const firstChunk = regionAt(123, 0).toXU / 1024 + 1;
+  const firstBiome = biomeAt(123, firstChunk).biome;
   expect(firstBiome).not.toBe('countryside');
   const consist = { locomotiveId: 'diesel_mainline', wagons: [] };
   await page.addInitScript(
@@ -32,7 +34,7 @@ test('R10: the first frame of a second journey shows its biome without crossfade
         seed: 123,
         generatorVersion: TRACK_GENERATOR_VERSION,
         consist,
-        head: { chunkIndex: 9, arcOffsetU: 100 },
+        head: { chunkIndex: firstChunk, arcOffsetU: 100 },
         simulationTick: 0,
         activeEntities: [],
       },
@@ -41,6 +43,7 @@ test('R10: the first frame of a second journey shows its biome without crossfade
   await page.goto('./?debug=1&seed=123');
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
+  await waitForRideStart(page);
   await expect
     .poll(async () => (await snapshot(page)).scenery.biome)
     .toBe(firstBiome);
@@ -48,6 +51,10 @@ test('R10: the first frame of a second journey shows its biome without crossfade
     currentBiome: firstBiome,
     incomingBiome: undefined,
     fade: 1,
+    world: expect.objectContaining({
+      generatorVersion: TRACK_GENERATOR_VERSION,
+      seed: 123,
+    }),
   });
   await tapAction(page, 'pause');
   await tapAction(page, 'open-depot');
@@ -76,6 +83,10 @@ test('R10: the first frame of a second journey shows its biome without crossfade
     currentBiome: 'countryside',
     incomingBiome: undefined,
     fade: 1,
+    world: expect.objectContaining({
+      generatorVersion: TRACK_GENERATOR_VERSION,
+      seed: state.seed,
+    }),
   });
   await writeFile(
     test.info().outputPath('second-journey-first-frame.png'),

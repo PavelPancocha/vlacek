@@ -10,6 +10,9 @@ import type {
  */
 export class EmissionClock {
   #carry = 0;
+  constructor(initialCarry = 0) {
+    this.#carry = initialCarry;
+  }
 
   tick(rate: number, amount: number, maxBurst = 8): number {
     if (rate <= 0 || amount <= 0) return 0;

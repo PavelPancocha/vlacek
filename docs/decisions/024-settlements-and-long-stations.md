@@ -1,0 +1,85 @@
+# D-024: Velká vesnice, české město a dlouhá nádraží
+
+Datum: 2026-10-13. Stav: přijato pro obsahovou linku `settlements` nad nevydaným generátorem v2 (D-023).
+
+## Důvod
+
+Zadavatel požaduje větší vesnici, české město s předměstím a „větší, delší nádraží ne jenom zastávky“. Původní stanice byla jediný chunk s 330u obrázkem platformy; město přebíralo vesnickou šablonu. R3, sloty a možnost volného průjezdu se musí zachovat.
+
+## Rozhodnutí
+
+- `settlements.scenes.ts` přidává příjezd/náves/odjezd vsi a předměstí/ulici/park/areál. `SettlementPlan` vloží do každého venkovského regionu 6 144u vesnici, městu určuje pořadí a klidné konce. Ostatní scénky a jejich RNG zůstávají. Náhodný výběr nesmí vložit osamocenou část velké vsi mimo tento plán.
+- `SettlementScenery` nejprve vytvoří obecní cestu, potom suché parcely s přístupy, jedinou kapli, nepravidelnou náves, zastávkový záliv s čekajícím autobusem, hřiště a zahrady s celými ploty. Konfliktní infrastruktura má přednost; dekorativní cesta nikdy neprohlásí sama sebe za přejezd. Za tratí se smí napojit na konkrétní silnici již plánovaného přejezdu; její feature odkazuje na jeho skutečné ID. Na skutečných koncích osady nebo městského regionu se cesta zužuje do horizontu. Nízká přední pěšina se tam stejně plánovaně ukončí: během posledních 160 u se zúží do louky a končí bodem nulové šířky na okraji osady, nikdy plochým 10u zakončením. Spoj mezi chunky má plnou šířku jen tam, kde pěšinu drží i soused (`settlementFootpathChunk`: každý chunk osady kromě pracovního dvora); před dvorem končí pěšina stejným zúžením. Řeka nebo jiná rezervovaná překážka ji rozdělí na kusy, které se před břehem zúží do bodu; kus napojený na souseda zůstává vždy, osamocený kus kratší než 192 u nevznikne. Nízká servisní cesta stanice se na obou koncích nástupiště zúží do louky. Rezervace vždy sleduje kreslenou geometrii. Validátor `footpath-end` odmítne kdekoli plochý konec přední cesty, který nenavazuje na sousední chunk s pěšinou, jinou cestu, vlastní pozemek ani vchod, jemuž slouží; `validateFootpathJoin` porovná oba konce každého spoje a `validate:world` vyžaduje nenulové svědky `settlements-footpath-end`, `-yard`, `-split` a `station-service-end`. Hlavní ulice smí překročit rezervovaný potok jen po vlastním malém silničním mostě: feature `road-bridge` závisí na ulici a toku a její rezervace mostovky je `roadBridgeDeck`, tedy polygon ulice rozšířený o 7 u a oříznutý na pás toku a 8 u suchého břehu na každé straně. Renderer kreslí v tomto polygonu nad vodou kamennou mostovku s tmavším čelem, pokračující asfalt s přerušovanou čarou a nízká zábradlí se sloupky. Validátor dovolí `road-infrastructure` přes řeku jen pod takovým mostem, `road-bridge-deck` kontroluje mostovku a `road-water-end` odmítne konec silnice či ulice se šířkou, před nímž do 96 u leží voda, pokud nenavazuje na jinou cestu a neodchází do horizontu; přístupové cesty končí u domu, branky nebo záhonu a přední cesty hlídá `footpath-end`. Vyžaduje se nenulový svědek `settlements-road-bridge`. Cestičky k záhonům vycházejí ze vstupní cesty uvnitř plotu a celé leží uvnitř pozemku: přední plot je přímka mezi rohovými sloupky a terén pod záhony může klesat, proto cesta drží 6 u (poloviční šířka 3 u a 3 u odstupu) za touto přímkou; validátor je hlídá jako `allotment-path-outside`. Městská ulice střídá řadovky a střídmé bytové/panelové domy; sklad či pila má obslužný přístup.
+- `longStation` volí 1 216 u v plánované velké vsi a 2 368 u ve městě. Jeho plán načte `TrackProfile` před svahy. Za platformou přidá polovinu 192u přechodu a 32u rezervu; kolej má přes celou platformu nulový sklon. Nádraží končí před stávajícím přejezdem ve slotu 3. První blok zůstává zastávkou ve slotu 1 (R3); jinde mimo plánované osady zůstává výběr plochého slotu 1/2.
+- Malá zastávka má celkových 480 u a 448 u použitelných, střední 1 216 u a velká 2 368 u / 2 336 u použitelných. Všechny díly drží 1 u/u, krok 128/32 u a 2u neprůhledný přesah. `back.platform-short.svg` je statický 32u ořez dodaného středu, potřebný pro přesnou délku malé zastávky. Není nataženou budovou ani novou výtvarnou sadou.
+- `stationSite` a `StationScenery` poskytují celou rezervaci, vlastníka a shodnou geometrii při dotazu na libovolný prostřední chunk. Děti vlastní chunk středu, start a konec existují jen jednou. Přístup vede k budově a vedle ní na platformu; cestující a lavičky mají rezervu od sloupů přístřešků. Číselný adaptér validuje 24 × 44u obal pohyblivé ruky; projekce používá jeho zrcadlený/otočený obrys, kontaktní stopa nohou se nemění. Validátor prochází každých 8 u celé platformy a kontroluje její přesný plánový rozsah, podporu cestujících a autobus na skutečné silnici. Nenulové svědky motivů vyžaduje stávající `validate:world`.
+- Čtyři zahradní kresby volí efektivní `contextAt().season`; `atlasGroup.seasons` je metadata pro D-030. Nevzniká další sezónní systém. `settlements.art.ts` zachovává střešní obrysy a kotvení pro společnou sezónní linku. Používá se jen zapojených 36 dodaných dílů a jeden odvozený ořez.
+- Houpačka, ruce a střecha přístřešku se skládají z dodaných kotev. Autobus stojí v zálivu, jeho dvě kola proto mají nulový úhel. Jemný pohyb pokračuje při stání, zamrzá s existujícím simulačním časem a uvolní se s chunkem. `StationReaction` pozdraví jedním aktérem, rozezná dobrovolné zastavení pod 4 u/s po 0,5 s a drží 12s cooldown. Je kosmetický a nikdy nevlastní vstup ani rychlost; při novém načtení view může znovu pozdravit. Nevytváří timer, posluchač ani historii celé jízdy.
+- Diagnostický lokátor doplňuje vesnici, autobus/hřiště, předměstí a tři velikosti stanic. Město hledá skutečnou panelovou ulici. Velikostní lokátory postaví čelo 120/180/300 u před koncem zastávky/středního/velkého nádraží; původní obecný lokátor stanice ponechá příjezd. Velké nádraží tím zajistí, že 2 000u souprava stojí celá na použitelné platformě. Běžná cesta a záloha zůstávají chráněné existujícím dočasným režimem.
+
+## Kompatibilita a důsledky
+
+Jde o obsahový řez nevydaného v2 v jediném integračním PR. Číslo generátoru zůstává 2, save schéma/obsah 1 a katalog vozidel se nemění. Migrace vydaných v0/v1 a ochrana budoucího v3 podle D-023 zůstávají. Po vydání v2 nelze tuto geometrii znovu měnit bez samostatného rozhodnutí kompatibility.
+
+Dopravní příjezdy/odjezdy autobusu, dálnice, jeřáb, sezónní sníh na střechách a nové zvuky dodají příslušné obsahové linky. Tento řez je neoznačuje za ověřené. Fyzický tablet a Tesla/firmware jsou NEOVĚŘENO. Přesné lokální výsledky a snímky patří do předání běhu `settlements-1`; sdílené README/roadmapu/původ assetů zapisuje integrátor.
+
+Starší **vývojové jízdy generátoru v2 nemají garantovanou kompatibilitu**: předchozí kurzor chunk/arc mohl vzniknout nad jinou geometrií. Obnova se může posunout nebo skončit upozorněním `journey-unavailable`; migrace vydaných v0/v1 tuto záruku nedokazuje. Cílem není staré vývojové v2 cesty zachovat. Obnova: v domovské obrazovce zvolit **Postavit vlak**, ponechat nebo sestavit soupravu a vyjet novou cestou; původní jízda se nahradí až úspěšným odjezdem. Při neobnovitelné cestě se použije běžný výběr lokomotivy/depo. Pro úplný reset vývojového profilu lze po exportu případné potřebné zálohy při zavřené hře odstranit jen klíče `vlacek.save.v1` a `vlacek.save.backup.v1` z úložiště příslušného originu a znovu načíst aplikaci; tím se odstraní také místní nastavení/souprava. Neznámé novější formáty se automaticky nemažou.
+
+## Opravy settlements-2 a integrační kontrakty
+
+Jedna náves vlastní celý VI-02 obraz; její rezerva vzniká před parcelami a společná cesta sleduje obvod. Domovní zahrady patří prostorově ke skutečným domům, přední záhony sdílejí podélnou pěšinu s brankami bez křížení dráhy. Kompozice eviduje obsazené budovy a přístupy. Stanice rezervuje suchou ulici a pojmenované vstupy před okolními domy; doplňuje přednádraží a nízkou servisní cestu. Městská ulice má pěší popředí a sklad/pila vymezený pracovní dvůr. Autorské rodinné domy používají stávající deterministickou paměť posledních dvou fasád i přes hranici scény (GEN-17); nízké staniční a osadní objekty zachovávají 60u odstup od zvířete.
+
+`settlementStreetPlan(seed, worldXU)` v `SettlementScenery.ts` vrací plán hostitelského regionu: vlastněný interval, ID a oba koncové body hlavní ulice (světové u, y dolů). Lze jej načíst i před příjezdem do osady; příslušnost aktuálního bodu se testuje proti vrácenému intervalu. Podle dodatku 13 do tohoto intervalu nevstupuje paralelní cesta dopravní linky; na konci se napojí nebo zmizí za terénem. Ulice obchází stanici v globální geometrii, nikoli skokem na hranici chunku. Při nečekaném odmítnutí se zkusí bezpečná alternativní cesta a méně parcel.
+
+Zahrady si podle dodatku 12 ponechávají pouze `atlasGroup.seasons`; D-030 sloučí metadata po jednotlivých polích a sdílené staniční díly označí jako společné. Kombinované atlasy a doprava zatím nejsou ověřeny tímto worktree. Seznam dílů používaných mimo město je v předání `settlements-2`.
+
+Akceptace je rozdělena na ověřené kompoziční invarianty a zbývající runtime/výtvarný rozsah. Logický pozdrav/cooldown dokládají doménové testy; viditelný pozdrav a opakovaný cleanup view nejsou doložené cílenou browserovou asercí a zůstávají částečné. Dva timeouty meziběhu `settlements-1` jsou konzistentní se zátěží sdíleného stroje; příčina nebyla prokázána.
+
+## Opravy settlements-3 nad přistálým world-core
+
+Objížďka ±40 u používá uvnitř chunku 160u plynulá ramena s nulovou koncovou tečnou; oba hraniční body i první a poslední 32u segment zůstávají na kanonické ulici, takže navazují také okraje vozovky odvozené ze vzorkovaných tečen. Kontrola se provádí nad celým výsledným polygonem včetně 4u odstupu. Regrese seed 1 / chunk 8 s překážkou x = 8 192–9 216, y = −155 až −125 kontroluje exportovaný vstup, spoj do chunku 9 a celý povrch. Export `settlementStreetPlan()` se nemění.
+
+Běžné předměstí má čtyři kandidáty na chunk na bezpečně oddělených parcelách; test seed 6 / chunky 78–79 vyžaduje 6–10 skutečně přijatých domů za celý TO-01 obraz a kontroluje jejich parcely/přístupy. Dvouparcelová varianta zůstává pro objížďku nebo fragmentovanou ulici. Ostatní role osad nemění své hustoty.
+
+Přední zahrádky tvoří jeden větší pozemek v prvním chunku dvouchunkového obrazu, se 2–4 záhony původní kresby 100 × 20 u, jedním uzavřeným obvodovým plotem, brankou a krátkými vnitřními cestami napojenými na společnou pěšinu. Sloupce záhonů mohou ustoupit zvířeti; celý pozemek včetně výšky plotu se kontroluje proti infrastruktuře. Při nedostatku místa nevznikne prázdný plot. `FenceFeature.closed` uzavírá poslední panel k prvnímu sloupku bez druhé instance sloupku; otevřené ploty zachovávají dosavadní kontrakt. Renderer ponechá díly obou stran vzpřímené. Validátor vyžaduje nenulový výskyt zahrádek, obvod, připojenou branku a celé záhony uvnitř pozemku.
+
+Rebase na integraci `82a55bf` zachovává novější oblé přední povrchy, palety, rezervace a rodičovské nástroje. Popředí zahrnuje zároveň celé povrchy s jejich 8u lemem i nízké cesty. Browserová kontrola používá skutečné nové rámování: střed kreslené soupravy do 1 % od 46 % šířky, nejméně 15 % obrazu za jejím koncem a 23 % před čelem včetně přesahů SVG. Formát save, limit soupravy a politika vývojových v2 cest výše zůstávají stejné.
+
+## Zakončení ulice pod kopcem — polish-1 / polish-2
+
+Regrese seed 1 / chunk 246 měla mezi plochým koncem ulice a svahem tunelu
+travnatou mezeru. Fragment dostane pouze kreslicí `drawingPoints`: vnitřní
+konec pokračuje 32 u (nejvýše 64 u), pokud celý koncový řez včetně krajnice
+leží uvnitř skutečně neprůhledného obrysu kopce. Rezervace slouží pouze
+k určení vlastníka, nikoli jako důkaz zakrytí. `StreetHillCover` používá
+vnitřní tětivy dvou konvexních křivek SVG `secondary.portal-hill` před
+otvorem portálu, s jeho pivotem, zrcadlením a rotací podle sklonu koleje.
+U krátkého tunelu kopíruje skutečně kreslenou 16u lomenou čáru `TunnelView`,
+včetně nerovností a 8u interpolace koleje vlastnícího chunku. Celý koncový
+řez musí být uvnitř a nesmí protínat žádnou hranu obrysu; pokud nevyhoví
+ani 32u, ani 64u přesah, zůstane původní konec posledního volného segmentu.
+Renderer použije
+prodloužení při kreslení povrchu. Kanonické chunkové spoje, `points`,
+rezervace průjezdné ulice, přijaté přístupy a dráhy vozidel se nemění;
+krátký zakrytý přesah není nová průjezdná cesta. Save ani kompatibilita
+nevydaného generátoru v2 se nemění. Geometrická regrese v
+`SettlementsReview.test.ts` zachovává seed 1 / chunk 246.
+`StreetHillCover.test.ts` doplňuje village-green před levým vedlejším portálem
+(seed 1 / chunk 11) a vyčnívající krajnici krátkého kopce (seed 7 / chunk 62).
+`TunnelView.test.ts` porovnává zakrytí s polygony skutečně upečenými
+`TunnelView`; `streetHillOutline.test.ts` ověřuje oba směry zrcadlení na
+nenulovém sklonu, rozměry a pivot skutečného manifestu. Celé SVG kotví
+otisk SHA-256, včetně neprůhledné výplně, průhlednosti a ořezu; před změnou
+otisku je nutná kontrola lokálního obrysu `StreetHillCover`. Regrese chunku 11
+výslovně vyžaduje původní konec bez prodloužení a vždy geometricky ověří
+vyčnívající krajnici obou odmítnutých přesahů proti cestě neprůhledné výplně,
+nikoli proti definici ořezu. Umístění objektů, rezervace a přijaté trasy se nemění.
+
+## Kontroly
+
+`VITEST_MAX_WORKERS=4 volta run npm test -- tests/unit/world/Settlements.test.ts tests/unit/interaction/StationReaction.test.ts tests/unit/render/settlementMotion.test.ts` ověřuje plán, délky, podpory, sezónu, sloupy a kosmetický automat. `volta run npm run validate:world` kontroluje skutečnou kompozici, query order a R3 nad 20 000 seedy. Browserová sada `tests/e2e/settlements.spec.ts` používá skutečné rodičovské menu, 2 000u soupravu, Canvas i WebGL a nový vstup pro okamžitý odjezd. Cílené E2E se spouští pod sdíleným zámkem podle pravidel linky; celý `npm run check` pod samostatným zámkem. CI a skutečné zařízení se z těchto lokálních kontrol neodvozují.
+
+Integrace integrate-4 zachovává oba importy v TunnelView.test: zimní
+portály D-026 i rendererovou paritu hran kopce. Harbour trace regrese
+po změně vodního katalogu používá seed 1 / chunk 312 a aktuální
+`back.harbour-pier`; stále porovnává přijatou hloubku s vykresleným objektem.

@@ -1,7 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, tapAction } from './helpers.ts';
+import {
+  snapshot,
+  tapAction,
+  waitForRideStart,
+  waitForWorldAtlasesWithoutVehicleArt,
+} from './helpers.ts';
 
 /**
  * A stopped journey in world 123 just before the second track of biome
@@ -44,6 +49,7 @@ async function continueBeforeSecondTrack(page: Page): Promise<void> {
   await tapAction(page, 'continue');
   await tapAction(page, 'resume');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('RIDING');
+  await waitForRideStart(page);
 }
 
 test.describe('the oncoming train (doc 05 §6, SCN-09, D-017)', () => {
@@ -115,6 +121,8 @@ test.describe('the oncoming train (doc 05 §6, SCN-09, D-017)', () => {
     test.setTimeout(120_000);
     await page.route(/steam_local\.body-[^/]*\.svg$/, (route) => route.abort());
     await continueBeforeSecondTrack(page);
+    // D-019 exposed the world atlas synchronously on resume, including vehicle-art fallback.
+    await waitForWorldAtlasesWithoutVehicleArt(page);
     const state = await snapshot(page);
     expect(state.vehicleAtlas).toBeUndefined();
     expect(state.artAtlas).toBeDefined();

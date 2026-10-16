@@ -1,15 +1,17 @@
+import { worldAtlasWindowKeys } from '../../src/content/worldAtlasGroups.ts';
+import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { locomotives, wagons } from '../../src/content/vehicles.ts';
 import { npcFleetFor } from '../../src/domain/interaction/npcFleet.ts';
 import { journeyArtKeys } from '../../src/render/atlasPacking.ts';
 import { expect, test } from '@playwright/test';
 import { isBackdropPart, worldParts } from '../../src/content/worldArt.ts';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
-import { snapshot, startRide, tapAction } from './helpers.ts';
+import { snapshot, startRide, tapAction, waitForRideStart } from './helpers.ts';
 
-/** World parts keep their atlas across journeys (D-019). */
-const MAIN_FRAMES = Object.keys(worldParts).filter(
-  (key) => !isBackdropPart(key),
-).length;
+const mainFrames = (state: DebugSnapshot) =>
+  worldAtlasWindowKeys(worldParts, state.worldAtlases.regions).filter(
+    (key) => !isBackdropPart(key),
+  ).length;
 
 test.describe('vehicle art (doc 14 §3)', () => {
   test('the ride draws every vehicle from its art in one atlas', async ({
@@ -19,7 +21,7 @@ test.describe('vehicle art (doc 14 §3)', () => {
     await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(3);
     const state = await snapshot(page);
     expect(state.renderedVehicles).toBe(3);
-    expect(state.artAtlas?.frames).toBe(MAIN_FRAMES);
+    expect(state.artAtlas?.frames).toBe(mainFrames(state));
     expect(state.vehicleAtlas?.vehicleIds).toEqual(
       expect.arrayContaining(['steam_local', 'cargo_box', 'fun_balloons']),
     );
@@ -73,7 +75,7 @@ test.describe('vehicle art (doc 14 §3)', () => {
       .toBe(2);
     const state = await snapshot(page);
     expect(state.vehicleAtlas).toBeUndefined();
-    expect(state.artAtlas?.frames).toBe(MAIN_FRAMES);
+    expect(state.artAtlas?.frames).toBe(mainFrames(state));
     expect(state.renderedChunks).toBeGreaterThan(0);
     expect(state.artVehicles).toBe(0);
     // The parts that did load are released too (D-011): the fallback must
@@ -99,8 +101,9 @@ test.describe('vehicle art (doc 14 §3)', () => {
       ) {
         const [source] = args;
         if (
-          source instanceof HTMLImageElement &&
-          /^(data:image\/svg|blob:)/.test(source.src)
+          source instanceof ImageBitmap ||
+          (source instanceof HTMLImageElement &&
+            /^(data:image\/svg|blob:)/.test(source.src))
         )
           throw new Error('atlas canvas lost (test)');
         return draw.apply(this, args);
@@ -188,15 +191,22 @@ test.describe('vehicle art (doc 14 §3)', () => {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.setViewportSize({ width: 1280, height: 720 });
     await startRide(page, ['cargo_box']);
-    // Zoom 0.72 × 1280 / 1600 = 0.576 game px per u → raster step 0.75.
+    // Zoom 0.60 × 1280 / 2000 = 0.384 game px per u → raster step 0.5.
+    await expect
+      .poll(async () => (await snapshot(page)).vehicleAtlas?.pxPerU)
+      .toBe(0.5);
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    // 0.60 × 1920 / 2000 = 0.576 → 0.75.
     await expect
       .poll(async () => (await snapshot(page)).vehicleAtlas?.pxPerU)
       .toBe(0.75);
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    // 0.72 × 1920 / 1600 = 0.864 → 1.
+    // D-030, owner decision 2026-10-16: the world re-decodes its window after
+    // a resize; publication may take up to 15 s instead of the default 5 s.
     await expect
-      .poll(async () => (await snapshot(page)).vehicleAtlas?.pxPerU)
-      .toBe(1);
+      .poll(async () => (await snapshot(page)).artAtlas?.pxPerU, {
+        timeout: 15_000,
+      })
+      .toBe(0.75);
     const state = await snapshot(page);
     expect(state.artVehicles).toBe(2);
     expect(state.trainBox).toBeDefined();
@@ -239,6 +249,7 @@ test('H0: mixed groups rebuild the vehicle atlas on depot exit and restore while
   await tapAction(page, 'add:cargo_container');
   const loadedSources = sourceRequests.length;
   await tapAction(page, 'depart');
+  await waitForRideStart(page);
   await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(6);
   const next = await snapshot(page);
   expect(next.artVehicles).toBe(next.vehicles);
@@ -248,8 +259,11 @@ test('H0: mixed groups rebuild the vehicle atlas on depot exit and restore while
   expect(sourceRequests.length).toBe(loadedSources);
   await page.reload();
   await tapAction(page, 'continue');
+  await waitForRideStart(page);
   await expect.poll(async () => (await snapshot(page)).artVehicles).toBe(6);
   const restored = await snapshot(page);
+  // The restored journey stays paused while its art is drawn.
+  expect(restored.screen).toBe('PAUSED');
   expect(restored.artVehicles).toBe(restored.vehicles);
   expect(restored.vehicleAtlas?.vehicleIds).toContain('cargo_container');
   expect(restored.artSourceTextures).toBe(0);
@@ -287,12 +301,13 @@ test('H0: vehicle rasterisation failure keeps world art and is attempted only on
       ...args: Parameters<typeof draw>
     ) {
       const [source] = args;
-      // steam_local's loaded body/overlay frame at the authoritative 2 px/u;
-      // no world source has this frame size.
+      // D-030 passes a disposable ImageBitmap at the camera's requested scale;
+      // D-028 selects 0.5 px/u on both configured 1280px browser projects.
+      // No world source has the steam_local body/overlay's 78 x 50 frame.
       if (
-        source instanceof HTMLImageElement &&
-        source.width === 312 &&
-        source.height === 200
+        source instanceof ImageBitmap &&
+        source.width === 78 &&
+        source.height === 50
       ) {
         attempts += 1;
         throw new Error('vehicle atlas canvas lost (test)');
@@ -307,7 +322,7 @@ test('H0: vehicle rasterisation failure keeps world art and is attempted only on
     .toBeGreaterThan(tick + 30);
   const state = await snapshot(page);
   expect(state.vehicleAtlas).toBeUndefined();
-  expect(state.artAtlas?.frames).toBe(MAIN_FRAMES);
+  expect(state.artAtlas?.frames).toBe(mainFrames(state));
   expect(state.backdropAtlas).toBeDefined();
   expect(state.artVehicles).toBe(0);
   expect(state.renderedVehicles).toBe(2);

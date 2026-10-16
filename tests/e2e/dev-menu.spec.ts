@@ -8,6 +8,11 @@ import {
 import { generateTrackProfile } from '../../src/domain/world/TrackProfile.ts';
 import { parseSave, saveRules } from '../../src/platform/SaveValidation.ts';
 import { driveUntilMoving, snapshot, startRide, tapAction } from './helpers.ts';
+import {
+  advanceSeasonalFrames,
+  probeScene,
+  restore,
+} from './seasonalVisual.helpers.ts';
 
 test.beforeEach(async ({ page }) => {
   await page.clock.install();
@@ -430,6 +435,14 @@ test('developer menu targets fit a small landscape phone and stay accessible aft
   await page.setViewportSize({ width: 568, height: 320 });
   await paused(page);
   await openMenu(page);
+  // Every expandable parent section is opened before measuring its controls.
+  for (const summary of await page
+    .locator('.dev-menu details > summary')
+    .all()) {
+    const section = summary.locator('..');
+    if ((await section.getAttribute('open')) === null) await summary.click();
+    await expect(section).toHaveJSProperty('open', true);
+  }
   for (const control of await page
     .locator('.dev-menu select, .dev-menu input, .dev-menu button')
     .all()) {
@@ -531,10 +544,20 @@ for (const clipboard of ['available', 'missing', 'denied']) {
     await paused(page, '?debug=1');
     await openMenu(page);
     await tapAction(page, 'dev-details');
-    for (const title of ['Výkon', 'Svět', 'Vlak', 'Přejezdy', 'Atlasy', 'Zvuk'])
-      await expect(
-        page.getByRole('heading', { name: title, exact: true }),
-      ).toBeVisible();
+    for (const title of [
+      'Výkon',
+      'Svět',
+      'Vlak',
+      'Přejezdy',
+      'Atlasy',
+      'Tunely',
+      'Trolejové vedení',
+      'Zvuk',
+    ]) {
+      const heading = page.getByRole('heading', { name: title, exact: true });
+      await heading.scrollIntoViewIfNeeded();
+      await expect(heading).toBeInViewport({ ratio: 1 });
+    }
     await page
       .getByRole('button', { name: 'Kopírovat JSON', exact: true })
       .click();
@@ -582,6 +605,9 @@ for (const clipboard of ['available', 'missing', 'denied']) {
     expect(JSON.parse(copied)).toMatchObject({
       buildId: (await snapshot(page)).buildId,
       seed: (await snapshot(page)).seed,
+      worldDebug: { temporaryRide: false },
+      audioDetails: { pending: 0 },
+      catenary: { outOfRange: 0 },
     });
     await tapAction(page, 'dev-details-close');
     await expect(page.locator('[data-action="dev-details"]')).toBeFocused();
@@ -680,11 +706,12 @@ for (const action of ['dev-restart', 'dev-random-world']) {
         window.__restartVoices = [];
         const NativeAudioContext = window.AudioContext;
         window.AudioContext = class extends NativeAudioContext {
-          override createOscillator(): OscillatorNode {
-            const oscillator = super.createOscillator();
+          override createBufferSource(): AudioBufferSourceNode {
+            const oscillator = super.createBufferSource();
             const voice: RestartVoice = { stops: [], disconnected: false };
             window.__restartVoices.push(voice);
             const stop = oscillator.stop.bind(oscillator);
+            oscillator.loop = true;
             oscillator.stop = (when = 0) => {
               voice.stops.push(when);
               // Keep the real source unfinished through the menu interaction.
@@ -709,6 +736,12 @@ for (const action of ['dev-restart', 'dev-random-world']) {
       await expect
         .poll(async () => (await snapshot(page)).audio)
         .toBe('suspended');
+      await openMenu(page);
+      await page.getByText('Zvuky', { exact: true }).click();
+      await activate(page, 'dev-sound:audio.horn.steam_local');
+      await expect
+        .poll(async () => (await snapshot(page)).audioDetails.active.length)
+        .toBe(1);
       const previous = await page.evaluate(() => window.__restartVoices);
       if (fails)
         await page.evaluate(() => {
@@ -721,9 +754,10 @@ for (const action of ['dev-restart', 'dev-random-world']) {
             write.call(this, key, value);
           };
         });
-      await openMenu(page);
       await activate(page, action);
-      expect((await snapshot(page)).audio).toBe('suspended');
+      expect((await snapshot(page)).audio).toBe(
+        fails ? 'running' : 'suspended',
+      );
       if (fails) {
         await expect(page.locator('[data-dev-error]')).toBeVisible();
         expect(await page.evaluate(() => window.__restartVoices)).toEqual(
@@ -734,7 +768,7 @@ for (const action of ['dev-restart', 'dev-random-world']) {
         await expect(page.locator('.dev-menu')).toHaveCount(0);
         expect(await page.evaluate(() => window.__restartVoices)).toEqual(
           previous.map((voice) => ({
-            stops: [...voice.stops, 0],
+            stops: voice.disconnected ? voice.stops : [...voice.stops, 0],
             disconnected: true,
           })),
         );
@@ -743,11 +777,22 @@ for (const action of ['dev-restart', 'dev-random-world']) {
       await expect
         .poll(async () => (await snapshot(page)).audio)
         .toBe('running');
-      if (fails)
-        expect(await page.evaluate(() => window.__restartVoices)).toEqual(
-          previous,
+      if (fails) {
+        expect(
+          (await snapshot(page)).audioDetails.active.map((voice) => voice.id),
+        ).not.toContain('audio.horn.steam_local');
+        expect(
+          await page.evaluate(
+            (count) => window.__restartVoices.slice(0, count),
+            previous.length,
+          ),
+        ).toEqual(
+          previous.map((voice) => ({
+            stops: voice.disconnected ? voice.stops : [...voice.stops, 0],
+            disconnected: true,
+          })),
         );
-      else {
+      } else {
         await activate(page, 'horn');
         await expect
           .poll(() => page.evaluate(() => window.__restartVoices.length))
@@ -761,18 +806,17 @@ test('restart effects: active ambient life starts again after the initial delay'
   page,
 }) => {
   await page.setViewportSize({ width: 568, height: 320 });
-  await page.addInitScript(() => {
-    Math.random = () => 0.5;
-  });
-  await paused(page, '?debug=1&seed=123&quality=low&renderer=canvas');
-  await tapAction(page, 'resume');
-  await page.clock.runFor(8000);
+  // D-027 seeds a shared effects stream: fix its frames as well as the journey.
+  await probeScene(page);
+  await restore(page, 'canvas', 0, 512, [], 123, 'low', true);
+  await advanceSeasonalFrames(page, 240);
   expect((await snapshot(page)).effects.kinds['bird'] ?? 0).toBeGreaterThan(0);
   await tapAction(page, 'pause');
   await openMenu(page);
   await activate(page, 'dev-restart');
+  await advanceSeasonalFrames(page, 1);
   await expect.poll(async () => (await snapshot(page)).effects.live).toBe(0);
   await tapAction(page, 'resume');
-  await page.clock.runFor(7600);
+  await advanceSeasonalFrames(page, 228);
   expect((await snapshot(page)).effects.kinds['bird'] ?? 0).toBeGreaterThan(0);
 });

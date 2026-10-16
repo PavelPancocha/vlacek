@@ -104,7 +104,14 @@ Níže uvedené typy jsou normativní jádro, které lze rozšířit o konkrétn
 ```ts
 export type Power = 'steam' | 'diesel' | 'electric' | 'fantasy';
 export type BiomeId =
-  'countryside' | 'forest' | 'lakes' | 'foothills' | 'mountains' | 'coast';
+  | 'countryside'
+  | 'forest'
+  | 'lakes'
+  | 'foothills'
+  | 'mountains'
+  | 'coast'
+  | 'dunes'
+  | 'town';
 export type MotionIntent = 'THROTTLE' | 'COAST' | 'BRAKE';
 export type EffectId =
   'none' | 'steam' | 'diesel' | 'stars' | 'bubbles' | 'rainbow';
@@ -297,7 +304,7 @@ Při známé starší `schemaVersion` provést explicitní čistou migraci a ote
 
 Ochrana novějšího primáru i zálohy platí i po úspěšném načtení staršího save: před zápisem zálohy i primáru `SaveRepository.save()` znovu přečte a validuje oba aktuální klíče. Pokud je některý z nich novější nebo nelze storage přečíst, neprovede žádný zápis a pokračuje v paměti ([D-031](../docs/decisions/031-installable-offline-pwa.md), DATA-04). Pokud mezitím jiná karta s novějším buildem uloží novější save, výsledek `newer` přepne relaci do `memory-only` a ukončí ukládání bez jediného zápisu. Další checkpointy nadále uchovávají snapshot v paměti; primár ani existující záloha se nemění (R1, DATA-04).
 
-`generatorVersion` mění geometrii. V rámci V1 jej držet na 1. Verze 0.1 ukládala cesty dočasného generátoru 0. Build s generátorem 1 u nich zachová soupravu i číslo světa (seed) a po upozornění „Trať se změnila, vlak vyjede na novou cestu.“ začne novou cestu na startu (rozhodnutí [D-005](../docs/decisions/005-provisional-track-generator-v0.md) a [D-009](../docs/decisions/009-track-generator-v1.md)). Známé a starší verze přijímá validace jako `valid`; o obnově starší cesty rozhoduje `GameSession`. Novější verzi hlásí validace jako `newer` ještě před kontrolou obsahu, takže se save nezahodí jako poškozený ani nepřepíše cestou staršího buildu. Při budoucí nekompatibilní změně buď zachovat starý generátor pro rozehranou cestu, nebo zachovat soupravu a po jasném upozornění začít novou cestu. Nikdy neregenerovat jiný most pod starou soupravou potichu.
+`generatorVersion` označuje kompatibilitu vydané geometrie a umístění; aktuální generátor je **2** ([D-023](../docs/decisions/023-world-generator-v2.md)). Schéma a verze obsahu zůstávají 1. Cesty z vydaných generátorů 0 i 1 obnovuje stávající restart: zachová soupravu, seed a nastavení, oznámí `track-changed` a resetuje kurzor, tick a rychlost na nový start. Novější generátor 3 se chrání před validací katalogu. Historická fixture `v1-future-catalog.json` zůstává beze změny a testuje se také explicitní čtečkou v1; pro v2 už její generátor 2 není novější. Verze 0.1 ukládala cesty dočasného generátoru 0. Build s generátorem 1 u nich zachová soupravu i číslo světa (seed) a po upozornění „Trať se změnila, vlak vyjede na novou cestu.“ začne novou cestu na startu (rozhodnutí [D-005](../docs/decisions/005-provisional-track-generator-v0.md) a [D-009](../docs/decisions/009-track-generator-v1.md)). Známé a starší verze přijímá validace jako `valid`; o obnově starší cesty rozhoduje `GameSession`. Novější verzi hlásí validace jako `newer` ještě před kontrolou obsahu, takže se save nezahodí jako poškozený ani nepřepíše cestou staršího buildu. Při budoucí nekompatibilní změně buď zachovat starý generátor pro rozehranou cestu, nebo zachovat soupravu a po jasném upozornění začít novou cestu. Nikdy neregenerovat jiný most pod starou soupravou potichu.
 
 Změna `contentVersion` má mapování přejmenovaných ID. Chybějící vagón se bez upozornění nezahodí; zachovat zálohu, nabídnout obnovu sestavy s dostupnou náhradou. V produkční V1 se však všechny katalogové ID zavazují jako stabilní.
 
@@ -326,3 +333,7 @@ Použít Node 24.x jako výchozí vývojovou řadu a ověřit skutečné požada
 Povinné skripty skutečné implementace: `dev`, `typecheck`, `lint`, `test`, `test:e2e`, `build`, `preview`, `validate:assets`, `report:budgets`. V běžném předání se používá `npm ci`, nikoli pokaždé aktualizace na nejnovější verze.
 
 Tento dokument definuje kontrakty a strukturu. Neobsahuje tvrzení, že zmíněné soubory již existují nebo že byl spuštěn build hry.
+
+### Kontrakty světa v2
+
+`RegionPlan`, `ScenePlan`, `FeatureExtent`, `Reservation`, `RoadPath`, `WaterGeometry`, `FenceFeature` a `PlacementCatalog` jsou čistá data domény. Obsahový adaptér předává zmrazené validované rozměry/pivoty; doména neimportuje obsah ani render. Dlouhé prvky vlastní region/scénka, řezy jsou samostatné klíče fragmentů. Nové RNG jmenné prostory jsou nezávislé na číslu kompatibility. Přesné jednotky, vztahy, stropy cache a migrační politika jsou v [D-023](../docs/decisions/023-world-generator-v2.md).

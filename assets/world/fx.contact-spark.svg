@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="8" viewBox="0 0 14 8">
+  <!-- Vlastní kresba: klidná modrobílá čárka u kontaktu sběrače s drátem. -->
+  <defs><radialGradient id="soft"><stop stop-color="#b5dcff" stop-opacity="0.8"/><stop offset="1" stop-color="#86bded" stop-opacity="0"/></radialGradient></defs>
+  <ellipse cx="7" cy="4" rx="7" ry="4" fill="url(#soft)"/>
+  <ellipse cx="7" cy="4" rx="5.5" ry="1.7" fill="#d5ebff"/>
+  <ellipse cx="8" cy="4" rx="3.5" ry="0.9" fill="#f0f7ff"/>
+</svg>

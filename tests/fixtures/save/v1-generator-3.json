@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": 1,
+  "savedAtIso": "2026-10-11T12:00:00.000Z",
+  "appBuildId": "9.9.0+future0",
+  "settings": {
+    "sfxEnabled": true,
+    "musicEnabled": false,
+    "reducedEffects": false,
+    "maxSpeedFactor": 1,
+    "quality": "auto"
+  },
+  "lastConsist": {
+    "locomotiveId": "future_locomotive",
+    "wagons": []
+  },
+  "builderDraft": {
+    "locomotiveId": "future_locomotive",
+    "wagons": []
+  },
+  "journey": {
+    "seed": 123,
+    "generatorVersion": 3,
+    "consist": {
+      "locomotiveId": "future_locomotive",
+      "wagons": []
+    },
+    "head": {
+      "chunkIndex": 0,
+      "arcOffsetU": 512
+    },
+    "simulationTick": 0,
+    "activeEntities": []
+  }
+}

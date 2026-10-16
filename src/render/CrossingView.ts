@@ -1,3 +1,12 @@
+import { frameTexture } from './frameTexture.ts';
+import type { RoadVehicleSnapshot } from './roadVehicleSnapshot.ts';
+import {
+  vehicleHeading,
+  type VehicleHeading,
+} from '../domain/interaction/VehicleHeading.ts';
+import { roadVehicleArt } from '../content/roadVehicleArt.ts';
+import { ROAD_ACTOR_SPEED_U_PER_SEC } from '../domain/interaction/roadTraffic.ts';
+import { RoadVehicleMotion } from './RoadVehicleMotion.ts';
 import Phaser from 'phaser';
 import type { ArtPart } from '../content/artManifest.ts';
 import {
@@ -37,6 +46,7 @@ export interface CrossingState {
 }
 
 export interface CrossingArt {
+  textureFor?: (frame: string) => string | undefined;
   texture: string;
   pxPerU: number;
 }
@@ -76,6 +86,18 @@ export class CrossingView {
   readonly #depths: CrossingDepths;
   readonly #barriers: Barrier[];
   readonly #actors = new Map<string, Phaser.GameObjects.Image>();
+  readonly #motion = new Map<
+    string,
+    {
+      visual: RoadVehicleMotion;
+      heading: VehicleHeading;
+      vx: number;
+      vy: number;
+      kind: string;
+      roadU: number;
+      timeSec: number;
+    }
+  >();
   /** Every image with its chunk-local x (actors move, see #placeActor). */
   readonly #placed = new Map<Phaser.GameObjects.Image, number>();
   #chunkX = 0;
@@ -114,11 +136,18 @@ export class CrossingView {
   }
 
   setX(chunkX: number): void {
+    const delta = chunkX - this.#chunkX;
+    for (const moving of this.#motion.values()) moving.visual.shiftX(delta);
     this.#chunkX = chunkX;
     for (const [image, localX] of this.#placed) image.setX(chunkX + localX);
   }
 
-  update(state: CrossingState | undefined, timeSec: number): void {
+  update(
+    state: CrossingState | undefined,
+    timeSec: number,
+    motion = 1,
+    arrows = false,
+  ): void {
     const barrier = state?.barrier ?? 0;
     const warning = state?.warning ?? false;
     const red = redLampsLit(timeSec);
@@ -132,12 +161,14 @@ export class CrossingView {
     const alive = new Set<string>();
     for (const actor of state?.actors ?? []) {
       alive.add(actor.id);
-      this.#placeActor(actor);
+      this.#placeActor(actor, timeSec, motion, arrows);
     }
     for (const [id, image] of this.#actors) {
       if (alive.has(id)) continue;
       this.#placed.delete(image);
       image.destroy();
+      this.#motion.get(id)?.visual.destroy();
+      this.#motion.delete(id);
       this.#actors.delete(id);
     }
   }
@@ -146,6 +177,8 @@ export class CrossingView {
     for (const image of this.#placed.keys()) image.destroy();
     this.#placed.clear();
     this.#actors.clear();
+    for (const moving of this.#motion.values()) moving.visual.destroy();
+    this.#motion.clear();
     this.#barriers.length = 0;
   }
 
@@ -157,7 +190,7 @@ export class CrossingView {
     const scale = roadScale(roadU);
     const sign = side === 'left' ? -1 : 1;
     const x = this.#x + sign * (roadHalfWidthU(roadU) + POST_SIDE_GAP_U);
-    const footY = roadPointY(this.#frame, roadU);
+    const footY = roadPointY(this.#frame, roadU, x - this.#x);
     const post = worldParts[postKey];
     const anchors = crossingPostAnchors[postKey];
     const at = (point: { x: number; y: number }) => ({
@@ -185,12 +218,26 @@ export class CrossingView {
     };
   }
 
-  #placeActor(actor: RoadActor): void {
+  #placeActor(
+    actor: RoadActor,
+    timeSec: number,
+    effects: number,
+    arrows: boolean,
+  ): void {
     const key = this.#actorKey(actor);
     let image = this.#actors.get(actor.id);
     if (!image) {
       image = this.#image(key, 0, 0, 1, 0);
       this.#actors.set(actor.id, image);
+      this.#motion.set(actor.id, {
+        visual: new RoadVehicleMotion(this.#scene),
+        heading: { rotationRad: 0, flipX: false },
+        vx: 0,
+        vy: 0,
+        kind: key,
+        roadU: actor.roadU,
+        timeSec,
+      });
     }
     const r = actor.roadU;
     const x = this.#x + laneOffsetU(actor.direction, r);
@@ -202,10 +249,77 @@ export class CrossingView {
           : this.#depths.near + r * DEPTH_PER_ROAD_U;
     this.#placed.set(image, x);
     image
-      .setPosition(this.#chunkX + x, roadPointY(this.#frame, r))
+      .setPosition(this.#chunkX + x, roadPointY(this.#frame, r, x - this.#x))
       .setScale((ROAD_ACTOR_SCALE * roadScale(r)) / this.#art.pxPerU)
       .setAlpha(roadActorAlpha(r))
       .setDepth(depth);
+    const moving = this.#motion.get(actor.id),
+      asset = roadVehicleArt[key],
+      part = parts[key];
+    if (moving && asset && part) {
+      const dt = timeSec - moving.timeSec;
+      const speed = actor.waiting
+        ? 0
+        : dt > 0
+          ? (r - moving.roadU) / dt
+          : actor.direction * ROAD_ACTOR_SPEED_U_PER_SEC[actor.kind];
+      moving.roadU = r;
+      moving.timeSec = timeSec;
+      const beforeX = laneOffsetU(actor.direction, r - 0.5),
+        afterX = laneOffsetU(actor.direction, r + 0.5);
+      if (dt > 0 || (moving.vx === 0 && moving.vy === 0 && !actor.waiting)) {
+        moving.vx = (afterX - beforeX) * speed;
+        moving.vy =
+          (roadPointY(this.#frame, r + 0.5, afterX) -
+            roadPointY(this.#frame, r - 0.5, beforeX)) *
+          speed;
+      }
+      if (actor.waiting) {
+        moving.vx = 0;
+        moving.vy = 0;
+      }
+      vehicleHeading(asset.front, moving.vx, moving.vy, moving.heading);
+      image
+        .setFlipX(moving.heading.flipX)
+        .setRotation(moving.heading.rotationRad);
+      moving.visual.graphics.setDepth(depth + 0.00001).setAlpha(image.alpha);
+      moving.visual.update(
+        image,
+        part,
+        asset,
+        moving.vx,
+        moving.vy,
+        timeSec,
+        effects,
+        arrows,
+        this.#art.pxPerU,
+      );
+    }
+  }
+
+  roadVehicles(chunkWorldXU: number): RoadVehicleSnapshot[] {
+    const result: RoadVehicleSnapshot[] = [];
+    for (const [id, moving] of this.#motion) {
+      const image = this.#actors.get(id);
+      if (!image) continue;
+      const v = moving.visual;
+      result.push({
+        id,
+        kind: moving.kind,
+        roadKind: 'crossing',
+        worldXU: chunkWorldXU + image.x - this.#chunkX,
+        worldYU: image.y,
+        velocityXUPerSec: moving.vx,
+        velocityYUPerSec: moving.vy,
+        frontX: v.frontX,
+        frontY: v.frontY,
+        parentScaleX: 1,
+        wheelAngleRad: v.wheelAngleRad,
+        exhaust: v.exhaust,
+        arrows: v.arrows,
+      });
+    }
+    return result;
   }
 
   /** Art of a road actor: seen from the front when it comes closer. */
@@ -223,12 +337,9 @@ export class CrossingView {
     scale: number,
     depth: number,
   ): Phaser.GameObjects.Image {
-    const image = this.#scene.add.image(
-      this.#chunkX + x,
-      y,
-      this.#art.texture,
-      key,
-    );
+    const image = this.#scene.add
+      .image(this.#chunkX + x, y, frameTexture(key, this.#art.texture), key)
+      .setData('world-part', key);
     const part = parts[key];
     if (part) {
       const origin = frameOrigin(part.pivotU, this.#art.pxPerU, image.frame);

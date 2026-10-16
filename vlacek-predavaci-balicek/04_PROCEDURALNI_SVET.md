@@ -40,11 +40,19 @@ export function unitRandom(...parts: readonly (string | number)[]): number {
 }
 ```
 
-Příklady klíčů: `terrain-boundary`, `route-template`, `major-feature`, `tree-position`, `animal-species`, `npc-train`, `cloud-shape`. Číselné indexy validovat jako bezpečná celá čísla. `generatorVersion` je součástí vstupního klíče.
+Příklady klíčů: `terrain-boundary`, `route-template`, `major-feature`, `tree-position`, `animal-species`, `npc-train`, `cloud-shape`. Číselné indexy validovat jako bezpečná celá čísla. Kompatibilita a RNG jsou oddělené: nezměněné algoritmy drží sůl 1, nové regiony/scénky/umístění mají explicitní jmenné prostory `regions-v2:*`, `scenes-v2:*`, `placement-v2` a `fences-v2`. Změna vydané geometrie či umístění stále vyžaduje rozhodnutí kompatibility ([D-023](../docs/decisions/023-world-generator-v2.md)).
 
-ID entity má podobu `g1:chunk:42:animal:3`; není to náhodné UUID při každém vykreslení. Kosmetické částice mohou mít vlastní omezený generátor a neovlivňují layout ani save.
+ID entity má podobu `g2:chunk:42:prop:rule:3:candidate:1`; není to náhodné UUID při každém vykreslení. Kosmetické částice mohou mít vlastní omezený generátor a neovlivňují layout ani save.
 
-## 4. Kontinuita kolejí: profil generátoru v1
+Částicové efekty mají vlastní 32bitový generátor, seedovaný jednou při změně
+instance jízdy z čísla cesty, klíče `effects` a počátečního ticku nové nebo
+obnovené jízdy, před resetem okolního života. Další emise posouvají jeho stav
+bez nového hashování během snímků. Stejná posloupnost snímků,
+profilu kvality a vstupů od stejného počátečního stavu opakuje i částice;
+nejde o shodu částic při různých FPS ani o ukládání kosmetického stavu.
+Podrobnosti a obrazové regrese vlastní [D-027](../docs/decisions/027-seasons-and-life.md).
+
+## 4. Kontinuita kolejí: profil generátoru v2
 
 Zadání [14 §6](14_UPRAVY_PRVNI_VERZE.md) mění charakter tratě: roviny a delší rovná stoupání a klesání spojená krátkými plynulými přechody, bez souvislého vlnění. Původní konstrukce tohoto oddílu (hraniční výšky `H(k)` v ±32 u a smootherstep přechody s nulovým sklonem na každé hranici chunku) zůstává jen jako generátor v0 verze 0.1. Měření ukázalo, že v ní se sklon mění na 91–95 % délky ([D-009](../docs/decisions/009-track-generator-v1.md)).
 
@@ -57,44 +65,29 @@ Generátor v1 (`src/domain/world/TrackProfile.ts`, parametry `world.profile` v d
 
 Výška a sklon jsou spojité na každém švu chunku i bloku. Sklon nikdy nepřekročí `gradeRangeMax`, a tedy ani absolutní mez `world.maxTrackGrade` (0.12), se kterou počítá model pohybu. Změna kteréhokoli parametru `world.profile` mění geometrii a vyžaduje nové `generatorVersion`.
 
-Nádraží a přejezdy (M2) se umístí na existující roviny plánu, mosty a tunely na terén kolem tratě, který může být členitější než kolejové těleso. Geometrie v1 se kvůli nim nemá měnit.
+Nádraží a přejezdy (M2) se umístí na existující roviny plánu, mosty a tunely na terén kolem tratě, který může být členitější než kolejové těleso. V2 před volnými sklony vyhradí prvnímu bloku počáteční rovinu do x = 2 144 u; ve slotu 1 tak zůstane minimálně 448 u použitelné roviny i po přechodových ramenech. Ostatní bloky zachovávají konstrukci v1 i její RNG sůl. Viz [D-023](../docs/decisions/023-world-generator-v2.md).
 
 Terén kolem tratě je samostatná seedovaná funkce, ne součást profilu koleje ([D-012](../docs/decisions/012-track-tiles-and-terrain.md)). `embankmentU(seed, x)` určuje výšku kolejového tělesa nad loukou v popředí: hodnotový šum s uzly po `world.terrain.latticeU` do `world.terrain.maxEmbankmentU`, spojitý se spojitým sklonem a počítaný jen z x. Klíč obsahuje verzi generátoru.
 
-## 5. Biomy a návaznost krajiny
+## 5. Regiony, scénky a návaznost krajiny
 
-Šest základních biomů:
+Generátor **v2** odděluje geometrické bloky od regionů. Blok zůstává osm chunků, region má 3–7 celých bloků, tedy 24 576–57 344 u (asi 51–119 s při 480 u/s). Zastavení nepřepne krajinu. Pevný cyklus má 12 regionů a 60 bloků; seed řadí multiset délek `[3,4,4,4,4,5,5,5,6,6,7,7]`. Dvě explicitní trasy a tabulka sousedností kontrolují i spoj cyklů; záporné a vzdálené pozice mají omezený náhodný přístup bez generování minulosti.
 
-- `countryside`: pole, louky, vesnice, sad a farma; výchozí prostředí.
-- `forest`: smíšený les, paseka, potok, hájovna.
-- `lakes`: rybník, řeka, mokřad, lodě a vodní mlýn.
-- `foothills`: údolí, louky, skalní zářezy, menší viadukty.
-- `mountains`: skály, vysoká údolí, tunely, horské louky a sníh.
-- `coast`: pobřeží, pláž, přístav, maják a moře.
+Krajiny: `countryside`, `forest`, `lakes`, `foothills`, `mountains`, `coast`, **`dunes`**, **`town`**. Duny inspirované Moravskou Saharou mají písek, borovice, dunovou trávu a kameny. Pobřeží zůstává samostatné. `town` dočasně používá vesnické skladby; odstranění omezení: **replaced by the settlements-stations lane in the same PR**.
 
-Vesnice, malé město a technické areály jsou scénické motivy, ne sedmý plnohodnotný biome. Tím nevznikají další systémy pouze kvůli jedné budově.
+`RegionPlan` nese sezónu a počasí z explicitní tabulky podporovaných presetů. Sezóna i počasí drží skupiny 2–3 regionů; vybírá se společný podporovaný preset všech jejich krajin, i přes šev cyklu. Nová cesta má letní jasno. Existující sněhové šablony patří pouze k zimě. Sezónní kresbu a ambientní projevy doplňuje [D-027](../docs/decisions/027-seasons-and-life.md): efektivní klima a jeho váhy jsou čistý dotaz podle x, animace používají herní sekundy.
 
-### Jednoduchá deterministická gramatika trasy
+`WorldPlan` skládá uspořádané 2 048u scénky z explicitně importovaných modulů `src/domain/world/scenes/`. Infrastrukturní rezervace mají přednost. `contextAt(seed, worldXU)` určuje konkrétní podzónu, povrch a klima; přípustnost celého obrysu i patrolovacího rozsahu se kontroluje v jednotlivých místech, včetně hranic.
 
-Jeden biomový blok má osm chunků. Osm takových bloků tvoří cyklus. Pro každý cyklus hash vybere jeden z následujících itinerářů:
+Přední pole a lesní půda mají oblé nepravidelné zakončení s travnatým lemem. Brázdy nepokračují do souvrati a sousední plochy se nedotýkají hroty. Podpora a celý pohybový obal používají stejný světový obrys.
 
-```text
-A: countryside → forest → foothills → mountains → foothills → lakes → coast → lakes
-B: countryside → lakes → coast → lakes → forest → foothills → mountains → foothills
-C: countryside → forest → lakes → coast → lakes → foothills → mountains → foothills
-```
+`PlacementCatalog` je validovaný numerický adaptér rozměrů/pivotů `worldArt` předaný doméně. Sdílený `SceneryGeometry` vlastní projekci, stopy, vodní obrysy a vesnické cesty včetně zatáček; renderer nevytváří druhou silnici. `Reservations` chrání kolej a průjezdný prostor, silnice, řeky, kopce portálů, nástupiště a podpěry vedení. Záměrné překryvy mají pojmenovaný vztah ke konkrétnímu prvku.
 
-Všechny začínají venkovem a končí biomem, který na další venkov přirozeně naváže. Pro záporné indexy používat matematické floor dělení a kladné modulo. Žádná potřeba generovat všechny předchozí bloky kvůli určení současného biomu.
+Nejdřív se filtrují přípustné druhy a podpory, potom se losuje. Osm pokusů je konečná mez. Dům potřebuje cestu, loď vodu i pod celou svojí dráhou, mlýn tekoucí náhon a kachna přední rybníček. Neplatné dítě nevznikne. Moře je jedna souvislá regionová plocha s otevřenými řezy chunků, včetně stanic; na pláži nejsou samostatné vnitrozemské rybníčky.
 
-Tohle je výchozí gramatika, nikoli tvrzení, že celá mapa je unikátní bez opakování. Konkrétní profily, stavby, fauna, dekorace a rozložení se dál generují podle samostatných klíčů. Jednoduchá gramatika zaručuje návštěvu všech prostředí bez složitého hledání cesty.
+Prominentní rybníky mají plánový odstup 4 096 u, mlýn jedinou příležitost za region a odstup nejméně 8 192 u, maják jedinou přístavní příležitost. Paměť fasád a motivů se rekonstruuje z plánu, nikoli z historie kamery. Plot je celá 512u cesta se sloupky po 64 u délky, skutečnými konci a případnou brankou; fragment nevytváří falešný konec ani duplicitní sloupek.
 
-Poslední chunk biomového bloku provádí postupný vizuální přechod k dalšímu biomu. Krajinu míchat prostorově, ne časovým přepnutím celé obrazovky. Vzdálené hory či moře se objeví před hlavním přechodem. Nesmí následovat okamžitý skok ze zasněženého tunelu do tropické džungle.
-
-Implementace ([D-013](../docs/decisions/013-landscape-localities-and-backdrops.md)) má tři části.
-
-- **Biom a lokalita.** `biomeAt(seed, k)` počítá biom z gramatiky pro libovolný, i záporný chunk. `chunkScenery(seed, k)` vybere lokalitu ze šablon v `sceneryTemplates.ts`, například pastvinu, pole, farmu, vesnici, les, paseku, rybník, mlýn, přístav nebo horskou chatu. Pak rozmístí její rekvizity se stabilními ID `g1:chunk:k:prop:n`.
-- **Sloty.** Slot 0 je klidný, nádraží stojí ve slotu 1 nebo 2 na rovině aspoň 448 u. Slot 7 přepíná od x = 512 na klidnou lokalitu dalšího biomu, takže přechod je prostorový. Pozadí navíc změnu biomu prolne.
-- **Voda.** Je to rovná nádrž v rámci jednoho chunku se zaoblenými konci. Lodě i se svou trasou zůstávají na vodě, stavby a stromy na suchu, nádraží je suché. Traktor, auto a lodě nejezdí v polovině přechodového chunku.
+Posledních 8 192 u regionu nese společný postup přechodu podle světového x. Používají jej far/mid/výplň Backdropu, palety země a hustota vegetace. Břeh příchozího moře se otevírá už v přechodovém bloku předchozího regionu a zužuje se při odchodu; nevzniká uzavřená nádrž. Od poloviny přechodu používá admissibility incoming povrch; rybníček ani květiny nesmějí zasáhnout písek/sníh. Pevné budovy mají plnou neprůhlednost, při stání se postup nemění. Nová cesta resetuje pozadí (R10). Kontrakty, identity a omezení jsou v [D-023](../docs/decisions/023-world-generator-v2.md).
 
 ## 6. Rozvržení výrazných motivů
 
@@ -114,7 +107,7 @@ V prvním bloku nové cesty jsou pro rychlé předvedení pevně stanice ve slot
 
 Stanice dostane rovinu; přejezd není na otevřeném mostě ani uvnitř tunelu. Traktor dostane pole nebo cestu, vodní mlýn vodu, maják pobřeží. Jedna dekorace nesmí zabrat rezervovanou obslužnou dráhu silničního provozu.
 
-Implementace přejezdu ([D-015](../docs/decisions/015-level-crossings.md)): `crossingSite(seed, k)` ve slotu 3 vybere seedem jedno z míst, kde je kolej aspoň 96 u na obě strany rovná a silnice je aspoň 120 u od interaktivního zvířete. Bez takového místa blok přejezd nemá. Pruh silnice ±64 u je rezervovaný: voda se kolem něj rozdělí a žádná rekvizita ani její trasa do něj nezasahuje.
+Implementace přejezdu ([D-015](../docs/decisions/015-level-crossings.md)): `crossingSite(seed, k)` ve slotu 3 vybere seedem jedno z míst, kde je kolej aspoň 96 u na obě strany rovná a přejezd se rezervuje před umístěním zvířete. Zvíře ustoupí nejméně 120 u; první blok přejezd neztratí (R3, seed 1226). Pruh silnice ±64 u je rezervovaný: voda se kolem něj rozdělí a žádná rekvizita ani její trasa do něj nezasahuje.
 
 Implementace mostu a tunelu ([D-018](../docs/decisions/018-bridges-and-tunnels.md)):
 
@@ -122,7 +115,7 @@ Implementace mostu a tunelu ([D-018](../docs/decisions/018-bridges-and-tunnels.m
 - Louka pod mostem klesá do údolí 56 u hlubokého. Kolej se nemění.
 - `tunnelSite(seed, k)` dává ve slotu 6 krátký tunel (448 u): v bloku 0 vždy, jinde v blocích bez souběhu podle biomu (hory 1, podhůří 0,9, les 0,6, ostatní 0,3, klíč `tunnel`).
 
-Každý template deklaruje rezervované oblasti, rozměry, povolené biomy, případné navazující chunky a bezpečné oblasti pro dotykové cíle. Konfliktní kandidát se odmítne nejvýše osmkrát a pak se použije `safe-meadow` nebo biomová obdoba. Generátor se nikdy nesmí zacyklit ani vytvořit chybějící kolej.
+Každá scénka deklaruje podpory a rezervace; rozměry pocházejí z validovaného katalogu stop. Konfliktní kandidát se odmítne nejvýše osmkrát a pak se volitelná rekvizita či neplatná závislá část vynechá; nevzniká globální náhradní seznam. Generátor se nikdy nesmí zacyklit ani vytvořit chybějící kolej.
 
 ## 7. Sekundární trať jako vícedílný motiv
 
@@ -136,7 +129,7 @@ Implementace ([D-017](../docs/decisions/017-second-track-and-oncoming-train.md))
 
 - `secondarySite` dává souběh ve slotech 4–6: vždy v bloku 1, nikdy v bloku 0, jinak s pravděpodobností z configu.
 - `SecondaryLine` je hlavní profil o 64 u hlouběji s vlastním oknem chunků, se skrytými konci o délku soupravy plus 256 u.
-- Pás tratě a portálové kopce (320 u za portály) drží zadní rekvizity za hloubkou 0,45 a vodu za tratí. Přejezd se drží mimo levý kopec.
+- Pás tratě a portálové kopce (380 u za portály) drží zadní rekvizity za hloubkou 0,45 a vodu za tratí. Přejezd se drží mimo levý kopec.
 - Portál tvoří tmavé ústí pod vlakem a kopec s kamenným obloukem nad ním. Vozidla tak mizí po jednom.
 
 ## 8. Streaming a paměť
@@ -169,7 +162,7 @@ Jeden cyklus má výchozí délku 480 s. Nová cesta začíná v denní fázi. B
 
 Počasí používá oddělený seedový plán po 120 s simulačního času: převážně jasno, občas lehký déšť. V horách může srážkový stav znamenat sníh; změnu na hranici biomu jemně prolínat. Žádné bouřky, ostré blesky ani omezení přilnavosti. Výkonnostní profil snižuje počet vloček a kapek, ne zastavuje změnu atmosféry.
 
-Roční období se v první verzi globálně nesimuluje. Sníh v horách je vlastnost prostředí; podzimní či zimní varianta celé mapy je pozdější rozšíření.
+V2 plánuje sezónu a mírné počasí prostorově v regionech podle §5. Sezónní vzhled, lokální listí, třívrstvé sněžení a lehký déšť používají váhy `effectiveClimateAt(seed, worldXU)` ze stejného přechodu jako svět. Simulační čas ovládá pohyb, nikoli změnu krajiny při stání; podrobnosti vlastní [D-027](../docs/decisions/027-seasons-and-life.md).
 
 ## 11. Diagnostika
 
@@ -178,3 +171,27 @@ Vývojový HUD při jízdě ukazuje nejvýše dva krátké řádky: medián FPS,
 Diagnostické API `window.__vlacek.snapshot()` při `?debug=1` uvádí u každého protijedoucího vlaku také `oncoming.trains[].locomotiveId`: katalogové ID skutečně nasazené lokomotivy. E2E píšťaly porovnává odpověď s přesným tónem této identity, nikoli s pevně předpokládaným typem; seedovaná NPC sada podle D-019 se rozšiřuje s dostupnou kresbou. Tento diagnostický údaj se neukládá a nemění svět ani výběr vozidel.
 
 Musí existovat deterministické testovací seedy a profil, který postupně předvede stanici, přejezd, most, tunel a druhou kolej. Debug zkratky nejsou součást dětského menu. Chyby layoutu se mají dát reprodukovat seedem a indexem chunku. Pauza ukazuje drobně číslo světa (seed) pro dospělého a parametr adresy `?seed=N` založí každou novou cestu s tímto seedem; uloženou cestu nemění (rozhodnutí [D-007](../docs/decisions/007-world-seed-in-url.md)).
+
+Diagnostika v2: `snapshot().backdrop.world` obsahuje světové x, region/scénku, krajinu, podzónu, sezónu/počasí, prostorový postup a počty logických prvků, fragmentů, rekvizit a animovaných objektů. `volta run npm run validate:world` ověřuje deskriptory, pořadí dotazů, auditní reprodukce a 20 000 prvních bloků; nulová matice a tři mutační chyby jsou povinné důkazy validátoru. Krok 2 přidává rodičovské překryvy a lokátor: viz D-023 níže.
+
+### Dokončení základu v2 (D-023, krok 2)
+
+Kolej má profil podle krajiny: nížiny, pobřeží a duny zůstávají mírné, podhůří a hory mají skutečné delší svahy a údolí. Rozsahy jsou v dokumentu 13; absolutní sklon nepřekročí ani globální limit, ani validovaný strop pantografu 0,10. Výška/sklon navazují přes bloky i regiony a R3 zůstává.
+
+Přední scény používají vlastní geometrické pole/lesní půdu, skutečné stopy a pojmenované podpory. První teplý řez má traktor na poli v `near`, první lesní práce mají klády a nízkou lesní hranu. Vysoké dospělé koruny do popředí nepatří. Obsahové linky doplní sezónní nářadí a pracovní stroje podle textového katalogu.
+
+Skryté menu nabízí tři světové překryvy, stopu umístění podle ID/x a jedenáct cílených scén. Lokátor má mez čtyř cyklů; dočasná jízda nepřepíše běžnou cestu ani zálohu a při návratu ji obnoví v původní pauze. `snapshot().worldDebug` popisuje tento stav. Výplň země i spodní pokračování používají stejnou prostorovou paletu; hranice chunku nesmí vytvářet zelený obdélník. Podrobný postup rozšíření modulů a registrů vlastní [D-023](../docs/decisions/023-world-generator-v2.md).
+
+Revize generátoru v2: přechod zachovává autorské pole a brázdy, také spodní výplň se vzorkuje podle světového x. Přední pole/lesní půda mají zúžené nepravidelné konce a společnou geometrii podpory i kreslení. Přístavní lodě/mola se odvozují od skutečného břehu, včetně zužujícího se moře; molo musí mít geometrický kontakt s odkazovanou vodou. Přímý obrat sklonu přes 192 u má mez 0,098 pro kompaktní sběrač, současné plány oddělují opačné svahy rovinou. Podrobnosti a nenulové validační svědky popisuje [D-023](../docs/decisions/023-world-generator-v2.md).
+
+### Silniční úseky světa v2 (D-029)
+
+[RD-01 až RD-03](../docs/scenes/roads.md) doplňují souběžnou okresku a vzácný
+vzdálený dálniční úsek do existující krajiny. Celá cesta má identitu/rozsah;
+chunkové fragmenty sdílejí světové vzorky a rezervují skutečnou šířku před
+rekvizitami i ploty. Odstup od koleje se mění plynule, skutečné konce se stáčejí
+za zadní horizont; žádné viditelné příčné zakončení nebo slepé odbočky.
+Okreska se může spojit se zadním ramenem plánovaného přejezdu. Kolej protíná
+pouze jeho silnice; tento invariant prochází velkým seedovým průchodem.
+Dálnice je jeden motiv v regionu, ne nový biom. V2 není vydaná; doplnění
+nemění schéma save ani verzi katalogu, RNG používá `roads-v2:*`.

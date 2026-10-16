@@ -151,7 +151,7 @@ describe('SaveRepository', () => {
 
   it('DATA-04 R1: keeps a newer primary with unknown catalog IDs despite a valid backup', () => {
     const storage = new MemoryStorage();
-    const primary = fixture('v1-future-catalog.json');
+    const primary = fixture('v1-generator-3.json');
     const backup = fixture('v1-journey.json');
     storage.data.set(PRIMARY_KEY, primary);
     storage.data.set(BACKUP_KEY, backup);
@@ -166,7 +166,7 @@ describe('SaveRepository', () => {
   it('DATA-04 R1: keeps a newer primary written after load across repeated saves', () => {
     const storage = new MemoryStorage();
     const older = valid('v1-journey.json');
-    const newer = fixture('v1-future-catalog.json');
+    const newer = fixture('v1-generator-3.json');
     const backup = fixture('v1-no-journey.json');
     storage.data.set(PRIMARY_KEY, fixture('v1-journey.json'));
     storage.data.set(BACKUP_KEY, backup);

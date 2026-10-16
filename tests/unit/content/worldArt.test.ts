@@ -5,14 +5,11 @@ import { gameConfig } from '../../../src/config/gameConfig.ts';
 import { artParts } from '../../../src/content/artManifest.ts';
 import {
   TRACK_TILE_STEP_U,
-  CATENARY_POLE_DEPTH_U,
   TRACK_BED_DEPTH_U,
   TUNNEL_CLEARANCE_U,
   animalParts,
   bridgeParts,
   tunnelParts,
-  catenaryAnchors,
-  catenaryParts,
   crossingPostAnchors,
   trackTileSets,
   worldParts,
@@ -147,23 +144,6 @@ describe('world art manifest (D-011)', () => {
       expect(anchors.white.y).toBeGreaterThan(anchors.red[0].y);
       expect(anchors.hinge.y).toBeGreaterThan(anchors.white.y);
     }
-  });
-
-  it('hangs the catenary wires where the masts hold them (doc 03 §9)', () => {
-    const pole = worldParts[catenaryParts.pole];
-    const span = worldParts[catenaryParts.span];
-    // The mast stands behind the rail; the contact wire is at contact
-    // height above the rail.
-    expect(
-      pole.pivotU.y - catenaryAnchors.contact.y + CATENARY_POLE_DEPTH_U,
-    ).toBe(gameConfig.world.catenaryContactHeightU);
-    // The span's pivot lies on its contact wire, its messenger wire as
-    // far above as the mast's messenger clamp.
-    expect(span.pivotU).toEqual({ x: 0, y: span.heightU - 2 });
-    expect(catenaryAnchors.contact.y - catenaryAnchors.messenger.y).toBe(
-      span.pivotU.y - 2,
-    );
-    expect(catenaryAnchors.contact.x).toBe(catenaryAnchors.messenger.x);
   });
 
   it('builds the bridge down to its valley floor and the tunnel high enough for the wire (doc 03 §8–9)', () => {

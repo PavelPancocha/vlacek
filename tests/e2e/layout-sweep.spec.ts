@@ -395,6 +395,26 @@ for (const [width, height] of [
           build.y + build.height / 2,
         );
       await page.clock.resume();
+      // The gate's final touch can leave a native details section open.
+      // Exercise mixed states independently of native click timing.
+      const overlays = page
+        .getByText('Svět — překryvy', { exact: true })
+        .locator('..');
+      if ((await overlays.getAttribute('open')) === null)
+        await overlays.locator('summary').click();
+      for (const summary of await page
+        .locator('.dev-menu details > summary')
+        .all()) {
+        const section = summary.locator('..');
+        if ((await section.getAttribute('open')) === null)
+          await summary.click();
+        await expect(section).toHaveJSProperty('open', true);
+        const control = section.locator('button, input').last();
+        await control.scrollIntoViewIfNeeded();
+        await insideViewport(control);
+        for (const fixed of ['dev-apply', 'dev-defaults', 'dev-close'])
+          await insideViewport(action(fixed), fixed === 'dev-apply' ? 80 : 64);
+      }
       for (const name of ['dev-copy-seed', 'dev-restart', 'dev-random-world']) {
         await action(name).scrollIntoViewIfNeeded();
         await insideViewport(action(name));
@@ -416,6 +436,8 @@ for (const [width, height] of [
         'Vlak',
         'Přejezdy',
         'Atlasy',
+        'Tunely',
+        'Trolejové vedení',
         'Zvuk',
       ]) {
         const heading = content.getByRole('heading', {
@@ -490,6 +512,13 @@ for (const viewport of [
     await page.clock.resume();
     await action('dev-apply').click();
     await expect(page.locator('[data-dev-error]')).not.toBeEmpty();
+    for (const summary of await page
+      .locator('.dev-menu details > summary')
+      .all()) {
+      const section = summary.locator('..');
+      if ((await section.getAttribute('open')) === null) await summary.click();
+      await expect(section).toHaveJSProperty('open', true);
+    }
     for (const size of [viewport, { width: 320, height: 568 }]) {
       await page.setViewportSize(size);
       await expect(page.locator('.rotate')).toHaveCount(0);

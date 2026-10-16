@@ -1,8 +1,27 @@
+import type { WaterMountainDiagnostic } from '../render/waterMountainMotion.ts';
+import type { FarmForestDiagnostic } from '../render/farmForestMotion.ts';
+import type { RoadVehicleSnapshot } from '../render/roadVehicleSnapshot.ts';
+import type { AtlasMetrics } from '../render/AtlasMetrics.ts';
+import type { TextureMemory } from '../render/TextureMemory.ts';
+import type { Biome } from '../domain/world/Biomes.ts';
+import type { Season } from '../domain/world/Regions.ts';
+import type { TestSceneLocation } from '../domain/world/TestScenes.ts';
+import type { WorldOverlayOptions } from '../domain/world/WorldDebugGeometry.ts';
+import type { WorldDiagnostics } from '../domain/world/WorldValidation.ts';
 import type { RenderProfile } from './renderProfile.ts';
 import type { Settings } from '../platform/SaveValidation.ts';
 
 /** Read-only diagnostics via `?debug=1` or the hidden parent developer menu. */
 export interface DebugSnapshot {
+  roadVehicles: RoadVehicleSnapshot[];
+  perf:
+    import('../platform/PerformanceProbe.ts').PerformanceSnapshot | undefined;
+  worldDebug: {
+    temporaryRide: boolean;
+    location: TestSceneLocation | undefined;
+    overlays: WorldOverlayOptions;
+    overlayPrimitives: number;
+  };
   buildId: string;
   renderer: string;
   renderProfile: RenderProfile & { quality: Settings['quality'] };
@@ -17,6 +36,26 @@ export interface DebugSnapshot {
   /** Rendered vehicles drawn from their art (doc 14 §3). */
   artVehicles: number;
   /** The world art atlas (D-019); undefined if this atlas failed. */
+  worldAtlases: {
+    pending: boolean;
+    failure: string | undefined;
+    swaps: number;
+    regions: { id: string; landscape: Biome; season: Season }[];
+    pages: {
+      textureKey: string;
+      width: number;
+      height: number;
+      frames: number;
+      pxPerU: number;
+    }[];
+    textureBytes: number;
+    memory: TextureMemory['snapshot'];
+    performance: AtlasMetrics['snapshot'];
+    bufferBytes: number;
+    liveTextures: number;
+    drawnParts: number;
+    missingFrames: string[];
+  };
   artAtlas:
     | {
         width: number;
@@ -45,6 +84,9 @@ export interface DebugSnapshot {
     /** Sum of particle positions; unchanged while the ride is paused. */
     checksum: number;
     bubblePops: number;
+    seasonalSources: number;
+    costMs: number;
+    animationCostMs: number;
   };
   /**
    * Loaded SVG sources still held as textures; 0 once the atlases are
@@ -61,6 +103,8 @@ export interface DebugSnapshot {
     biome: string | undefined;
     /** Localities of the chunks in view, left to right. */
     localities: string[];
+    waterMountains: readonly WaterMountainDiagnostic[];
+    work: readonly (FarmForestDiagnostic & { layer: 'near' | 'back' })[];
     /** Near-meadow props in view. */
     nearProps: number;
     /** Near-meadow props overlapping a drawn vehicle; always 0. */
@@ -80,6 +124,8 @@ export interface DebugSnapshot {
     poles: number;
     /** How far the drawn pantograph head misses the wire, u. */
     pantographGapU: number | undefined;
+    /** Player pantographs currently clamped by their working reach. */
+    outOfRange: number;
   };
   /**
    * Tunnels in view, the opacity of their hills (1 opaque) and whether the
@@ -89,6 +135,8 @@ export interface DebugSnapshot {
     id: string;
     alpha: number;
     train: 'outside' | 'partly' | 'inside';
+    /** Each player's vehicle relative to the opaque core (in consist order). */
+    vehicles: ('outside' | 'partly' | 'inside')[];
   }[];
   /** Actual backdrop layers and crossfade progress (0 … 1), if a journey exists. */
   backdrop:
@@ -96,6 +144,7 @@ export interface DebugSnapshot {
         currentBiome: string | undefined;
         incomingBiome: string | undefined;
         fade: number;
+        world: WorldDiagnostics | undefined;
       }
     | undefined;
   /** Parallax: the first mid backdrop tile's x from the view's left, u. */
@@ -120,6 +169,11 @@ export interface DebugSnapshot {
   /** Level crossings the ride simulates (doc 05 §4, D-015). */
   crossings: {
     id: string;
+    /** Crossing centre in world units and CSS px, including offscreen positions. */
+    worldX: number;
+    screenX: number;
+    /** Player train tail in world units, to observe clearance of the extended zone. */
+    tailX: number;
     phase: string;
     /** Every distinct phase so far, recorded each frame, newest last. */
     phases: string[];
@@ -160,5 +214,22 @@ export interface DebugSnapshot {
     { left: number; top: number; right: number; bottom: number } | undefined;
   brakeRect:
     { left: number; top: number; width: number; height: number } | undefined;
+  audioDetails: {
+    active: { id: string; kind: string; key: string }[];
+    played: string[];
+    loaded: number;
+    pending: number;
+    pendingLayers: number;
+    failures: { file: string; reason: string }[];
+    covered: number;
+  };
   audio: string;
+}
+
+/** Debug fixture input is plain metadata; importing it must not pull Phaser into E2E types. */
+export interface AtlasProofSources {
+  world: { key: string; url: string; widthU: number; heightU: number }[];
+  backdrop: { key: string; url: string; widthU: number; heightU: number }[];
+  /** Raster scales of the probe pages; default 2 (world) and 1 (backdrop) px/u. */
+  pxPerU?: { world: number; backdrop: number };
 }

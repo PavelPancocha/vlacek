@@ -89,3 +89,27 @@ it('keeps the old journey when creating the initial world fails', () => {
   expect(session.ride).toBe(ride);
   expect(storage.getItem(PRIMARY_KEY)).toBe(before);
 });
+
+it('ends a diagnostic test-scene ride before saving the restarted ordinary journey', () => {
+  const storage = new MemoryStorage();
+  const session = createSession(storage);
+  buildAndDepart(session, ['cargo_box']);
+  tap(session, 'pause');
+  const original = session.ride;
+  expect(session.startDiagnosticRide({ chunkIndex: 20, arcOffsetU: 0 })).toBe(
+    true,
+  );
+  tap(session, 'pause');
+  expect(session.diagnosticRide).toBe(true);
+  expect(session.restartJourney(345)).toBe('saved');
+  expect(session.diagnosticRide).toBe(false);
+  const restarted = session.ride;
+  expect(restarted).not.toBe(original);
+  expect(restarted?.simulationTick).toBe(0);
+  const restored = createSession(storage);
+  expect(restored.journeySeed).toBe(345);
+  expect(restored.ride?.headCursor()).toEqual(restarted?.headCursor());
+  session.endDiagnosticRide();
+  expect(session.ride).toBe(restarted);
+  expect(session.journeySeed).toBe(345);
+});

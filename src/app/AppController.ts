@@ -1,3 +1,13 @@
+import {
+  locateTestScene,
+  TEST_SCENES,
+  type TestSceneLocation,
+} from '../domain/world/TestScenes.ts';
+import {
+  traceChunkPlacement,
+  placementQuery,
+} from '../domain/world/PlacementTrace.ts';
+import type { WorldOverlayOptions } from '../domain/world/WorldDebugGeometry.ts';
 import { PwaController } from '../platform/PwaController.ts';
 import { gameConfig } from '../config/gameConfig.ts';
 import type { ShapedVehicle } from '../content/placeholderShapes.ts';
@@ -5,6 +15,18 @@ import { locomotives, wagons } from '../content/vehicles.ts';
 import type { Consist } from '../domain/types.ts';
 import type { RideSimulation } from '../domain/ride/RideSimulation.ts';
 import { TRACK_GENERATOR_VERSION } from '../domain/world/TrackProfile.ts';
+import { animalSounds } from '../content/soundManifest.ts';
+import { contextAt } from '../domain/world/WorldPlan.ts';
+import { chunkOfEntityId } from '../domain/world/ChunkObjects.ts';
+import { chunkScenery } from '../domain/world/Scenery.ts';
+import { worldPlacementCatalog } from '../content/worldPlacementCatalog.ts';
+import { tunnelSite } from '../domain/world/Structures.ts';
+import {
+  AudioDirector,
+  coveredFraction,
+  crossingBellGain,
+} from '../platform/audio/AudioDirector.ts';
+import { frameLeftX } from '../render/cameraFraming.ts';
 import { AudioManager } from '../platform/AudioManager.ts';
 import {
   browserStorage,
@@ -23,6 +45,10 @@ import {
 } from '../platform/DevOptions.ts';
 import { DomInputAdapter } from '../platform/DomInputAdapter.ts';
 import { FullscreenController } from '../platform/FullscreenController.ts';
+import {
+  PerformanceProbe,
+  observeLongTasks,
+} from '../platform/PerformanceProbe.ts';
 import { FrameStats } from '../platform/FrameStats.ts';
 import type { CssRect } from '../platform/InputRouter.ts';
 import { createGameHost, type GameHost } from '../render/GameHost.ts';
@@ -30,6 +56,7 @@ import { RideScene } from '../render/RideScene.ts';
 import { BRAKE_HIT_MARGIN_PX, UiLayer } from '../ui/UiLayer.ts';
 import { hudLines } from '../ui/diagnosticsFormat.ts';
 import type { DebugSnapshot } from './debugSnapshot.ts';
+import type { RoadMotionSnapshot } from '../render/roadVehicleSnapshot.ts';
 import { worldHidden } from './AppState.ts';
 import { PhaseLog } from './phaseLog.ts';
 import { renderProfile } from './renderProfile.ts';
@@ -60,13 +87,25 @@ export class AppController {
   readonly #ui: UiLayer;
   readonly #pwa: PwaController;
   readonly #audio = new AudioManager();
+  #audioDirector = new AudioDirector(this.#audio);
+  #audioRide: RideSimulation | undefined;
+  #audioHeadS = 0;
   readonly #frames = new FrameStats(600);
   /** Every crossing phase of the ride, recorded each frame (debug only). */
   readonly #crossingPhases = new PhaseLog();
+  readonly #perf: PerformanceProbe | undefined;
+  readonly #stopPerf: () => void;
+  readonly #perfInput = new AbortController();
   readonly #scene: RideScene;
   readonly #host: GameHost;
   readonly #input: DomInputAdapter;
   readonly #fullscreen: FullscreenController;
+  readonly #worldOverlays: WorldOverlayOptions = {
+    areas: false,
+    boundaries: false,
+    roads: false,
+  };
+  #worldLocation: TestSceneLocation | undefined;
   #renderer = 'pending';
   #diagnostics: HTMLElement | undefined;
   #lastDiagnosticsMs = 0;
@@ -81,6 +120,11 @@ export class AppController {
     session: GameSession,
     options: AppControllerOptions,
   ) {
+    this.#perf = options.debug
+      ? new PerformanceProbe(() => performance.now())
+      : undefined;
+    if (this.#perf) performance.setResourceTimingBufferSize(2048);
+    this.#stopPerf = this.#perf ? observeLongTasks(this.#perf) : () => {};
     this.#session = session;
     this.#options = options;
     this.#gameRoot = gameRoot;
@@ -103,13 +147,56 @@ export class AppController {
       this.#diagnostics = document.createElement('pre');
       this.#diagnostics.id = 'diagnostics';
       app.append(this.#diagnostics);
-      Object.assign(window, { __vlacek: { snapshot: () => this.snapshot() } });
+      Object.assign(window, {
+        __vlacek: {
+          snapshot: () => this.snapshot(),
+          // Build only renderer motion observations when explicitly queried.
+          roadMotion: (): RoadMotionSnapshot => ({
+            simulationTick: this.#session.ride?.simulationTick ?? 0,
+            cars: this.#scene.roadVehicles,
+          }),
+          resetAtlasMetrics: () => this.#scene.atlasMetrics.reset(),
+          atlasProof: (
+            catalogue?: import('./debugSnapshot.ts').AtlasProofSources,
+          ) => this.#scene.atlasProof(catalogue),
+          closeAtlasProof: () => this.#scene.closeAtlasProof(),
+        },
+      });
     }
+    // Capture the request before the real router performs synchronous restoration.
+    const request = (event: Event) => {
+      if (
+        event instanceof MouseEvent &&
+        event.type === 'click' &&
+        event.detail !== 0
+      )
+        return;
+      const button =
+        event.target instanceof Element
+          ? event.target.closest('[data-action]')
+          : null;
+      if (button?.matches(':disabled, [aria-disabled="true"]')) return;
+      if (
+        ['continue', 'depart'].includes(
+          button?.getAttribute('data-action') ?? '',
+        )
+      )
+        this.#perf?.requestRide();
+    };
+    if (this.#perf)
+      for (const type of ['pointerup', 'click'])
+        this.#uiRoot.addEventListener(type, request, {
+          capture: true,
+          signal: this.#perfInput.signal,
+        });
     this.#portrait = isPortrait();
 
     this.#scene = new RideScene({
+      perf: this.#perf,
+      worldOverlays: () => this.#worldOverlays,
       frame: (deltaSec, nowMs) => this.#frame(deltaSec, nowMs),
       ride: () => this.#session.ride,
+      worldRunning: () => this.#session.screen.name === 'RIDING',
       worldHidden: () =>
         worldHidden(
           this.#session.screen,
@@ -117,6 +204,10 @@ export class AppController {
           this.#ui.developerMenuOpen,
         ),
       worldDrawn: () => {
+        this.#perf?.presented(
+          this.#scene.artReady,
+          session.screen.name === 'RIDING',
+        );
         if (
           !this.#curtain.hidden &&
           !worldHidden(
@@ -130,6 +221,10 @@ export class AppController {
       journeyVehicles: () => this.#vehiclesOfJourney(),
       journeyNpcFleet: () => this.#session.journeyNpcFleet,
       catalogVehicles: () => [...locomotives, ...wagons],
+      artQuality: () =>
+        (options.qualityOverride ?? this.#session.settings.quality) === 'low'
+          ? 'low'
+          : 'standard',
       // Reduced effects or the low profile halve the particles (doc 07 §9).
       effectsQuality: () =>
         renderProfile(
@@ -163,6 +258,10 @@ export class AppController {
       (id) => this.#scene.popBubble(id),
     );
     session.setUnhandledActionHandler((action) => {
+      if (action.startsWith('dev-world-')) {
+        this.#worldDeveloperAction(action);
+        return;
+      }
       if (action === 'strip-start') {
         // The locomotive is the front of the train, at the strip's right end.
         const strip = this.#uiRoot.querySelector('.strip');
@@ -176,7 +275,15 @@ export class AppController {
           quality: options.qualityOverride ?? session.settings.quality,
           reducedEffects: session.settings.reducedEffects,
         });
-      if (action === 'dev-close') this.#ui.closeDeveloperMenu();
+      if (action === 'dev-close') {
+        this.#audio.suspend();
+        this.#ui.closeDeveloperMenu();
+      }
+      if (action === 'dev-sound-stop') this.#audio.suspend();
+      if (action.startsWith('dev-sound:') && this.#ui.developerMenuOpen) {
+        this.#audio.setEnabled(session.settings.sfxEnabled);
+        this.#audio.audition(action.slice('dev-sound:'.length));
+      }
       if (this.#ui.developerMenuOpen) {
         if (action === 'pwa-install') void this.#pwa.install();
         if (action === 'dev-details') this.#ui.openDiagnostics(this.snapshot());
@@ -196,6 +303,8 @@ export class AppController {
             action === 'dev-random-world' && drawnSeed === currentSeed
               ? (drawnSeed + 1) >>> 0
               : drawnSeed;
+          session.endDiagnosticRide();
+          this.#worldLocation = undefined;
           const outcome = session.restartJourney(seed);
           if (outcome !== 'saved') {
             if (outcome === 'save-failed')
@@ -204,6 +313,10 @@ export class AppController {
             return;
           }
           this.#audio.stopAll();
+          this.#audio.suspend();
+          this.#audioDirector = new AudioDirector(this.#audio);
+          this.#audioRide = undefined;
+          this.#audioHeadS = 0;
           this.#crossingPhases.record([]);
           window.history.replaceState(
             null,
@@ -223,6 +336,8 @@ export class AppController {
               }
             : this.#ui.developerValues();
         if (!values || !this.#ui.developerMenuOpen) return;
+        session.endDiagnosticRide();
+        this.#worldLocation = undefined;
         session.setRenderSettings(values);
         if (session.interrupt() !== 'saved') {
           this.#ui.developerSaveError('session');
@@ -253,6 +368,7 @@ export class AppController {
       onGesture: () => {
         // A gesture that leaves the game paused keeps the sound frozen
         // (doc 02 §6); the one that resumes unlocks after routing.
+        this.#audio.setEnabled(this.#session.settings.sfxEnabled);
         if (this.#session.screen.name !== 'PAUSED') this.#audio.unlock();
         // Show what the tap changed right away, not a frame later: the
         // screen never offers a button the tap has just disabled.
@@ -276,6 +392,68 @@ export class AppController {
       this.#refreshUi();
     });
     this.#refreshUi();
+    this.#perf?.markStartInteractive();
+  }
+
+  #worldDeveloperAction(action: string): void {
+    if (!this.#ui.developerMenuOpen) return;
+    const seed = this.#session.journeySeed;
+    if (seed === undefined) return;
+    if (action.startsWith('dev-world-overlay:')) {
+      const name = action.slice('dev-world-overlay:'.length);
+      if (name === 'areas' || name === 'boundaries' || name === 'roads') {
+        this.#worldOverlays[name] = !this.#worldOverlays[name];
+        this.#ui.worldOverlayPressed(name, this.#worldOverlays[name]);
+      }
+    } else if (action.startsWith('dev-world-scene:')) {
+      const kind = TEST_SCENES.find(
+        (k) => k === action.slice('dev-world-scene:'.length),
+      );
+      if (!kind) return;
+      const location = locateTestScene(seed, kind, worldPlacementCatalog);
+      if (!location) {
+        this.#ui.worldDeveloperStatus(
+          'Scéna v omezeném hledání tohoto světa nenalezena.',
+        );
+        return;
+      }
+      // A second selection first releases the previous temporary ride.
+      this.#session.endDiagnosticRide();
+      if (!this.#session.startDiagnosticRide(location.head)) {
+        this.#ui.worldDeveloperStatus('Dočasnou jízdu nelze zahájit.');
+        return;
+      }
+      this.#worldLocation = location;
+      this.#ui.closeDeveloperMenu();
+    } else if (action === 'dev-world-return') {
+      this.#session.endDiagnosticRide();
+      this.#worldLocation = undefined;
+      this.#ui.closeDeveloperMenu();
+    } else if (action === 'dev-world-trace') {
+      const input = this.#ui.developerWorldQuery(),
+        x = this.#session.ride?.sample(this.#session.ride.headS).x ?? 0;
+      const location = placementQuery(input, x);
+      if (!location) {
+        this.#ui.worldDeveloperStatus(
+          'Neplatné ID nebo světová souřadnice.',
+          true,
+        );
+        return;
+      }
+      this.#ui.worldDeveloperStatus(
+        JSON.stringify(
+          traceChunkPlacement(
+            seed,
+            location.chunkIndex,
+            worldPlacementCatalog,
+            location.query,
+          ),
+          null,
+          2,
+        ),
+        true,
+      );
+    }
   }
 
   #vehiclesOfJourney(): readonly ShapedVehicle[] {
@@ -299,13 +477,95 @@ export class AppController {
     const alpha = this.#session.frame(deltaSec, nowMs);
     if (this.#options.debug)
       this.#crossingPhases.record(this.#session.ride?.crossings ?? []);
+    this.#updateAudio();
     for (const event of this.#session.drainEvents()) this.#feedback(event);
     this.#refreshUi();
     if (this.#diagnostics && nowMs - this.#lastDiagnosticsMs > 250) {
       this.#lastDiagnosticsMs = nowMs;
-      this.#diagnostics.textContent = hudLines(this.snapshot()).join('\n');
+      const frames = this.#frames.summary();
+      const ride = this.#session.ride;
+      this.#diagnostics.textContent = hudLines({
+        medianFps: frames.medianFps,
+        p95FrameMs: frames.p95FrameMs,
+        renderer: this.#renderer,
+        renderProfile: {
+          quality:
+            this.#options.qualityOverride ?? this.#session.settings.quality,
+          ...renderProfile(
+            this.#session.settings,
+            gameConfig.quality,
+            this.#options.qualityOverride,
+          ),
+        },
+        seed: this.#session.journeySeed,
+        headChunk: ride?.headCursor().chunkIndex,
+        speedUPerSec: ride?.speedUPerSec ?? 0,
+        vehicles: ride?.vehicleCount ?? 0,
+      }).join('\n');
     }
     return alpha;
+  }
+
+  #updateAudio(): void {
+    const session = this.#session;
+    this.#audio.setEnabled(session.settings.sfxEnabled);
+    const ride = session.ride;
+    const seed = session.journeySeed;
+    if (!ride || seed === undefined || session.screen.name !== 'RIDING') {
+      if (session.screen.name !== 'PAUSED') this.#audio.setLayers([]);
+      return;
+    }
+    const loco = locomotives.find(
+      (candidate) => candidate.id === session.journeyConsist?.locomotiveId,
+    );
+    if (!loco) return;
+    const distanceU =
+      this.#audioRide === ride ? Math.max(0, ride.headS - this.#audioHeadS) : 0;
+    this.#audioRide = ride;
+    this.#audioHeadS = ride.headS;
+    const frontX = ride.sample(ride.frontS).x;
+    const tailX = ride.sample(ride.tailS).x;
+    const widthU =
+      gameConfig.train.maxConsistLengthU / gameConfig.camera.trainWidthFraction;
+    const leftX = frameLeftX(
+      frontX,
+      ride.layout.frontOffsetU + ride.layout.tailOffsetU,
+      { widthPx: 1, heightPx: 1, reservedTopPx: 0, reservedBottomPx: 0 },
+      1 / widthU,
+      { ...gameConfig.camera, vehicleHeightU: 0 },
+    );
+    const tunnels: { fromX: number; toX: number }[] = [];
+    for (
+      let k = ride.track.firstChunkIndex;
+      k <= ride.track.lastChunkIndex;
+      k++
+    ) {
+      const tunnel = tunnelSite(seed, k);
+      if (!tunnel) continue;
+      const fromX = k * gameConfig.world.chunkWidthU + tunnel.fromX;
+      let seen = false;
+      for (const range of tunnels) if (range.fromX === fromX) seen = true;
+      if (!seen)
+        tunnels.push({
+          fromX,
+          toX: k * gameConfig.world.chunkWidthU + tunnel.toX,
+        });
+    }
+    this.#audioDirector.update({
+      power: loco.power,
+      speedUPerSec: ride.speedUPerSec,
+      distanceU,
+      wheelRadiusU: loco.wheelRadiusU,
+      throttle: ride.lastIntent === 'THROTTLE',
+      biome: contextAt(seed, frontX).region.landscape,
+      season: contextAt(seed, frontX).season,
+      covered: coveredFraction(tailX, frontX, tunnels),
+      bellGain: crossingBellGain(
+        ride.crossings,
+        leftX + widthU / 2,
+        widthU / 2,
+      ),
+    });
   }
 
   #feedback(event: SessionEvent): void {
@@ -332,15 +592,31 @@ export class AppController {
         const loco = locomotives.find(
           (candidate) => candidate.id === train?.vehicles[0]?.id,
         );
-        if (loco) this.#audio.play(loco.hornAudio);
+        if (loco && train) {
+          const frontX =
+            this.#session.ride?.sample(this.#session.ride.frontS).x ??
+            train.xSpan().minX;
+          const gain = 0.35 / (1 + Math.abs(train.xSpan().minX - frontX) / 600);
+          this.#audio.play(loco.hornAudio, gain, 80);
+        }
         return;
       }
       case 'bubblePopped':
         this.#audio.play('bubble-pop');
         return;
-      case 'objectReacted':
-        this.#audio.play('reaction');
+      case 'objectReacted': {
+        const chunk = chunkOfEntityId(event.id);
+        const seed = this.#session.journeySeed;
+        if (chunk !== undefined && seed !== undefined)
+          this.#audio.play(
+            animalSounds[
+              chunkScenery(seed, chunk, worldPlacementCatalog).animal.kind
+            ],
+            1,
+            40,
+          );
         return;
+      }
       case 'trainFull':
         this.#audio.play('train-full');
         return;
@@ -384,6 +660,9 @@ export class AppController {
       wagons,
       lengthRules: session.lengthRules,
     });
+    if (this.#ui.developerMenuOpen)
+      for (const name of ['areas', 'boundaries', 'roads'] as const)
+        this.#ui.worldOverlayPressed(name, this.#worldOverlays[name]);
     const now = this.#uiRoot.dataset['screen'];
     if (now !== before) {
       this.#measureBrake();
@@ -426,6 +705,14 @@ export class AppController {
     const frames = this.#frames.summary();
     const canvas = this.#host.canvas as HTMLCanvasElement | undefined;
     return {
+      perf: this.#perf?.snapshot(),
+      worldDebug: {
+        temporaryRide: session.diagnosticRide,
+        location: session.diagnosticRide ? this.#worldLocation : undefined,
+        overlays: { ...this.#worldOverlays },
+        overlayPrimitives: this.#scene.worldOverlayCount,
+      },
+      roadVehicles: this.#scene.roadVehicles,
       buildId: this.#options.buildId,
       renderer: this.#renderer,
       renderProfile: {
@@ -446,14 +733,24 @@ export class AppController {
       renderedVehicles: this.#scene.stats.renderedVehicles,
       artVehicles: this.#scene.stats.artVehicles,
       artAtlas: this.#scene.artAtlas,
+      worldAtlases: this.#scene.worldAtlases,
       vehicleAtlas: this.#scene.vehicleAtlas,
       effects: this.#scene.effectsStats,
       backdropAtlas: this.#scene.backdropAtlas,
-      backdrop: this.#scene.stats.backdrop,
+      backdrop: this.#scene.stats.backdrop
+        ? {
+            currentBiome: this.#scene.stats.backdrop.currentBiome,
+            incomingBiome: this.#scene.stats.backdrop.incomingBiome,
+            fade: this.#scene.stats.backdrop.fade,
+            world: this.#scene.stats.backdrop.world,
+          }
+        : undefined,
       artSourceTextures: this.#scene.artSourceTextures,
       scenery: {
         biome: this.#scene.stats.biome,
         localities: [...this.#scene.stats.localities],
+        work: this.#scene.farmForestCheck(),
+        waterMountains: this.#scene.waterMountainCheck(),
         ...this.#nearPropCheck(),
         crossingViews: this.#scene.stats.crossingViews,
         secondaryTrackViews: this.#scene.stats.secondaryTrackViews,
@@ -463,6 +760,7 @@ export class AppController {
         electrified: ride?.electrified ?? false,
         poles: this.#scene.stats.catenaryPoles,
         pantographGapU: this.#scene.stats.pantographGapU,
+        outOfRange: this.#scene.stats.pantographOutOfRange,
       },
       crossings: ride ? this.#crossings(ride) : [],
       backdropMidOffsetU: this.#scene.stats.backdropMidOffsetU,
@@ -510,6 +808,7 @@ export class AppController {
         ? this.#scene.trainScreenBox(canvas.getBoundingClientRect())
         : undefined,
       brakeRect: this.#brakeRect,
+      audioDetails: this.#audio.diagnostics,
       audio: this.#audio.state,
     };
   }
@@ -519,8 +818,14 @@ export class AppController {
       tailX: ride.sample(ride.tailS).x,
       frontX: ride.sample(ride.frontS).x,
     };
+    const canvasRect = this.#host.canvas?.getBoundingClientRect();
     return ride.crossings.map((crossing) => ({
       id: crossing.id,
+      worldX: crossing.worldX,
+      screenX: canvasRect
+        ? this.#scene.worldScreenX(crossing.worldX, canvasRect)
+        : 0,
+      tailX: train.tailX,
       phase: crossing.phase,
       phases: [...this.#crossingPhases.phases(crossing.id)],
       barrier: crossing.barrier,
@@ -546,6 +851,8 @@ export class AppController {
 
   dispose(): void {
     this.#pwa.dispose();
+    this.#stopPerf();
+    this.#perfInput.abort();
     this.#input.dispose();
     this.#fullscreen.dispose();
     this.#host.destroy();

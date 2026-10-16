@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="18" viewBox="0 0 22 18">
+  <!-- Vláček, art-farm-forest-1: Lžíce bagru, bez padajícího materiálu. -->
+  <defs><linearGradient id="bucket" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#939c8c"/><stop offset="1" stop-color="#616c5d"/></linearGradient></defs>
+  <path d="M4 2 H10 L13 8 L21 14 L18 17 H7 Q2 15 2 10 Z" fill="url(#bucket)" stroke="#1d2a14" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 5 L6 12 Q10 15 17 14" fill="none" stroke="#c9c8b0" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="5" cy="3" rx="2" ry="2" fill="#6a7468" stroke="#1d2a14" stroke-width=".6"/>
+</svg>

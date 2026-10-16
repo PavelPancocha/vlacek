@@ -1,3 +1,5 @@
+import { polygonsHit } from '../../../src/domain/world/SceneryGeometry.ts';
+import { worldPlacementCatalog } from '../../../src/content/worldPlacementCatalog.ts';
 import { describe, expect, it } from 'vitest';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
 import { biomeAt } from '../../../src/domain/world/Biomes.ts';
@@ -30,7 +32,7 @@ describe('crossingSite: one level crossing per block (doc 04 §6, doc 05 §4)', 
         for (const site of sites) {
           found += 1;
           expect(biomeAt(seed, site.chunkIndex).slot).toBe(3);
-          expect(site.id).toBe(`g1:chunk:${site.chunkIndex}:crossing:0`);
+          expect(site.id).toBe(`g2:chunk:${site.chunkIndex}:crossing:0`);
           expect(crossingSite(seed, site.chunkIndex)).toEqual(site);
         }
       }
@@ -62,7 +64,7 @@ describe('crossingSite: one level crossing per block (doc 04 §6, doc 05 §4)', 
         const k = b * chunksPerBiomeBlock + 3;
         const site = crossingSite(seed, k);
         if (!site) continue;
-        const scenery = chunkScenery(seed, k);
+        const scenery = chunkScenery(seed, k, worldPlacementCatalog);
         expect(scenery.crossing?.localXU).toBe(site.localXU);
         // Water splits around the road like a causeway.
         for (const basin of scenery.water)
@@ -70,11 +72,19 @@ describe('crossingSite: one level crossing per block (doc 04 §6, doc 05 §4)', 
             basin.toX <= site.localXU - CROSSING_RESERVE_U ||
               basin.fromX >= site.localXU + CROSSING_RESERVE_U,
           ).toBe(true);
-        for (const prop of scenery.props)
+        for (const prop of scenery.props) {
+          if (prop.clip) {
+            for (const road of scenery.reservations.filter(
+              (r) => r.purpose === 'crossing-road',
+            ))
+              expect(polygonsHit(prop.clip, road.polygon), prop.id).toBe(false);
+            continue;
+          }
           expect(
             Math.abs(prop.xU - site.localXU),
             `${scenery.locality}: ${prop.kind}`,
           ).toBeGreaterThanOrEqual(CROSSING_RESERVE_U);
+        }
         checked += 1;
       }
     expect(checked).toBeGreaterThan(50);

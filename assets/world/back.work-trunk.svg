@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="100" viewBox="0 0 24 100">
+  <!-- Vláček, art-farm-forest-1: Pracovní kmen, světlý prstenec označuje pevný úchop. -->
+  <defs><linearGradient id="bark" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#ab8b62"/><stop offset="1" stop-color="#74543b"/></linearGradient></defs>
+  <path d="M9 98 L7 12 Q6 5 12 2 Q18 4 17 12 L16 98 Z" fill="url(#bark)" stroke="#1d2a14" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 29 L3 24 M16 42 L21 34 M9 74 L4 71" fill="none" stroke="#70513a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 13 Q12 38 10 56 M14 17 V47 M12 68 V94" fill="none" stroke="#ad8d60" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 58 H16 M8 66 H16" fill="none" stroke="#ccb58b" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="12" cy="97" rx="4" ry="2" fill="#d5bb87" stroke="#1d2a14" stroke-width=".6"/>
+</svg>

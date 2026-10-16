@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="24" viewBox="0 0 80 24">
+  <!-- Vláček, water-mountains-2, 2026-10-15: vlastní vektorová úprava pro Moravskou Saharu. -->
+<ellipse cx="40" cy="23" rx="39" ry="1" fill="#6a5b4b" opacity=".18"/>
+<path d="M1 22 L4 17 L9 18 L12 13 L16 16 L21 11 L25 13 L29 9 L34 12 L40 8 L44 11 L49 10 L53 13 L57 10 L61 14 L67 12 L71 17 L76 16 L79 22Z" fill="#526c49"/>
+<path d="M6 22 L8 16 M15 22 L16 14 M24 22 L23 12 M32 22 L31 10 M41 23 L40 9 M48 22 L49 12 M58 22 L58 12 M68 22 L67 14 M74 22 L74 18" stroke="#75644d" stroke-width=".8"/><path d="M4 19 L10 17 L15 20 L22 15 L27 18 L33 13 L39 17 L46 14 L52 19 L59 15 L65 19 L72 17 L77 21 L68 21 L62 20 L55 22 L46 20 L36 22 L28 20 L18 21 L10 22Z" fill="#748459"/>
+<path d="M10 17 L11 20 M22 15 L23 19 M34 13 L35 18 M46 14 L47 19 M59 15 L60 19 M71 17 L72 20" stroke="#a07991" stroke-width="1.6" stroke-linecap="round"/>
+</svg>
