@@ -99,6 +99,7 @@ sw.addEventListener('install', (event) => {
       if (await complete(true)) return;
       const cache = await caches.open(cacheName);
       try {
+        if (existed) await cache.delete(markerUrl);
         // Sequential downloads bound memory and make failure cleanup deterministic.
         for (const file of bundle.files) {
           const url = new URL(file.url, sw.location.origin);

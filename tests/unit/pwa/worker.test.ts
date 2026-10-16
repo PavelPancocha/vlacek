@@ -41,6 +41,9 @@ class MemoryCache {
     this.entries.set(cacheUrl(key), response.clone());
     return Promise.resolve();
   }
+  delete(key: CacheKey) {
+    return Promise.resolve(this.entries.delete(cacheUrl(key)));
+  }
 }
 
 interface WorkerHandle {
@@ -74,6 +77,7 @@ function browser() {
       return Promise.resolve({
         match: target.match.bind(target),
         keys: target.keys.bind(target),
+        delete: target.delete.bind(target),
         put: async (key: CacheKey, response: Response) => {
           if (fault === 'write') throw new Error('Cache write failed');
           await target.put(key, response);
@@ -168,6 +172,35 @@ function browser() {
 }
 
 describe('PWA-03/11 rollback cache ownership', () => {
+  it('invalidates a corrupt active cache marker before a failed repair', async () => {
+    const env = browser();
+    const a = release('A');
+    const active = env.worker(a);
+    await active.install();
+    env.registration.active = active;
+    const cache = env.stores.get(a.cacheName);
+    if (!cache) throw new Error('A cache missing');
+    await cache.put('/vlacek/assets/train.svg', new Response('Corrupt'));
+    env.fail('offline');
+
+    await expect(env.worker(a).install()).rejects.toThrow(
+      'Network interrupted',
+    );
+    expect(env.stores.get(a.cacheName)).toBe(cache);
+    expect(await cache.match('/vlacek/__offline_complete__')).toBeUndefined();
+    const channel = new MessageChannel();
+    try {
+      const status = new Promise<unknown>((resolve) =>
+        channel.port1.once('message', resolve),
+      );
+      active.postMessage('offline-status', [channel.port2]);
+      await expect(status).resolves.toMatchObject({ ready: false });
+    } finally {
+      channel.port1.close();
+      channel.port2.close();
+    }
+  });
+
   it('activates and removes a stale cache with an unreadable completion marker', async () => {
     const env = browser();
     const a = release('A');

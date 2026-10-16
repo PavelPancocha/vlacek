@@ -144,7 +144,7 @@ Aktualizace se standardně aktivuje, když už žádná karta/okno nepoužívá 
 
 Při běžném webu bez workeru se nové soubory načtou při příštím načtení stránky. HTML má revalidaci; hashed assety dlouhou cache. Všechny assety používané aktuálním builtem zůstanou na serveru dostupné během nasazení a po rozumnou dobu pro již otevřené karty. Nasazení nesmí nejdříve smazat staré JS chunk soubory a teprve potom nahrát nové.
 
-Po automatické aktivaci nového workeru ponechat aktuální a nejméně předchozí úplnou cache. Cleanup nesmí proběhnout během nedokončené instalace. Při další aktualizaci uvolnit starší nepotřebné cache; dlouhodobě se nesmí vrstvit všechny verze. Save není součást statické cache a aktualizace jej nemaže.
+Po automatické aktivaci nového workeru ponechat aktuální a nejnověji staženou předchozí úplnou cache podle času dokončení stažení, nikoli pořadí aktivací. Jde o vědomé omezení: po rollbacku se starší vydání může stahovat znovu; rollback na GitHub Pages znovu publikuje jeho soubory. Cleanup nesmí proběhnout během nedokončené instalace. Při další aktualizaci uvolnit starší nepotřebné cache; dlouhodobě se nesmí vrstvit všechny verze. Save není součást statické cache a aktualizace jej nemaže.
 
 Rychlé nucené přepnutí všech otevřených instancí s koordinací mezi kartami je **mimo V1**. Nezavádět ho kvůli domnělému pohodlí. Přesná pravidla životního cyklu vycházejí ze service worker dokumentace S14.
 
