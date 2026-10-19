@@ -108,6 +108,7 @@ Jaro: světlé listy, kapradí, několik květů na okraji; léto: plné koruny 
 Podzim: barevné listnáče, zelené jehličnany, listí z konkrétních korun a lesní půdy.
 Zima: sníh na větvích, mladých smrčcích, hájovně i skládce; práce probíhá na připravené cestě bez prachu.
 Použít lesní ptáky, vítr a potok; nové audio: krátký datel, tlumená hydraulika a měkký motor lesního stroje.
+Zvuky lesních zvířat po dotyku: jelenovité krátce zamečí, veverka cvakne, ježek odfrkne; liška má přiznaný fallback: venkovní kroky člověka v suchém listí místo hlasu. Každý má samostatnou nahrávku, nikoli výřez větru ([D-022](../decisions/022-recorded-sounds.md)); poslech majitelem zůstává NEOVĚŘENO.
 Sova může být tichou večerní variantou hustého lesa, bez lekavého výkřiku.
 
 ## Nové kresby

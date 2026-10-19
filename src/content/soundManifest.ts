@@ -272,16 +272,37 @@ export const soundManifest: Readonly<Record<string, SoundClip>> = {
     category: 'ui',
     licenceKey: 'ui-wood-thud--bsb1025.flac',
   },
-  rustle: {
-    file: 'rustle.mp3',
+  deer: {
+    file: 'deer.mp3',
     gain: 0.32,
     rate: 1,
     category: 'animal',
-    licenceKey: 'ambience-light-wind--bsb0904.mp3',
+    licenceKey: 'deer--fs351113-hq.mp3',
+  },
+  fox: {
+    file: 'fox.mp3',
+    gain: 0.32,
+    rate: 1,
+    category: 'animal',
+    licenceKey: 'ambience-leaves--bsb0137.wav',
+  },
+  squirrel: {
+    file: 'squirrel.mp3',
+    gain: 0.32,
+    rate: 1,
+    category: 'animal',
+    licenceKey: 'squirrel--fs111393-hq.mp3',
+  },
+  hedgehog: {
+    file: 'hedgehog.mp3',
+    gain: 0.32,
+    rate: 1,
+    category: 'animal',
+    licenceKey: 'hedgehog-huff--fs528183-hq.mp3',
   },
 };
 
-/** Small woodland animals get recorded leaves, without invented vocalisations. */
+/** Recorded reactions; fox uses outdoor human footsteps in dry leaves as an explicit fallback. */
 export const animalSounds: Readonly<Record<AnimalKind, string>> = {
   sheep: 'sheep',
   cow: 'cow',
@@ -291,8 +312,8 @@ export const animalSounds: Readonly<Record<AnimalKind, string>> = {
   duck: 'duck',
   frog: 'frog',
   gull: 'gull',
-  deer: 'rustle',
-  fox: 'rustle',
-  squirrel: 'rustle',
-  hedgehog: 'rustle',
+  deer: 'deer',
+  fox: 'fox',
+  squirrel: 'squirrel',
+  hedgehog: 'hedgehog',
 };

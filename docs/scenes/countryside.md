@@ -126,6 +126,7 @@ Zima: zasněžená pole a střechy; traktor s radlicí čistí polní příjezd,
 ## Zvuky a nové kresby
 
 Použít luční ptáky, vítr, cvrčky a zvířata; stroje mají tichý motor pouze poblíž své činnosti.
+Zvuk ježka po dotyku je krátké nahrané odfrknutí, nikoli vítr ([D-022](../decisions/022-recorded-sounds.md)); poslech majitelem je NEOVĚŘENO.
 Nové audio: klidný traktor/kombajn, jemné šustění sklizně; žádné ostré startování.
 NEW: pluh 44 × 24 u, lis 60 × 38 u a radlice 36 × 22 u; rozpoznatelné pracovní nářadí.
 NEW: kombajn 110 × 60 u; nízká boční silueta s oddělenými koly a žacím ústrojím.

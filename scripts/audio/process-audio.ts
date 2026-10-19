@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import sources from './sources.json' with { type: 'json' };
 import { audioCredits } from './credits.ts';
+import { soundManifest } from '../../src/content/soundManifest.ts';
 
 const originals = process.argv[2];
 if (!originals)
@@ -27,7 +28,18 @@ try {
     if (hash !== source.sha256)
       throw new Error(`SHA-256 mismatch: ${source.original}`);
     const duration = source.endSec - source.startSec;
-    const common = `atrim=start=${source.startSec}:end=${source.endSec},asetpts=PTS-STARTPTS,aformat=channel_layouts=mono,highpass=f=70,lowpass=f=6000,loudnorm=I=${source.lufs}:TP=${source.truePeakDb}:LRA=7,aresample=44100,alimiter=limit=0.5:level=false:latency=true,asetpts=N/SR/TB`;
+    const lowpassHz = source.animalLowpassHz ?? 6000;
+    if (
+      source.animalLowpassHz !== undefined &&
+      !Object.values(soundManifest).some(
+        (clip) =>
+          clip.file === source.file &&
+          clip.category === 'animal' &&
+          source.crossfadeSec === 0,
+      )
+    )
+      throw new Error(`Animal-only low-pass exception: ${source.file}`);
+    const common = `atrim=start=${source.startSec}:end=${source.endSec},asetpts=PTS-STARTPTS,aformat=channel_layouts=mono,highpass=f=70,lowpass=f=${lowpassHz},loudnorm=I=${source.lufs}:TP=${source.truePeakDb}:LRA=7,aresample=44100,alimiter=limit=0.5:level=false:latency=true,asetpts=N/SR/TB`;
     const normalized = resolve(temporary, 'normalized.wav');
     execFileSync('ffmpeg', [
       '-hide_banner',

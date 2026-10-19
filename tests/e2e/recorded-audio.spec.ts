@@ -130,6 +130,14 @@ test('hidden developer Zvuky list auditions every manifest id while keeping the 
   expect(await page.locator('[data-action^="dev-sound:"]').count()).toBe(
     Object.keys(soundManifest).length,
   );
+  expect(text).not.toContain('rustle.mp3');
+  for (const id of ['deer', 'fox', 'squirrel', 'hedgehog']) {
+    expect(text).toContain(`${id}.mp3`);
+    await tapAction(page, `dev-sound:${id}`);
+    await expect
+      .poll(async () => (await snapshot(page)).audioDetails.played.at(-1))
+      .toBe(id);
+  }
   await tapAction(page, 'dev-sound:sheep');
   await expect
     .poll(async () => (await snapshot(page)).audioDetails.played.at(-1))

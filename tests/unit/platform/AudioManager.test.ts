@@ -20,6 +20,10 @@ function setup() {
   const voices: ReturnType<typeof source>[] = [];
   function source() {
     const ended: (() => void)[] = [];
+    let started = false;
+    let finished = false;
+    let endSec = Infinity;
+    let stopSec = Infinity;
     return {
       buffer: undefined,
       loop: false,
@@ -28,12 +32,24 @@ function setup() {
       playbackRate: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn() },
       connect: vi.fn(),
       disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
+      start: vi.fn((_when?: number, _offset?: number, duration?: number) => {
+        started = true;
+        endSec = nowSec + (duration ?? 3);
+      }),
+      stop: vi.fn((at?: number) => {
+        stopSec = at ?? nowSec;
+      }),
+      get playing() {
+        return started && !finished;
+      },
+      get dueSec() {
+        return Math.min(stopSec, this.loop ? Infinity : endSec);
+      },
       addEventListener: vi.fn((_name: string, callback: () => void) =>
         ended.push(callback),
       ),
       finish: () => {
+        finished = true;
         for (const callback of ended.splice(0)) callback();
       },
     };
@@ -68,7 +84,7 @@ function setup() {
       setTargetAtTime: vi.fn((next: number, at: number, constant: number) => {
         target = { value: next, from: sample(at), at, constant };
       }),
-      linearRampToValueAtTime: vi.fn(),
+      linearRampToValueAtTime: vi.fn<(value: number, at: number) => void>(),
     };
   };
   const node = () => {
@@ -139,6 +155,13 @@ function setup() {
   vi.stubGlobal('fetch', fetch);
   return {
     audio: new AudioManager(),
+    advanceTo: async (sec: number) => {
+      nowSec = sec;
+      for (const voice of [...voices])
+        if (voice.playing && voice.dueSec <= sec) voice.finish();
+      // Drain async decode/reconciliation without advancing the controlled audio clock.
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    },
     context,
     voices,
     fetch,
@@ -147,6 +170,45 @@ function setup() {
     delays,
     gains,
   };
+}
+
+async function saturatedTails(extraClips: readonly string[] = []) {
+  const state = setup();
+  const { audio, advanceTo } = state;
+  for (const id of [
+    'diesel-running',
+    'audio.horn.steam_local',
+    ...extraClips,
+  ]) {
+    audio.audition(id);
+    await advanceTo(10);
+  }
+  audio.stopAll();
+  await advanceTo(10);
+  for (const id of ['cow', 'sheep', 'hen', 'cat', 'dog']) audio.play(id, 1, 40);
+  const wheels = {
+    key: 'wheels',
+    id: 'wheels',
+    gain: 1,
+    rate: 1,
+    priority: 60,
+  };
+  audio.setLayers([
+    wheels,
+    { key: 'engine', id: 'diesel-idle', gain: 1, rate: 1, priority: 70 },
+    { key: 'bell', id: 'crossing-bell', gain: 1, rate: 1, priority: 90 },
+  ]);
+  await advanceTo(10);
+  expect(audio.diagnostics.active).toHaveLength(8);
+  audio.setLayers([
+    wheels,
+    { key: 'engine', id: 'diesel-running', gain: 1, rate: 1, priority: 70 },
+    { key: 'ambient', id: 'forest', gain: 1, rate: 1, priority: 10 },
+  ]);
+  await advanceTo(10);
+  expect(audio.diagnostics.retiringSources).toBe(2);
+  expect(state.voices.filter((source) => source.playing)).toHaveLength(10);
+  return state;
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -676,6 +738,555 @@ describe('recorded sounds / H1', () => {
     expect(audio.diagnostics.active.map((v) => v.id)).not.toContain('songbird');
     audio.dispose();
   });
+  it('does not add chuff sources to a non-pulsed engine loop', async () => {
+    const { audio, voices } = setup();
+    audio.unlock();
+    audio.setLayers([
+      { key: 'engine', id: 'steam-chuff', gain: 1, rate: 1, priority: 70 },
+    ]);
+    await vi.waitFor(() => expect(voices).toHaveLength(1));
+    audio.chuff(0.1);
+    audio.chuff(0.1);
+    expect(voices).toHaveLength(1);
+    audio.dispose();
+  });
+  it('finishes a coalesced empty layer set without another frame', async () => {
+    const { audio, voices, gains, advanceTo } = setup();
+    audio.audition('diesel-running');
+    await advanceTo(10);
+    audio.stopAll();
+    await advanceTo(10);
+    const layer = (id: string) => [
+      { key: 'engine', id, gain: 1, rate: 1, priority: 70 },
+    ];
+    audio.setLayers(layer('diesel-idle'));
+    await advanceTo(10);
+    audio.setLayers(layer('diesel-running'));
+    await advanceTo(10);
+    expect(audio.diagnostics.active.map((voice) => voice.id)).toEqual([
+      'diesel-running',
+    ]);
+    audio.setLayers([]);
+    await advanceTo(10.01);
+    await advanceTo(10.16);
+    expect(voices.filter((source) => source.playing)).toEqual([]);
+    expect(audio.diagnostics.active).toEqual([]);
+    expect(audio.diagnostics.retiringSources).toBe(0);
+    for (const source of voices)
+      expect(source.disconnect).toHaveBeenCalledOnce();
+    for (const gain of gains.slice(1))
+      expect(gain.disconnect).toHaveBeenCalledOnce();
+    audio.dispose();
+  });
+  it('admits a cached priority horn during saturated tails within the short ramp', async () => {
+    const { audio, voices, advanceTo } = await saturatedTails();
+    audio.play('audio.horn.steam_local', 1, 100);
+    await advanceTo(10);
+    expect(voices.filter((source) => source.playing)).toHaveLength(10);
+    await advanceTo(10.01);
+    expect(audio.diagnostics.active.map((voice) => voice.id)).toContain(
+      'audio.horn.steam_local',
+    );
+    expect(voices.filter((source) => source.playing)).toHaveLength(10);
+    expect(audio.diagnostics.retiringSources).toBe(2);
+    await advanceTo(10.16);
+    expect(voices.filter((source) => source.playing)).toHaveLength(8);
+    audio.dispose();
+    await advanceTo(11);
+    for (const source of voices)
+      expect(source.disconnect).toHaveBeenCalledOnce();
+  });
+  it('keeps only the highest-priority waiting shot and coalesces duplicate requests', async () => {
+    const { audio, voices, advanceTo } = await saturatedTails([
+      'audio.horn.diesel_shunter',
+      'audio.horn.steam_express',
+    ]);
+    const playedBefore = audio.diagnostics.played.length;
+    audio.play('audio.horn.steam_local', 0.2, 80);
+    await advanceTo(10);
+    for (let request = 0; request < 20; request++) {
+      audio.play('audio.horn.diesel_shunter', 1, 100);
+      audio.play('audio.horn.steam_express', 0.2, 80);
+      audio.play('audio.horn.steam_local', 1, 100);
+      audio.play('cow', 1, 40);
+    }
+    await advanceTo(10);
+    await advanceTo(10.01);
+    expect(voices.filter((source) => source.playing)).toHaveLength(10);
+    await advanceTo(10.16);
+    await advanceTo(13.02);
+    expect(audio.diagnostics.played.slice(playedBefore)).toEqual([
+      'audio.horn.diesel_shunter',
+    ]);
+    audio.dispose();
+  });
+  it.each([0.249, 0.251])(
+    'checks the original animal deadline when tail ended is delivered after %s seconds',
+    async (delaySec) => {
+      const { audio, voices, advanceTo } = await saturatedTails(['frog']);
+      const playedBefore = audio.diagnostics.played.length;
+      audio.play('frog', 1, 60);
+      await advanceTo(10);
+      await advanceTo(10 + delaySec);
+      expect(audio.diagnostics.played.slice(playedBefore)).toEqual(
+        delaySec < 0.25 ? ['frog'] : [],
+      );
+      expect(
+        voices.filter((source) => source.playing).length,
+      ).toBeLessThanOrEqual(10);
+      audio.dispose();
+    },
+  );
+  it.each(['suspend', 'stopAll', 'disable', 'dispose'] as const)(
+    'cancels a waiting priority shot and coalesced layers on %s, including late ended',
+    async (action) => {
+      const { audio, voices, gains, advanceTo } = await saturatedTails();
+      audio.play('audio.horn.steam_local');
+      await advanceTo(10);
+      const playedBefore = audio.diagnostics.played.length;
+      if (action === 'disable') audio.setEnabled(false);
+      else audio[action]();
+      // Reusing the manager before old ended events arrive must not revive requests.
+      if (action !== 'dispose') {
+        audio.setEnabled(true);
+        audio.unlock();
+        audio.play('frog', 1, 40);
+      }
+      await advanceTo(10.02);
+      await advanceTo(10.2);
+      expect(audio.diagnostics.played.slice(playedBefore)).toEqual(
+        action === 'dispose' ? [] : ['frog'],
+      );
+      expect(audio.diagnostics.active.map((voice) => voice.id)).toEqual(
+        action === 'dispose' ? [] : ['frog'],
+      );
+      audio.dispose();
+      await advanceTo(11);
+      expect(voices.filter((source) => source.playing)).toEqual([]);
+      for (const source of voices)
+        expect(source.disconnect).toHaveBeenCalledOnce();
+      for (const gain of gains.slice(1))
+        expect(gain.disconnect).toHaveBeenCalledOnce();
+    },
+  );
+  it('does not queue a one-shot that cannot beat any admitted voice', async () => {
+    const { audio, advanceTo } = setup();
+    audio.unlock();
+    for (const id of ['cow', 'sheep', 'hen', 'cat', 'dog', 'frog'])
+      audio.play(id, 1, 40);
+    await advanceTo(10);
+    expect(audio.diagnostics.active).toHaveLength(5);
+    await advanceTo(13);
+    expect(audio.diagnostics.active).toEqual([]);
+    expect(audio.diagnostics.played).not.toContain('frog');
+    audio.dispose();
+  });
+  it('preserves the 11-source ceiling when a priority horn waits beside two steam strokes', async () => {
+    const { audio, voices, advanceTo } = setup();
+    audio.audition('audio.horn.steam_local');
+    await advanceTo(10);
+    audio.stopAll();
+    await advanceTo(10);
+    const train = [
+      {
+        key: 'engine',
+        id: 'steam-chuff',
+        pulsed: true,
+        gain: 1,
+        rate: 1,
+        priority: 70,
+      },
+      { key: 'wheels', id: 'wheels', gain: 1, rate: 1, priority: 60 },
+      { key: 'ambient', id: 'forest', gain: 1, rate: 1, priority: 10 },
+    ];
+    audio.setLayers(train);
+    for (const id of ['cow', 'sheep', 'hen', 'cat', 'dog'])
+      audio.play(id, 1, 40);
+    await advanceTo(10);
+    audio.chuff(0.1);
+    audio.chuff(0.1);
+    audio.setLayers([
+      ...train,
+      { key: 'bell', id: 'crossing-bell', gain: 1, rate: 1, priority: 90 },
+    ]);
+    await advanceTo(10);
+    audio.setLayers(train);
+    await advanceTo(10);
+    expect(audio.diagnostics.retiringSources).toBe(2);
+    expect(voices.filter((source) => source.playing)).toHaveLength(11);
+    audio.play('audio.horn.steam_local');
+    await advanceTo(10);
+    await advanceTo(10.01);
+    expect(audio.diagnostics.active.map((voice) => voice.id)).toContain(
+      'audio.horn.steam_local',
+    );
+    expect(voices.filter((source) => source.playing)).toHaveLength(11);
+    expect(audio.diagnostics.sourceCount).toBe(11);
+    audio.dispose();
+    await advanceTo(11);
+    for (const source of voices)
+      expect(source.disconnect).toHaveBeenCalledOnce();
+  });
+  it.each([60, 80])(
+    'does not extend a waiting animal deadline with a duplicate at priority %i',
+    async (priority) => {
+      const { audio, context, advanceTo } = await saturatedTails(['frog']);
+      const playedBefore = audio.diagnostics.played.length;
+      audio.play('frog', 1, 60);
+      await advanceTo(10);
+      // Delay delivery of ended while a duplicate arrives near the original deadline.
+      context.currentTime = 10.24;
+      audio.play('frog', 1, priority);
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      await advanceTo(10.251);
+      expect(audio.diagnostics.played.slice(playedBefore)).toEqual([]);
+      audio.dispose();
+    },
+  );
+  it('keeps the raised priority of a stronger same-ID duplicate within the original deadline', async () => {
+    const { audio, context, advanceTo } = await saturatedTails([
+      'frog',
+      'duck',
+    ]);
+    const playedBefore = audio.diagnostics.played.length;
+    audio.play('frog', 1, 60);
+    await advanceTo(10);
+    context.currentTime = 10.1;
+    audio.play('frog', 1, 80);
+    // Only a strictly stronger different ID may replace the waiting record.
+    audio.play('duck', 1, 70);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    await advanceTo(10.2);
+    expect(audio.diagnostics.played.slice(playedBefore)).toEqual(['frog']);
+    audio.dispose();
+  });
+  it('reports allocation failure during an ended retry and releases the shot slot', async () => {
+    const { audio, context, advanceTo } = await saturatedTails();
+    audio.play('audio.horn.steam_local');
+    await advanceTo(10);
+    context.createBufferSource.mockImplementationOnce(() => {
+      throw new Error('no node on retry');
+    });
+    await advanceTo(10.01);
+    expect(audio.diagnostics.failures).toEqual([
+      { file: 'play:audio.horn.steam_local', reason: 'no node on retry' },
+    ]);
+    audio.play('frog', 1, 40);
+    await advanceTo(10.01);
+    expect(audio.diagnostics.active.map((voice) => voice.id)).toContain('frog');
+    audio.dispose();
+  });
+  it('retries the priority shot when an admitted one-shot naturally ends before the short tail', async () => {
+    const { audio, voices, context, advanceTo } = await saturatedTails();
+    audio.play('audio.horn.steam_local');
+    await advanceTo(10);
+    const animal = voices.find((source) => source.playing && !source.loop);
+    if (!animal) throw new Error('playing animal missing');
+    context.currentTime = 10.005;
+    animal.finish();
+    await advanceTo(10.005);
+    expect(audio.diagnostics.active.map((voice) => voice.id)).toContain(
+      'audio.horn.steam_local',
+    );
+    expect(voices.filter((source) => source.playing)).toHaveLength(10);
+    audio.dispose();
+  });
+  it('retries the priority shot when the first retiring steam stroke frees capacity', async () => {
+    const { audio, voices, advanceTo } = setup();
+    for (const id of ['audio.horn.steam_local', 'diesel-running']) {
+      audio.audition(id);
+      await advanceTo(10);
+    }
+    audio.stopAll();
+    await advanceTo(10);
+    const surroundings = [
+      { key: 'wheels', id: 'wheels', gain: 1, rate: 1, priority: 60 },
+      { key: 'ambient', id: 'forest', gain: 1, rate: 1, priority: 10 },
+    ];
+    audio.setLayers([
+      ...surroundings,
+      {
+        key: 'engine',
+        id: 'steam-chuff',
+        pulsed: true,
+        gain: 1,
+        rate: 1,
+        priority: 70,
+      },
+    ]);
+    for (const id of ['cow', 'sheep', 'hen', 'cat', 'dog'])
+      audio.play(id, 1, 40);
+    await advanceTo(10);
+    audio.chuff(0.005);
+    audio.chuff(0.1);
+    audio.setLayers([
+      ...surroundings,
+      { key: 'engine', id: 'diesel-running', gain: 1, rate: 1, priority: 70 },
+    ]);
+    await advanceTo(10);
+    expect(audio.diagnostics.retiringSources).toBe(2);
+    audio.play('audio.horn.steam_local');
+    await advanceTo(10);
+    await advanceTo(10.005);
+    expect(audio.diagnostics.active.map((voice) => voice.id)).toContain(
+      'audio.horn.steam_local',
+    );
+    expect(voices.filter((source) => source.playing)).toHaveLength(10);
+    expect(audio.diagnostics.retiringSources).toBe(2);
+    audio.dispose();
+    await advanceTo(11);
+    for (const source of voices)
+      expect(source.disconnect).toHaveBeenCalledOnce();
+  });
+  it.each(['diesel', 'bell', 'ambient', 'chuffs'] as const)(
+    'bounds every started-but-not-ended source during rapid %s transitions',
+    async (scenario) => {
+      const { audio, voices, advanceTo, gains } = setup();
+      audio.unlock();
+      // Warm all toggled clips before the controlled 30ms transition sequence.
+      for (const id of [
+        'diesel-idle',
+        'diesel-running',
+        'crossing-bell',
+        'forest',
+        'meadow',
+        'steam-chuff',
+      ]) {
+        audio.audition(id);
+        await vi.waitFor(() =>
+          expect(audio.diagnostics.played.at(-1)).toBe(id),
+        );
+      }
+      audio.stopAll();
+      await advanceTo(10);
+      const startIndex = voices.length;
+      for (const id of ['cow', 'sheep', 'hen', 'cat', 'dog']) audio.play(id);
+      await vi.waitFor(() => expect(audio.diagnostics.active).toHaveLength(5));
+      const ceiling = scenario === 'chuffs' ? 11 : 10;
+      let maximum = 0;
+      for (let step = 0; step < 30; step++) {
+        await advanceTo(10 + step * 0.03);
+        const odd = step % 2 === 1;
+        const previousStops = new Map(
+          voices.map((source) => [source, source.stop.mock.calls.length]),
+        );
+        audio.setLayers([
+          { key: 'wheels', id: 'wheels', gain: 1, rate: 1, priority: 60 },
+          {
+            key: 'engine',
+            id:
+              scenario === 'chuffs'
+                ? odd
+                  ? 'diesel-running'
+                  : 'steam-chuff'
+                : odd
+                  ? 'diesel-running'
+                  : 'diesel-idle',
+            gain: 1,
+            rate: 1,
+            priority: 70,
+            pulsed: scenario === 'chuffs' && !odd,
+          },
+          {
+            key: 'ambient',
+            id: scenario === 'ambient' && odd ? 'meadow' : 'forest',
+            gain: 1,
+            rate: 1,
+            priority: 10,
+          },
+          ...(scenario !== 'diesel' && odd
+            ? [
+                {
+                  key: 'bell',
+                  id: 'crossing-bell',
+                  gain: 1,
+                  rate: 1,
+                  priority: 90,
+                },
+              ]
+            : []),
+        ]);
+        await advanceTo(10 + step * 0.03);
+        if (scenario === 'chuffs') {
+          audio.chuff(0.1);
+          audio.chuff(0.1);
+        }
+        for (const source of voices.slice(startIndex))
+          for (const [end] of source.stop.mock.calls.slice(
+            previousStops.get(source) ?? 0,
+          ))
+            if (end !== undefined)
+              expect(end - (10 + step * 0.03)).toBeGreaterThanOrEqual(
+                0.01 - 1e-9,
+              );
+        const started = voices
+          .slice(startIndex)
+          .filter((source) => source.playing);
+        maximum = Math.max(maximum, started.length);
+        expect(started.length, `step ${step}`).toBeLessThanOrEqual(ceiling);
+        expect(audio.diagnostics.sourceCount).toBe(started.length);
+        expect(audio.diagnostics.retiringSources).toBeLessThanOrEqual(2);
+        const keys = audio.diagnostics.retiring.map((tail) => tail.key);
+        expect(new Set(keys).size).toBe(keys.length);
+        // A saturated tail allowance permits the priority bell after a 10ms release.
+        await advanceTo(10 + step * 0.03 + 0.010001);
+        expect(
+          voices.slice(startIndex).filter((source) => source.playing).length,
+        ).toBeLessThanOrEqual(ceiling);
+        expect(audio.diagnostics.active.length).toBeLessThanOrEqual(8);
+        expect(
+          audio.diagnostics.active.filter((v) => v.kind === 'loop').length,
+        ).toBeLessThanOrEqual(3);
+        if (odd && scenario !== 'diesel')
+          expect(
+            audio.diagnostics.active.some((v) => v.id === 'crossing-bell'),
+          ).toBe(true);
+      }
+      expect(maximum).toBeGreaterThan(8); // Actually exercised retired sources/chuffs.
+      expect(
+        gains.some((gain) =>
+          gain.gain.linearRampToValueAtTime.mock.calls.some(
+            ([value, end]) =>
+              value === 0 && typeof end === 'number' && end < 10.15,
+          ),
+        ),
+      ).toBe(true);
+      await advanceTo(12.95);
+      audio.dispose();
+      await advanceTo(13);
+      expect(voices.filter((source) => source.playing)).toEqual([]);
+      for (const source of voices)
+        expect(source.disconnect).toHaveBeenCalledOnce();
+      for (const gain of gains) expect(gain.connections.size).toBe(0);
+    },
+  );
+  it('fades a stolen ambient voice for 150 ms and hands over its budget immediately', async () => {
+    const { audio, context, voices, gains } = setup();
+    audio.unlock();
+    const train = [
+      { key: 'wheels', id: 'wheels', gain: 1, rate: 1, priority: 60 },
+      { key: 'engine', id: 'diesel-idle', gain: 1, rate: 1, priority: 70 },
+    ];
+    audio.setLayers([
+      ...train,
+      { key: 'ambient', id: 'forest', gain: 1, rate: 1, priority: 10 },
+    ]);
+    await vi.waitFor(() => expect(voices).toHaveLength(3));
+    const ambient = voices[2];
+    const envelope = gains[3];
+    context.currentTime = 11;
+    audio.setLayers([
+      ...train,
+      { key: 'ambient', id: 'meadow', gain: 1, rate: 1, priority: 10 },
+      { key: 'bell', id: 'crossing-bell', gain: 1, rate: 1, priority: 90 },
+    ]);
+    for (const id of ['cow', 'sheep', 'hen', 'cat', 'dog']) audio.play(id);
+    await vi.waitFor(() => expect(audio.diagnostics.active).toHaveLength(8));
+    expect(ambient?.stop).toHaveBeenLastCalledWith(11.15);
+    expect(ambient?.stop.mock.calls.every((call) => call.length === 1)).toBe(
+      true,
+    );
+    expect(envelope?.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+      0,
+      11.15,
+    );
+    expect(ambient?.disconnect).not.toHaveBeenCalled();
+    expect(
+      audio.diagnostics.active.filter((v) => v.kind === 'loop'),
+    ).toHaveLength(3);
+    ambient?.finish();
+    expect(ambient?.disconnect).toHaveBeenCalledOnce();
+    expect(envelope?.disconnect).toHaveBeenCalledOnce();
+    // Finishing a retired tail must not release its already handed-over slot twice.
+    audio.setLayers([
+      ...train,
+      { key: 'ambient', id: 'meadow', gain: 1, rate: 1, priority: 10 },
+      { key: 'bell', id: 'crossing-bell', gain: 1, rate: 1, priority: 90 },
+    ]);
+    audio.play('frog', 1, 1);
+    await vi.waitFor(() => expect(audio.diagnostics.loaded).toBe(11));
+    expect(audio.diagnostics.active).toHaveLength(8);
+    expect(voices).toHaveLength(9);
+    audio.dispose();
+    for (const source of voices)
+      expect(source.disconnect).toHaveBeenCalledOnce();
+  });
+  it('does not retrigger an animal id while its stolen voice is still fading', async () => {
+    const { audio, voices } = setup();
+    audio.unlock();
+    for (const id of ['cow', 'sheep', 'hen', 'cat', 'dog'])
+      audio.play(id, 1, 10);
+    await vi.waitFor(() => expect(voices).toHaveLength(5));
+    audio.play('audio.horn.steam_local', 1, 100);
+    await vi.waitFor(() => expect(voices).toHaveLength(6));
+    audio.play('cow', 1, 100);
+    // A later uncached request proves the cached cow consumer has reconciled.
+    audio.play('frog', 1, 1);
+    await vi.waitFor(() => expect(audio.diagnostics.loaded).toBe(7));
+    expect(voices).toHaveLength(6);
+    voices[0]?.finish();
+    audio.play('cow', 1, 100);
+    await vi.waitFor(() => expect(voices).toHaveLength(7));
+    audio.dispose();
+  });
+  it('resumes the ambient loop at its elapsed position after the bell releases its slot', async () => {
+    const { audio, context, voices } = setup();
+    audio.unlock();
+    const layers = [
+      { key: 'wheels', id: 'wheels', gain: 1, rate: 1, priority: 60 },
+      { key: 'engine', id: 'diesel-idle', gain: 1, rate: 1, priority: 70 },
+      { key: 'ambient', id: 'forest', gain: 1, rate: 1, priority: 10 },
+    ];
+    audio.setLayers(layers);
+    await vi.waitFor(() => expect(voices).toHaveLength(3));
+    context.currentTime = 11;
+    audio.setLayers([
+      ...layers,
+      { key: 'bell', id: 'crossing-bell', gain: 1, rate: 1, priority: 90 },
+    ]);
+    await vi.waitFor(() => expect(voices).toHaveLength(4));
+    expect(voices[2]?.stop).toHaveBeenCalledExactlyOnceWith(11.15);
+    context.currentTime = 12;
+    audio.setLayers(layers);
+    await vi.waitFor(() => expect(voices).toHaveLength(5));
+    expect(voices[4]?.start).toHaveBeenCalledWith(0, 2.12);
+    expect(audio.diagnostics.active).toHaveLength(3);
+    audio.dispose();
+  });
+  it.each([
+    ['diesel clip change', 'engine', 'diesel-idle', 'diesel-running'],
+    ['crossing opens', 'bell', 'crossing-bell', undefined],
+    ['wheels stop', 'wheels', 'wheels', undefined],
+  ] as const)(
+    'fades the old layer for 150 ms: %s',
+    async (_name, key, id, next) => {
+      const { audio, context, voices, gains } = setup();
+      audio.unlock();
+      const layer = (clip: string) => [
+        { key, id: clip, gain: 1, rate: 1, priority: 70 },
+      ];
+      audio.setLayers(layer(id));
+      await vi.waitFor(() => expect(voices).toHaveLength(1));
+      context.currentTime = 11;
+      const heldGain = gains[1]?.gain.value;
+      audio.setLayers(next ? layer(next) : []);
+      expect(gains[1]?.gain.cancelScheduledValues).toHaveBeenCalledWith(11);
+      expect(gains[1]?.gain.setValueAtTime).toHaveBeenCalledWith(heldGain, 11);
+      expect(gains[1]?.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+        0,
+        11.15,
+      );
+      expect(voices[0]?.stop).toHaveBeenCalledExactlyOnceWith(11.15);
+      expect(voices[0]?.disconnect).not.toHaveBeenCalled();
+      if (next) await vi.waitFor(() => expect(voices).toHaveLength(2));
+      expect(audio.diagnostics.active.length).toBe(next ? 1 : 0);
+      audio.dispose();
+      voices[0]?.finish();
+      for (const source of voices)
+        expect(source.disconnect).toHaveBeenCalledOnce();
+      expect(audio.diagnostics.active).toEqual([]);
+    },
+  );
   it('crossfades an ambient bed when a spare loop voice exists, and cleans both on suspend', async () => {
     const { audio, voices, context } = setup();
     audio.unlock();
@@ -740,7 +1351,12 @@ describe('recorded sounds / H1', () => {
     expect(audio.diagnostics.active[0]?.kind).toBe('loop');
     audio.setLayers([]);
     expect(audio.diagnostics.active).toHaveLength(0);
-    for (const voice of voices) expect(voice.disconnect).toHaveBeenCalledOnce();
+    for (const voice of voices) {
+      expect(voice.stop).toHaveBeenCalledExactlyOnceWith(10.15);
+      expect(voice.disconnect).not.toHaveBeenCalled();
+      voice.finish();
+      expect(voice.disconnect).toHaveBeenCalledOnce();
+    }
     audio.dispose();
   });
 });

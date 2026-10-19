@@ -29,6 +29,8 @@ Automatizované testy domény použijí Vitest, integrační/browser testy Playw
 
 Klávesnicové ekvivalenty ověřit zvlášť, zejména `keyup`, auto-repeat a fokus v rodičovském panelu.
 
+Audio regrese INP-10/12 podle [D-022](../docs/decisions/022-recorded-sounds.md) řídí čas AudioContextu: idle → running → prázdný cíl musí bez dalších framů dokončit oba fades a uvolnit všechny uzly. Při pěti zvířatech priority 40 a dvou obsazených tail zdrojích musí cached hráčova píšťala priority 100 začít po 10ms rampě a `ended`; skutečný počet všech zahájených a dosud neskončených zdrojů zůstane ≤10, s dvěma parními rázy ≤11. Nejvýše jeden čekající prioritní požadavek, bez duplicit a prodlužování původní 250ms expirace zvířat; pause/mute/stopAll/dispose zruší i čekání a pozdní `ended` nic neobnoví. Ověřuje `tests/unit/platform/AudioManager.test.ts`; browserové `recorded-audio.spec.ts` a `horns.spec.ts` kontrolují skutečné dekódování, ovládání a přehrávání, fyzická hlasitost je samostatná akceptace.
+
 ## 3. Souprava a geometrie — TRN
 
 | ID     | Situace                                                   | Očekávaný výsledek                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
