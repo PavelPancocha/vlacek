@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="50" height="18" viewBox="0 0 50 18">
-  <!-- Loďka: wooden rowing boat on the lake. Foot centre (25, 18). -->
+  <!-- Loďka: wooden rowing boat on the lake. Bow is +x (front-lamp marks its rim). Foot centre (25, 18). -->
   <defs><linearGradient id="boat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c0392b"/><stop offset="1" stop-color="#7a1f17"/></linearGradient>
   </defs>
-  <path d="M3 8 H47 L42 15 Q25 17 8 15 Z" fill="url(#boat)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <path d="M3 8 H47 L42 15 Q25 17 8 15 Z" fill="url(#boat)"/><path d="M3 8 H47 M42 15 Q25 17 8 15 L3 8" fill="none" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/><polyline id="front-lamp" points="47,8 42,15" fill="none" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
   <path d="M5 10 H45" stroke="#f4f1ea" stroke-width="0.8"/>
   <path d="M20 8 V4 M30 8 V4" stroke="#6d4c33" stroke-width="1"/>
   <path d="M14 9 L4 1 M36 9 L46 1" stroke="#a5794a" stroke-width="0.9"/>

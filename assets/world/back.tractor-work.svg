@@ -8,7 +8,7 @@
   <path d="M34 20 H58 Q62 20 62 24 V30 H34 Z" fill="url(#red)" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
   <path d="M38 22 H56 M38 25 H56 M38 28 H56" stroke="#7a151b" stroke-width="0.6"/>
   <rect x="50" y="11" width="2.6" height="10" fill="#2a2d33" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
-  <circle cx="61" cy="25" r="1.6" fill="#fff3c4" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle id="front-lamp" cx="61" cy="25" r="1.6" fill="#fff3c4" stroke="#1d2a14" stroke-width="0.6" stroke-linejoin="round"/>
 
 
   <path d="M12 26 A12 12 0 0 1 32 24" stroke="#7a151b" stroke-width="2" fill="none"/>

@@ -81,6 +81,35 @@ Kamera nesmí být vstupem orientace. Lodní symetrické trupy neměly označeno
 
 ## Kompatibilita a ověření
 
+### Playtest cars-1 — čitelná silueta modrého auta (2026-10-20)
+
+Vlastník 2026-10-19 na Android tabletu v buildu `0.1.0+b211e87` hlásil
+„cars (some, the blue one) goes backwards“. `back.car` mělo správně čelo +x,
+žlutý světlomet vpravo i červené zadní světlo vlevo, ale dlouhá nízká plocha
+vlevo a krátká splývavá záď vpravo četly siluetu opačně. Dřívější pohybový
+test porovnával posun s metadaty, nikoli s kresbou. Ručně překreslené SVG
+má nyní krátký kufr vlevo, kabinu a šikmé čelní sklo před dlouhou kapotou
+vpravo pod světlometem. Plátno 60 × 28, pivot (30, 28), kola, výfuk, barvy
+i čelo +x zůstávají. „Neobracíme plošně kresby“ dál znamená, že runtime
+neprovádí plošné přezrcadlení assetů; použije jedinou dosavadní transformaci
+podle pohybu. Oprava mění zdrojový obrys jediného auta, ne orientační helper.
+
+Kontaktní list před/po v herním měřítku a ve 4× velikosti zahrnuje všech
+pět bočních položek `roadVehicleArt`, devět strojů/nářadí s `front` a navíc
+datla. Traktory, kombajn, harvestor, vyvážečka, auto s kládami a bagr mají
+čitelné čelo vpravo; pluh/lis mají vpravo tažné oko a radlice pracovní hranu.
+U neutrálních lodních trupů zůstává smluvená příď +x. Žádná další silueta ani
+metadata nepotřebovala otočit. Viditelný světlomet nebo určující přední prvek
+(příď, závěs, kabina či základ ramene) je ve všech 14 SVG označen
+`id="front-lamp"`; u cest jsou příslušné rovné obrysové úseky vyčleněny
+do geometrických prvků bez nového světla. Datel se nemění.
+`tests/unit/content/vehicleFrontMarkers.test.ts` ověřuje x střed označeného
+prvku proti deklarované přední polovině viewBoxu. Test chrání metadata proti
+světlu/prvku, **nikoli siluetu**; tu dokládá vizuální kontrola kontaktních
+listů a jízdy v obou směrech. Před přidáním značek test selhal na jejich
+absenci. Save, katalog, generátor, ovládání a bezpečnost přejezdu se nemění.
+Fyzický tablet a Tesla po této opravě zůstávají NEOVĚŘENO.
+
 ### PR #13 — návrat silniční patroly do záběru (2026-10-16)
 
 `ChunkView.update()` nejdřív přepočítá polohu každého aktéra s `roadPath`
