@@ -371,7 +371,7 @@ export class ChunkView {
   readonly #glints: { image: Phaser.GameObjects.Image; phase: number }[] = [];
   /** Barriers, lamps and traffic of the chunk's level crossing. */
   #crossing: CrossingView | CrossingFallbackView | undefined;
-  /** Main-track tunnel fragment; its rock stays opaque over the train. */
+  /** Main-track tunnel fragment; its cover fades near the player's train. */
   #tunnel: TunnelView | undefined;
   /** Catenary masts of an electric journey (doc 03 §9). */
   #poles = 0;
@@ -1393,6 +1393,7 @@ export class ChunkView {
     let remaining = Math.max(0, animationBudget);
     const before = stage === 'decoration' ? this.#animatedLastFrame : 0;
     if (stage !== 'decoration') {
+      this.#tunnel?.advanceCover(timeSec);
       this.#animatedLastFrame = 0;
       if (this.#crossing instanceof CrossingView)
         this.#crossing.update(crossing, timeSec, motion, arrows);

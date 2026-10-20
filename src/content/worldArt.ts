@@ -839,8 +839,14 @@ const baseWorldParts = {
     heightU: 110,
     pivotU: { x: 38, y: 104 },
   },
-  'tunnel.portal': {
-    file: 'tunnel.portal.svg',
+  'tunnel.portal-mouth': {
+    file: 'tunnel.portal-mouth.svg',
+    widthU: 80,
+    heightU: 190,
+    pivotU: { x: 80, y: 186 },
+  },
+  'tunnel.portal-front': {
+    file: 'tunnel.portal-front.svg',
     widthU: 160,
     heightU: 240,
     pivotU: { x: 80, y: 236 },
@@ -1178,7 +1184,8 @@ export const bridgeParts = {
 
 /** Tunnel portal of the main track; its hill is painted per chunk. */
 export const tunnelParts = {
-  portal: 'tunnel.portal',
+  portalMouth: 'tunnel.portal-mouth',
+  portalFront: 'tunnel.portal-front',
 } as const satisfies Record<string, WorldPartKey>;
 
 /** Inner height of the portal's arch over the rail head, as drawn (u). */

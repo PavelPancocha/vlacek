@@ -907,6 +907,21 @@ export class RideScene extends Phaser.Scene {
     return true;
   };
 
+  /** Bubbles visible through a fading cover remain interactive (D-033). */
+  readonly #bubbleOutsideTunnel = (point: {
+    x: number;
+    y: number;
+  }): boolean => {
+    for (const chunk of this.#chunks.values())
+      if (
+        chunk.tunnel &&
+        chunk.tunnel.alpha === 1 &&
+        chunk.tunnel.coversPoint(point)
+      )
+        return false;
+    return true;
+  };
+
   #weatherOutside(point: { x: number; y: number }, radiusU: number): boolean {
     const ride = this.#host.ride();
     if (!ride) return true;
@@ -937,7 +952,7 @@ export class RideScene extends Phaser.Scene {
         this.#particles,
         world.x + this.#originX,
         world.y,
-        this.#outsideTunnel,
+        this.#bubbleOutsideTunnel,
         (gameConfig.input.minTargetCssPx / 2) * world.unitsPerCss,
       );
       if (bubbleId !== undefined) return { bubbleId };
@@ -960,7 +975,7 @@ export class RideScene extends Phaser.Scene {
         this.#particles,
         id,
         this.#host.effectsQuality() === 'low' ? 0.5 : 1,
-        this.#outsideTunnel,
+        this.#bubbleOutsideTunnel,
       )
     )
       return false;
@@ -975,7 +990,7 @@ export class RideScene extends Phaser.Scene {
     if (this.#effectsTexture === undefined) return [];
     const scale =
       (this.#view.zoom * Math.max(1, canvasRect.width)) / this.scale.width;
-    return visibleBubbles(this.#particles, this.#outsideTunnel)
+    return visibleBubbles(this.#particles, this.#bubbleOutsideTunnel)
       .map((bubble) => {
         const at = this.#particles.positionOf(bubble);
         return {

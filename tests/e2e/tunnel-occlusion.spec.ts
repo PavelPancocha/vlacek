@@ -9,11 +9,246 @@ import {
   renderedFrame,
   worldCrop,
   sceneryPixels,
+  electric2000uWagons,
 } from './tunnelHelpers.ts';
+import { tunnelSite } from '../../src/domain/world/Structures.ts';
 import { vehicleArt } from '../../src/content/artManifest.ts';
 
+for (const renderer of ['canvas', 'webgl'])
+  for (const [width, height] of [
+    [1140, 512],
+    [1280, 800],
+  ] as const)
+    for (const size of ['short', 'longest'] as const)
+      for (const area of ['crest', 'seam'] as const)
+        test(`D-033 review ${renderer} ${width} ${size}: solid ${area} without double blending`, async ({
+          page,
+        }) => {
+          await page.setViewportSize({ width, height });
+          await probeScene(page);
+          await restore(
+            page,
+            renderer,
+            214,
+            100,
+            size === 'longest' ? electric2000uWagons() : ['cargo_box'],
+            7,
+            size === 'longest' ? 'electric_retro' : 'steam_local',
+          );
+          const length = (await snapshot(page)).consistLengthU;
+          const seam = 214 * 1024;
+          await page.evaluate(
+            ({ seam, length, loco }) => {
+              const { ride, scene } = window.__tunnelProbe;
+              scene.sys.setActive(false);
+              ride.step = () => {};
+              const x = seam + length / 2 - loco / 2;
+              ride.track.ensureRange(ride.track.startS, ride.track.endS + 4000);
+              ride.headS = ride.track.sFromLocalX(
+                Math.floor(x / 1024),
+                x % 1024,
+              );
+              ride.resetMotion();
+              ride.simulationTick += 120;
+              scene.update((ride.simulationTick * 1000) / 60, 0);
+            },
+            { seam, length, loco: size === 'longest' ? 188 : 156 },
+          );
+          await renderedFrame(page);
+          const rail = await page.evaluate((x) => {
+            const { ride } = window.__tunnelProbe;
+            return -ride.sample(
+              ride.track.sFromLocalX(Math.floor(x / 1024), x % 1024),
+            ).y;
+          }, seam);
+          const clip = await worldCrop(page, {
+            x: seam - 32,
+            y: rail - (area === 'crest' ? 380 : 80),
+            width: 64,
+            height: area === 'crest' ? 64 : 48,
+          });
+          if (area === 'seam') {
+            await expectHalfCover(page, clip);
+          } else {
+            // Probe the filled crest and the rock face above the ceiling separately;
+            // their raster/vector join is an antialiased edge, not a filled sample.
+            const upperFace = await worldCrop(page, {
+              x: seam - 32,
+              y: rail - 250,
+              width: 64,
+              height: 40,
+            });
+            for (const region of [clip, upperFace]) {
+              await page.evaluate(() => {
+                for (const o of window.__tunnelProbe.scene.children.list) {
+                  if (o.depth === 7.6) {
+                    o.setAlpha(0.5);
+                    o.setVisible(true);
+                  }
+                  if (o.depth === 4.5) o.setVisible(true);
+                }
+              });
+              await renderedFrame(page);
+              const half = await page.screenshot({ clip: region });
+              if (region === clip) {
+                const error = await page.evaluate(async (base64) => {
+                  const image = new Image();
+                  image.src = `data:image/png;base64,${base64}`;
+                  await image.decode();
+                  const c = document.createElement('canvas');
+                  c.width = image.width;
+                  c.height = image.height;
+                  const ctx = c.getContext('2d')!;
+                  ctx.drawImage(image, 0, 0);
+                  const pixels = ctx.getImageData(0, 0, c.width, c.height).data;
+                  let error = 0;
+                  for (let i = 0; i < pixels.length; i += 4)
+                    for (const [channel, expected] of [110, 174, 67].entries())
+                      error = Math.max(
+                        error,
+                        Math.abs((pixels[i + channel] ?? 0) - expected),
+                      );
+                  return error;
+                }, half.toString('base64'));
+                expect(
+                  error,
+                  'filled crest stays meadow green across its opaque fragment seam',
+                ).toBeLessThanOrEqual(1);
+              }
+
+              await page.evaluate(() => {
+                for (const o of window.__tunnelProbe.scene.children.list)
+                  if (o.depth === 7.6) o.setAlpha(1);
+              });
+              await renderedFrame(page);
+              const solid = await page.screenshot({ clip: region });
+              expect(
+                await pixelChanges(page, half, solid),
+                'filled mountain above the interior stays solid at either cover alpha',
+              ).toBe(0);
+              await page.evaluate(() => {
+                for (const o of window.__tunnelProbe.scene.children.list)
+                  if (o.depth === 7.6 || o.depth === 4.5) o.setVisible(false);
+              });
+              await renderedFrame(page);
+              expect(
+                await pixelChanges(
+                  page,
+                  solid,
+                  await page.screenshot({ clip: region }),
+                ),
+                'positive control contains the mountain',
+              ).toBeGreaterThan(0);
+            }
+          }
+        });
+
 for (const renderer of ['canvas', 'webgl']) {
-  test(`tunnel-1 ${renderer}: fully covered player, old smoke and brake sparks cannot shine through`, async ({
+  for (const [kind, seed, k] of [
+    ['short', 123, 6],
+    ['rock', 7, 213],
+  ] as const) {
+    test(`D-033 ${renderer} ${kind}: both outer pillars stay behind the locomotive, cover reveals inside then returns opaque`, async ({
+      page,
+    }) => {
+      await probeScene(page);
+      const site = tunnelSite(seed, k);
+      if (!site) throw new Error('tunnel witness missing');
+      const from = k * 1024 + site.fromX,
+        to = k * 1024 + site.toX;
+      await restore(
+        page,
+        renderer,
+        Math.floor((from - 300) / 1024),
+        (from - 300) % 1024,
+        [],
+        seed,
+      );
+      expect(
+        (await snapshot(page)).tunnels.find((t) => t.id === site.id)?.alpha,
+      ).toBe(1);
+      await page.evaluate(() => {
+        const { ride, scene } = window.__tunnelProbe;
+        ride.step = () => {};
+        scene.sys.setActive(false);
+      });
+      const move = async (x: number) => {
+        await page.evaluate((x) => {
+          const { ride, scene } = window.__tunnelProbe;
+          ride.track.ensureRange(ride.track.startS, ride.track.endS + 6000);
+          ride.headS = ride.track.sFromLocalX(Math.floor(x / 1024), x % 1024);
+          ride.resetMotion();
+          ride.simulationTick += 120;
+          for (const o of scene.children.list)
+            if (o.depth === 7 || o.depth === 7.6) o.setVisible(true);
+          scene.update((ride.simulationTick * 1000) / 60, 0);
+        }, x);
+        await renderedFrame(page);
+      };
+      const length = (await snapshot(page)).consistLengthU;
+      for (const [side, x, portal] of [
+        ['entry', from - length / 2 - 4, from],
+        ['exit', to + length / 2 + 4, to],
+      ] as const) {
+        await move(x);
+        const box = await page.evaluate(
+          ({ portal, side }) => {
+            const { ride } = window.__tunnelProbe;
+            const rail = ride.sample(
+              ride.track.sFromLocalX(Math.floor(portal / 1024), portal % 1024),
+            );
+            return {
+              x: portal + (side === 'entry' ? -74 : 64),
+              y: -rail.y - 65,
+              width: 10,
+              height: 35,
+            };
+          },
+          { portal, side },
+        );
+        const clip = await worldCrop(page, box);
+        const shown = await page.screenshot({ clip });
+        await page.evaluate(() => {
+          for (const o of window.__tunnelProbe.scene.children.list)
+            if (o.depth === 7.6) o.setVisible(false);
+        });
+        await renderedFrame(page);
+        const withoutFront = await page.screenshot({ clip });
+        expect(
+          await pixelChanges(page, shown, withoutFront),
+          `${side}: no front masonry over the outside locomotive`,
+        ).toBe(0);
+        await page.evaluate(() => {
+          for (const o of window.__tunnelProbe.scene.children.list)
+            if (o.depth === 7) o.setVisible(false);
+        });
+        await renderedFrame(page);
+        expect(
+          await pixelChanges(
+            page,
+            withoutFront,
+            await page.screenshot({ clip }),
+          ),
+          `${side}: positive control actually contains locomotive pixels`,
+        ).toBeGreaterThan(0);
+      }
+      await move(from + 300);
+      expect(
+        (await snapshot(page)).tunnels.find((t) => t.id === site.id)?.alpha,
+      ).toBeCloseTo(0.5, 4);
+      const body = await page.evaluate(() => {
+        const p = window.__tunnelProbe.ride.vehiclePose(0);
+        return { x: p.centerX - 25, y: -p.centerY - 65, width: 50, height: 40 };
+      });
+      await expectCoveredPixels(page, await worldCrop(page, body), 7, false);
+      await expectHalfCover(page, await worldCrop(page, body));
+      await move(to + length + 81);
+      expect(
+        (await snapshot(page)).tunnels.find((t) => t.id === site.id)?.alpha,
+      ).toBe(1);
+    });
+  }
+  test(`tunnel-1 ${renderer}: half-transparent player cover shows the train and old smoke; no new brake sparks`, async ({
     page,
   }) => {
     await probeScene(page);
@@ -64,7 +299,9 @@ for (const renderer of ['canvas', 'webgl']) {
     });
     const state = await snapshot(page);
     expect(state.effects.kinds['smoke'] ?? 0).toBeGreaterThan(0);
-    expect(state.tunnels.find((t) => t.train === 'inside')?.alpha).toBe(1);
+    expect(state.tunnels.find((t) => t.train === 'inside')?.alpha).toBeLessThan(
+      0.6,
+    );
     expect(state.tunnels.find((t) => t.train === 'inside')?.vehicles).toEqual([
       'inside',
     ]);
@@ -86,7 +323,7 @@ for (const renderer of ['canvas', 'webgl']) {
         height: 60,
       };
     });
-    await expectCoveredPixels(page, clip, 7);
+    await expectCoveredPixels(page, clip, 7, false);
   });
 
   for (const fallback of [false, true]) {
@@ -290,12 +527,34 @@ for (const renderer of ['canvas', 'webgl']) {
 }
 
 for (const renderer of ['canvas', 'webgl']) {
-  test(`tunnel-3 ${renderer}: covered bubbles have no hit or pop, exposed touch still drives`, async ({
+  test(`tunnel-3 ${renderer}: departed cover snaps opaque and blocks bubble report, hit and pop; exposed touch still drives`, async ({
     page,
   }, testInfo) => {
     const pointerType = testInfo.project.use.hasTouch ? 'touch' : 'mouse';
     await probeScene(page);
     await restore(page, renderer, 6, 370);
+    expect(
+      (await snapshot(page)).tunnels.find((t) => t.train === 'inside')?.alpha,
+    ).toBe(0.5);
+    await page.evaluate(() => {
+      const { ride, scene } = window.__tunnelProbe;
+      scene.sys.setActive(false);
+      ride.headS = ride.track.sFromLocalX(5, 900);
+      ride.resetMotion();
+      // Normal 60 Hz simulation clocks, no restored far-state shortcut.
+      for (let tick = 0; tick < 60; tick++) {
+        ride.simulationTick++;
+        scene.update((ride.simulationTick * 1000) / 60, 0);
+      }
+    });
+    expect(
+      (await snapshot(page)).tunnels.find(
+        (t) => t.id === tunnelSite(123, 6)?.id,
+      )?.alpha,
+    ).toBe(1);
+    await page.evaluate(() => {
+      window.__tunnelProbe.scene.sys.setActive(true);
+    });
     const hidden = await page.evaluate((kind) => {
       const { ride, field } = window.__tunnelProbe;
       window.__tunnelProbe.step = ride.step.bind(ride);
@@ -409,6 +668,59 @@ for (const renderer of ['canvas', 'webgl']) {
         );
       },
       { point: exposedPoint, pointerType },
+    );
+  });
+
+  test(`D-033 ${renderer}: visible bubble under half cover is reported and tappable`, async ({
+    page,
+  }, testInfo) => {
+    const pointerType = testInfo.project.use.hasTouch ? 'touch' : 'mouse';
+    await probeScene(page);
+    await restore(page, renderer, 6, 370);
+    const bubble = await page.evaluate((kind) => {
+      const { ride, field } = window.__tunnelProbe;
+      ride.step = () => {};
+      field.emit(kind, 6150, -ride.vehiclePose(0).centerY - 55, 1, {
+        depth: 7.55,
+      });
+      field.step(0.5);
+      const p = field.particles().find((p) => p.kind === kind);
+      if (!p) throw new Error('bubble missing');
+      p.x = 6500;
+      return { id: p.id, x: p.x, y: p.y, width: 1, height: 1 };
+    }, kindIndex('bubble'));
+    await renderedFrame(page);
+    const before = await snapshot(page);
+    expect(before.bubbles.some((b) => b.id === bubble.id)).toBe(true);
+    const point = await worldCrop(page, bubble);
+    expect(
+      await page.evaluate((point) => {
+        const rect = document.querySelector('canvas')!.getBoundingClientRect();
+        return window.__tunnelProbe.scene.hitObject(point.x, point.y, rect);
+      }, point),
+    ).toEqual({ bubbleId: bubble.id });
+    await page.evaluate(
+      ({ point, pointerType }) => {
+        const target = document.elementFromPoint(point.x, point.y);
+        if (!target) throw new Error('target missing');
+        for (const type of ['pointerdown', 'pointerup'])
+          target.dispatchEvent(
+            new PointerEvent(type, {
+              bubbles: true,
+              pointerId: 107,
+              pointerType,
+              isPrimary: true,
+              button: 0,
+              buttons: type === 'pointerdown' ? 1 : 0,
+              clientX: point.x,
+              clientY: point.y,
+            }),
+          );
+      },
+      { point, pointerType },
+    );
+    expect((await snapshot(page)).effects.bubblePops).toBe(
+      before.effects.bubblePops + 1,
     );
   });
 
@@ -578,7 +890,12 @@ for (const renderer of ['canvas', 'webgl']) {
         const covered = boxes[0],
           exposed = boxes[1];
         if (!covered || !exposed) throw new Error('vehicle crops missing');
-        await expectCoveredPixels(page, await worldCrop(page, covered), 7);
+        await expectCoveredPixels(
+          page,
+          await worldCrop(page, covered),
+          7,
+          false,
+        );
         await renderedFrame(page);
         await expectCoveredPixels(
           page,
@@ -646,7 +963,7 @@ for (const renderer of ['canvas', 'webgl']) {
     { width: 1140, height: 512 },
     { width: 568, height: 320 },
   ]) {
-    test(`sparks-3 ${renderer} ${viewport.width}: contact pixels persist over three game frames and stay behind rock`, async ({
+    test(`sparks-3 ${renderer} ${viewport.width}: contact pixels persist over three game frames and remain below the half-transparent cover`, async ({
       page,
     }) => {
       await page.setViewportSize(viewport);
@@ -800,7 +1117,7 @@ for (const renderer of ['canvas', 'webgl']) {
         width: 110,
         height: 250,
       });
-      await expectCoveredPixels(page, covered, 7.55);
+      await expectCoveredPixels(page, covered, 7.55, false);
       // Advance real effect ticks under throttle: hidden sources must not renew
       // the old contact particles after their short lifetimes expire.
       await page.evaluate(() => {
@@ -814,4 +1131,72 @@ for (const renderer of ['canvas', 'webgl']) {
       await page.keyboard.up('ArrowRight');
     });
   }
+}
+
+/** The actual composite must be the midpoint of opaque rock and an uncovered train. */
+async function expectHalfCover(
+  page: Page,
+  clip: { x: number; y: number; width: number; height: number },
+): Promise<void> {
+  await page.evaluate(() => {
+    const { scene } = window.__tunnelProbe;
+    scene.sys.setActive(false);
+    for (const o of scene.children.list) if (o.depth === 7) o.setVisible(true);
+  });
+  const frames: Buffer[] = [];
+  for (const alpha of [0.5, 1, 0]) {
+    await page.evaluate((alpha) => {
+      for (const o of window.__tunnelProbe.scene.children.list)
+        if (o.depth === 7.6) o.setAlpha(alpha);
+    }, alpha);
+    await renderedFrame(page);
+    frames.push(await page.screenshot({ clip }));
+  }
+  const result = await page.evaluate(
+    async (frames) => {
+      const arrays = await Promise.all(
+        frames.map(async (base64) => {
+          const im = new Image();
+          im.src = `data:image/png;base64,${base64}`;
+          await im.decode();
+          const c = document.createElement('canvas');
+          c.width = im.width;
+          c.height = im.height;
+          const ctx = c.getContext('2d')!;
+          ctx.drawImage(im, 0, 0);
+          return ctx.getImageData(0, 0, c.width, c.height).data;
+        }),
+      );
+      const [half, solid, clear] = arrays;
+      if (!half || !solid || !clear) throw new Error('blend frames missing');
+      let count = 0,
+        error = 0;
+      for (let i = 0; i < half.length; i += 4)
+        for (let ch = 0; ch < 3; ch++) {
+          const a = solid[i + ch] ?? 0,
+            b = clear[i + ch] ?? 0;
+          if (Math.abs(a - b) > 12) {
+            count++;
+            error = Math.max(
+              error,
+              Math.abs((half[i + ch] ?? 0) - (a + b) / 2),
+            );
+          }
+        }
+      return { count, error };
+    },
+    frames.map((f) => f.toString('base64')),
+  );
+  expect(
+    result.count,
+    'positive blend control has contrasting train/rock pixels',
+  ).toBeGreaterThan(0);
+  expect(
+    result.error,
+    '50% cover is the pixel midpoint, including overlapping cover children',
+  ).toBeLessThanOrEqual(2);
+  await page.evaluate(() => {
+    for (const o of window.__tunnelProbe.scene.children.list)
+      if (o.depth === 7.6) o.setAlpha(0.5);
+  });
 }

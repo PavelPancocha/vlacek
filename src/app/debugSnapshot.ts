@@ -144,14 +144,14 @@ export interface DebugSnapshot {
     outOfRange: number;
   };
   /**
-   * Tunnels in view, the opacity of their hills (1 opaque) and whether the
+   * Tunnels in view, actual cover alpha (0.5 near/inside, 1 far; D-033) and whether the
    * train is outside, partly or wholly inside (doc 03 §8, TRN-06, D-018).
    */
   tunnels: {
     id: string;
     alpha: number;
     train: 'outside' | 'partly' | 'inside';
-    /** Each player's vehicle relative to the opaque core (in consist order). */
+    /** Each player's vehicle relative to the covered core (in consist order). */
     vehicles: ('outside' | 'partly' | 'inside')[];
   }[];
   /** Actual backdrop layers and crossfade progress (0 … 1), if a journey exists. */

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   vehicleInCover,
+  tunnelCoverTarget,
+  nextCoverAlpha,
   portalMasonryPoint,
   secondaryPortalCoversPoint,
   portalFootPoints,
@@ -82,4 +84,34 @@ it('tunnel-1: NPC sources behind the sloped rear plane cannot escape through the
   const right = { ...left, x: 2000, mirrored: true };
   expect(secondaryPortalCoversPoint({ x: 2005, y: -40 }, right)).toBe(true);
   expect(secondaryPortalCoversPoint({ x: 1975, y: -70 }, right)).toBe(false);
+});
+
+it('D-033: both approaches and the interior target 50 percent, far targets opaque', () => {
+  for (const train of [
+    { minX: 900, maxX: 920 },
+    { minX: 920, maxX: 950 },
+    { minX: 1000, maxX: 1100 },
+    { minX: 1448, maxX: 1500 },
+    { minX: 1528, maxX: 1600 },
+  ])
+    expect(tunnelCoverTarget(train, tunnel)).toBe(0.5);
+  expect(tunnelCoverTarget({ minX: 0, maxX: 919 }, tunnel)).toBe(1);
+  expect(tunnelCoverTarget({ minX: 1529, maxX: 1800 }, tunnel)).toBe(1);
+});
+it('D-033: restored frame snaps, simulation pause holds and easing is frame-rate independent', () => {
+  expect(nextCoverAlpha(undefined, 0.5, 0)).toBe(0.5);
+  expect(nextCoverAlpha(1, 0.5, 0)).toBe(1);
+  expect(nextCoverAlpha(1, 0.5, 1 / 6)).toBeCloseTo(0.5 + 0.5 / Math.E);
+  expect(nextCoverAlpha(nextCoverAlpha(1, 0.5, 0.1), 0.5, 0.1)).toBeCloseTo(
+    nextCoverAlpha(1, 0.5, 0.2),
+  );
+});
+
+it('D-033 review-3: departure reaches exact opacity through normal ticks and pause holds near target', () => {
+  let alpha = 0.5;
+  for (let tick = 0; tick < 60; tick++)
+    alpha = nextCoverAlpha(alpha, 1, 1 / 60);
+  expect(alpha).toBe(1);
+  expect(nextCoverAlpha(0.999, 1, 0)).toBe(0.999);
+  expect(nextCoverAlpha(0.501, 0.5, 0)).toBe(0.501);
 });

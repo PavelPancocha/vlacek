@@ -138,11 +138,12 @@ function groundGeometryEnvelope() {
       to = from + length;
     const pages: { width: number; height: number }[] = [];
     for (let k = start; k < start + chunks; k++) {
-      const left = Math.max(k * width - 2, from);
-      const right = Math.min((k + 1) * width + 2, to);
+      const left = Math.max(k * width, from - 120);
+      const right = Math.min((k + 1) * width, to + 120);
       if (right <= left) continue;
       const span = right - left;
-      const height = Math.ceil(span * grade + 294);
+      // D-033: two face images share this one texture; fragments never overlap.
+      const height = Math.ceil(span * grade + 298);
       const page = { width: Math.ceil(span), height: Math.max(1, height) };
       materialLargest = Math.max(materialLargest, bytes(page));
       pages.push(page);
@@ -529,7 +530,7 @@ export function windowResidency(
  * profile (D-030). Every case of `atlasBoundCases` proves its windows and
  * peaks stay within these; content changes must recompute them.
  */
-/** WM4 adds no scratch/readback; corrected foothills hosts grow the packed world window. */
+/** D-033 recomputes the trimmed portals and bounded cover strip; 96/192 MiB budgets stay fixed. */
 export const ATLAS_BOUND: Readonly<
   Record<
     Quality,
@@ -537,14 +538,14 @@ export const ATLAS_BOUND: Readonly<
   >
 > = {
   low: {
-    oldWorldBytes: 10485760,
+    oldWorldBytes: 11534336,
     oldBackdropBytes: 4696968,
-    peakBytes: 97951432,
+    peakBytes: 100504352,
   },
   standard: {
-    oldWorldBytes: 26017792,
+    oldWorldBytes: 26345472,
     oldBackdropBytes: 9191424,
-    peakBytes: 147406304,
+    peakBytes: 148527464,
   },
 };
 

@@ -47,15 +47,31 @@ vi.mock('phaser', () => ({
           this.alpha = alpha;
           return this;
         }
-        setFlipX() {
+        flipX = false;
+        setFlipX(value: boolean) {
+          this.flipX = value;
+          return this;
+        }
+        rotation = 0;
+        setRotation(value: number) {
+          this.rotation = value;
           return this;
         }
       },
       Container: class {
-        add() {
+        list: unknown[] = [];
+        depth = 0;
+        alpha = 1;
+        add(child: unknown) {
+          this.list.push(child);
           return this;
         }
-        setDepth() {
+        setDepth(value: number) {
+          this.depth = value;
+          return this;
+        }
+        setAlpha(value: number) {
+          this.alpha = value;
           return this;
         }
       },
@@ -152,7 +168,7 @@ describe('tunnel catenary supports (TRN-08)', () => {
   });
 });
 
-it('tunnel-1: opaque from the first paused frame; sources behind the fitted cover stay inside rock', () => {
+it('D-033: see-through from the first paused frame; emission geometry stays inside rock', () => {
   const site = tunnelSite(123, 6);
   if (!site) throw new Error('missing regression tunnel');
   const scene = new Phaser.Scene();
@@ -179,7 +195,7 @@ it('tunnel-1: opaque from the first paused frame; sources behind the fitted cove
   const fromX = site.chunkIndex * chunkWidthU + site.fromX;
   for (const minX of [fromX - 100, fromX + 40, fromX + 120]) {
     view.update({ minX, maxX: minX + 100 });
-    expect(view.alpha).toBe(1);
+    expect(view.alpha).toBe(0.5);
   }
   const x = fromX + 150;
   const railY = (site.fromX + 150) * 0.07885;
@@ -261,6 +277,7 @@ it('SCN-TB04/06: an interior long-tunnel fragment bakes at most one chunk and st
   expect(Math.max(...widths)).toBeLessThanOrEqual(1028);
   view.update({ minX: 9000, maxX: 11000 });
   expect(view.train).toBe('inside');
+  expect(view.alpha).toBe(0.5);
   for (const localX of [0, 512, 1024]) {
     expect(
       view.coversPoint({ x: 10240 + localX, y: 0.05 * localX - 110 }),
@@ -358,6 +375,7 @@ function shortMound(
   k: number,
   art = false,
   appearance?: ConstructorParameters<typeof TunnelView>[8],
+  railY: (x: number) => number = () => 0,
 ) {
   const site = tunnelSite(seed, k);
   if (!site || site.rock) throw new Error(`missing short tunnel ${seed}/${k}`);
@@ -379,12 +397,12 @@ function shortMound(
     (x: number, y: number, texture: string, frame: WorldPartKey) =>
       new Phaser.GameObjects.Image(scene, x, y, texture, frame),
   );
-  Object.assign(scene, { add: { image } });
+  Object.assign(scene, { add: { ...scene.add, image } });
   const view = new TunnelView(
     scene,
     art ? { texture: 'world', pxPerU: 1 } : undefined,
     site,
-    { railY: () => 0, meadowY: () => 20 },
+    { railY, meadowY: (x) => railY(x) + 20 },
     (paint) => {
       strokes.mockClear();
       lines.mockClear();
@@ -523,7 +541,8 @@ it.each([
     for (const key of expected) expect(keys).toContain(key);
     expect(keys).not.toContain('near.wildflowers');
     for (const [i, [x, y, , key]] of image.mock.calls.entries()) {
-      if (key === 'tunnel.portal') continue;
+      if (key === 'tunnel.portal-mouth' || key === 'tunnel.portal-front')
+        continue;
       const result = image.mock.results[i];
       if (result?.type !== 'return') throw new Error('missing plant');
       const scale = result.value.scaleX;
@@ -621,6 +640,9 @@ for (const [seed, k] of [
     const scene = new Phaser.Scene();
     const graphics = new Phaser.GameObjects.Graphics(scene);
     const polygons = vi.spyOn(graphics, 'fillPoints');
+    Object.assign(scene, {
+      add: { container: () => new Phaser.GameObjects.Container(scene) },
+    });
     new TunnelView(
       scene,
       undefined,
@@ -668,3 +690,97 @@ for (const [seed, k] of [
     expect(covered).toBeGreaterThan(100);
     expect(rejected).toBeGreaterThan(100);
   });
+
+it('D-033: short portals split into opaque mouths behind the train and mirrored fronts in the cover', () => {
+  const { view, image } = shortMound(0, 382, true);
+  const mouths = image.mock.results.flatMap((r) =>
+    r.type === 'return' &&
+    r.value.data.get('world-part') === 'tunnel.portal-mouth'
+      ? [r.value]
+      : [],
+  );
+  const fronts = image.mock.results.flatMap((r) =>
+    r.type === 'return' &&
+    r.value.data.get('world-part') === 'tunnel.portal-front'
+      ? [r.value]
+      : [],
+  );
+  expect(mouths).toHaveLength(2);
+  expect(fronts).toHaveLength(2);
+  expect(mouths.map((im) => im.flipX)).toEqual([false, true]);
+  expect(fronts.map((im) => im.flipX)).toEqual([false, true]);
+  for (const mouth of mouths)
+    expect(
+      view.containers.find((c) => c.list.includes(mouth))?.depth,
+    ).toBeLessThan(2);
+  for (const front of fronts)
+    expect(view.containers.find((c) => c.list.includes(front))?.depth).toBe(3);
+});
+
+it('D-033: a short tunnel eases only with simulation time and leaves its mouths opaque', () => {
+  const { view, site } = shortMound(0, 382, true);
+  const from = site.chunkIndex * 1024 + site.fromX,
+    to = site.chunkIndex * 1024 + site.toX;
+  view.update({ minX: from - 300, maxX: from - 200 }, 0);
+  expect(view.alpha).toBe(1);
+  view.update({ minX: from - 100, maxX: from - 20 }, 0);
+  expect(view.alpha).toBe(1);
+  view.update({ minX: from - 100, maxX: from - 20 }, 1);
+  expect(view.alpha).toBeCloseTo(0.5, 2);
+  view.update({ minX: from + 100, maxX: from + 200 }, 2);
+  expect(view.alpha).toBeCloseTo(0.5, 4);
+  const paused = view.alpha;
+  view.update({ minX: to + 100, maxX: to + 200 }, 2);
+  expect(view.alpha).toBe(paused);
+  view.update({ minX: to + 100, maxX: to + 200 }, 4);
+  expect(view.alpha).toBe(1);
+  expect(view.containers.find((c) => c.depth === 1.01)?.alpha).toBe(1);
+  expect(view.containers.find((c) => c.depth === 3)?.alpha).toBe(view.alpha);
+});
+
+it('D-033: the chunk clock advances a span-only update, once and without wall time', () => {
+  const { view, site } = shortMound(0, 382);
+  const from = site.chunkIndex * 1024 + site.fromX;
+  view.update({ minX: from - 300, maxX: from - 200 });
+  view.advanceCover(10);
+  view.update({ minX: from - 100, maxX: from - 20 });
+  view.advanceCover(10);
+  expect(view.alpha).toBe(1);
+  view.advanceCover(11);
+  expect(view.alpha).toBeCloseTo(0.5, 2);
+  const paused = view.alpha;
+  view.advanceCover(11);
+  expect(view.alpha).toBe(paused);
+});
+
+it.each([-0.12, 0.12])(
+  'D-033 review-4: both winter caps follow their portal on grade %s',
+  (grade) => {
+    const railY = (x: number) => 30 + grade * x;
+    const { site, image } = shortMound(
+      0,
+      230,
+      true,
+      {
+        climateAt: (x) => effectiveClimateAt(0, 230 * 1024 + x),
+        sandAt: () => false,
+      },
+      railY,
+    );
+    const angle = Math.atan(grade),
+      c = Math.cos(angle),
+      s = Math.sin(angle);
+    const caps = image.mock.calls.flatMap((call, i) => {
+      if (call[3] !== 'snow.roof-64') return [];
+      const cap = image.mock.results[i];
+      if (cap?.type !== 'return') throw new Error('snow missing');
+      return [{ call, cap: cap.value }];
+    });
+    expect(caps).toHaveLength(2);
+    for (const [i, x] of [site.fromX, site.toX].entries()) {
+      expect(caps[i]?.call[0]).toBeCloseTo(x - 78 * c + 228 * s);
+      expect(caps[i]?.call[1]).toBeCloseTo(railY(x) - 78 * s - 228 * c);
+      expect(caps[i]?.cap.rotation).toBeCloseTo(angle);
+    }
+  },
+);

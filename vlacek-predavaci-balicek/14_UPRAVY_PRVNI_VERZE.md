@@ -38,7 +38,7 @@ Limit odvozuj od délky konkrétní lokomotivy, všech zvolených vagonků, spř
 
 Kamera musí zohledňovat i výškový rozsah soupravy na svahu a místo zabrané ovládáním. Pohybuj s ní plynule; žádné cukání nebo výrazné přibližování a oddalování na každém hrbolu. Po změně velikosti okna přepočítej zobrazení. Na nepoužitelně úzkém displeji raději pozastav hru a nabídni otočení na šířku, než abys vlak ořízl nebo změnil na tečky. Uložené vagonky nikdy tiše neodstraňuj.
 
-Trať musí existovat pod celou soupravou už při startu a nesmí se odstraňovat před průjezdem posledního vozu. Podle zadání world v2 z 2026-10-13 a D-018 je tunel neprůhledný: vozidla postupně mizí za portálem a vystupují u výjezdu. Pokračování jízdy ukazuje pohyb kamery a otevřené ústí; žádný nový ovládací režim. Tento požadavek nahrazuje původní průřez nebo zprůhlednění.
+Trať musí existovat pod celou soupravou už při startu a nesmí se odstraňovat před průjezdem posledního vozu. Podle rozhodnutí vlastníka z 2026-10-19 a D-033 kryt všech tunelů zprůhlední na 50 % při přiblížení a průjezdu hráčovy soupravy (80 u, 6 s⁻¹ v simulačním čase). První obnovený snímek nastaví cíl okamžitě, pauza jej drží. Ústí a vnější pilíř jsou za vlakem, přední část včetně vnitřního pilíře je před ním. Vlak zůstává uvnitř ztmavený; ovládání se nemění.
 
 ## 3. Grafika je hlavní priorita této iterace
 

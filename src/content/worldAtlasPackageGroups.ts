@@ -242,7 +242,8 @@ const groups: readonly { keys: readonly string[]; group: WorldAtlasGroup }[] = [
     keys: [
       'backdrop.mountains-ridges',
       'backdrop.mountains-slope',
-      'tunnel.rock-portal',
+      'tunnel.rock-portal-front',
+      'tunnel.rock-portal-mouth',
       'tunnel.rock-cover',
       'tunnel.rock-cap',
     ],
@@ -266,7 +267,8 @@ const groups: readonly { keys: readonly string[]; group: WorldAtlasGroup }[] = [
     keys: [
       'backdrop.mountains-ridges-snow',
       'backdrop.mountains-slope-snow',
-      'tunnel.rock-portal-snow',
+      'tunnel.rock-portal-front-snow',
+      'tunnel.rock-portal-mouth-snow',
       'tunnel.rock-cover-snow',
       'tunnel.rock-cap-snow',
     ],
@@ -406,7 +408,12 @@ const groups: readonly { keys: readonly string[]; group: WorldAtlasGroup }[] = [
     },
   },
   {
-    keys: ['tunnel.rock-portal', 'tunnel.rock-cover', 'tunnel.rock-cap'],
+    keys: [
+      'tunnel.rock-portal-front',
+      'tunnel.rock-portal-mouth',
+      'tunnel.rock-cover',
+      'tunnel.rock-cap',
+    ],
     group: {
       landscapes: ['mountains', 'foothills', 'coast'],
       seasons: ['spring', 'summer', 'autumn'],
@@ -414,7 +421,8 @@ const groups: readonly { keys: readonly string[]; group: WorldAtlasGroup }[] = [
   },
   {
     keys: [
-      'tunnel.rock-portal-snow',
+      'tunnel.rock-portal-front-snow',
+      'tunnel.rock-portal-mouth-snow',
       'tunnel.rock-cover-snow',
       'tunnel.rock-cap-snow',
     ],

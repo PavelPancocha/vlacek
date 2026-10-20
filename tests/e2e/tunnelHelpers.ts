@@ -50,6 +50,7 @@ interface ProbeScene {
       frame?: { name: string | number; width: number; height: number };
       texture?: { key: string };
       setVisible(visible: boolean): void;
+      setAlpha(alpha: number): void;
     }[];
   };
   scale: { width: number };

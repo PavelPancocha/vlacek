@@ -42,10 +42,12 @@ import { artAtlasItems, packAtlas } from '../../../src/render/atlasPacking.ts';
 import { gameConfig } from '../../../src/config/gameConfig.ts';
 
 it.each([
-  ['tunnel.rock-portal', ['mountains', 'foothills', 'coast']],
+  ['tunnel.rock-portal-front', ['mountains', 'foothills', 'coast']],
+  ['tunnel.rock-portal-mouth', ['mountains', 'foothills', 'coast']],
   ['tunnel.rock-cover', ['mountains', 'foothills', 'coast']],
   ['tunnel.rock-cap', ['mountains', 'foothills', 'coast']],
-  ['tunnel.rock-portal-snow', ['mountains', 'foothills', 'coast']],
+  ['tunnel.rock-portal-front-snow', ['mountains', 'foothills', 'coast']],
+  ['tunnel.rock-portal-mouth-snow', ['mountains', 'foothills', 'coast']],
   ['tunnel.rock-cover-snow', ['mountains', 'foothills', 'coast']],
   ['tunnel.rock-cap-snow', ['mountains', 'foothills', 'coast']],
   ['bridge.viaduct-arch', ['mountains', 'foothills']],
@@ -219,13 +221,14 @@ describe('D-030 real metadata and distance window', () => {
   });
 });
 
-it('excludes the six package summer mountain variants in winter while keeping shared rock structure', () => {
-  const parts = atlasPackages[2].parts;
+it('excludes the package summer mountain variants in winter while keeping shared rock structure', () => {
+  const parts = worldParts;
   const summerOnly = [
     'backdrop.mountains-ridges',
     'backdrop.mountains-slope',
     'back.cutting-rock',
-    'tunnel.rock-portal',
+    'tunnel.rock-portal-front',
+    'tunnel.rock-portal-mouth',
     'tunnel.rock-cover',
     'tunnel.rock-cap',
   ];
@@ -241,9 +244,8 @@ it('excludes the six package summer mountain variants in winter while keeping sh
     expect.arrayContaining([
       'bridge.viaduct-arch',
       'bridge.viaduct-pier',
-      'tunnel.rock-left',
-      'tunnel.rock-right',
-      'tunnel.rock-crown',
+      'tunnel.rock-portal-front-snow',
+      'tunnel.rock-portal-mouth-snow',
     ]),
   );
 });

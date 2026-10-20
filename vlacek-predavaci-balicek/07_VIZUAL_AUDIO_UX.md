@@ -16,7 +16,7 @@ Výchozí volba: žádné lidské oči a ústa na lokomotivách. Výraz je v sil
 
 Hlavním vizuálním objektem zůstává vlak. Pozadí má nižší kontrast; interaktivní zvíře se přirozeně odlišuje od houští. Interaktivitu naznačuje občasné vykouknutí či otočení hlavy, nikoli permanentní blikající obrys.
 
-Dekorace nesmějí dlouhodobě zakrýt celý vlak. Výjimkou je skutečný neprůhledný tunel podle D-018: vjezd a výjezd jsou vidět v ústí, kamera pokračuje a ovládání zůstává dostupné. Přední strom může na okamžik překrýt jeden vagónek, nikoli lokomotivu a celou cestu po mnoho sekund. Při více možných cílech má být zřejmé, který reagoval.
+Dekorace nesmějí dlouhodobě zakrýt celý vlak. Podle D-033 kryt každého tunelu při přiblížení a průjezdu zprůhlední na 50 %; vlak je uvnitř ztmavený, vnější pilíře jsou za ním a kamera i ovládání pokračují. Přední strom může na okamžik překrýt jeden vagónek, nikoli lokomotivu a celou cestu po mnoho sekund. Při více možných cílech má být zřejmé, který reagoval.
 
 Ve V1 není potřeba generovat grafiku za běhu. Obrázky, zvuky i fonty jsou součást buildu. Pokud vzniknou pomocí generativních nástrojů během vývoje, musí projít kontrolou konzistence a použitelnosti, stejně jako ručně vytvořený asset. Nezavádět runtime volání AI ani připojení kvůli jednotlivým krajinám.
 

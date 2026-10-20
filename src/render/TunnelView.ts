@@ -1,3 +1,6 @@
+import { atlasFramePixels } from './atlasFramePixels.ts';
+import type { ArtPart } from '../content/artManifest.ts';
+import { FRAME_MARGIN_PX } from './atlasPacking.ts';
 import { frameTexture } from './frameTexture.ts';
 import type { EffectiveClimate } from '../domain/world/Seasons.ts';
 import { effectiveClimateAt } from '../domain/world/Seasons.ts';
@@ -13,8 +16,9 @@ import { BACK_PALETTE, mixColour } from './groundPalette.ts';
 import { frameOrigin } from './atlasPacking.ts';
 import { setWorldPivot } from './worldImage.ts';
 import {
+  TunnelCoverFade,
   portalMasonryPoint,
-  vehicleInCover,
+  trainInTunnel,
   type TrainInTunnel,
 } from './tunnelCover.ts';
 
@@ -43,8 +47,8 @@ export type Bake = (
 ) => Phaser.GameObjects.Container;
 
 /**
- * Layers of a tunnel: the hill's flanks and the inside behind the train,
- * a darkening band over it, the cover (hill and portals) in front.
+ * Layers: flanks, interior and outer mouths behind the train; a darkening
+ * band over it; the cover (hill and front portal parts) in front.
  */
 export interface TunnelDepths {
   flanks: number;
@@ -86,7 +90,7 @@ function shortTunnelHostAt(seed: number, portalXU: number) {
  * A short tunnel of the main track (doc 03 §8, doc 14 §2): stone portals
  * at both ends, the hill over the track in front of the train and its
  * flanks behind it, the dark inside with lamps. While the train is in or
- * at the tunnel the opaque cover hides each vehicle progressively by its
+ * at the tunnel the half-transparent cover darkens each vehicle by its
  * own position (TRN-06). Chunk-local, owned by its ChunkView.
  */
 export class TunnelView {
@@ -96,6 +100,8 @@ export class TunnelView {
   readonly #worldTo: number;
   readonly #coveredPoint: (point: { x: number; y: number }) => boolean;
   #train: TrainInTunnel = 'outside';
+  readonly #fade: TunnelCoverFade;
+  readonly #coverRange: { fromX: number; toX: number };
 
   constructor(
     scene: Phaser.Scene,
@@ -117,6 +123,10 @@ export class TunnelView {
     const { fromX, toX } = site;
     this.#worldFrom = site.chunkIndex * chunkWidthU + fromX;
     this.#worldTo = site.chunkIndex * chunkWidthU + toX;
+    this.#coverRange = {
+      fromX: this.#worldFrom + COVER_INSET_U,
+      toX: this.#worldTo - COVER_INSET_U,
+    };
     if (site.rock) {
       const fragment = new RockTunnelView(
         scene,
@@ -129,6 +139,7 @@ export class TunnelView {
         site.season === 'winter',
       );
       this.containers = fragment.containers;
+      this.#fade = fragment.fade;
       this.#coveredPoint = fragment.coversPoint;
       return;
     }
@@ -424,28 +435,27 @@ export class TunnelView {
     const cap = (x: number) => Math.max(top(x), rail(x) - CAP_BOTTOM_U);
     const coverBottom = (x: number) =>
       x >= coverFrom && x <= coverTo ? meadow(x) : cap(x);
-    const cover = bake(
-      (g) =>
-        paintHill(
-          g,
-          flankFrom,
-          flankTo,
-          [
-            ...xs(coverTo, flankTo)
-              .reverse()
-              .map((x) => point(x, cap(x))),
-            ...xs(coverFrom, coverTo)
-              .reverse()
-              .map((x) => point(x, meadow(x))),
-            ...xs(flankFrom, coverFrom)
-              .reverse()
-              .map((x) => point(x, cap(x))),
-          ],
-          coverBottom,
-        ),
-      bounds(flankFrom, flankTo, coverBottom),
-    );
-    // All new plants fit inside the existing opaque silhouette and its bounds.
+    const paintCover = (g: Phaser.GameObjects.Graphics) =>
+      paintHill(
+        g,
+        flankFrom,
+        flankTo,
+        [
+          ...xs(coverTo, flankTo)
+            .reverse()
+            .map((x) => point(x, cap(x))),
+          ...xs(coverFrom, coverTo)
+            .reverse()
+            .map((x) => point(x, meadow(x))),
+          ...xs(flankFrom, coverFrom)
+            .reverse()
+            .map((x) => point(x, cap(x))),
+        ],
+        coverBottom,
+      );
+    const coverBounds = bounds(flankFrom, flankTo, coverBottom);
+    const cover = scene.add.container(0, 0);
+    // All new plants fit inside the existing cover silhouette and its bounds.
     if (art && !meadowSurface) {
       for (
         let x = Math.ceil((flankFrom + 40) / 80) * 80;
@@ -502,37 +512,47 @@ export class TunnelView {
         }
       }
     }
-    const portal = worldParts[tunnelParts.portal];
+    const mouths = scene.add.container(0, 0).setDepth(depths.interior + 0.01);
     for (const [x, mirrored] of [
       [fromX, false],
       [toX, true],
     ] as const) {
       if (!art) break;
-      const image = scene.add.image(
-        x,
-        ground.railY(x),
-        frameTexture(tunnelParts.portal, art.texture),
-        tunnelParts.portal,
-      );
-      image.setData('world-part', tunnelParts.portal);
-      const pivot = mirrored
-        ? { x: portal.widthU - portal.pivotU.x, y: portal.pivotU.y }
-        : portal.pivotU;
-      cover.add(
-        setWorldPivot(image, pivot, art.pxPerU)
-          .setFlipX(mirrored)
-          .setScale(1 / art.pxPerU),
-      );
+      for (const [key, layer] of [
+        [tunnelParts.portalMouth, mouths],
+        [tunnelParts.portalFront, cover],
+      ] as const) {
+        const part = worldParts[key];
+        const image = scene.add
+          .image(x, ground.railY(x), frameTexture(key, art.texture), key)
+          .setData('world-part', key);
+        const pivot = mirrored
+          ? { x: part.widthU - part.pivotU.x, y: part.pivotU.y }
+          : part.pivotU;
+        layer.add(
+          setWorldPivot(image, pivot, art.pxPerU)
+            .setFlipX(mirrored)
+            .setRotation(
+              Math.atan((ground.railY(x + 4) - ground.railY(x - 4)) / 8),
+            )
+            .setScale(1 / art.pxPerU),
+        );
+      }
     }
     if (art)
       for (const x of [fromX, toX]) {
         const winter = appearance?.climateAt(x).winter ?? 0;
         if (winter <= 0) continue;
+        const angle = Math.atan(
+          (ground.railY(x + 4) - ground.railY(x - 4)) / 8,
+        );
+        const c = Math.cos(angle),
+          s = Math.sin(angle);
         const snow = worldParts['snow.roof-64'];
         const cap = scene.add
           .image(
-            x - 78,
-            ground.railY(x) - 228,
+            x - 78 * c + 228 * s,
+            ground.railY(x) - 78 * s - 228 * c,
             frameTexture('snow.roof-64', art.texture),
             'snow.roof-64',
           )
@@ -541,27 +561,58 @@ export class TunnelView {
         cover.add(
           cap
             .setOrigin(origin.x, origin.y)
+            .setRotation(angle)
             .setScale(156 / 64 / art.pxPerU, 0.45 / art.pxPerU)
             .setAlpha(winter),
         );
       }
-    cover.setDepth(depths.cover);
+    const flat = bake(
+      paintCover,
+      coverBounds,
+      art
+        ? (canvas, memory, owner) => {
+            composeCoverImages(
+              scene,
+              art,
+              canvas,
+              coverBounds,
+              cover,
+              memory,
+              owner,
+            );
+            cover.removeAll(true);
+          }
+        : undefined,
+    );
+    cover.add(flat).setDepth(depths.cover);
+    this.#fade = new TunnelCoverFade(cover, {
+      fromX: this.#worldFrom,
+      toX: this.#worldTo,
+    });
+    const portalPlanes = [fromX, toX].map((x, i) => {
+      const angle = Math.atan((ground.railY(x + 4) - ground.railY(x - 4)) / 8);
+      return {
+        x,
+        y: ground.railY(x),
+        cos: Math.cos(angle),
+        sin: Math.sin(angle),
+        sign: i === 0 ? 1 : -1,
+      };
+    });
     this.#coveredPoint = (point) => {
       const x = point.x - site.chunkIndex * chunkWidthU;
-      if (
-        art &&
-        [fromX, toX].some((portalX) =>
-          portalMasonryPoint(
-            x - portalX,
-            point.y - ground.railY(portalX),
-            74,
-            222,
-            58,
-            128,
-          ),
-        )
-      )
-        return true;
+      if (art)
+        for (const portal of portalPlanes) {
+          const dx = x - portal.x,
+            dy = point.y - portal.y;
+          const localX = (dx * portal.cos + dy * portal.sin) * portal.sign;
+          const localY = -dx * portal.sin + dy * portal.cos;
+          if (
+            (localX >= 0 || localY < -186) &&
+            portalMasonryPoint(localX, localY, 74, 222, 58, 128)
+          )
+            return true;
+        }
       return (
         x >= flankFrom &&
         x <= flankTo &&
@@ -569,20 +620,17 @@ export class TunnelView {
         point.y <= coverBottom(x)
       );
     };
-    this.containers = [flanks, interior, shade, cover];
+    this.containers = [flanks, interior, shade, mouths, cover];
   }
 
-  /** Rock stays opaque, including the first restored or paused frame. */
+  /** Actual cover opacity; the opaque mouths are a separate layer (D-033). */
   get alpha(): number {
-    return 1;
+    return this.#fade.alpha;
   }
 
   /** Fully covered core; the open portal mouths stay visible at its ends. */
   get coverRange(): { fromX: number; toX: number } {
-    return {
-      fromX: this.#worldFrom + COVER_INSET_U,
-      toX: this.#worldTo - COVER_INSET_U,
-    };
+    return this.#coverRange;
   }
 
   /** True behind the hill silhouette or portal masonry, with the arches open. */
@@ -594,7 +642,79 @@ export class TunnelView {
     return this.#train;
   }
 
-  update(train: { minX: number; maxX: number } | undefined): void {
-    this.#train = train ? vehicleInCover(train, [this.coverRange]) : 'outside';
+  /** Called by the chunk's existing simulation-time life stage. */
+  advanceCover(timeSec: number): void {
+    this.#fade.advance(timeSec);
+  }
+
+  update(
+    train: { minX: number; maxX: number } | undefined,
+    timeSec?: number,
+  ): void {
+    this.#train = train ? trainInTunnel(train, this.#coverRange) : 'outside';
+    this.#fade.setTarget(train);
+    if (timeSec !== undefined) this.#fade.advance(timeSec);
+  }
+}
+
+/** Flatten cover decorations into the already owned bake before immutable upload.
+ * Phaser 4.2.1 Layers multiply child alpha on Canvas; they do not isolate overlaps.
+ * No extra texture, render target, timer or per-frame composition is retained.
+ */
+export function composeCoverImages(
+  scene: Phaser.Scene,
+  art: TunnelArt,
+  canvas: HTMLCanvasElement,
+  bounds: { left: number; top: number },
+  cover: Phaser.GameObjects.Container,
+  memory: TextureMemory,
+  owner: string,
+): void {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('no tunnel composition canvas context');
+  const parts: Readonly<Record<string, ArtPart | undefined>> = worldParts;
+  const scale = Math.min(1, art.pxPerU);
+  ctx.save();
+  ctx.scale(scale, scale);
+  ctx.translate(-bounds.left, -bounds.top);
+  try {
+    for (const child of cover.list) {
+      if (!(child instanceof Phaser.GameObjects.Image))
+        throw new Error('non-image tunnel decoration');
+      const key = child.frame.name;
+      const part = typeof key === 'string' ? parts[key] : undefined;
+      if (!part || typeof key !== 'string')
+        throw new Error('unknown tunnel decoration');
+      const frame = atlasFramePixels(
+        scene,
+        frameTexture(key, art.texture),
+        key,
+        memory,
+        `readback:${owner}`,
+      );
+      try {
+        ctx.save();
+        ctx.translate(child.x, child.y);
+        ctx.rotate(child.rotation);
+        ctx.scale(child.scaleX * (child.flipX ? -1 : 1), child.scaleY);
+        ctx.globalAlpha = child.alpha;
+        ctx.drawImage(
+          frame.image,
+          frame.x + FRAME_MARGIN_PX,
+          frame.y + FRAME_MARGIN_PX,
+          part.widthU * art.pxPerU,
+          part.heightU * art.pxPerU,
+          -part.pivotU.x * art.pxPerU,
+          -part.pivotU.y * art.pxPerU,
+          part.widthU * art.pxPerU,
+          part.heightU * art.pxPerU,
+        );
+        ctx.restore();
+      } finally {
+        frame.release();
+      }
+    }
+  } finally {
+    ctx.restore();
   }
 }

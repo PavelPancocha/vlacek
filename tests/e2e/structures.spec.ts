@@ -61,7 +61,7 @@ async function continueBeforeBridge(
 }
 
 test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () => {
-  test('TRN-06 and TRN-08: over the bridge and through the tunnel vehicles enter an opaque tunnel under the wire', async ({
+  test('TRN-06 and TRN-08: over the bridge and through the tunnel vehicles enter a half-transparent tunnel under the wire', async ({
     page,
   }) => {
     test.setTimeout(90_000);
@@ -82,8 +82,8 @@ test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () =>
       const tunnel = state.tunnels.find((t) => t.id === tunnelId);
       if (tunnel && tunnel.train !== 'outside') {
         wasIn = true;
-        // World-v2 supersedes doc 14: the mouth shows entry, rock stays opaque.
-        if (tunnel.train === 'partly' && tunnel.alpha === 1) {
+        // D-033: the player approach fades the cover while each vehicle enters.
+        if (tunnel.train === 'partly' && tunnel.alpha < 0.6) {
           partlyCovered = true;
           if (!shot) {
             shot = true;
@@ -110,7 +110,7 @@ test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () =>
       .toBeGreaterThan(0.95);
   });
 
-  test('a journey restored inside the tunnel keeps the rock opaque, even while paused', async ({
+  test('a journey restored inside the tunnel snaps the cover to 50 percent, even while paused', async ({
     page,
   }) => {
     // The front deep in the chunk 6 tunnel (world 6272 to 6720).
@@ -125,6 +125,6 @@ test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () =>
         );
         return tunnel && tunnel.train !== 'outside' ? tunnel.alpha : undefined;
       })
-      .toBe(1);
+      .toBe(0.5);
   });
 });

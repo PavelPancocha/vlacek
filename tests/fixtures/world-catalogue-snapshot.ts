@@ -897,7 +897,18 @@ export const catalogueSnapshot: Readonly<
     heightU: 100,
     group: { landscapes: ['lakes'] },
   },
-  'tunnel.portal': { module: 'base', widthU: 160, heightU: 240, group: {} },
+  'tunnel.portal-mouth': {
+    module: 'base',
+    widthU: 80,
+    heightU: 190,
+    group: {},
+  },
+  'tunnel.portal-front': {
+    module: 'base',
+    widthU: 160,
+    heightU: 240,
+    group: {},
+  },
   'wheel.farm-large': {
     module: 'farm-forest',
     widthU: 24,

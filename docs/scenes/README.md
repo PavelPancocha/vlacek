@@ -3,7 +3,7 @@
 Tento katalog určuje, **jak má krajina vypadat a co se v ní děje**, ještě před implementací generátoru.
 Číselné hustoty, hloubky, časování a krajinné profily níže jsou návrhové cíle, nikoli tvrzení o dokončené implementaci.
 Platí společně se specifikacemi [světa](../../vlacek-predavaci-balicek/04_PROCEDURALNI_SVET.md), [interakcí](../../vlacek-predavaci-balicek/05_SCENKY_A_INTERAKCE.md), [obsahu](../../vlacek-predavaci-balicek/06_KATALOG_OBSAHU.md) a [výtvarného směru](../../vlacek-predavaci-balicek/07_VIZUAL_AUDIO_UX.md).
-Pro svět V2 platí schválená výjimka: skutečný tunel vlak zakrývá neprůhlednou horninou.
+Podle [D-033](../decisions/033-tunnel-see-through-and-split-portals.md) kryt všech tunelů při přiblížení a průjezdu hráčovy soupravy zprůhlední na 50 %; dělená ústí zůstávají za vlakem.
 
 ## Soubory a jejich význam
 
