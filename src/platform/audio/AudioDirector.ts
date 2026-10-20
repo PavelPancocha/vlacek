@@ -65,6 +65,19 @@ export function coveredFraction(
   );
   return Math.min(1, overlapU / lengthU);
 }
+// Owner: nice "šššh šššh šh" becomes "trrr" at speed. D-035; tune here after listening.
+const CHUFF_KNEE_PER_SEC = 4;
+const CHUFF_CEILING_PER_SEC = 6;
+const CHUFF_MAX_OVERLAP = 1.5; // Strictly < 2: D-022 permits only two live strokes.
+
+export function chuffRate(beatsPerSec: number): number {
+  if (beatsPerSec <= CHUFF_KNEE_PER_SEC) return Math.max(0, beatsPerSec);
+  const range = CHUFF_CEILING_PER_SEC - CHUFF_KNEE_PER_SEC;
+  return (
+    CHUFF_KNEE_PER_SEC +
+    range * (1 - Math.exp(-(beatsPerSec - CHUFF_KNEE_PER_SEC) / range))
+  );
+}
 export class ChuffDistance {
   #remainderU = 0;
   advance(distanceU: number, wheelRadiusU: number): boolean {
@@ -143,15 +156,32 @@ export class AudioDirector {
     );
     if (
       frame.power === 'steam' &&
-      this.#chuffs.advance(frame.distanceU, frame.wheelRadiusU)
-    )
-      this.audio.chuff(
-        Math.min(
-          0.58,
-          (2 * Math.PI * frame.wheelRadiusU) /
-            4 /
-            Math.max(1, frame.speedUPerSec),
-        ),
-      );
+      frame.speedUPerSec > 0 &&
+      frame.distanceU > 0
+    ) {
+      const intervalU = (2 * Math.PI * frame.wheelRadiusU) / 4;
+      const beatsPerSec = frame.speedUPerSec / intervalU;
+      const rate = chuffRate(beatsPerSec);
+      // Phase = remainderU / intervalU; scaled distance adds (distanceU / intervalU) * (rate / beatsPerSec).
+      if (
+        this.#chuffs.advance(
+          frame.distanceU * (rate / beatsPerSec),
+          frame.wheelRadiusU,
+        )
+      ) {
+        const overlap =
+          1 +
+          ((CHUFF_MAX_OVERLAP - 1) * Math.max(0, rate - CHUFF_KNEE_PER_SEC)) /
+            (CHUFF_CEILING_PER_SEC - CHUFF_KNEE_PER_SEC);
+        this.audio.chuff(
+          Math.min(
+            0.58,
+            beatsPerSec <= CHUFF_KNEE_PER_SEC
+              ? intervalU / Math.max(1, frame.speedUPerSec)
+              : overlap / rate,
+          ),
+        );
+      }
+    }
   }
 }

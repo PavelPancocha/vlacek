@@ -37,6 +37,7 @@ Emitery mají sedět na modelu se sklonem a vypuštěné částice se nesmí poh
 
 3. **Pravidla vlaku** (`TrainEffects`, čistá a testovaná):
    - **Pára:** kouř v taktech výfuku, čtyři takty na otáčku hnacích kol podle ujeté dráhy. Při rozjezdu pod plynem přibývá bílá pára, ve stání jen slabý obláček.
+     Kouř zachovává čtyři takty na otáčku i nad kolenem zvukového rytmu, který se podle [D-035](035-steam-chuff-rhythm.md) plynule omezuje ke stropu 6 rázů/s.
    - **Diesel:** lehký výfuk, pod plynem silnější.
    - **Hvězdičková mašinka:** pouští hvězdičky, nikdy kouř. Lokomotiva bez emitoru (elektrická) nekouří.
    - **Bublinková mašinka:** katalogové `bubbles` se mapuje na `bubble`, nikdy na hvězdičky. Vlastní perleťová SVG bublina pomalu stoupá a unáší se větrem, žije 3–5 s. Emitor je na hraně kruhového ústí `(127,12)` v rámu 164 × 96 u.

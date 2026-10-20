@@ -1,11 +1,169 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { AudioManager } from '../../../src/platform/AudioManager.ts';
 import {
   ambientSound,
+  AudioDirector,
+  chuffRate,
   ChuffDistance,
   coveredFraction,
   crossingBellGain,
   wheelSound,
 } from '../../../src/platform/audio/AudioDirector.ts';
+
+function recordSteam(wheelRadiusU: number) {
+  const audio = new AudioManager();
+  const director = new AudioDirector(audio);
+  const strokes: { startSec: number; durationSec: number }[] = [];
+  let nowSec = 0;
+  vi.spyOn(audio, 'setLayers').mockImplementation(() => {});
+  vi.spyOn(audio, 'setCovered').mockImplementation(() => {});
+  vi.spyOn(audio, 'chuff').mockImplementation((durationSec) => {
+    strokes.push({ startSec: nowSec, durationSec });
+  });
+  return {
+    strokes,
+    update(speedUPerSec: number, distanceU: number, startSec = 0) {
+      nowSec = startSec;
+      director.update({
+        power: 'steam',
+        speedUPerSec,
+        distanceU,
+        wheelRadiusU,
+        throttle: true,
+        biome: 'countryside',
+        covered: 0,
+        bellGain: 0,
+      });
+    },
+  };
+}
+
+describe('steam chuff rhythm (D-035)', () => {
+  it('preserves every distance beat and the old duration at 60 u/s for 10 s at 60 fps', () => {
+    const steam = recordSteam(15);
+    const oldBeats = new ChuffDistance();
+    const oldDurationSec = Math.min(0.58, (2 * Math.PI * 15) / 4 / 60);
+    for (let frame = 1; frame <= 600; frame++) {
+      const before = steam.strokes.length;
+      steam.update(60, 1, frame / 60);
+      expect(steam.strokes.length - before).toBe(
+        oldBeats.advance(1, 15) ? 1 : 0,
+      );
+    }
+    expect(
+      Math.abs(steam.strokes.length - 600 / ((2 * Math.PI * 15) / 4)),
+    ).toBeLessThanOrEqual(1);
+    expect(steam.strokes[0]?.startSec).toBe(24 / 60);
+    for (const stroke of steam.strokes)
+      expect(stroke.durationSec).toBe(oldDurationSec);
+  });
+
+  it.each([15, 19])(
+    'caps full-speed chuffs with radius %s u over 10 s at 60 fps',
+    (radiusU) => {
+      const steam = recordSteam(radiusU);
+      for (let frame = 1; frame <= 600; frame++)
+        steam.update(480, 480 / 60, frame / 60);
+      expect(steam.strokes.length / 10).toBeGreaterThanOrEqual(5.5);
+      expect(steam.strokes.length / 10).toBeLessThanOrEqual(6);
+    },
+  );
+
+  it.each([15, 19])(
+    'lengthens every full-speed chuff with radius %s u to 250 ms',
+    (radiusU) => {
+      const steam = recordSteam(radiusU);
+      for (let frame = 1; frame <= 600; frame++)
+        steam.update(480, 480 / 60, frame / 60);
+      expect(steam.strokes.length).toBeGreaterThan(0);
+      for (const stroke of steam.strokes) {
+        expect(stroke.durationSec).toBeGreaterThanOrEqual(0.2);
+        expect(stroke.durationSec).toBeLessThanOrEqual(0.58);
+        expect(stroke.durationSec).toBeCloseTo(0.25, 12);
+      }
+    },
+  );
+
+  it.each([15, 19])(
+    'has a smooth monotone rate with slope at most 1 for radius %s u',
+    (radiusU) => {
+      const intervalU = (2 * Math.PI * radiusU) / 4;
+      let previousRate = 0;
+      // 0.1 u/s steps: dr/db <= 1 bounds each increase by db = 0.1 / intervalU.
+      for (let sample = 0; sample <= 6000; sample++) {
+        const beatsPerSec = sample / 10 / intervalU;
+        const rate = chuffRate(beatsPerSec);
+        expect(rate).toBeGreaterThanOrEqual(previousRate);
+        expect(rate - previousRate).toBeLessThanOrEqual(
+          0.1 / intervalU + 1e-12,
+        );
+        expect(rate).toBeLessThanOrEqual(6);
+        if (beatsPerSec <= 4) expect(rate).toBe(beatsPerSec);
+        previousRate = rate;
+      }
+      expect(chuffRate(4)).toBe(4);
+      expect((chuffRate(4 + 1e-6) - 4) / 1e-6).toBeCloseTo(1, 5);
+      expect(chuffRate(6)).toBeCloseTo(5.264241117657115, 12);
+      expect(chuffRate(0)).toBe(0);
+    },
+  );
+
+  it.each([30, 60])(
+    'never overlaps more than two strokes on 0 → 480 → 0 ramps at %s fps',
+    (fps) => {
+      for (const radiusU of [15, 19]) {
+        // +160 u/s² throttle; -96 coast, -160 symmetric ramp, -480 brake.
+        for (const decelerationUPerSec2 of [96, 160, 480]) {
+          const steam = recordSteam(radiusU);
+          const rampSec = 3 + 480 / decelerationUPerSec2;
+          for (let frame = 1; frame <= Math.ceil(rampSec * fps); frame++) {
+            const timeSec = frame / fps;
+            const speedUPerSec =
+              timeSec <= 3
+                ? timeSec * 160
+                : Math.max(0, 480 - (timeSec - 3) * decelerationUPerSec2);
+            steam.update(speedUPerSec, speedUPerSec / fps, timeSec);
+          }
+          let maximumLive = 0;
+          for (const stroke of steam.strokes) {
+            const live = steam.strokes.filter(
+              (other) =>
+                other.startSec <= stroke.startSec &&
+                other.startSec + other.durationSec > stroke.startSec,
+            ).length;
+            maximumLive = Math.max(maximumLive, live);
+          }
+          expect(maximumLive).toBe(2);
+        }
+      }
+    },
+  );
+
+  it('makes no strokes or phase progress without positive speed and distance', () => {
+    const steam = recordSteam(15);
+    steam.update(0, 1000);
+    steam.update(-10, 1000);
+    steam.update(480, 0);
+    steam.update(480, -10);
+    expect(steam.strokes).toHaveLength(0);
+    steam.update(60, 23);
+    expect(steam.strokes).toHaveLength(0);
+    steam.update(60, 1);
+    expect(steam.strokes).toHaveLength(1);
+  });
+
+  it('keeps the first capped chuff after one phase beat and discards whole catch-up beats', () => {
+    const steam = recordSteam(15);
+    for (let frame = 1; frame <= 10; frame++) steam.update(480, 8);
+    expect(steam.strokes).toHaveLength(0);
+    steam.update(480, 8);
+    expect(steam.strokes).toHaveLength(1);
+    steam.update(480, 8000);
+    expect(steam.strokes).toHaveLength(2);
+    steam.update(480, 0);
+    expect(steam.strokes).toHaveLength(2);
+  });
+});
 
 describe('recorded audio layer mapping', () => {
   it('wheels are silent at rest and increase rate and gain with speed', () => {
