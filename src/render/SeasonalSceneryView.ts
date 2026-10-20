@@ -20,6 +20,7 @@ interface LifeSprite {
   scale: number;
   frames?: readonly string[];
   timeSec?: number;
+  frame?: string;
   id?: string;
   flowing?: boolean;
 }
@@ -360,18 +361,12 @@ export class SeasonalSceneryView {
             Math.abs(frontXU - (this.worldXU + item.x)) < 220 &&
             (localTime + item.phase * 20) % 20 < 3;
           const frame = item.frames?.[alert && item.frames.length > 1 ? 1 : 0];
-          if (frame)
-            item.image
-              .setTexture(frameTexture(frame, this.texture), frame)
-              .setData('world-part', frame);
+          if (frame) this.#setLifeFrame(item, frame);
         }
         if (item.kind === 'ripple') {
           const frame =
             item.frames?.[Math.floor(localTime * 1.5 + item.phase * 2) % 2];
-          if (frame)
-            item.image
-              .setTexture(frameTexture(frame, this.texture), frame)
-              .setData('world-part', frame);
+          if (frame) this.#setLifeFrame(item, frame);
           item.image.setAlpha(
             (0.3 + 0.15 * Math.sin(localTime * 1.7 + item.phase * 6)) * motion,
           );
@@ -387,16 +382,21 @@ export class SeasonalSceneryView {
       else {
         const frame =
           item.frames?.[Math.floor(localTime * 2 + item.phase * 2) % 2];
-        if (frame)
-          item.image
-            .setTexture(frameTexture(frame, this.texture), frame)
-            .setData('world-part', frame);
+        if (frame) this.#setLifeFrame(item, frame);
         item.image.setRotation(
           wind * 0.001 * Math.sin(localTime * 2 + item.phase * 6) * motion,
         );
       }
     }
     return animated;
+  }
+  #setLifeFrame(item: LifeSprite, frame: string): void {
+    const texture = frameTexture(frame, this.texture);
+    if (item.frame !== frame || item.image.texture.key !== texture) {
+      item.image.setTexture(texture, frame);
+      if (item.frame !== frame) item.image.setData('world-part', frame);
+      item.frame = frame;
+    }
   }
   get animatedObjects(): number {
     return this.#life.length;

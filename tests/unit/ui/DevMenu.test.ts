@@ -11,6 +11,7 @@ const form = {
 it('menu model accepts the five selections, empty world and both 32-bit boundaries', () => {
   expect(parseDevMenu(form)).toEqual({
     debug: true,
+    perfGraph: false,
     renderer: 'canvas',
     quality: 'low',
     reducedEffects: true,
@@ -28,6 +29,7 @@ it('menu model accepts the five selections, empty world and both 32-bit boundari
       }),
     ).toEqual({
       debug: false,
+      perfGraph: false,
       renderer: 'auto',
       quality: 'auto',
       reducedEffects: false,

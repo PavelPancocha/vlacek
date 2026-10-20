@@ -11,14 +11,28 @@ export interface AudioLayer {
   /** Distance-triggered chuffs share one scheduled engine voice. */
   pulsed?: boolean;
 }
+const MAX_RETIRING_SOURCES = 2;
+const SHORT_FADE_SEC = 0.01;
+
 interface Voice {
   key: string;
+  layerKey: string;
   id: string;
   kind: VoiceKind;
   priority: number;
   gain: GainNode;
   source: AudioBufferSourceNode | undefined;
   strokes: Map<AudioBufferSourceNode, GainNode>;
+}
+
+interface ReadyShot {
+  id: string;
+  clip: SoundClip;
+  buffer: AudioBuffer;
+  gainFactor: number;
+  priority: number;
+  epoch: number;
+  expiresAtSec: number;
 }
 
 /** One gesture-owned context; no automatic resume, external server or audio clock. */
@@ -45,6 +59,10 @@ export class AudioManager {
   readonly #pendingLayers = new Map<string, number>();
   readonly #failures = new Map<string, string>();
   readonly #voices = new Map<string, Voice>();
+  // Retired envelopes own their nodes until ended, but relinquish admission slots now.
+  readonly #tails = new Map<Voice, number>();
+  #pendingShot: ReadyShot | undefined;
+  #ambientTimeline: { id: string; startedAtSec: number } | undefined;
   readonly #layers = new Map<string, AudioLayer>();
   readonly #played: string[] = [];
   readonly #budget = new VoiceBudget({
@@ -65,6 +83,18 @@ export class AudioManager {
         kind: v.kind,
         key: v.key,
       })),
+      sourceCount: [...this.#voices.values(), ...this.#tails.keys()].reduce(
+        (sum, voice) => sum + this.#sourceCount(voice),
+        0,
+      ),
+      retiring: [...this.#tails.keys()].map((voice) => ({
+        key: voice.layerKey,
+        sources: this.#sourceCount(voice),
+      })),
+      retiringSources: [...this.#tails.keys()].reduce(
+        (sum, voice) => sum + this.#sourceCount(voice),
+        0,
+      ),
       played: [...this.#played],
       loaded: this.#buffers.size,
       pending: this.#loading.size,
@@ -121,9 +151,12 @@ export class AudioManager {
   }
   suspend(): void {
     this.#epoch += 1;
+    this.#pendingShot = undefined;
     this.#resuming = undefined;
     this.#layers.clear();
-    for (const voice of [...this.#voices.values()]) this.#stop(voice);
+    this.#ambientTimeline = undefined;
+    for (const voice of [...this.#voices.values(), ...this.#tails.keys()])
+      this.#stop(voice);
     if (this.#context?.state === 'running')
       void this.#context
         .suspend()
@@ -132,13 +165,16 @@ export class AudioManager {
   /** Release every old-journey source and async consumer without resuming the context. */
   stopAll(): void {
     this.#epoch += 1;
+    this.#pendingShot = undefined;
     this.#resuming = undefined;
     this.#layers.clear();
     for (const request of this.#requests) request.abort();
     this.#requests.clear();
     this.#loading.clear();
     this.#pendingLayers.clear();
-    for (const voice of [...this.#voices.values()]) this.#stop(voice);
+    this.#ambientTimeline = undefined;
+    for (const voice of [...this.#voices.values(), ...this.#tails.keys()])
+      this.#stop(voice);
     this.setCovered(0);
     const context = this.#context;
     if (context && this.#filter && this.#delay && this.#echo) {
@@ -209,8 +245,7 @@ export class AudioManager {
       .filter((v) => v.kind === kind && v.priority < priority)
       .sort((a, b) => a.priority - b.priority)[0];
     if (!victim) return false;
-    this.#stop(victim);
-    return this.#budget.acquire(kind);
+    return this.#fadeOut(victim) && this.#budget.acquire(kind);
   }
   #voice(
     key: string,
@@ -230,6 +265,7 @@ export class AudioManager {
     );
     const voice: Voice = {
       key,
+      layerKey: key,
       id,
       kind,
       priority,
@@ -244,10 +280,11 @@ export class AudioManager {
     this.#played.push(id);
     if (this.#played.length > 32) this.#played.shift();
   }
-  #stop(voice: Voice): void {
-    if (this.#voices.get(voice.key) !== voice) return;
-    this.#voices.delete(voice.key);
-    this.#budget.release(voice.kind);
+  #stop(voice: Voice): boolean {
+    if (this.#voices.get(voice.key) === voice) {
+      this.#voices.delete(voice.key);
+      this.#budget.release(voice.kind);
+    } else if (!this.#tails.delete(voice)) return false;
     voice.source?.stop();
     voice.source?.disconnect();
     for (const [stroke, envelope] of voice.strokes) {
@@ -257,6 +294,63 @@ export class AudioManager {
     }
     voice.strokes.clear();
     voice.gain.disconnect();
+    return true;
+  }
+  #ended(voice: Voice): void {
+    // Explicit cleanup already released ownership; its late ended must do nothing.
+    if (this.#stop(voice)) this.#reconcile();
+  }
+  #reconcile(): void {
+    if (this.#context?.state !== 'running' || !this.#enabled) return;
+    const shot = this.#pendingShot;
+    this.#pendingShot = undefined;
+    if (shot) this.#playReady(shot);
+    // Empty is also a desired state: a coalesced removal must finish on its own.
+    this.setLayers([...this.#layers.values()]);
+  }
+  #sourceCount(voice: Voice): number {
+    return (voice.source ? 1 : 0) + voice.strokes.size;
+  }
+  /** Hand over the slot now; Web Audio's ended event releases the fading nodes. */
+  #fadeOut(voice: Voice): boolean {
+    const context = this.#context;
+    if (!context || this.#voices.get(voice.key) !== voice) return false;
+    const cost = this.#sourceCount(voice);
+    if (cost === 0) {
+      this.#stop(voice);
+      return true;
+    }
+    const tails = [...this.#tails.keys()];
+    const sameLayer = tails.find((tail) => tail.layerKey === voice.layerKey);
+    if (
+      sameLayer ||
+      tails.reduce((sum, tail) => sum + this.#sourceCount(tail), 0) + cost >
+        MAX_RETIRING_SOURCES
+    ) {
+      // Coalesce the latest desired layer until a bounded tail has ended.
+      const oldest = sameLayer ?? tails[0];
+      if (
+        oldest &&
+        (this.#tails.get(oldest) ?? 0) > context.currentTime + SHORT_FADE_SEC
+      )
+        this.#rampOut(oldest, SHORT_FADE_SEC);
+      return false;
+    }
+    this.#voices.delete(voice.key);
+    this.#budget.release(voice.kind);
+    this.#rampOut(voice, 0.15);
+    return true;
+  }
+  #rampOut(voice: Voice, durationSec: number): void {
+    const now = this.#context?.currentTime ?? 0;
+    const end = now + durationSec;
+    this.#tails.set(voice, end);
+    const heldGain = voice.gain.gain.value;
+    voice.gain.gain.cancelScheduledValues(now);
+    voice.gain.gain.setValueAtTime(heldGain, now);
+    voice.gain.gain.linearRampToValueAtTime(0, end);
+    voice.source?.stop(end);
+    for (const stroke of voice.strokes.keys()) stroke.stop(end);
   }
   play(id: string, gainFactor = 1, priority = 100, maxDelaySec?: number): void {
     const clip = this.#clip(id);
@@ -276,36 +370,16 @@ export class AudioManager {
       (maxDelaySec ?? (clip.category === 'horn' ? Infinity : 0.25));
     void Promise.all([this.#load(clip), this.#resuming])
       .then(([buffer]) => {
-        if (
-          !buffer ||
-          this.#epoch !== epoch ||
-          context.state !== 'running' ||
-          context.currentTime > expiresAtSec ||
-          !this.#enabled
-        )
-          return;
-        const previous = this.#voices.get(`shot:${id}`);
-        if (previous) {
-          if (clip.category !== 'horn' || previous.priority >= priority) return;
-          this.#stop(previous);
-        }
-        const voice = this.#voice(`shot:${id}`, id, 'oneShot', priority, clip);
-        if (!voice) return;
-        const source = context.createBufferSource();
-        source.buffer = buffer;
-        source.playbackRate.value = clip.rate;
-        source.connect(voice.gain);
-        voice.source = source;
-        voice.gain.gain.setTargetAtTime(
-          clip.gain * Math.max(0, Math.min(1, gainFactor)),
-          context.currentTime,
-          0.015,
-        );
-        source.addEventListener('ended', () => this.#stop(voice), {
-          once: true,
-        });
-        source.start();
-        this.#remember(id);
+        if (buffer)
+          this.#playReady({
+            id,
+            clip,
+            buffer,
+            gainFactor,
+            priority,
+            epoch,
+            expiresAtSec,
+          });
       })
       .catch((error) => {
         this.#failures.set(
@@ -315,6 +389,80 @@ export class AudioManager {
         const voice = this.#voices.get(`shot:${id}`);
         if (voice) this.#stop(voice);
       });
+  }
+
+  #playReady(request: ReadyShot): void {
+    let shot = request;
+    const context = this.#context;
+    const { id, clip, buffer, gainFactor, priority, epoch, expiresAtSec } =
+      shot;
+    if (
+      !context ||
+      this.#epoch !== epoch ||
+      context.state !== 'running' ||
+      context.currentTime > expiresAtSec ||
+      !this.#enabled
+    )
+      return;
+    if (
+      this.#pendingShot &&
+      context.currentTime > this.#pendingShot.expiresAtSec
+    )
+      this.#pendingShot = undefined;
+    const waiting = this.#pendingShot;
+    if (waiting?.id === id) {
+      if (waiting.priority >= priority) return;
+      // A stronger duplicate takes over the waiting record, never its deadline.
+      this.#pendingShot = undefined;
+      shot = {
+        ...shot,
+        epoch: waiting.epoch,
+        expiresAtSec: waiting.expiresAtSec,
+      };
+    }
+    if ([...this.#tails.keys()].some((voice) => voice.id === id)) return;
+    const previous = this.#voices.get(`shot:${id}`);
+    if (previous) {
+      if (clip.category !== 'horn' || previous.priority >= priority) return;
+      this.#stop(previous);
+    }
+    try {
+      const voice = this.#voice(`shot:${id}`, id, 'oneShot', priority, clip);
+      if (!voice) {
+        // Only a priority eviction blocked by tails waits; never queue ordinary spam.
+        if (
+          [...this.#voices.values()].some(
+            (candidate) =>
+              candidate.kind === 'oneShot' && candidate.priority < priority,
+          ) &&
+          (!this.#pendingShot || this.#pendingShot.priority < priority)
+        )
+          this.#pendingShot = shot;
+        return;
+      }
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.playbackRate.value = clip.rate;
+      source.connect(voice.gain);
+      voice.source = source;
+      voice.gain.gain.setTargetAtTime(
+        clip.gain * Math.max(0, Math.min(1, gainFactor)),
+        context.currentTime,
+        0.015,
+      );
+      source.addEventListener('ended', () => this.#ended(voice), {
+        once: true,
+      });
+      source.start();
+      this.#remember(id);
+    } catch (error) {
+      this.#failures.set(
+        `play:${id}`,
+        error instanceof Error ? error.message : 'playback failed',
+      );
+      const voice = this.#voices.get(`shot:${id}`);
+      if (voice) this.#stop(voice);
+    }
   }
 
   /** Reconciles a bounded desired set. Priority evicts decoration for a nearby bell. */
@@ -334,7 +482,7 @@ export class AudioManager {
         this.#voices.set(voice.key, voice);
         voice.gain.gain.setTargetAtTime(0, context.currentTime, 0.5);
         voice.source.stop(context.currentTime + 2);
-      } else this.#stop(voice);
+      } else this.#fadeOut(voice);
     }
     for (const layer of [...this.#layers.values()].sort(
       (a, b) => b.priority - a.priority,
@@ -343,7 +491,7 @@ export class AudioManager {
       if (!clip) continue;
       const voice = this.#voices.get(layer.key);
       if (voice) {
-        this.#adjust(voice, layer, clip);
+        if (voice.id === layer.id) this.#adjust(voice, layer, clip);
         continue;
       }
       if (!this.#pendingLayers.has(layer.key)) void this.#startLayer(layer.key);
@@ -396,10 +544,24 @@ export class AudioManager {
         );
         source.connect(created.gain);
         created.source = source;
-        source.addEventListener('ended', () => this.#stop(created), {
+        source.addEventListener('ended', () => this.#ended(created), {
           once: true,
         });
-        source.start(0, source.loopStart);
+        let offsetSec = source.loopStart;
+        if (key === 'ambient') {
+          if (this.#ambientTimeline?.id !== desired.id)
+            this.#ambientTimeline = {
+              id: desired.id,
+              startedAtSec: context.currentTime,
+            };
+          const elapsedSec =
+            context.currentTime - this.#ambientTimeline.startedAtSec;
+          const loopDurationSec = source.loopEnd - source.loopStart;
+          if (loopDurationSec > 0)
+            offsetSec +=
+              (elapsedSec * clip.rate * desired.rate) % loopDurationSec;
+        }
+        source.start(0, offsetSec);
       }
       this.#adjust(created, desired, clip);
       this.#remember(layer.id);
@@ -445,6 +607,7 @@ export class AudioManager {
       context.state !== 'running' ||
       !voice ||
       voice.id !== 'steam-chuff' ||
+      voice.source !== undefined ||
       !buffer ||
       voice.strokes.size >= 2
     )
@@ -469,6 +632,9 @@ export class AudioManager {
         source.disconnect();
         envelope.disconnect();
         voice.strokes.delete(source);
+        if (voice.strokes.size === 0 && this.#tails.has(voice))
+          this.#stop(voice);
+        this.#reconcile();
       },
       { once: true },
     );

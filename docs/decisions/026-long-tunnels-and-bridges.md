@@ -19,9 +19,12 @@ Kresba `RockTunnelView` a textura mají pouze lokální rozsah s 2u přesahem;
 portály patří skutečným koncům. Odebrání vstupního chunku neodstraní kryt
 uprostřed tunelu. Životní cyklus dál vlastní `ChunkView.destroy`.
 Mřížka materiálu má světovou fázi 256 u, nikoli fázi chunku nebo kamery.
-Světlost portálu je 186 u, kontakt 128 u, neprůhledný kryt začíná 52 u
-za ústím. Pata tělesa navazuje na skutečnou louku. Celá stavba zůstává
-neprůhledná; řízení, kamera, částice i tlumení D-022 zachovávají své kontrakty.
+Světlost portálu je 186 u, kontakt 128 u, kryt začíná 52 u
+za ústím. Pata tělesa navazuje na skutečnou louku. Podle [D-033](033-tunnel-see-through-and-split-portals.md) kryt všech fragmentů
+zprůhlední na 50 % u hráčova vlaku, včetně zimy. Ústí a vnější pilíř
+jsou za vlakem, přední část v krytu; druhý portál je zrcadlený.
+Řízení, kamera a tlumení D-022 zachovávají své kontrakty; emise uvnitř
+zůstává potlačená a viditelné bubliny jsou dotykové.
 Audio sbírá každý úplný rozsah pouze jednou i při několika renderových
 fragmentech, aby částečný vjezd nenásobil útlum počtem chunků.
 

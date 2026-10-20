@@ -10,7 +10,7 @@ export const audioCredits =
         source.licence === 'CC-BY-4.0'
           ? 'CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/'
           : 'CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/';
-      return `${source.file}\n${source.title}\nAutor: ${source.author}\nZdroj: ${source.url}\nLicence: ${licence}\nZměny: výřez ${source.startSec}–${source.endSec} s, mono, EQ 70 Hz–6 kHz, normalizace ${source.lufs} LUFS / ${source.truePeakDb} dBTP, jemné fades${source.crossfadeSec ? `, crossfade ${source.crossfadeSec} s a smyčkové okraje` : ''}, MP3.\nPůvodní soubor: ${source.original}\nSHA-256: ${source.sha256}`;
+      return `${source.file}\n${source.title}\nAutor: ${source.author}\nZdroj: ${source.url}\nLicence: ${licence}\nZměny: výřez ${source.startSec}–${source.endSec} s, mono, EQ 70 Hz–${(source.animalLowpassHz ?? 6000) / 1000} kHz, normalizace ${source.lufs} LUFS / ${source.truePeakDb} dBTP, jemné fades${source.crossfadeSec ? `, crossfade ${source.crossfadeSec} s a smyčkové okraje` : ''}, MP3.\nPůvodní soubor: ${source.original}\nSHA-256: ${source.sha256}`;
     })
     .join('\n\n') +
   '\n';

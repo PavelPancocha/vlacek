@@ -87,7 +87,7 @@ for (const renderer of ['canvas', 'webgl'])
       await page.evaluate(() =>
         window.__tunnelProbe.scene.children.list
           .flatMap((root) => root.list ?? [])
-          .some((image) => image.frame?.name === 'tunnel.rock-portal'),
+          .some((image) => image.frame?.name === 'tunnel.rock-portal-mouth'),
       ),
     ).toBe(true);
   });
@@ -153,7 +153,7 @@ for (const renderer of ['canvas', 'webgl'])
 
 for (const renderer of ['canvas', 'webgl'])
   for (const mouth of ['entry', 'exit'])
-    test(`SCN-TB04–09 ${renderer}: locator, 2000u train covered, both mouths and chunk seams (${mouth})`, async ({
+    test(`SCN-TB04–09 ${renderer}: locator, 2000u train through half cover, both mouths and chunk seams (${mouth})`, async ({
       page,
     }) => {
       const { from, to } = await restoreLocatedLongTunnel(page, renderer);
@@ -170,6 +170,7 @@ for (const renderer of ['canvas', 'webgl'])
             x - Math.floor(x / 1024) * 1024,
           );
           ride.resetMotion();
+          ride.simulationTick += 120; // Explicit simulation ticks, not a wall-time wait.
         }, headX);
         await renderedFrame(page);
         await waitForWorldAtlases(page);
@@ -195,7 +196,7 @@ for (const renderer of ['canvas', 'webgl'])
                 t.train === 'inside' && t.vehicles.every((v) => v === 'inside'),
             ),
           ).toBe(true);
-          // Old smoke/spark particles straddle a technical seam in the opaque core.
+          // Old smoke/spark particles straddle a technical seam in the half-transparent core.
           await page.evaluate(
             (x) => {
               const { ride, field } = window.__tunnelProbe;
@@ -215,6 +216,7 @@ for (const renderer of ['canvas', 'webgl'])
               height: Math.ceil(box.bottom - box.top),
             },
             7,
+            false,
           );
         } else if (headX === from + 80 || headX === to + 80) {
           expect(tunnels.some((t) => t.train === 'partly')).toBe(true);
@@ -416,7 +418,9 @@ for (const renderer of ['canvas', 'webgl'])
         }
       if (!witness) throw new Error('season witness missing');
       await restore(page, renderer, witness.k, 128, [], witness.seed);
-      const key = winter ? 'tunnel.rock-portal-snow' : 'tunnel.rock-portal';
+      const key = winter
+        ? 'tunnel.rock-portal-mouth-snow'
+        : 'tunnel.rock-portal-mouth';
       expect(
         await page.evaluate(
           (key) =>

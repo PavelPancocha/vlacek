@@ -43,10 +43,13 @@ for (const source of sources) {
     console.log(
       `${source.file}: peak ${(20 * Math.log10(peak)).toFixed(2)} dBFS; seam ${jump.toFixed(6)}`,
     );
-  } else
+  } else {
+    const edge = Math.max(Math.abs(sample(0)), Math.abs(sample(count - 1)));
+    assert(edge < 0.0025, `${source.file}: one-shot edge step ${edge}`);
     console.log(
-      `${source.file}: peak ${(20 * Math.log10(peak)).toFixed(2)} dBFS`,
+      `${source.file}: peak ${(20 * Math.log10(peak)).toFixed(2)} dBFS; edge ${edge.toFixed(6)}`,
     );
+  }
 }
 assert(bytes <= 3 * 1024 * 1024, `Audio budget exceeded: ${bytes}`);
 console.log(

@@ -13,6 +13,22 @@ import type { Settings } from '../platform/SaveValidation.ts';
 
 /** Read-only diagnostics via `?debug=1` or the hidden parent developer menu. */
 export interface DebugSnapshot {
+  framePacing?:
+    | (ReturnType<
+        import('../platform/FrameStats.ts').FramePacing['snapshot']
+      > & {
+        device: {
+          userAgent: string;
+          devicePixelRatio: number;
+          canvasWidth: number;
+          canvasHeight: number;
+          renderer: string;
+          quality: string;
+          profile: RenderProfile;
+        };
+      })
+    | undefined;
+  longFrames?: number;
   roadVehicles: RoadVehicleSnapshot[];
   perf:
     import('../platform/PerformanceProbe.ts').PerformanceSnapshot | undefined;
@@ -128,14 +144,14 @@ export interface DebugSnapshot {
     outOfRange: number;
   };
   /**
-   * Tunnels in view, the opacity of their hills (1 opaque) and whether the
+   * Tunnels in view, actual cover alpha (0.5 near/inside, 1 far; D-033) and whether the
    * train is outside, partly or wholly inside (doc 03 §8, TRN-06, D-018).
    */
   tunnels: {
     id: string;
     alpha: number;
     train: 'outside' | 'partly' | 'inside';
-    /** Each player's vehicle relative to the opaque core (in consist order). */
+    /** Each player's vehicle relative to the covered core (in consist order). */
     vehicles: ('outside' | 'partly' | 'inside')[];
   }[];
   /** Actual backdrop layers and crossfade progress (0 … 1), if a journey exists. */
@@ -232,4 +248,12 @@ export interface AtlasProofSources {
   backdrop: { key: string; url: string; widthU: number; heightU: number }[];
   /** Raster scales of the probe pages; default 2 (world) and 1 (backdrop) px/u. */
   pxPerU?: { world: number; backdrop: number };
+}
+
+/** Human-readable JSON; compact numeric ring rows keep tablet copies manageable. */
+export function diagnosticJson(snapshot: unknown): string {
+  return JSON.stringify(snapshot, null, 2).replace(
+    /\[\s+(-?\d[\d.eE+-]*(?:,\s+-?\d[\d.eE+-]*)*)\s+\]/g,
+    (_match, numbers: string) => `[${numbers.replace(/\s/g, '')}]`,
+  );
 }

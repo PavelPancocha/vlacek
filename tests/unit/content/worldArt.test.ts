@@ -154,7 +154,7 @@ describe('world art manifest (D-011)', () => {
     );
     expect(bridge.widthU / 2).toBeGreaterThanOrEqual(BRIDGE_HALF_U);
     expect(bridge.pivotU.x).toBe(bridge.widthU / 2);
-    const portal = worldParts[tunnelParts.portal];
+    const portal = worldParts[tunnelParts.portalFront];
     expect(TUNNEL_CLEARANCE_U).toBeGreaterThan(
       gameConfig.world.catenaryContactHeightU + 16,
     );

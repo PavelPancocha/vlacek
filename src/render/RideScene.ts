@@ -1,10 +1,11 @@
+import { RideFrameCollections } from './RideFrameCollections.ts';
+import { observeCompositionWork } from '../platform/FrameWorkObserver.ts';
 import { particleRadiusU } from './particles/particleRadius.ts';
 import { setFrameResolver } from './frameTexture.ts';
 import { mixColour, scenerySnowCoverage } from './groundPalette.ts';
 import { atlasProof } from './AtlasProof.ts';
 import { AtlasMetrics } from './AtlasMetrics.ts';
 import { TextureMemory } from './TextureMemory.ts';
-import { worldAtlasWindowKeys } from '../content/worldAtlasGroups.ts';
 import { worldAtlasRegions } from './worldAtlasWindow.ts';
 import { WorldOverlay } from './WorldOverlay.ts';
 import type { WorldOverlayOptions } from '../domain/world/WorldDebugGeometry.ts';
@@ -108,7 +109,10 @@ import {
   type TrainInTunnel,
 } from './tunnelCover.ts';
 import { secondaryPortalFeet } from './SecondaryView.ts';
-import { WorldAtlasRequests } from './WorldAtlasRequests.ts';
+import {
+  WorldAtlasRequests,
+  WorldWindowSelection,
+} from './WorldAtlasRequests.ts';
 import { rebindWorldImage } from './worldImage.ts';
 import {
   frameLeftX,
@@ -129,6 +133,8 @@ export interface RideSceneHost {
   worldHidden(): boolean;
   /** Paused/covered preparation stays asynchronous without waiting for ride frames. */
   worldRunning?(): boolean;
+  simulationSteps?(): number;
+  droppedSec?(): number;
   /** A prepared ride frame has passed through Phaser's renderer. */
   worldDrawn(): void;
   /** Vehicle definitions of the current journey, locomotive first. */
@@ -370,6 +376,13 @@ const WEATHER_SPRITE_SAMPLES = [
 export class RideScene extends Phaser.Scene {
   readonly #host: RideSceneHost;
   #worldOverlay: WorldOverlay | undefined;
+  readonly #frameCollections = new RideFrameCollections<
+    import('../domain/interaction/LevelCrossing.ts').LevelCrossing
+  >();
+  readonly #visibleAnimalIds = new Set<string>();
+  readonly #npcEffectIds = new Set<string>();
+  readonly #effectEmitters: PlacedEmitter[] = [];
+  readonly #effectWheels: { x: number; y: number }[] = [];
   readonly #chunks = new Map<number, ChunkView>();
   readonly #objectImages = new Map<string, Phaser.GameObjects.Image>();
   readonly #slots: VehicleSlot[] = [];
@@ -406,6 +419,12 @@ export class RideScene extends Phaser.Scene {
   #windowRequests = new WorldAtlasRequests(undefined, undefined);
   readonly #worldLoadFailures: string[] = [];
   #worldSwaps = 0;
+  readonly #windowSelection = new WorldWindowSelection();
+  readonly #activateWindow = (backdrop: boolean) =>
+    this.#activateWorldAtlas(
+      backdrop ? this.#backdropArt : this.#art,
+      backdrop,
+    );
   #worldRegions: ReturnType<typeof worldAtlasRegions> = [];
   /** Journey vehicles and NPC fleet, independent of world art failure. */
   #vehicleArt: ArtAtlas | undefined;
@@ -483,6 +502,12 @@ export class RideScene extends Phaser.Scene {
               stage === 'upload'
             )
               probe.atlasWork(duration, stage === 'upload');
+            if (stage === 'worldActivate' || stage === 'backdropActivate')
+              probe.framePacing.event(
+                'atlasActivation',
+                performance.now() - duration,
+                duration,
+              );
             if (detail?.startsWith('decode:')) {
               const key = detail.slice('decode:'.length);
               const source =
@@ -739,6 +764,21 @@ export class RideScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (this.#host.perf) {
+      const renderer = this.game.renderer;
+      const stop = observeCompositionWork(
+        this.#textureMemory,
+        'gl' in renderer ? renderer.gl : undefined,
+        this.#host.perf.framePacing,
+      );
+      const cleanup = () => {
+        this.events.off('shutdown', cleanup);
+        this.events.off('destroy', cleanup);
+        stop();
+      };
+      this.events.once('shutdown', cleanup);
+      this.events.once('destroy', cleanup);
+    }
     let renderedFrames = this.rideFramesDrawn;
     const presented = () => {
       this.atlasMetrics.frame(performance.now());
@@ -867,6 +907,21 @@ export class RideScene extends Phaser.Scene {
     return true;
   };
 
+  /** Bubbles visible through a fading cover remain interactive (D-033). */
+  readonly #bubbleOutsideTunnel = (point: {
+    x: number;
+    y: number;
+  }): boolean => {
+    for (const chunk of this.#chunks.values())
+      if (
+        chunk.tunnel &&
+        chunk.tunnel.alpha === 1 &&
+        chunk.tunnel.coversPoint(point)
+      )
+        return false;
+    return true;
+  };
+
   #weatherOutside(point: { x: number; y: number }, radiusU: number): boolean {
     const ride = this.#host.ride();
     if (!ride) return true;
@@ -897,7 +952,7 @@ export class RideScene extends Phaser.Scene {
         this.#particles,
         world.x + this.#originX,
         world.y,
-        this.#outsideTunnel,
+        this.#bubbleOutsideTunnel,
         (gameConfig.input.minTargetCssPx / 2) * world.unitsPerCss,
       );
       if (bubbleId !== undefined) return { bubbleId };
@@ -920,7 +975,7 @@ export class RideScene extends Phaser.Scene {
         this.#particles,
         id,
         this.#host.effectsQuality() === 'low' ? 0.5 : 1,
-        this.#outsideTunnel,
+        this.#bubbleOutsideTunnel,
       )
     )
       return false;
@@ -935,7 +990,7 @@ export class RideScene extends Phaser.Scene {
     if (this.#effectsTexture === undefined) return [];
     const scale =
       (this.#view.zoom * Math.max(1, canvasRect.width)) / this.scale.width;
-    return visibleBubbles(this.#particles, this.#outsideTunnel)
+    return visibleBubbles(this.#particles, this.#bubbleOutsideTunnel)
       .map((bubble) => {
         const at = this.#particles.positionOf(bubble);
         return {
@@ -1091,6 +1146,8 @@ export class RideScene extends Phaser.Scene {
   }
 
   #reset(): void {
+    this.#npcEffectIds.clear();
+    this.#effectEmitters.length = this.#effectWheels.length = 0;
     this.#particles.clear();
     this.#trainEffects.reset();
     this.#contactSupportChunk = undefined;
@@ -1128,6 +1185,7 @@ export class RideScene extends Phaser.Scene {
   }
 
   #destroyObjects(): void {
+    this.#visibleAnimalIds.clear();
     for (const image of this.#objectImages.values()) image.destroy();
     this.#objectImages.clear();
   }
@@ -1147,7 +1205,44 @@ export class RideScene extends Phaser.Scene {
     return scenery;
   }
 
+  #pacedRide: RideSimulation | undefined;
+  #lastPacedTime: number | undefined;
   override update(time: number, delta: number): void {
+    const pacing = this.#host.worldRunning?.()
+      ? this.#host.perf?.framePacing
+      : undefined;
+    const started = pacing ? performance.now() : 0;
+    if (pacing) {
+      const ride = this.#host.ride();
+      if (ride !== this.#pacedRide) {
+        pacing.reset();
+        this.#pacedRide = ride;
+        this.#lastPacedTime = undefined;
+      }
+      pacing.begin(
+        time,
+        this.#lastPacedTime === undefined ? delta : time - this.#lastPacedTime,
+      );
+      this.#lastPacedTime = time;
+    } else this.#lastPacedTime = undefined;
+    const drawnBefore = this.rideFramesDrawn;
+    try {
+      this.#updateRide(time, delta);
+      if (pacing && this.rideFramesDrawn > drawnBefore)
+        pacing.observeScene(
+          this.stats.renderedVehicles,
+          this.#host.ride()?.track.chunkCount ?? 0,
+        );
+    } finally {
+      pacing?.end(
+        performance.now() - started,
+        this.#host.simulationSteps?.() ?? 0,
+        this.#host.droppedSec?.() ?? 0,
+      );
+    }
+  }
+
+  #updateRide(time: number, delta: number): void {
     const alpha = this.#host.frame(delta / 1000, time);
     const ride = this.#host.ride();
     if (ride !== this.#rideRef) {
@@ -1272,8 +1367,11 @@ export class RideScene extends Phaser.Scene {
     )
       return;
     // Cancelled vehicle decoders settle before world allocations start (D-030).
+    const pacing = this.#host.perf?.framePacing;
+    let phaseStarted = pacing ? performance.now() : 0;
     if (!this.#vehiclePending && !this.#vehicleArt?.settling)
       this.#updateWorldWindow(ride.seed, leftX, rightX, zoom);
+    if (pacing) pacing.phase('worldWindow', performance.now() - phaseStarted);
     if (
       this.#windowRequests.pending &&
       (!this.#art?.textureKey ||
@@ -1281,7 +1379,9 @@ export class RideScene extends Phaser.Scene {
         this.#chunks.size === 0)
     )
       return;
+    phaseStarted = pacing ? performance.now() : 0;
     this.#drawTrack(ride, leftX, rightX, timeSec);
+    if (pacing) pacing.phase('trackChunks', performance.now() - phaseStarted);
     this.#worldOverlay?.draw(
       ride.seed,
       Math.max(ride.track.firstChunkIndex, Math.floor(leftX / 1024) - 1),
@@ -1299,9 +1399,13 @@ export class RideScene extends Phaser.Scene {
       this.#view.top +
       (this.scale.height - this.#insetsCss.controls * gamePerCss) / zoom -
       FREE_BAND_MARGIN_U;
+    phaseStarted = pacing ? performance.now() : 0;
     this.#drawObjects(ride, leftX, rightX, timeSec);
     this.#drawTrain(ride, headS, leftX, rightX);
     this.#drawOncoming(ride, leftX, rightX);
+    if (pacing)
+      pacing.phase('objectsVehicles', performance.now() - phaseStarted);
+    phaseStarted = pacing ? performance.now() : 0;
     this.#drawEffects(
       ride,
       headS,
@@ -1313,6 +1417,7 @@ export class RideScene extends Phaser.Scene {
       gamePerCss / zoom,
     );
 
+    if (pacing) pacing.phase('effects', performance.now() - phaseStarted);
     const horizonTarget = -(minRailY + maxRailY) / 2;
     this.#horizonY =
       this.#horizonY === undefined
@@ -1371,7 +1476,8 @@ export class RideScene extends Phaser.Scene {
     );
     this.stats.backdrop = this.#backdrop?.state;
     this.stats.backdropMidOffsetU = this.#backdrop?.midOffsetU ?? 0;
-    const localities: string[] = [];
+    const localities = this.stats.localities;
+    localities.length = 0;
     for (
       let k = Math.floor(leftWorldX / CHUNK_WIDTH_U);
       k * CHUNK_WIDTH_U < leftWorldX + viewW;
@@ -1384,6 +1490,8 @@ export class RideScene extends Phaser.Scene {
   }
 
   #destroyChunks(): void {
+    this.#frameCollections.crossings.clear();
+    this.#frameCollections.chunks.length = 0;
     this.#worldOverlay?.clear();
     for (const chunk of this.#chunks.values()) chunk.destroy();
     this.#chunks.clear();
@@ -1419,7 +1527,7 @@ export class RideScene extends Phaser.Scene {
     }
     for (const index of this.#scenery.keys())
       if (index < first || index > last) this.#scenery.delete(index);
-    const crossings = new Map(ride.crossings.map((c) => [c.id, c]));
+    const crossings = this.#frameCollections.crossings;
     // Reduced effects calm the decorative motion (doc 07 §9).
     const motion = motionScale(this.#host.effectsQuality());
     // The whole train's x interval, for tunnel coverage diagnostics.
@@ -1476,7 +1584,16 @@ export class RideScene extends Phaser.Scene {
             : undefined,
           this.#textureMemory,
         );
-        this.#host.perf?.chunk(k, 'bake', performance.now() - started);
+        if (this.#host.perf) {
+          const duration = performance.now() - started;
+          this.#host.perf.chunk(k, 'bake', duration);
+          this.#host.perf.framePacing.event(
+            'chunkCreated',
+            started,
+            duration,
+            k,
+          );
+        }
         this.#chunks.set(k, chunk);
         const site = secondarySiteOfChunk(ride.seed, k);
         if (site && chunk.secondaryPortalViews > 0) {
@@ -1529,12 +1646,15 @@ export class RideScene extends Phaser.Scene {
     this.#weatherPortals.length = 0;
     for (const portals of this.#weatherPortalByChunk.values())
       this.#weatherPortals.push(...portals);
-    const visibleChunks = [...this.#chunks.entries()].sort(([a], [b]) => {
-      const center = (leftX + rightX) / 2 / CHUNK_WIDTH_U;
-      return Math.abs(a - center) - Math.abs(b - center);
-    });
+    this.#frameCollections.prepare(
+      ride.crossings,
+      this.#chunks,
+      (leftX + rightX) / 2 / CHUNK_WIDTH_U,
+    );
     for (const stage of ['life', 'decoration'] as const)
-      for (const [k, chunk] of visibleChunks) {
+      for (const k of this.#frameCollections.chunks) {
+        const chunk = this.#chunks.get(k);
+        if (!chunk) continue;
         const site = this.#sceneryOf(ride.seed, k).crossing;
         animationBudget -= chunk.update(
           timeSec,
@@ -1555,40 +1675,49 @@ export class RideScene extends Phaser.Scene {
     this.#animationBudgetRemaining = Math.max(0, animationBudget) + 8;
     if (this.#lastAnimalSec === undefined || timeSec > this.#lastAnimalSec)
       this.#animationCostMs = performance.now() - animationStarted;
-    this.stats.tunnels = [...this.#chunks.values()].flatMap((chunk) => {
+    const tunnels = this.stats.tunnels;
+    let tunnelCount = 0;
+    this.stats.renderedChunks = this.#chunks.size;
+    this.stats.crossingViews =
+      this.stats.secondaryTrackViews =
+      this.stats.secondaryPortalViews =
+      this.stats.catenaryPoles =
+        0;
+    for (const chunk of this.#chunks.values()) {
+      this.stats.crossingViews += Number(chunk.hasCrossingView);
+      this.stats.secondaryTrackViews += Number(chunk.hasSecondaryTrackView);
+      this.stats.secondaryPortalViews += chunk.secondaryPortalViews;
+      this.stats.catenaryPoles += chunk.catenaryPoles;
       const tunnel = chunk.tunnel;
-      if (!tunnel) return [];
-      return [
-        {
+      if (!tunnel) continue;
+      let sample = tunnels[tunnelCount];
+      if (!sample) {
+        sample = {
           id: tunnel.id,
           alpha: tunnel.alpha,
           train: tunnel.train,
-          vehicles: this.#host.journeyVehicles().map((vehicle, i) => {
-            const pose = ride.vehiclePose(i);
-            const half = vehicle.lengthU / 2;
-            return vehicleInCover(
-              { minX: pose.centerX - half, maxX: pose.centerX + half },
-              [tunnel.coverRange],
-            );
-          }),
-        },
-      ];
-    });
-    this.stats.renderedChunks = this.#chunks.size;
-    this.stats.crossingViews = [...this.#chunks.values()].filter(
-      (chunk) => chunk.hasCrossingView,
-    ).length;
-    this.stats.secondaryTrackViews = [...this.#chunks.values()].filter(
-      (chunk) => chunk.hasSecondaryTrackView,
-    ).length;
-    this.stats.secondaryPortalViews = [...this.#chunks.values()].reduce(
-      (sum, chunk) => sum + chunk.secondaryPortalViews,
-      0,
-    );
-    this.stats.catenaryPoles = [...this.#chunks.values()].reduce(
-      (sum, chunk) => sum + chunk.catenaryPoles,
-      0,
-    );
+          vehicles: [],
+        };
+        tunnels.push(sample);
+      }
+      sample.id = tunnel.id;
+      sample.alpha = tunnel.alpha;
+      sample.train = tunnel.train;
+      const vehicles = this.#host.journeyVehicles();
+      sample.vehicles.length = vehicles.length;
+      for (let i = 0; i < vehicles.length; i++) {
+        const vehicle = vehicles[i];
+        if (!vehicle) continue;
+        const pose = ride.vehiclePose(i),
+          half = vehicle.lengthU / 2;
+        sample.vehicles[i] = vehicleInCover(
+          { minX: pose.centerX - half, maxX: pose.centerX + half },
+          [tunnel.coverRange],
+        );
+      }
+      tunnelCount++;
+    }
+    tunnels.length = tunnelCount;
   }
 
   #drawObjects(
@@ -1604,8 +1733,9 @@ export class RideScene extends Phaser.Scene {
         : Math.min(0.1, Math.max(0, timeSec - this.#lastAnimalSec));
     this.#lastAnimalSec = timeSec;
     this.#animalAnimated = 0;
-    const visible = new Set<string>();
-    this.#visibleObjects = [];
+    const visible = this.#visibleAnimalIds;
+    visible.clear();
+    this.#visibleObjects.length = 0;
     for (const object of ride.objectsBetween(
       ride.track.startS,
       ride.track.endS,
@@ -1732,8 +1862,9 @@ export class RideScene extends Phaser.Scene {
     const vehicles = this.#host.journeyVehicles();
     const locomotive = vehicles[0];
     const art = locomotive ? vehicleArt[locomotive.id] : undefined;
-    const emitters: PlacedEmitter[] = [];
-    const wheels: { x: number; y: number }[] = [];
+    const emitters = this.#effectEmitters,
+      wheels = this.#effectWheels;
+    emitters.length = wheels.length = 0;
     let front: TrainEffectsInput['front'] = { x: 0, y: 0, ground: undefined };
     if (locomotive) {
       const pose = ride.vehiclePose(0, headS);
@@ -1813,7 +1944,9 @@ export class RideScene extends Phaser.Scene {
         : {}),
     });
     // Oncoming locomotives emit their own effect outside their tunnels.
-    this.#npcEffects.retain(new Set(ride.oncomingTrains.map((t) => t.id)));
+    this.#npcEffectIds.clear();
+    for (const train of ride.oncomingTrains) this.#npcEffectIds.add(train.id);
+    this.#npcEffects.retain(this.#npcEffectIds);
     for (const train of ride.oncomingTrains) {
       const loco = train.vehicles[0];
       const shaped = this.#host
@@ -2119,26 +2252,15 @@ export class RideScene extends Phaser.Scene {
     rightXU: number,
     zoom: number,
   ): void {
-    const regions = worldAtlasRegions(seed, leftXU, rightXU);
-    this.#worldRegions = regions;
-    const keys = worldAtlasWindowKeys(worldParts, regions);
-    const artScale = profileArtScale(zoom, this.#host.artQuality());
-    const backdropScale = profileBackdropScale(zoom, this.#host.artQuality());
-    this.#windowRequests.update(
-      {
-        id: `${artScale}/${backdropScale}/${keys.join(',')}`,
-        world: {
-          keys: keys.filter((key) => !isBackdropPart(key)),
-          pxPerU: artScale,
-        },
-        backdrop: { keys: keys.filter(isBackdropPart), pxPerU: backdropScale },
-      },
-      (backdrop) =>
-        this.#activateWorldAtlas(
-          backdrop ? this.#backdropArt : this.#art,
-          backdrop,
-        ),
+    const request = this.#windowSelection.update(
+      seed,
+      leftXU,
+      rightXU,
+      profileArtScale(zoom, this.#host.artQuality()),
+      profileBackdropScale(zoom, this.#host.artQuality()),
     );
+    this.#worldRegions = this.#windowSelection.regions;
+    this.#windowRequests.update(request, this.#activateWindow);
   }
 
   /** Safe boundary: no render is in progress and all images move before old pages are released. */

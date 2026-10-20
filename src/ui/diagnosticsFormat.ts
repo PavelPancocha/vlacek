@@ -13,7 +13,7 @@ function number(value: number | undefined, decimals = 0): string {
 
 export function hudLines(s: Partial<DebugSnapshot>): string[] {
   return [
-    `${number(s.medianFps)} FPS · p95 ${number(s.p95FrameMs, 1)} ms · ${s.renderer ?? '—'} · ${s.renderProfile?.quality ?? '—'}`,
+    `${number(s.medianFps)} FPS · p95 ${number(s.p95FrameMs, 1)} ms · dlouhé ${number(s.longFrames ?? 0)} · ${s.renderer ?? '—'} · ${s.renderProfile?.quality ?? '—'}`,
     `Svět ${number(s.seed)} · úsek ${number(s.headChunk)} · ${number(s.speedUPerSec, 1)} u/s · ${number(s.vehicles)} vozů`,
   ];
 }

@@ -381,7 +381,15 @@ export class GameSession {
    * One rendered frame. Simulation runs only while RIDING; returns the
    * interpolation fraction for the renderer.
    */
+  lastFrameSteps = 0;
+  lastFrameDroppedSec = 0;
+  savePhaseMs = 0;
+  onSaveMeasured: ((startMs: number, durationMs: number) => void) | undefined;
+
   frame(frameSec: number, nowMs: number): number {
+    this.lastFrameSteps = 0;
+    this.lastFrameDroppedSec = 0;
+    this.savePhaseMs = 0;
     this.#nowMs = nowMs;
     let alpha = 0;
     const ride = this.#journey?.ride;
@@ -390,6 +398,8 @@ export class GameSession {
         stepSec: 1 / this.#deps.config.simulation.fixedHz,
         maxStepsPerFrame: this.#deps.config.simulation.maxCatchUpSteps,
       });
+      this.lastFrameSteps = result.steps;
+      this.lastFrameDroppedSec = result.droppedSec;
       this.#fixedStep = result.state;
       alpha = result.alpha;
       for (let i = 0; i < result.steps; i++) {
@@ -633,7 +643,13 @@ export class GameSession {
   #persist(): SaveOutcome {
     // Diagnostic checkpoints, pause, resize and reload must never replace the ordinary save.
     if (this.#diagnosticOriginal) return 'saved';
+    const started = this.onSaveMeasured ? performance.now() : 0;
     const outcome = this.#deps.repository.save(this.#envelope());
+    if (this.onSaveMeasured) {
+      const duration = performance.now() - started;
+      this.savePhaseMs += duration;
+      this.onSaveMeasured(started, duration);
+    }
     if (outcome === 'memory-only') this.#notices.add('storage-limited');
     return outcome;
   }

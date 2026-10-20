@@ -151,3 +151,65 @@ function pointInsideSecondary(x: number, y: number, radiusU: number): boolean {
   }
   return inside;
 }
+
+/** D-033: only the player's interval drives the main-track cover. */
+export const TUNNEL_SEE_THROUGH_ALPHA = 0.5;
+const APPROACH_U = 80;
+const FADE_PER_SEC = 6;
+export function tunnelCoverTarget(
+  train: { minX: number; maxX: number },
+  tunnel: { fromX: number; toX: number },
+): number {
+  return train.maxX >= tunnel.fromX - APPROACH_U &&
+    train.minX <= tunnel.toX + APPROACH_U
+    ? TUNNEL_SEE_THROUGH_ALPHA
+    : 1;
+}
+export function nextCoverAlpha(
+  current: number | undefined,
+  target: number,
+  dtSec: number,
+): number {
+  if (current === undefined) return target;
+  if (dtSec <= 0) return current;
+  const next = target + (current - target) * Math.exp(-FADE_PER_SEC * dtSec);
+  // Drawing and bubble visibility share an exact endpoint after departure.
+  return Math.abs(next - target) <= 0.002 ? target : next;
+}
+
+/** View-owned easing clock. The caller supplies simulation seconds, including pauses. */
+export class TunnelCoverFade {
+  #alpha: number | undefined;
+  #timeSec: number | undefined;
+  #target = 1;
+  constructor(
+    readonly cover: { setAlpha(alpha: number): unknown },
+    readonly range: { fromX: number; toX: number },
+  ) {}
+  get alpha(): number {
+    return this.#alpha ?? 1;
+  }
+  setTarget(train: { minX: number; maxX: number } | undefined): void {
+    this.#target = train ? tunnelCoverTarget(train, this.range) : 1;
+    if (this.#alpha === undefined) {
+      this.#alpha = this.#target;
+      this.cover.setAlpha(this.#alpha);
+    }
+  }
+  advance(timeSec: number): void {
+    this.#alpha = nextCoverAlpha(
+      this.#alpha,
+      this.#target,
+      this.#timeSec === undefined ? 0 : timeSec - this.#timeSec,
+    );
+    this.#timeSec = timeSec;
+    this.cover.setAlpha(this.#alpha);
+  }
+  update(
+    train: { minX: number; maxX: number } | undefined,
+    timeSec: number,
+  ): void {
+    this.setTarget(train);
+    this.advance(timeSec);
+  }
+}

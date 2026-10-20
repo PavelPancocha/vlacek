@@ -176,3 +176,34 @@ describe('D-030 atlas timing overhead', () => {
     expect(h.assignments).not.toHaveBeenCalled();
   });
 });
+
+it('records whole update exits and sim loss only while riding, resumes without a pause interval and resets for a new ride', () => {
+  const h = setup();
+  const ride = () =>
+    new RideSimulation({
+      seed: 20261009,
+      vehicles: [{ lengthU: 156, bogieOffsetU: 46 }],
+      speedFactor: 1,
+      config: gameConfig,
+    });
+  let current = ride(),
+    running = true;
+  h.host.ride = () => current;
+  h.host.worldHidden = () => true;
+  h.host.worldRunning = () => running;
+  h.host.simulationSteps = () => 2;
+  h.host.droppedSec = () => 0.125;
+  h.scene.update(100, 16);
+  expect(h.perf.framePacing.snapshot().frames[0]?.slice(4, 6)).toEqual([
+    2, 0.125,
+  ]);
+  running = false;
+  h.scene.update(10000, 16);
+  expect(h.perf.framePacing.snapshot().summary.frames).toBe(1);
+  running = true;
+  h.scene.update(10016, 16);
+  expect(h.perf.framePacing.snapshot().frames[1]?.[2]).toBe(16);
+  current = ride();
+  h.scene.update(10032, 16);
+  expect(h.perf.framePacing.snapshot().summary.frames).toBe(1);
+});

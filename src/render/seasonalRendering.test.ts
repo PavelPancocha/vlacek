@@ -533,3 +533,23 @@ it.each(['summer', 'winter'] as const)(
     }
   },
 );
+
+it('does not retarget unchanged animation frames, but retargets after an atlas page change', () => {
+  pages.active = false;
+  const r = renderer(20261009, 0);
+  r.add('near.pond');
+  r.add('back.dispatcher');
+  r.owner.update(1, 0, 1, 100, { left: -100, right: 100 });
+  const textures = r.images.map((i) => vi.spyOn(i, 'setTexture'));
+  const data = r.images.map((i) => vi.spyOn(i, 'setData'));
+  for (let i = 0; i < 60; i++)
+    r.owner.update(1, 0, 1, 100, { left: -100, right: 100 });
+  expect(textures.reduce((sum, spy) => sum + spy.mock.calls.length, 0)).toBe(0);
+  expect(data.reduce((sum, spy) => sum + spy.mock.calls.length, 0)).toBe(0);
+  pages.active = true;
+  r.owner.update(1, 0, 1, 100, { left: -100, right: 100 });
+  expect(
+    textures.reduce((sum, spy) => sum + spy.mock.calls.length, 0),
+  ).toBeGreaterThan(0);
+  pages.active = false;
+});

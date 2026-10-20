@@ -1,3 +1,6 @@
+import { worldAtlasRegions } from './worldAtlasWindow.ts';
+import { worldAtlasWindowKeys } from '../content/worldAtlasGroups.ts';
+import { worldParts, isBackdropPart } from '../content/worldArt.ts';
 /** The part of an atlas owner the D-030 window drives (ArtAtlas). */
 export interface PreparedAtlas {
   prepare(keys: readonly string[], pxPerU: number): Promise<void>;
@@ -196,5 +199,68 @@ export class WorldAtlasRequests {
         this.#report(error);
       },
     );
+  }
+}
+
+/** D-034: owns the world-window selection independently of async publication. */
+export class WorldWindowSelection {
+  #seed: number | undefined;
+  #from = NaN;
+  #to = NaN;
+  #regions: ReturnType<typeof worldAtlasRegions> = [];
+  #request: WindowRequest | undefined;
+  #keys: string[] = [];
+
+  get regions(): ReturnType<typeof worldAtlasRegions> {
+    return this.#regions;
+  }
+
+  update(
+    seed: number,
+    leftXU: number,
+    rightXU: number,
+    artScale: number,
+    backdropScale: number,
+  ): WindowRequest {
+    const from = Math.floor(leftXU / 1024),
+      to = Math.ceil(rightXU / 1024);
+    let keysChanged = false;
+    if (seed !== this.#seed || from !== this.#from || to !== this.#to) {
+      const regions = worldAtlasRegions(seed, leftXU, rightXU);
+      const same =
+        seed === this.#seed &&
+        regions.length === this.#regions.length &&
+        regions.every((r, i) => r.id === this.#regions[i]?.id);
+      this.#seed = seed;
+      this.#from = from;
+      this.#to = to;
+      this.#regions = regions;
+      if (!same) {
+        const keys = worldAtlasWindowKeys(worldParts, regions);
+        keysChanged =
+          keys.length !== this.#keys.length ||
+          keys.some((key, i) => key !== this.#keys[i]);
+        this.#keys = keys;
+      }
+    }
+    if (
+      !this.#request ||
+      keysChanged ||
+      this.#request.world.pxPerU !== artScale ||
+      this.#request.backdrop.pxPerU !== backdropScale
+    ) {
+      this.#request = {
+        id: `${artScale}/${backdropScale}/${this.#keys.join(',')}`,
+        world: {
+          keys: this.#keys.filter((key) => !isBackdropPart(key)),
+          pxPerU: artScale,
+        },
+        backdrop: {
+          keys: this.#keys.filter(isBackdropPart),
+          pxPerU: backdropScale,
+        },
+      };
+    }
+    return this.#request;
   }
 }

@@ -9,8 +9,7 @@ stejné metody před/po a zachovat obraz, ovládání, seed, save i verzi gener�
 
 `?debug=1` (také volba diagnostiky v dev menu po znovunačtení) zapne malou
 sondu `window.__vlacek.snapshot().perf`. Dev menu → Diagnostika – podrobnosti
-ukazuje český souhrn Načítání; Kopírovat JSON obsahuje celý vzorek. Bez diagnostiky
-se sonda ani PerformanceObserver nevytvářejí.
+ukazuje český souhrn Načítání; Kopírovat JSON obsahuje celý vzorek. Bez diagnostiky ani grafu snímků se sonda ani PerformanceObserver nevytvářejí.
 
 - `startInteractiveMs`: navigace → dokončení vytvoření aktivního úvodu/výběru;
   není to čas fyzického zobrazení pixelů.
@@ -559,3 +558,13 @@ Přibližně dvousekundová clona zůstává, sdílené testovací čekání na 
 má nejvýše 15 s podle [D-030](030-world-atlas-region-window.md).
 Následující krok je připravovat startovní svět už během pobytu v depu;
 není součástí této změny a musí zachovat paměťovou mez i první úplný snímek.
+
+## Navazující záznam škubání — D-034
+
+[D-034](034-ride-frame-pacing-instrumentation.md) doplňuje pořadí posledních
+1 800 snímků, fáze CPU, zahozený simulační čas a události během celé jízdy.
+Původní souhrn prvních 12 chunků a long tasks prvních 15 s zůstává doplňkem
+pro start; není z něj možné vyvozovat nepřítomnost pozdějších špiček. První
+kolo odstraňuje bezpečné opakované alokace. Hotspot #2 (synchronní konstrukce
+a pečení chunků včetně readbacků) se rozdělí až podle tabletového záznamu,
+nikoli naslepo.

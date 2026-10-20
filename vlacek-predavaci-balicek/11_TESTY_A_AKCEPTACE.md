@@ -29,6 +29,8 @@ Automatizované testy domény použijí Vitest, integrační/browser testy Playw
 
 Klávesnicové ekvivalenty ověřit zvlášť, zejména `keyup`, auto-repeat a fokus v rodičovském panelu.
 
+Audio regrese INP-10/12 podle [D-022](../docs/decisions/022-recorded-sounds.md) řídí čas AudioContextu: idle → running → prázdný cíl musí bez dalších framů dokončit oba fades a uvolnit všechny uzly. Při pěti zvířatech priority 40 a dvou obsazených tail zdrojích musí cached hráčova píšťala priority 100 začít po 10ms rampě a `ended`; skutečný počet všech zahájených a dosud neskončených zdrojů zůstane ≤10, s dvěma parními rázy ≤11. Nejvýše jeden čekající prioritní požadavek, bez duplicit a prodlužování původní 250ms expirace zvířat; pause/mute/stopAll/dispose zruší i čekání a pozdní `ended` nic neobnoví. Ověřuje `tests/unit/platform/AudioManager.test.ts`; browserové `recorded-audio.spec.ts` a `horns.spec.ts` kontrolují skutečné dekódování, ovládání a přehrávání, fyzická hlasitost je samostatná akceptace.
+
 ## 3. Souprava a geometrie — TRN
 
 | ID     | Situace                                                   | Očekávaný výsledek                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -110,7 +112,7 @@ V každém ticku dopravního testu assertovat, že vlak a silniční aktér sou�
 | CNT-02 | Validace assetů a rozměrů.                          | Každý klíč existuje, žádný povinný placeholder, délky a pivoty jsou platné.                                                                                                                                                                                                               |
 | CNT-03 | Kontaktní listy a živé scény.                       | Rozlišitelné typy a konzistentní styl; ne 10 přebarvených lokomotiv. Elektrické sběrače jsou nízké a široké; snímek ověří dotyk hlavy s drátem na pobřeží, mostě a u portálu, patrový vůz i náklady se pod drát vejdou.                                                                   |
 | CNT-04 | Přehled biomů a infrastruktury.                     | Šest biomů, 18 scénických sestav, varianty mostů/stanic a požadované živé typy.                                                                                                                                                                                                           |
-| CNT-05 | Den, noc, tunel, sníh a déšť.                       | Vlak, kolej a brzda zůstávají čitelné ve standardním i úsporném režimu; v neprůhledném tunelu pokračuje kamera a vjezd/výjezd je vidět v ústí.                                                                                                                                            |
+| CNT-05 | Den, noc, tunel, sníh a déšť.                       | Vlak, kolej a brzda zůstávají čitelné ve standardním i úsporném režimu; pod 50% krytem všech tunelů zůstává ztmavený vlak vidět a kamera pokračuje (D-033).                                                                                                                               |
 
 UI-08 (diagnostika): při zapnutí má HUD nejvýše dva krátké řádky bez surového JSON. Na 568 × 320, 844 × 390, 1140 × 512 a 1280 × 800 nekoliduje s ovládáním ani safe areas; držení přes HUD pohání vlak. V dev menu jsou čitelné skupiny Výkon, Svět, Vlak, Přejezdy, Atlasy a případně Zvuk. Kopírovat JSON dává platný plný snapshot; při chybějící nebo zamítnuté schránce je text viditelný, plně označený a jeho kontextové menu není potlačeno; nativní touch callout umožňuje ruční kopii dlouhým dotykem. Kopírovat číslo dává skutečný seed rozehrané cesty. Běžná dětská pauza nepřidává tlačítka detailů ani restartu.
 
@@ -215,7 +217,7 @@ Nesplněné neklíčové kosmetické přání lze viditelně odložit. Záměna 
 
 Unit testy ověřují pevný zoom podle reference 2 000 u, střed na 46 %, rezervy na 1280 × 800, 1140 × 512, 844 × 390 a 568 × 320, konzervativní atlas všech možných různých vozidel s NPC při 2 px/u a obnovu starého nadlimitního save. `tests/unit/train/longestConsist.test.ts` ověřuje 2 000 u, pořadí, spřáhla, svahy, zachování koleje a setkání s NPC. `tests/e2e/train-length.spec.ts` sestaví přesně 2 000 u a při jízdě světem 123 ověří všech 13 kreslených vozidel, uzavřené závory až po poslední vůz na přejezdu chunku 3, průjezd tunelem chunku 6 a obnovení. Stávající testy celé soupravy a katalogu na 844 × 390, 667 × 375 a 568 × 320 zůstávají bránou.
 
-Regrese tunnel-1 (TRN-06, SCN-09): svět 123, hlavní tunel chunku 6; ve v2 dieselový NPC svět 8 s portálovými sklony přibližně +0,01653 a −0,02739, polohy ±100, ±35 a 0 u včetně zastavení. Canvas i WebGL a fallback bez artu: žádné vozidlové pixely za krytem; žádná nová emise ze skály, žádný viditelný kouř vzniklý před vjezdem ani jiskry při brzdění uvnitř. Okolní život zůstává nezávislý. Regrese tunnel-3 navíc zastaví hráčovu lokomotivu s vagónem u obou hlavních ústí (art/fallback) a porovná zakryté i odkryté výřezy; pozitivní kontrola existuje u obou NPC portálů. Zakrytá již vypuštěná bublina nemá hit, pop ani záznam mezi viditelnými bublinami; odkrytý dotyk stále pohání vlak. Paty a zadní poloviny ústí nemění pixely při vzniku či zániku NPC a uvolní se teprve s vlastníkem scenérie.
+Regrese tunnel-1 (TRN-06, SCN-09): svět 123, hlavní tunel chunku 6; ve v2 dieselový NPC svět 8 s portálovými sklony přibližně +0,01653 a −0,02739, polohy ±100, ±35 a 0 u včetně zastavení. Canvas i WebGL a fallback bez artu: vozidlové pixely pod hráčovým 50% krytem zůstávají přítomné, u NPC platí původní neprůhledné zakrytí; žádná nová emise ze skály ani jiskry při brzdění uvnitř. Staré částice zachovávají hloubku. Okolní život zůstává nezávislý. Regrese tunnel-3 navíc zastaví hráčovu lokomotivu s vagónem u obou hlavních ústí (art/fallback) a porovná zakryté i odkryté výřezy; pozitivní kontrola existuje u obou NPC portálů. Za neprůhledným krytem již vypuštěná bublina nemá hit, pop ani záznam mezi viditelnými bublinami; za krytem s alfou pod 1 je viditelná a dotyková; odkrytý dotyk stále pohání vlak. Paty a zadní poloviny ústí nemění pixely při vzniku či zániku NPC a uvolní se teprve s vlastníkem scenérie.
 
 ### Kamera `camera-1`
 
@@ -267,7 +269,7 @@ Revizní důkaz GEN-14/GEN-19/SCN-CO02 vyžaduje nenulové v2 svědky každého 
 ### Regrese sloučení world v2 a rodičovských nástrojů
 
 - DATA / DEV-03: oba restarty během dočasné testovací jízdy nejprve ukončí diagnostický stav, uloží novou běžnou cestu s počáteční polohou/tickem a stejnou soupravou; následný návrat ani reload neobnoví starou rodičovskou cestu. Integrace `seedRestart.test.ts` a browser `world-diagnostics.spec.ts`.
-- UI-08: podrobnosti zahrnují kontext world v2, geometrii/fáze přejezdů, neprůhledné tunely, nahrané audio a trolejové vedení včetně `outOfRange`; kopie obsahuje plný snapshot. `diagnosticsFormat.test.ts`, `dev-menu.spec.ts` a `layout-sweep.spec.ts` kontrolují také nové skupiny a pevné akce při otevřených sbalených sekcích.
+- UI-08: podrobnosti zahrnují kontext world v2, geometrii/fáze přejezdů, skutečnou alfu tunelů, nahrané audio a trolejové vedení včetně `outOfRange`; kopie obsahuje plný snapshot. `diagnosticsFormat.test.ts`, `dev-menu.spec.ts` a `layout-sweep.spec.ts` kontrolují také nové skupiny a pevné akce při otevřených sbalených sekcích.
 - H1 / O5: `AudioManager.test.ts` ověřuje zastavení všech smyček, doznívání, výfuků a hlasů, zrušení čekajícího fetch/decode i reakce a nové přehrání po cleanupu. Pozdní `ended` nesmí podruhé uvolnit rozpočet a starý požadavek nesmí vymazat nový požadavek stejného klipu/vrstvy. Browserový restart používá skutečné nahrané buffer zdroje a ověřuje úspěch i odmítnutý zápis.
 
 ### Sezóny a život v generátoru v2
@@ -325,8 +327,7 @@ Pixelový test má 30 FPS a zachovává uvedený práh jasné plochy; navíc odd
 měří těžiště jasných pixelů svitu bez volně letících čárek, nejvýše
 1,25 CSS px od kontaktu. Referenci počítá z pivotu skutečně kreslené hlavy
 a transformace vozidla, nikoli z polohy testované částice či odhadu středu vlaku.
-Stejné živé částice za neprůhlednou
-skálou nezmění žádný pixel zakrytého výřezu. Po jejich vypršení za skálou
+Stejné živé částice pod hráčovým 50% krytem zachovávají hloubku a jsou zeslabeně viditelné (D-033). Po jejich vypršení za skálou
 nevznikají nové kontaktní částice ani při držení plynu. Navazují stávající
 `effects.spec.ts`, `electric.spec.ts` a celá tunelová regrese.
 Fyzická zařízení a vnímání dítětem: **NEOVĚŘENO**.

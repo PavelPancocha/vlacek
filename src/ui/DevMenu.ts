@@ -17,8 +17,9 @@ export interface DevMenuValues extends DevOptions {
 export function parseDevMenu(
   values: Record<string, unknown>,
 ): DevMenuValues | undefined {
-  const { debug, renderer, quality, reducedEffects, seed } = values;
+  const { debug, renderer, quality, reducedEffects, seed, perfGraph } = values;
   if (
+    (perfGraph !== undefined && perfGraph !== 'off' && perfGraph !== 'on') ||
     (debug !== 'off' && debug !== 'on') ||
     (renderer !== 'auto' && renderer !== 'canvas') ||
     (quality !== 'auto' && quality !== 'standard' && quality !== 'low') ||
@@ -30,6 +31,7 @@ export function parseDevMenu(
   if (seed !== '' && pinnedSeed === undefined) return undefined;
   return {
     debug: debug === 'on',
+    perfGraph: perfGraph === 'on',
     renderer,
     quality,
     reducedEffects: reducedEffects === 'on',
@@ -66,6 +68,10 @@ export function developerMenu(
     'form',
     { class: 'dev-fields' },
     select('debug', 'Diagnostika', values.debug ? 'on' : 'off', [
+      ['off', 'Vypnuto'],
+      ['on', 'Zapnuto'],
+    ]),
+    select('perfGraph', 'Graf času snímků', values.perfGraph ? 'on' : 'off', [
       ['off', 'Vypnuto'],
       ['on', 'Zapnuto'],
     ]),

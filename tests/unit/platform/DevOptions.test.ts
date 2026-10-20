@@ -12,7 +12,12 @@ describe('developer storage is separate from the save', () => {
   it('round trips debug, renderer and seed, and clears only its own key', () => {
     const storage = new MemoryStorage();
     storage.setItem('vlacek.save.v1', 'keep');
-    const options = { debug: true, renderer: 'canvas', seed: 0 } as const;
+    const options = {
+      debug: true,
+      perfGraph: false,
+      renderer: 'canvas',
+      seed: 0,
+    } as const;
     expect(writeDevOptions(storage, options)).toBe(true);
     expect(readDevOptions(storage)).toEqual(options);
     expect(clearDevOptions(storage)).toBe(true);
@@ -62,6 +67,7 @@ it('dev JSON stores only its three owned fields even when passed menu values', (
   const storage = new MemoryStorage();
   const values = {
     debug: true,
+    perfGraph: false,
     renderer: 'canvas',
     seed: 123,
     quality: 'low',
@@ -70,7 +76,35 @@ it('dev JSON stores only its three owned fields even when passed menu values', (
   expect(writeDevOptions(storage, values)).toBe(true);
   expect(JSON.parse(storage.getItem(DEV_KEY) ?? 'null')).toEqual({
     debug: true,
+    perfGraph: false,
     renderer: 'canvas',
     seed: 123,
   });
+});
+
+it('round trips the optional frame graph independently of debug', () => {
+  const storage = new MemoryStorage();
+  writeDevOptions(storage, { ...defaultDevOptions, perfGraph: true });
+  expect(readDevOptions(storage)).toMatchObject({
+    perfGraph: true,
+    debug: false,
+  });
+});
+
+it('graph URL accepts explicit on/off, ignores invalid values and is released on reload', async () => {
+  const { perfGraphEnabled, perfReloadUrl } =
+    await import('../../../src/platform/DevOptions.ts');
+  expect(perfGraphEnabled('?perfgraph=1', defaultDevOptions)).toBe(true);
+  expect(
+    perfGraphEnabled('?perfgraph=0', { ...defaultDevOptions, perfGraph: true }),
+  ).toBe(false);
+  expect(
+    perfGraphEnabled('?perfgraph=bad', {
+      ...defaultDevOptions,
+      perfGraph: true,
+    }),
+  ).toBe(true);
+  expect(
+    perfReloadUrl('https://example.test/vlacek/?perfgraph=1&keep=yes#here'),
+  ).toBe('https://example.test/vlacek/?keep=yes#here');
 });

@@ -73,12 +73,12 @@ světlo na horním svahu a stín směrem k patě dávají objem i skále a sněh
 Stínování leží uvnitř stávající výplně; obrys nepokračuje tam, kde se
 přední kryt ztenčí na nulovou plochu. Tvar kopce a pata portálu se nemění.
 
-| Zóna           | Objekty                             | Počet                      | Vztahy a závislosti               | Zakázáno                          |
-| -------------- | ----------------------------------- | -------------------------- | --------------------------------- | --------------------------------- |
-| far            | Pozadí hostitele                    | Souvislé                   | Kopec patří do okolí              | Náhodná zelená bublina            |
-| back 0,30–0,90 | Geometrie kopce, stromy hostitele   | 1 těleso, 3–6 skupin       | Vegetace mimo portálové rezervace | Strom uvnitř otvoru               |
-| bank           | `tunnel.portal`, neprůhledné těleso | 2 portály, délka 448–768 u | Jedna stavba, správná kolej       | Průhlednost místo zakrytí         |
-| near 0,35–0,85 | `near.bush`, `near.stones`          | 3–6 skupin                 | Mimo těleso a příjezdy            | Dodatečné zakrytí otevřené koleje |
+| Zóna           | Objekty                               | Počet                      | Vztahy a závislosti                               | Zakázáno                          |
+| -------------- | ------------------------------------- | -------------------------- | ------------------------------------------------- | --------------------------------- |
+| far            | Pozadí hostitele                      | Souvislé                   | Kopec patří do okolí                              | Náhodná zelená bublina            |
+| back 0,30–0,90 | Geometrie kopce, stromy hostitele     | 1 těleso, 3–6 skupin       | Vegetace mimo portálové rezervace                 | Strom uvnitř otvoru               |
+| bank           | Dělený portál, kryt 50 % při průjezdu | 2 portály, délka 448–768 u | Kryt zprůhlední na 50 % při přiblížení a průjezdu | Vnější pilíř před vlakem          |
+| near 0,35–0,85 | `near.bush`, `near.stones`            | 3–6 skupin                 | Mimo těleso a příjezdy                            | Dodatečné zakrytí otevřené koleje |
 
 ## TB-05 — Dlouhý skalní tunel
 
@@ -86,19 +86,27 @@ Vzdálené hřbety a zadní svah vytvářejí souvislou horu.
 Kolej do ní vchází skalním portálem a výjezd leží skutečně daleko za vstupem.
 Uvnitř stavby pokračuje stejná geometrie koleje i potřebný elektrický kontakt.
 Přední nízké kameny nechávají otevřené části trati přehledné.
-Celá souprava může na určitou dobu zmizet za horninou, zatímco kamera dál sleduje její cestu.
-Obloha a venkovní počasí pokračují nad horou, ale kouř ani jiskry nesmějí prosvítat jejím tělesem.
+Kryt každého tunelu včetně dlouhé skalní a zimní varianty zprůhlední na 50 % při přiblížení hráčova vlaku a průjezdu; kamera dál sleduje jeho cestu.
+Obloha a venkovní počasí pokračují nad horou, nový kouř ani jiskry uvnitř nevznikají. Dříve vzniklé částice zůstávají za krytem, před vlakem.
 Hornina se skládá před neměnným uploadem z rámců aktuální regionální stránky;
 čtení GPU pixelů se uvolní ihned po každém materiálu. Horská silueta s vegetací, jednobarevný vnitřek
 a závěsy jsou statické vektory se stejnou geometrií; peče se pouze pás
-skutečného skalního materiálu mezi ústími.
+skutečného skalního materiálu mezi ústími. Hora nad tmavým vnitřkem zůstává
+plná a neprůhledná; pouze přední tvář nad vnitřkem ukazuje vlak s krytem 50 %.
+Sousední fragmenty vlastní nepřekrývající se úseky 0–1 024 u, aby se jejich
+poloprůhledné tváře na hranici nesčítaly. Neprůhledný vektorový hřbet
+a pata mají 2u přesah pro pokrytí rasterizovaných hran; jejich alfa se nemění.
+Stejný přesah má tmavý neprůhledný vnitřek pouze přes vnitřní hranice chunků;
+skutečné meze ústí se neposouvají. Průhledná tvář zůstává bez překryvu. Po odjezdu se alfa přichytí přesně
+k 1 při odchylce nejvýše 0,002; skryté bubliny tím ztratí i dotyk.
+Sněhové přílohy krátkých portálů sledují místní sklon obou ústí.
 
-| Zóna           | Objekty                                          | Počet                            | Vztahy a závislosti                        | Zakázáno                              |
-| -------------- | ------------------------------------------------ | -------------------------------- | ------------------------------------------ | ------------------------------------- |
-| far            | Horské nebo podhorské hřbety                     | Souvislé                         | Délku vysvětluje hora                      | Dva portály bez hmoty mezi nimi       |
-| back 0,30–0,90 | Geometrie skalního tělesa a hostitelský les      | 1 stavba, fragmenty podle výřezu | Společné hraniční vzorky                   | Jedna neomezeně dlouhá textura        |
-| bank           | NEW: skalní portál 180 × 240 u; neprůhledný kryt | 2 portály, délka 1 024–4 096 u   | Varianta 3 072–4 096 u přesahuje celý vlak | Skrytí všech kolejí podle samotného x |
-| near 0,40–0,90 | `near.boulder`, mladé stromky hostitele          | 3–6 skupin                       | Mimo příjezd a otvor                       | Částice kreslené skrz skálu           |
+| Zóna           | Objekty                                             | Počet                            | Vztahy a závislosti                        | Zakázáno                              |
+| -------------- | --------------------------------------------------- | -------------------------------- | ------------------------------------------ | ------------------------------------- |
+| far            | Horské nebo podhorské hřbety                        | Souvislé                         | Délku vysvětluje hora                      | Dva portály bez hmoty mezi nimi       |
+| back 0,30–0,90 | Geometrie skalního tělesa a hostitelský les         | 1 stavba, fragmenty podle výřezu | Společné hraniční vzorky                   | Jedna neomezeně dlouhá textura        |
+| bank           | Dělený skalní portál 180 × 240 u; kryt 50 % u vlaku | 2 portály, délka 1 024–4 096 u   | Varianta 3 072–4 096 u přesahuje celý vlak | Skrytí všech kolejí podle samotného x |
+| near 0,40–0,90 | `near.boulder`, mladé stromky hostitele             | 3–6 skupin                       | Mimo příjezd a otvor                       | Částice kreslené skrz skálu           |
 
 ## Činnosti, profil a čitelnost
 
@@ -107,7 +115,15 @@ Tunel nepřidává výraznou scénickou akci; odezvu pohybu dává kamera a exis
 Most má rovinu nebo konstantní mírný sklon do 0,03; zaoblení leží mimo hlavní konstrukční pole.
 Tunel může pokračovat konstantním sklonem hostitele, vždy do `world.maxTrackGrade`, s ověřeným průjezdným profilem.
 Žádná stavba nesmí dodatečně narovnat pouze kresbu a odpojit ji od skutečné geometrie vozidel.
-Kryt tunelu pracuje pro jednotlivé části hráčovy i NPC soupravy a příslušnou kolej, v obou směrech.
+Ústí za hráčovým vlakem obsahuje tmavý otvor a vnější pilíř na straně otevřené krajiny.
+Přední část před vlakem obsahuje vnitřní pilíř, horní oblouk a těleso; výjezd je zrcadlený.
+Vnější pilíř nikdy neřeže vlak stojící venku. Ústí zůstává neprůhledné.
+Kryt se při vzdálenosti kterékoli části hráčovy soupravy do 80 u od portálu
+nebo uvnitř blíží k alfě 0,5 rychlostí 6 s⁻¹ v simulačním čase; mimo tento rozsah k 1.
+První obnovený snímek nastaví cíl okamžitě, pauza drží stav.
+Viditelná bublina za průhledným krytem je také dotyková a diagnostikovaná;
+za neprůhledným krytem není. Stínovací pás zůstává. NPC na druhé koleji
+zachovávají vlastní zakrytí. Podrobnosti vlastní [D-033](../decisions/033-tunnel-see-through-and-split-portals.md).
 Portál má rezervu pro nejvyšší vozidlo, sběrač a vedení; konkrétní světlost ověří katalogová geometrie.
 Mostní konzoly a tunelový kontakt jsou součást elektrifikované trasy, ne volitelná dekorace.
 
@@ -124,7 +140,10 @@ Použít potok, vítr a hostitelské ptactvo; nové audio: jemný mostní dozvuk
 
 NEW: ocelové pole 256 × 90 u a opěra 50 × 100 u; nosná struktura převážně pod kolejí.
 NEW: viaduktový oblouk 160 × 160 u a navazující pilíř 40 × 160 u; čitelné kamenné zdivo.
-NEW: skalní portál 180 × 240 u; oddělené boční části, otvor a překrývající hornina.
+Skalní portál 180 × 240 u má oddělené ústí a přední část, také ve sněhu.
+Krátký používá `tunnel.portal-mouth` / `tunnel.portal-front`, skalní
+`tunnel.rock-portal-mouth` / `tunnel.rock-portal-front` a jejich varianty `-snow`.
+Celý klenák a vršek oblouku patří do předního krytu.
 NEW: mostní konzola vedení 36 × 170 u, tunelový kontakt 128 × 12 u a staniční nosník 256 × 180 u.
 Kryty a dlouhá tělesa vznikají z omezených fragmentů, nikoli z natažení jednoho obřího SVG.
 Použít existující zděný portál, kamenný most a zábradlí tam, kde odpovídají potřebné geometrii.
@@ -152,7 +171,7 @@ přejezd 3, most 4 a souběh 4–6 mají přednost. Těleso sleduje skutečný
 profil včetně jeho zaoblení; nesmí pro stavbu narovnat kolej. Vstup leží
 na svahu alespoň 1,5 %. Portál se otáčí podle místní tečny, světlost
 186 u se měří kolmo ke koleji. Kryt začíná 52 u za portálem, čepice
-končí 214 u nad kolejí a neprůhledná pata dosahuje na skutečnou louku.
+končí 214 u nad kolejí a pata krytu dosahuje na skutečnou louku.
 
 Logické ID a úplný rozsah jsou společné. Každý zasažený chunk umí stavbu
 samostatně rekonstruovat; renderer peče pouze místní fragment s přesahem

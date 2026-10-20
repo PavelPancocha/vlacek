@@ -9,7 +9,9 @@ import { TUNNEL_MAST_CLEARANCE_U } from '../domain/world/Catenary.ts';
 import { worldParts } from '../content/worldArt.ts';
 import type { TunnelSite } from '../domain/world/Structures.ts';
 import { FRAME_MARGIN_PX, frameOrigin } from './atlasPacking.ts';
-import { portalMasonryPoint } from './tunnelCover.ts';
+import { TunnelCoverFade, portalMasonryPoint } from './tunnelCover.ts';
+import { composeCoverImages } from './TunnelView.ts';
+import { setWorldPivot } from './worldImage.ts';
 import type {
   Bake,
   TunnelArt,
@@ -19,6 +21,7 @@ import type {
 
 /** One bounded render fragment of a single, reconstructible long structure. */
 export class RockTunnelView {
+  readonly fade: TunnelCoverFade;
   readonly containers: Phaser.GameObjects.Container[];
   readonly coversPoint: (point: { x: number; y: number }) => boolean;
 
@@ -34,8 +37,8 @@ export class RockTunnelView {
   ) {
     const x0 = site.chunkIndex * 1024;
     const { fromX, toX } = site;
-    const left = Math.max(-2, fromX - 170),
-      right = Math.min(1026, toX + 170);
+    const left = Math.max(0, fromX - 170),
+      right = Math.min(1024, toX + 170);
     const coverFrom = fromX + 52,
       coverTo = toX - 52;
     const rail = (x: number) => ground.railY(x);
@@ -61,9 +64,10 @@ export class RockTunnelView {
       low: (x: number) => number,
       from = left,
       to = right,
+      opaqueOutset = 0,
     ) => {
-      from = Math.max(left, from);
-      to = Math.min(right, to);
+      from = Math.max(left - opaqueOutset, from);
+      to = Math.min(right + opaqueOutset, to);
       if (to <= from) return [];
       const samples = [from, ...xs.filter((x) => x > from && x < to), to];
       return [
@@ -71,11 +75,22 @@ export class RockTunnelView {
         ...samples.reverse().map((x) => new Phaser.Math.Vector2(x, low(x))),
       ];
     };
+    // Keep the owned pixel band bounded: the mountain above and foot below
+    // have disjoint vector silhouettes, so cover children never double-blend.
+    // 90*cos(atan(.12)) + 236*sin(atan(.12)) < 118u; retain 2u beyond
+    // every rotated front-portal corner, without allocating empty 170u shoulders.
+    const bodyLeft = Math.max(left, fromX - 120),
+      bodyRight = Math.min(right, toX + 120);
+    const bodyXs = [
+      bodyLeft,
+      ...xs.filter((x) => x > bodyLeft && x < bodyRight),
+      bodyRight,
+    ];
     const bounds = {
-      left,
-      right,
-      top: Math.min(...xs.map(roof)) - 64,
-      bottom: Math.max(...xs.map((x) => ground.meadowY(x))) + 8,
+      left: bodyLeft,
+      right: bodyRight,
+      top: Math.min(...bodyXs.map(rail)) - 292,
+      bottom: Math.max(...bodyXs.map(rail)) + 6,
     };
     // Flat interior and hangers need no pixel surface; retain their exact vector edges.
     const g = scene.add.graphics();
@@ -86,6 +101,7 @@ export class RockTunnelView {
       (x) => rail(x) + 4,
       fromX - TUNNEL_MAST_CLEARANCE_U,
       toX + TUNNEL_MAST_CLEARANCE_U,
+      2,
     );
     if (polygon.length) g.fillPoints(polygon, true);
     for (const x of hangerXs) {
@@ -99,6 +115,23 @@ export class RockTunnelView {
       g.fillRect(x - 3, wire - 3, 6, 3);
     }
     const interior = scene.add.container(0, 0, [g]).setDepth(depths.interior);
+    const mouths = scene.add.container(0, 0).setDepth(depths.interior + 0.01);
+    const mouthGraphics = scene.add.graphics();
+    mouths.add(mouthGraphics);
+    const bodyPoints = (
+      top: (x: number) => number,
+      low: (x: number) => number,
+      from = left,
+      to = right,
+    ) => {
+      const clippedTop = (x: number) => Math.max(top(x), rail(x) - 292);
+      return points(
+        clippedTop,
+        (x) => Math.max(clippedTop(x), Math.min(low(x), rail(x) + 6)),
+        from,
+        to,
+      );
+    };
     const paintCover = (g: Phaser.GameObjects.Graphics) => {
       // Opaque foundation fits the true terrain, including between material tiles.
       g.fillStyle(winter ? 0xdde6e5 : 0x6b7868, 1);
@@ -109,7 +142,7 @@ export class RockTunnelView {
         [coverFrom, coverTo, false],
         [coverTo, right, true],
       ] as const) {
-        const polygon = points(
+        const polygon = bodyPoints(
           roof,
           cap ? (x) => Math.max(roof(x), rail(x) - 214) : bottom,
           from,
@@ -119,46 +152,18 @@ export class RockTunnelView {
       }
       // A meadow mantle and rooted conifers complete the host above exposed rock.
       g.fillStyle(winter ? 0xf1f6fa : 0x6eae43, 1);
-      const mantle = points(roof, (x) => Math.max(roof(x), rail(x) - 264));
+      const mantle = bodyPoints(roof, (x) => Math.max(roof(x), rail(x) - 264));
       if (mantle.length) g.fillPoints(mantle, true);
       g.fillStyle(winter ? 0xd4e3e9 : 0x85b95d, 1);
-      const ridge = points(roof, (x) =>
+      const ridge = bodyPoints(roof, (x) =>
         Math.min(roof(x) + 16, Math.max(roof(x), rail(x) - 264)),
       );
       if (ridge.length) g.fillPoints(ridge, true);
-      for (
-        let i = Math.floor((x0 + left - 24) / 128);
-        i <= Math.ceil((x0 + right + 24) / 128);
-        i++
-      ) {
-        const h = hash32(site.id, 'hill-tree', i),
-          x = i * 128 + (h % 45) - x0;
-        if (rockMountainHeightU(fromX, toX, x) < 315) continue;
-        const foot = roof(x) + 8,
-          height = 32 + ((h >>> 8) % 17);
-        g.fillStyle(0x5c6141, 1);
-        g.fillRect(x - 1.5, foot - 14, 3, 14);
-        g.fillStyle(winter ? 0x5d827b : 0x416f43, 1);
-        g.fillPoints(
-          [
-            new Phaser.Math.Vector2(x, foot - height),
-            new Phaser.Math.Vector2(x + 16, foot - 6),
-            new Phaser.Math.Vector2(x - 16, foot - 6),
-          ],
-          true,
-        );
-        g.fillStyle(winter ? 0xf1f6fa : 0x5c8d4a, 1);
-        g.fillPoints(
-          [
-            new Phaser.Math.Vector2(x, foot - height),
-            new Phaser.Math.Vector2(x + 11, foot - 17),
-            new Phaser.Math.Vector2(x - 11, foot - 17),
-          ],
-          true,
-        );
-      }
       if (!art)
-        for (const portal of [fromX, toX]) {
+        for (const [portal, mirrored] of [
+          [fromX, false],
+          [toX, true],
+        ] as const) {
           if (portal < left - 90 || portal > right + 90) continue;
           const angle = Math.atan(grade(portal)),
             c = Math.cos(angle),
@@ -167,12 +172,13 @@ export class RockTunnelView {
             vertices.map(
               ([x, y]) =>
                 new Phaser.Math.Vector2(
-                  portal + x * c - y * s,
-                  rail(portal) + x * s + y * c,
+                  portal + (mirrored ? -x : x) * c - y * s,
+                  rail(portal) + (mirrored ? -x : x) * s + y * c,
                 ),
             );
           g.fillStyle(0xadae9d, 1);
-          g.fillPoints(
+          mouthGraphics.fillStyle(0xadae9d, 1);
+          mouthGraphics.fillPoints(
             polygon([
               [-90, -128],
               [-58, -128],
@@ -190,60 +196,39 @@ export class RockTunnelView {
             ]),
             true,
           );
-          const arch: [number, number][] = [[58, -128]];
-          for (let x = 58; x > -58; x -= 4)
-            arch.push([x, -128 - Math.sqrt(58 * 58 - x * x)]);
-          arch.push([-58, -128]);
+          // The arch shoulders on the open side belong behind the train too.
+          const rightArch: [number, number][] = [[58, -128]];
+          for (let x = 58; x >= 0; x -= 2)
+            rightArch.push([x, -128 - Math.sqrt(58 * 58 - x * x)]);
+          g.fillPoints(
+            polygon([
+              [0, -236],
+              [90, -236],
+              [90, -128],
+              ...rightArch,
+              [0, -236],
+            ]),
+            true,
+          );
           g.fillPoints(
             polygon([
               [-90, -236],
-              [90, -236],
-              [90, -128],
-              ...arch,
-              [-90, -128],
+              [0, -236],
+              [0, -186],
+              [-90, -186],
             ]),
+            true,
+          );
+          const leftArch: [number, number][] = [[0, -186]];
+          for (let x = 0; x >= -58; x -= 2)
+            leftArch.push([x, -128 - Math.sqrt(58 * 58 - x * x)]);
+          mouthGraphics.fillPoints(
+            polygon([[-90, -186], ...leftArch, [-58, -128], [-90, -128]]),
             true,
           );
         }
     };
-    const cover = art ? scene.add.container(0, 0) : bake(paintCover, bounds);
-    if (art) {
-      const hill = scene.add.graphics();
-      paintCover(hill);
-      cover.add(hill);
-      const materialFrom = Math.max(left, fromX),
-        materialTo = Math.min(right, toX);
-      const materialXs = [
-        materialFrom,
-        ...xs.filter((x) => x > materialFrom && x < materialTo),
-        materialTo,
-      ];
-      const materialBounds = {
-        left: materialFrom,
-        right: materialTo,
-        top: Math.min(...materialXs.map(rail)) - 292,
-        bottom: Math.max(...materialXs.map(rail)) + 2,
-      };
-      if (materialBounds.right > materialBounds.left)
-        cover.add(
-          bake(
-            () => {},
-            materialBounds,
-            (canvas, memory, owner) =>
-              composeRockMaterial(
-                scene,
-                art,
-                canvas,
-                winter,
-                site,
-                materialBounds,
-                rail,
-                memory,
-                owner,
-              ),
-          ),
-        );
-    }
+    const cover = scene.add.container(0, 0);
     cover.setDepth(depths.cover);
     if (art) {
       const image = (key: keyof typeof worldParts, x: number, y: number) => {
@@ -255,14 +240,29 @@ export class RockTunnelView {
         return im.setOrigin(origin.x, origin.y).setScale(1 / art.pxPerU);
       };
       cover.setName(`${site.id}:rock-fragment:${site.chunkIndex}`);
-      const portalKey = winter
-        ? 'tunnel.rock-portal-snow'
-        : 'tunnel.rock-portal';
-      for (const x of [fromX, toX])
+      for (const [x, mirrored] of [
+        [fromX, false],
+        [toX, true],
+      ] as const)
         if (x >= left - 90 && x < right + 90) {
-          cover.add(
-            image(portalKey, x, rail(x)).setRotation(Math.atan(grade(x))),
-          );
+          const suffix = winter ? '-snow' : '';
+          for (const [key, layer] of [
+            [`tunnel.rock-portal-mouth${suffix}`, mouths],
+            [`tunnel.rock-portal-front${suffix}`, cover],
+          ] as const) {
+            const im = image(key, x, rail(x))
+              .setRotation(Math.atan(grade(x)))
+              .setFlipX(mirrored);
+            if (mirrored) {
+              const part = worldParts[key];
+              setWorldPivot(
+                im,
+                { x: part.widthU - part.pivotU.x, y: part.pivotU.y },
+                art.pxPerU,
+              );
+            }
+            layer.add(im);
+          }
         }
       for (const x of hangerXs)
         if (x >= left && x < right)
@@ -274,10 +274,118 @@ export class RockTunnelView {
             ),
           );
     }
-    this.containers = [interior, cover];
-    const portalPlanes = [fromX, toX].map((x) => {
+    const hill = scene.add.graphics();
+    // Only opaque silhouettes overlap: cover adjacent antialiased vector edges
+    // without reintroducing the translucent face's former 0.75 seam.
+    const hillPoints = (
+      top: (x: number) => number,
+      low: (x: number) => number,
+    ) => points(top, low, left - 2, right + 2, 2);
+    const upperBottom = (x: number) => Math.max(roof(x), rail(x) - 292);
+    const ridgeBottom = (x: number) => Math.min(roof(x) + 16, upperBottom(x));
+    hill.fillStyle(winter ? 0xf1f6fa : 0x6eae43, 1);
+    const mantleTop = hillPoints(ridgeBottom, upperBottom);
+    if (mantleTop.length) hill.fillPoints(mantleTop, true);
+    hill.fillStyle(winter ? 0xd4e3e9 : 0x85b95d, 1);
+    const ridgeTop = hillPoints(roof, ridgeBottom);
+    if (ridgeTop.length) hill.fillPoints(ridgeTop, true);
+    hill.fillStyle(winter ? 0xdde6e5 : 0x6b7868, 1);
+    const foot = hillPoints((x) => Math.min(bottom(x), rail(x) + 6), bottom);
+    if (foot.length) hill.fillPoints(foot, true);
+    for (
+      let i = Math.floor((x0 + left - 24) / 128);
+      i <= Math.ceil((x0 + right + 24) / 128);
+      i++
+    ) {
+      const h = hash32(site.id, 'hill-tree', i),
+        x = i * 128 + (h % 45) - x0;
+      if (rockMountainHeightU(fromX, toX, x) < 315) continue;
+      const foot = roof(x) + 8,
+        height = 32 + ((h >>> 8) % 17);
+      hill.fillStyle(0x5c6141, 1);
+      hill.fillRect(x - 1.5, foot - 14, 3, 14);
+      hill.fillStyle(winter ? 0x5d827b : 0x416f43, 1);
+      hill.fillPoints(
+        [
+          new Phaser.Math.Vector2(x, foot - height),
+          new Phaser.Math.Vector2(x + 16, foot - 6),
+          new Phaser.Math.Vector2(x - 16, foot - 6),
+        ],
+        true,
+      );
+      hill.fillStyle(winter ? 0xf1f6fa : 0x5c8d4a, 1);
+      hill.fillPoints(
+        [
+          new Phaser.Math.Vector2(x, foot - height),
+          new Phaser.Math.Vector2(x + 11, foot - 17),
+          new Phaser.Math.Vector2(x - 11, foot - 17),
+        ],
+        true,
+      );
+    }
+    const flat =
+      bounds.right > bounds.left
+        ? bake(
+            paintCover,
+            bounds,
+            art
+              ? (canvas, memory, owner) => {
+                  composeRockMaterial(
+                    scene,
+                    art,
+                    canvas,
+                    winter,
+                    site,
+                    bounds,
+                    rail,
+                    memory,
+                    owner,
+                  );
+                  composeCoverImages(
+                    scene,
+                    art,
+                    canvas,
+                    bounds,
+                    cover,
+                    memory,
+                    owner,
+                  );
+                  cover.removeAll(true);
+                }
+              : undefined,
+          )
+        : undefined;
+    // The crest, vegetation and foot are solid. Reuse the baked face behind
+    // the dark interior as well: above the ceiling it backs its own pixels,
+    // while the interior replaces it with darkness behind the visible train.
+    // Both images share one immutable texture; there is no second pixel surface.
+    const flanks = scene.add.container(0, 0).setDepth(depths.flanks);
+    flanks.add(hill);
+    if (flat) {
+      for (const child of flat.list)
+        if (child instanceof Phaser.GameObjects.Image)
+          flanks.add(
+            scene.add
+              .image(child.x, child.y, child.texture.key, child.frame.name)
+              .setOrigin(child.originX, child.originY)
+              .setScale(child.scaleX, child.scaleY),
+          );
+      cover.add(flat);
+    }
+    this.fade = new TunnelCoverFade(cover, {
+      fromX: x0 + fromX,
+      toX: x0 + toX,
+    });
+    this.containers = [flanks, interior, mouths, cover];
+    const portalPlanes = [fromX, toX].map((x, i) => {
       const angle = Math.atan(grade(x));
-      return { x, y: rail(x), cos: Math.cos(angle), sin: Math.sin(angle) };
+      return {
+        x,
+        y: rail(x),
+        cos: Math.cos(angle),
+        sin: Math.sin(angle),
+        sign: i === 0 ? 1 : -1,
+      };
     });
     this.coversPoint = (point) => {
       const x = point.x - x0;
@@ -286,15 +394,11 @@ export class RockTunnelView {
         const dx = x - portal.x;
         if (Math.abs(dx) > 120) continue;
         const dy = point.y - portal.y;
+        const localX = (dx * portal.cos + dy * portal.sin) * portal.sign;
+        const localY = -dx * portal.sin + dy * portal.cos;
         if (
-          portalMasonryPoint(
-            dx * portal.cos + dy * portal.sin,
-            -dx * portal.sin + dy * portal.cos,
-            90,
-            236,
-            58,
-            128,
-          )
+          (localX >= 0 || localY < -186) &&
+          portalMasonryPoint(localX, localY, 90, 236, 58, 128)
         )
           return true;
       }
@@ -305,6 +409,12 @@ export class RockTunnelView {
       const silhouette = material ? Math.min(top, rail(x) - 290) : top;
       return low > top && point.y >= silhouette && point.y <= low;
     };
+  }
+  get alpha(): number {
+    return this.fade.alpha;
+  }
+  update(train: { minX: number; maxX: number } | undefined, timeSec = 0): void {
+    this.fade.update(train, timeSec);
   }
 }
 

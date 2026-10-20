@@ -279,11 +279,38 @@ Změny: výřez 4.7–5.2 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 d
 Původní soubor: ui-wood-thud--bsb1025.flac
 SHA-256: c8b8b9c4248b2e66b824a15ac2f6fc93e656bfebd3d535a5dc1f84713d98add1
 
-rustle.mp3
-Wind in the Trees
-Autor: Joseph SARDIN
-Zdroj: https://bigsoundbank.com/forest-wind-in-the-trees-s0904.html
+deer.mp3
+Deer Meewing 01.wav
+Autor: msantoro11
+Zdroj: https://freesound.org/people/msantoro11/sounds/351113/
 Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
-Změny: výřez 23–23.6 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
-Původní soubor: ambience-light-wind--bsb0904.mp3
-SHA-256: 25f907ab068df5836b28af2c923468b97d2b75afbc56cce27834d3526ac7b3c0
+Změny: výřez 1.55–2.55 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: deer--fs351113-hq.mp3
+SHA-256: 86edd367a4bc85320f643c866fc6f779973841c52194d1ea82fa10f042c0802b
+
+fox.mp3
+Feet in Leaves #1
+Autor: Joseph SARDIN
+Zdroj: https://bigsoundbank.com/feet-in-leaves-s0137.html
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0–0.85 s, mono, EQ 70 Hz–6 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: ambience-leaves--bsb0137.wav
+SHA-256: 80e56e24128744538e5c5ab2b9365d517e3a9c916f8ae8475276d35248334dff
+
+squirrel.mp3
+Red_Squirrel_chatter.wav
+Autor: philberts
+Zdroj: https://freesound.org/people/philberts/sounds/111393/
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 7.2–7.7 s, mono, EQ 70 Hz–12 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: squirrel--fs111393-hq.mp3
+SHA-256: b8ffa6e66e6c73f4fc3bf3e85fc6f51b2f8d96a062f2a9f559a0c4a65eb019ce
+
+hedgehog.mp3
+Angry hedgehog sniffing 1
+Autor: fthgurdy
+Zdroj: https://freesound.org/people/fthgurdy/sounds/528183/
+Licence: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Změny: výřez 0.1–1 s, mono, EQ 70 Hz–12 kHz, normalizace -18 LUFS / -6 dBTP, jemné fades, MP3.
+Původní soubor: hedgehog-huff--fs528183-hq.mp3
+SHA-256: 6503a00ab9ca4dc138083beb4cd8ba013ccebf78115d0a93fe8a334d08904db8

@@ -63,8 +63,8 @@ export const parts = {
       y: 11,
     },
   },
-  'tunnel.rock-portal': {
-    file: 'tunnel.rock-portal.svg',
+  'tunnel.rock-portal-front': {
+    file: 'tunnel.rock-portal-front.svg',
     widthU: 180,
     heightU: 240,
     pivotU: {
@@ -75,13 +75,37 @@ export const parts = {
       seasons: ['spring', 'summer', 'autumn'],
     },
   },
-  'tunnel.rock-portal-snow': {
-    file: 'tunnel.rock-portal-snow.svg',
+  'tunnel.rock-portal-mouth': {
+    file: 'tunnel.rock-portal-mouth.svg',
+    widthU: 90,
+    heightU: 190,
+    pivotU: {
+      x: 90,
+      y: 186,
+    },
+    atlasGroup: {
+      seasons: ['spring', 'summer', 'autumn'],
+    },
+  },
+  'tunnel.rock-portal-front-snow': {
+    file: 'tunnel.rock-portal-front-snow.svg',
     widthU: 180,
     heightU: 240,
     pivotU: {
       x: 90,
       y: 236,
+    },
+    atlasGroup: {
+      seasons: ['winter'],
+    },
+  },
+  'tunnel.rock-portal-mouth-snow': {
+    file: 'tunnel.rock-portal-mouth-snow.svg',
+    widthU: 90,
+    heightU: 190,
+    pivotU: {
+      x: 90,
+      y: 186,
     },
     atlasGroup: {
       seasons: ['winter'],

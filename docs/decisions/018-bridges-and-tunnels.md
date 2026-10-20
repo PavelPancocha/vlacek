@@ -2,14 +2,14 @@
 
 Datum: 2026-10-10. Stav: přijato.
 
-Dokument 14 §5 chce v krajině potoky, mosty a tunely. Požadavek na průsvitný kryt v dokumentu 14 §2 nahrazuje zadání world v2 z 2026-10-13 (§6–7): vlak skutečně vjede do neprůhledného tunelu; pokračující jízdu ukazuje pohyb kamery a vjezd do portálu. Další pravidla:
+Dokument 14 §5 chce v krajině potoky, mosty a tunely. Aktualizace [D-033](033-tunnel-see-through-and-split-portals.md) z 2026-10-19 obnovuje průhledný kryt na 50 % u hráčovy soupravy a dělí portály na ústí za vlakem a přední část. Nahrazuje zdejší pravidlo world v2 o trvale neprůhledném krytu. Další pravidla:
 
 - **Dokument 04 §6.**
   - V prvním bloku stojí most ve slotu 4 a krátký tunel ve slotu 6.
   - V blocích bez souběhu kolejí se volí biomově vhodný most a tunel, případně most a volná krajina.
   - Přejezd není na mostě ani v tunelu.
 - **Dokument 03 §8.**
-  - Tunel má portály a vrstvy. Vozidla se zakrývají jednotlivě podle vlastní polohy za portálem; starší požadavek na viditelný průřez je nahrazen neprůhledným krytem.
+  - Tunel má portály a vrstvy. Vozidla se zakrývají jednotlivě podle vlastní polohy za portálem; hráčův vlak zůstává vidět pod 50% krytem podle D-033.
   - Most podpírá souvislou kolej, voda a údolí jsou pod tratí. Sloupy a zábradlí patří do různých vrstev.
 - **Dokument 03 §9 a AGENTS.md.** Vedení vede celou trasou včetně mostů a tunelů; v tunelu visí u stropu.
 - **Dokument 04 §4.** Geometrie koleje se nemění.
@@ -31,20 +31,20 @@ Dokument 14 §5 chce v krajině potoky, mosty a tunely. Požadavek na průsvitn�
    - **Vrstvy.**
      - Za vlakem jsou boky kopce a vnitřek: tmavé zdivo se světly.
      - Přes vlak jde ztmavující pás mezi portály.
-     - Před vlakem je kryt: kopec mezi portály až k louce, nad portály jen výš než 214 u (nad stožáry i vlakem), a kamenné portály. Portál `tunnel.portal` má otvor 116 × 186 u, takže se vejde pantograf i drát.
+     - Před vlakem je kryt: kopec mezi portály až k louce, nad portály jen výš než 214 u (nad stožáry i vlakem), a přední části kamenných portálů. Ústí s vnějším pilířem je za vlakem. Dělený portál má otvor 116 × 186 u, takže se vejde pantograf i drát.
    - **Jednolitý kopec.** Kryt a boky mají stejný tón i stejnou mřížku pruhů, keřů, kamenů a kvítí. Spoje se schovají za portály a od paty portálu se kopec svažuje k louce.
-   - **Neprůhlednost (tunnel-1, TRN-06).** Kryt má vždy alpha 1, včetně prvního obnoveného snímku a zastavení v portálu. Otevřené ústí ukazuje postupný vjezd a výjezd; plně zakrytá část hlavního tunelu začíná 52 u za každým portálem. Kamera a ovládání pokračují beze změny.
-   - **Společné pravidlo vozidel.** `vehicleInCover` klasifikuje vlastní interval každého vozidla jako `outside`, `partly`, `inside`. Hlavní vlak se kreslí pod neprůhledným kopcem; NPC se úplně skryje až za otevřeným ústím. Částečné vozidlo vždy zakrývá skutečná kresba portálu, nikoli přepínač celé soupravy.
+   - **Průhlednost (D-033, TRN-06).** Kryt se přibližuje k alfě 0,5 při přiblížení a průjezdu hráčovy soupravy, jinak k 1. Platí 80 u a 6 s⁻¹ v simulačním čase; první obnovený snímek cíl nastaví okamžitě a pauza drží stav. Otevřené ústí ukazuje postupný vjezd a výjezd; plně zakrytá část hlavního tunelu začíná 52 u za každým portálem. Kamera a ovládání pokračují beze změny.
+   - **Společné pravidlo vozidel.** `vehicleInCover` klasifikuje vlastní interval každého vozidla jako `outside`, `partly`, `inside`. Hlavní vlak se kreslí pod průhledným krytem; NPC se úplně skryje až za otevřeným ústím. Částečné vozidlo vždy zakrývá skutečná kresba portálu, nikoli přepínač celé soupravy.
    - **Sklon vedlejší koleje.** Portál a kopec se natáčejí podle vlastního profilu. Zadní polovina ústí je tmavá, neprůhledná a její hrana sleduje normálu vlastní koleje včetně přesahu střechy: simulace odstraní NPC při dosažení středu portálu posledním vozem, takže jeho poslední pixely musí zmizet už před touto hranicí. Dvě doplňující neprůhledné paty kopce vzorkují přímo NPC kolej; kola proto neprosvítají pod rovným spodkem SVG ani ve fallbacku bez artu. Paty a zadní polovina ústí patří vykreslenému portálu: scéna je vytváří s jeho chunkem a ničí při uvolnění tohoto chunku, resetu i zániku scény. Vznik ani odstranění NPC nemění jejich pixely; nevznikají další emitery ani timery.
-   - **Částice.** Zdroj uvnitř zakrývajícího kopce nevypouští kouř, páru, jiskry, fantazijní obláčky ani vířený sníh/listí. Hodiny emise běží dál bez nahromaděného výbuchu při výjezdu. Živé částice mohou dožít venku, ale kreslí se mezi příslušným vlakem a krytem (hráč 7,55; NPC 4,32). Neprůhledná geometrie tak zakryje každý pixel včetně kouře vzniklého před vjezdem. Toto vrstvení funguje v Canvas i WebGL bez rendererově odlišné masky. Okolní život zůstává ve vrstvě 10. Stejné `TunnelView.coversPoint` filtruje již vypuštěné bubliny v hit-testu, seznamu viditelných bublin i při prasknutí; dotyk zakryté části kruhu také nezasáhne bublinu. Odkrytá bublina zachovává současně reakci a plyn.
-   - **Ztmavení.** Pás v prostoru tunelu s měkkým přechodem 40 u u portálů zůstává pro otevřená ústí; neprůhlednost krytu se nemění.
+   - **Částice.** Zdroj uvnitř zakrývajícího kopce nevypouští kouř, páru, jiskry, fantazijní obláčky ani vířený sníh/listí. Hodiny emise běží dál bez nahromaděného výbuchu při výjezdu. Živé částice mohou dožít venku, ale kreslí se mezi příslušným vlakem a krytem (hráč 7,55; NPC 4,32). Průhledný kryt zeslabí již živé částice; pořadí hloubek se nemění. Toto vrstvení funguje v Canvas i WebGL bez rendererově odlišné masky. Okolní život zůstává ve vrstvě 10. Geometrie `TunnelView.coversPoint` filtruje emisi vždy, bubliny v hit-testu, diagnostice a při prasknutí pouze při alfě krytu 1. Viditelná bublina za 50% krytem reaguje. Odkrytá bublina zachovává současně reakci a plyn.
+   - **Ztmavení.** Pás v prostoru tunelu s měkkým přechodem 40 u u portálů zůstává pro otevřená ústí; je nezávislý na průhlednosti krytu.
 5. **Vedení.**
    - Stožár stojí 80 u od středu potoka, tedy vedle opěr mostu.
    - V tunelu a méně než 60 u od jeho portálů nestojí stožár. Tam drát drží závěs ze stropu s izolátorem a svorkou (`catenarySupport` v doméně: `'mast'` nebo `'hanger'`). Klasifikace i kreslení používají společnou doménovou hranici `TUNNEL_MAST_CLEARANCE_U`; na hranici a za ní stojí stožár. Zapečené nitro dál přesahuje portály o 64 u (4 u za hranici závěsů).
    - **Oprava R6.** Dřívější klasifikace závěsu do 72 u nesouhlasila s kreslením jen do 60 u. Podpěra v mezeře proto nebyla vidět (svět 25, chunk 6, x = 6912 u). Mimo nitro nyní zůstává stožár na původním místě; podpěry se neposouvají a kresba kopce i nitra se nemění.
-   - Drát vede rovně přes most i tunelem. V tunelu je za neprůhledným krytem; v otevřených ústích je vidět.
+   - Drát vede rovně přes most i tunelem. V tunelu je za krytem; v otevřených ústích je vidět.
    - Stožáry stojí před boky kopce.
-6. **Diagnostika.** Snímek `?debug=1` i `RideScene.stats.tunnels` hlásí ID, alpha 1, `train` pro soupravu a `vehicles` pro jednotlivá vozidla (`outside`, `partly`, `inside`). Hodnoty popisují zakrytý střed, nikoli otevřená ústí; audio linka může číst `train` bez nové závislosti.
+6. **Diagnostika.** Snímek `?debug=1` i `RideScene.stats.tunnels` hlásí ID, skutečnou alfu krytu, `train` pro soupravu a `vehicles` pro jednotlivá vozidla (`outside`, `partly`, `inside`). Hodnoty popisují zakrytý střed, nikoli otevřená ústí; audio linka může číst `train` bez nové závislosti.
 
 ## Důsledky
 
@@ -53,11 +53,11 @@ Dokument 14 §5 chce v krajině potoky, mosty a tunely. Požadavek na průsvitn�
   - odstup rekvizit a stožárů od potoka, šířku potoka u trati;
   - stožáry a závěsy u tunelu;
   - rozměry a pivoty nových assetů;
-  - neprůhlednost krytu, polohy vozidel u obou portálů ±100, ±35 a 0 u, patu NPC portálu na sklonu −0,07885, potlačení emisí a vrstvu živých částic.
+  - průhlednost krytu podle D-033, polohy vozidel u obou portálů ±100, ±35 a 0 u, patu NPC portálu na sklonu −0,07885, potlačení emisí a vrstvu živých částic.
 - E2E: elektrická souprava ve světě 123 přejede most a projede tunelem.
   - Sběrač je celou dobu na drátu.
   - Žádná blízká rekvizita nepřekrývá vlak.
-  - Při částečném vjezdu, zastavení i výjezdu je kryt neprůhledný. Pixelová regrese zahrnuje zastavenou hráčovu lokomotivu s vagónem u obou ústí v artu i fallbacku, zakryté i odkryté výřezy, pozitivní kontroly u obou NPC ústí a stálost portálu přes vznik/odjezd NPC. Porovnává snímek s vozidly/částicemi a bez nich v zakryté oblasti; skála nesmí změnit žádný pixel. Brzdění se ověřuje přes skutečné snímky efektů, aby jednorázový skok simulačního času neukončil krátce žijící jiskry před kontrolou.
+  - Při částečném vjezdu, zastavení i výjezdu je kryt 50% podle D-033. Pixelová regrese zahrnuje zastavenou hráčovu lokomotivu s vagónem u obou ústí v artu i fallbacku, zakryté i odkryté výřezy, pozitivní kontroly u obou NPC ústí a stálost portálu přes vznik/odjezd NPC. Porovnává snímek s vozidly/částicemi a bez nich v zakryté oblasti; pod hráčovým 50% krytem jsou vozidlové pixely přítomné; NPC zachovává nulovou změnu za neprůhlednou skálou. Brzdění se ověřuje přes skutečné snímky efektů, aby jednorázový skok simulačního času neukončil krátce žijící jiskry před kontrolou.
 - Původní zavedení struktur přidalo potoky, údolí a posunuté stožáry. Oprava tunnel-1 mění pouze kreslení a emise; místa struktur a rozehraná trať se nemění. Scenérie ani částice se neukládají.
 
 ## Kompatibilita
