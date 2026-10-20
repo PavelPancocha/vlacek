@@ -4,11 +4,13 @@ import type { StorageLike } from './SaveRepository.ts';
 export const DEV_KEY = 'vlacek.dev.v1';
 export interface DevOptions {
   debug: boolean;
+  perfGraph?: boolean;
   renderer: RendererPreference;
   seed: number | undefined;
 }
 export const defaultDevOptions: DevOptions = {
   debug: false,
+  perfGraph: false,
   renderer: 'auto',
   seed: undefined,
 };
@@ -24,6 +26,7 @@ export function readDevOptions(storage: StorageLike | undefined): DevOptions {
     const seed = 'seed' in raw ? raw.seed : undefined;
     return {
       debug: debug === true,
+      perfGraph: 'perfGraph' in raw && raw.perfGraph === true,
       renderer: renderer === 'canvas' ? 'canvas' : 'auto',
       seed:
         typeof seed === 'number' &&
@@ -48,6 +51,7 @@ export function writeDevOptions(
       DEV_KEY,
       JSON.stringify({
         debug: options.debug,
+        perfGraph: options.perfGraph ?? false,
         renderer: options.renderer,
         seed: options.seed,
       }),
@@ -66,4 +70,21 @@ export function clearDevOptions(storage: StorageLike | undefined): boolean {
   } catch {
     return false;
   }
+}
+
+/** Valid URL wins; invalid or absent input falls back to the hidden menu setting. */
+export function perfGraphEnabled(search: string, stored: DevOptions): boolean {
+  const value = new URLSearchParams(search).get('perfgraph');
+  return value === '1'
+    ? true
+    : value === '0'
+      ? false
+      : stored.perfGraph === true;
+}
+
+/** Used together with devReloadUrl: applying hidden options releases the graph URL override. */
+export function perfReloadUrl(href: string): string {
+  const url = new URL(href);
+  url.searchParams.delete('perfgraph');
+  return url.href;
 }

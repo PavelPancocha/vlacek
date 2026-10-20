@@ -1,3 +1,5 @@
+import { observeAudioDecodes } from '../platform/FrameWorkObserver.ts';
+import { FrameTimeGraph } from '../ui/FrameTimeGraph.ts';
 import {
   locateTestScene,
   TEST_SCENES,
@@ -20,7 +22,7 @@ import { contextAt } from '../domain/world/WorldPlan.ts';
 import { chunkOfEntityId } from '../domain/world/ChunkObjects.ts';
 import { chunkScenery } from '../domain/world/Scenery.ts';
 import { worldPlacementCatalog } from '../content/worldPlacementCatalog.ts';
-import { tunnelSite } from '../domain/world/Structures.ts';
+import { AudioTunnelWindow } from './AudioTunnelWindow.ts';
 import {
   AudioDirector,
   coveredFraction,
@@ -42,6 +44,9 @@ import {
   clearDevOptions,
   defaultDevOptions,
   writeDevOptions,
+  readDevOptions,
+  perfGraphEnabled,
+  perfReloadUrl,
 } from '../platform/DevOptions.ts';
 import { DomInputAdapter } from '../platform/DomInputAdapter.ts';
 import { FullscreenController } from '../platform/FullscreenController.ts';
@@ -90,11 +95,23 @@ export class AppController {
   #audioDirector = new AudioDirector(this.#audio);
   #audioRide: RideSimulation | undefined;
   #audioHeadS = 0;
+  readonly #audioTunnels = new AudioTunnelWindow();
   readonly #frames = new FrameStats(600);
   /** Every crossing phase of the ride, recorded each frame (debug only). */
   readonly #crossingPhases = new PhaseLog();
   readonly #perf: PerformanceProbe | undefined;
+  readonly #perfGraph: FrameTimeGraph | undefined;
+  readonly #graphEnabled: boolean;
+  #refreshRaf = 0;
+  #refreshLast = 0;
+  readonly #observeRefresh = (time: number): void => {
+    if (this.#refreshLast)
+      this.#perf?.framePacing.refreshInterval(time - this.#refreshLast);
+    this.#refreshLast = time;
+    this.#refreshRaf = requestAnimationFrame(this.#observeRefresh);
+  };
   readonly #stopPerf: () => void;
+  readonly #stopAudioDecode: () => void;
   readonly #perfInput = new AbortController();
   readonly #scene: RideScene;
   readonly #host: GameHost;
@@ -120,12 +137,32 @@ export class AppController {
     session: GameSession,
     options: AppControllerOptions,
   ) {
-    this.#perf = options.debug
-      ? new PerformanceProbe(() => performance.now())
-      : undefined;
+    this.#graphEnabled = perfGraphEnabled(
+      window.location.search,
+      readDevOptions(browserStorage()),
+    );
+    this.#perf =
+      options.debug || this.#graphEnabled
+        ? new PerformanceProbe(() => performance.now())
+        : undefined;
     if (this.#perf) performance.setResourceTimingBufferSize(2048);
+    this.#stopAudioDecode = this.#perf
+      ? observeAudioDecodes(this.#perf.framePacing)
+      : () => {};
     this.#stopPerf = this.#perf ? observeLongTasks(this.#perf) : () => {};
     this.#session = session;
+    if (this.#perf) {
+      const pacing = this.#perf.framePacing;
+      this.#refreshRaf = requestAnimationFrame(this.#observeRefresh);
+      session.onSaveMeasured = (time, duration) => {
+        pacing.phase('save', duration);
+        pacing.event('save', time, duration);
+      };
+    }
+    this.#perfGraph =
+      this.#graphEnabled && this.#perf
+        ? new FrameTimeGraph(app, this.#perf.framePacing)
+        : undefined;
     this.#options = options;
     this.#gameRoot = gameRoot;
     this.#uiRoot = document.createElement('div');
@@ -197,6 +234,8 @@ export class AppController {
       frame: (deltaSec, nowMs) => this.#frame(deltaSec, nowMs),
       ride: () => this.#session.ride,
       worldRunning: () => this.#session.screen.name === 'RIDING',
+      simulationSteps: () => this.#session.lastFrameSteps,
+      droppedSec: () => this.#session.lastFrameDroppedSec,
       worldHidden: () =>
         worldHidden(
           this.#session.screen,
@@ -270,6 +309,7 @@ export class AppController {
       if (action === 'dev-build' && session.screen.name === 'PAUSED')
         this.#ui.activateDeveloperGate(performance.now(), {
           debug: options.debug,
+          perfGraph: this.#graphEnabled,
           renderer: options.renderer,
           seed: options.seedOverride,
           quality: options.qualityOverride ?? session.settings.quality,
@@ -321,7 +361,7 @@ export class AppController {
           window.history.replaceState(
             null,
             '',
-            devReloadUrl(window.location.href),
+            perfReloadUrl(devReloadUrl(window.location.href)),
           );
           this.#ui.closeDeveloperMenu();
         }
@@ -355,7 +395,7 @@ export class AppController {
         window.history.replaceState(
           null,
           '',
-          devReloadUrl(window.location.href),
+          perfReloadUrl(devReloadUrl(window.location.href)),
         );
         window.location.reload();
       }
@@ -474,17 +514,29 @@ export class AppController {
 
   #frame(deltaSec: number, nowMs: number): number {
     this.#frames.add(deltaSec * 1000);
+    const pacing = this.#perf?.framePacing;
+    let started = pacing ? performance.now() : 0;
     const alpha = this.#session.frame(deltaSec, nowMs);
+    if (pacing)
+      pacing.phase(
+        'simulation',
+        performance.now() - started - this.#session.savePhaseMs,
+      );
     if (this.#options.debug)
       this.#crossingPhases.record(this.#session.ride?.crossings ?? []);
+    started = pacing ? performance.now() : 0;
     this.#updateAudio();
     for (const event of this.#session.drainEvents()) this.#feedback(event);
+    if (pacing) pacing.phase('audio', performance.now() - started);
+    started = pacing ? performance.now() : 0;
     this.#refreshUi();
+    this.#perfGraph?.draw(nowMs, this.#session.screen.name === 'RIDING');
     if (this.#diagnostics && nowMs - this.#lastDiagnosticsMs > 250) {
       this.#lastDiagnosticsMs = nowMs;
       const frames = this.#frames.summary();
       const ride = this.#session.ride;
       this.#diagnostics.textContent = hudLines({
+        longFrames: pacing?.longFrames ?? 0,
         medianFps: frames.medianFps,
         p95FrameMs: frames.p95FrameMs,
         renderer: this.#renderer,
@@ -503,6 +555,7 @@ export class AppController {
         vehicles: ride?.vehicleCount ?? 0,
       }).join('\n');
     }
+    if (pacing) pacing.phase('ui', performance.now() - started);
     return alpha;
   }
 
@@ -534,31 +587,20 @@ export class AppController {
       1 / widthU,
       { ...gameConfig.camera, vehicleHeightU: 0 },
     );
-    const tunnels: { fromX: number; toX: number }[] = [];
-    for (
-      let k = ride.track.firstChunkIndex;
-      k <= ride.track.lastChunkIndex;
-      k++
-    ) {
-      const tunnel = tunnelSite(seed, k);
-      if (!tunnel) continue;
-      const fromX = k * gameConfig.world.chunkWidthU + tunnel.fromX;
-      let seen = false;
-      for (const range of tunnels) if (range.fromX === fromX) seen = true;
-      if (!seen)
-        tunnels.push({
-          fromX,
-          toX: k * gameConfig.world.chunkWidthU + tunnel.toX,
-        });
-    }
+    const tunnels = this.#audioTunnels.update(
+      seed,
+      ride.track.firstChunkIndex,
+      ride.track.lastChunkIndex,
+    );
+    const context = contextAt(seed, frontX);
     this.#audioDirector.update({
       power: loco.power,
       speedUPerSec: ride.speedUPerSec,
       distanceU,
       wheelRadiusU: loco.wheelRadiusU,
       throttle: ride.lastIntent === 'THROTTLE',
-      biome: contextAt(seed, frontX).region.landscape,
-      season: contextAt(seed, frontX).season,
+      biome: context.region.landscape,
+      season: context.season,
       covered: coveredFraction(tailX, frontX, tunnels),
       bellGain: crossingBellGain(
         ride.crossings,
@@ -650,6 +692,7 @@ export class AppController {
       },
       buildId: this.#options.buildId,
       devActive:
+        this.#graphEnabled ||
         this.#options.debug ||
         this.#options.renderer !== 'auto' ||
         this.#options.seedOverride !== undefined ||
@@ -705,6 +748,26 @@ export class AppController {
     const frames = this.#frames.summary();
     const canvas = this.#host.canvas as HTMLCanvasElement | undefined;
     return {
+      framePacing: this.#perf
+        ? {
+            ...this.#perf.framePacing.snapshot(),
+            device: {
+              userAgent: navigator.userAgent,
+              devicePixelRatio: window.devicePixelRatio,
+              canvasWidth: canvas?.width ?? 0,
+              canvasHeight: canvas?.height ?? 0,
+              profile: renderProfile(
+                session.settings,
+                gameConfig.quality,
+                this.#options.qualityOverride,
+              ),
+              renderer: this.#renderer,
+              quality:
+                this.#options.qualityOverride ?? session.settings.quality,
+            },
+          }
+        : undefined,
+      longFrames: this.#perf?.framePacing.longFrames ?? 0,
       perf: this.#perf?.snapshot(),
       worldDebug: {
         temporaryRide: session.diagnosticRide,
@@ -764,7 +827,10 @@ export class AppController {
       },
       crossings: ride ? this.#crossings(ride) : [],
       backdropMidOffsetU: this.#scene.stats.backdropMidOffsetU,
-      tunnels: this.#scene.stats.tunnels.map((tunnel) => ({ ...tunnel })),
+      tunnels: this.#scene.stats.tunnels.map((tunnel) => ({
+        ...tunnel,
+        vehicles: [...tunnel.vehicles],
+      })),
       oncoming: {
         trains: (ride?.oncomingTrains ?? []).map((train) => ({
           id: train.id,
@@ -851,10 +917,14 @@ export class AppController {
 
   dispose(): void {
     this.#pwa.dispose();
+    this.#stopAudioDecode();
     this.#stopPerf();
     this.#perfInput.abort();
     this.#input.dispose();
     this.#fullscreen.dispose();
+    cancelAnimationFrame(this.#refreshRaf);
+    this.#session.onSaveMeasured = undefined;
+    this.#perfGraph?.dispose();
     this.#host.destroy();
     this.#audio.dispose();
     this.#ui.dispose();

@@ -13,6 +13,22 @@ import type { Settings } from '../platform/SaveValidation.ts';
 
 /** Read-only diagnostics via `?debug=1` or the hidden parent developer menu. */
 export interface DebugSnapshot {
+  framePacing?:
+    | (ReturnType<
+        import('../platform/FrameStats.ts').FramePacing['snapshot']
+      > & {
+        device: {
+          userAgent: string;
+          devicePixelRatio: number;
+          canvasWidth: number;
+          canvasHeight: number;
+          renderer: string;
+          quality: string;
+          profile: RenderProfile;
+        };
+      })
+    | undefined;
+  longFrames?: number;
   roadVehicles: RoadVehicleSnapshot[];
   perf:
     import('../platform/PerformanceProbe.ts').PerformanceSnapshot | undefined;
@@ -232,4 +248,12 @@ export interface AtlasProofSources {
   backdrop: { key: string; url: string; widthU: number; heightU: number }[];
   /** Raster scales of the probe pages; default 2 (world) and 1 (backdrop) px/u. */
   pxPerU?: { world: number; backdrop: number };
+}
+
+/** Human-readable JSON; compact numeric ring rows keep tablet copies manageable. */
+export function diagnosticJson(snapshot: unknown): string {
+  return JSON.stringify(snapshot, null, 2).replace(
+    /\[\s+(-?\d[\d.eE+-]*(?:,\s+-?\d[\d.eE+-]*)*)\s+\]/g,
+    (_match, numbers: string) => `[${numbers.replace(/\s/g, '')}]`,
+  );
 }

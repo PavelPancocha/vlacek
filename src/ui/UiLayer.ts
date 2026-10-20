@@ -1,7 +1,7 @@
 import { initialPwaState, type PwaState } from '../platform/PwaController.ts';
 import { updatePwaSection } from './PwaSection.ts';
 import type { Screen } from '../app/AppState.ts';
-import type { DebugSnapshot } from '../app/debugSnapshot.ts';
+import { diagnosticJson, type DebugSnapshot } from '../app/debugSnapshot.ts';
 import type { SessionNotice } from '../app/GameSession.ts';
 import type { CatalogLocomotive, CatalogWagon } from '../content/vehicles.ts';
 import {
@@ -42,6 +42,37 @@ export interface UiModel {
   wagons: readonly CatalogWagon[];
   /** Length limit and coupler gap shared with every departure (doc 14 §2). */
   lengthRules: ConsistLengthRules;
+}
+
+function sameUiView(a: UiModel, b: UiModel): boolean {
+  return (
+    a.screen.name === b.screen.name &&
+    ('origin' in a.screen ? a.screen.origin : undefined) ===
+      ('origin' in b.screen ? b.screen.origin : undefined) &&
+    ('reason' in a.screen ? a.screen.reason : undefined) ===
+      ('reason' in b.screen ? b.screen.reason : undefined) &&
+    a.portrait === b.portrait &&
+    a.devActive === b.devActive &&
+    a.fullscreen.supported === b.fullscreen.supported &&
+    a.fullscreen.active === b.fullscreen.active &&
+    a.fullscreen.failed === b.fullscreen.failed
+  );
+}
+/** The fields that previously owned the serialized UI signature. Drafts are immutable. */
+export function uiModelEqual(a: UiModel, b: UiModel): boolean {
+  if (
+    !sameUiView(a, b) ||
+    a.draft !== b.draft ||
+    a.settings.sfxEnabled !== b.settings.sfxEnabled ||
+    a.fullSignals !== b.fullSignals ||
+    a.hasJourney !== b.hasJourney ||
+    a.seed !== b.seed ||
+    a.notices.length !== b.notices.length
+  )
+    return false;
+  for (let i = 0; i < a.notices.length; i++)
+    if (a.notices[i] !== b.notices[i]) return false;
+  return true;
 }
 
 const NOTICE_TEXT: Record<SessionNotice, string> = {
@@ -97,12 +128,12 @@ function label(text: string): HTMLElement {
 export class UiLayer {
   readonly #root: HTMLElement;
   #pwa: PwaState = initialPwaState;
-  #signature = '';
-  #viewSignature = '';
+  #previous: UiModel | undefined;
+  #previousDevOpen = false;
+  #view: UiModel | undefined;
+  #viewDevOpen = false;
   #updateView: ((model: UiModel) => void) | undefined;
   #renderScope: AbortController | undefined;
-  readonly #draftRevisions = new WeakMap<ConsistDraft, number>();
-  #nextRevision = 1;
   #lastWagonCount = 0;
   #stripScrollLeft = 0;
   #devValues: DevMenuValues | undefined;
@@ -163,7 +194,7 @@ export class UiLayer {
     const output = panel?.querySelector<HTMLElement>('[data-copy-output]');
     const text =
       json && this.#detailSnapshot
-        ? JSON.stringify(this.#detailSnapshot, null, 2)
+        ? diagnosticJson(this.#detailSnapshot)
         : seed === undefined
           ? undefined
           : String(seed);
@@ -221,53 +252,43 @@ export class UiLayer {
           : 'Vývojářské volby se nepodařilo uložit. Cesta a nastavení jsou uložené; stránka se znovu nenačetla.';
   }
 
-  #revision(draft: ConsistDraft): number {
-    let revision = this.#draftRevisions.get(draft);
-    if (revision === undefined) {
-      revision = this.#nextRevision++;
-      this.#draftRevisions.set(draft, revision);
-    }
-    return revision;
-  }
-
   update(model: UiModel): void {
     if (model.screen.name !== 'PAUSED') {
       this.#devValues = undefined;
       this.#detailSnapshot = undefined;
       this.#devGate = { count: 0, startMs: 0 };
     }
-    const signature = JSON.stringify([
-      model.screen,
-      this.#revision(model.draft),
-      model.settings.sfxEnabled,
-      model.notices,
-      model.fullSignals,
-      model.hasJourney,
-      model.seed,
-      model.portrait,
-      model.fullscreen,
-      model.devActive,
-      this.#devValues !== undefined,
-    ]);
-    if (signature === this.#signature) return;
-    this.#signature = signature;
+    const devOpen = this.#devValues !== undefined;
+    if (
+      this.#previous &&
+      this.#previousDevOpen === devOpen &&
+      uiModelEqual(this.#previous, model)
+    )
+      return;
+    this.#previous = {
+      ...model,
+      screen: { ...model.screen },
+      settings: { ...model.settings },
+      fullscreen: { ...model.fullscreen },
+      notices: [...model.notices],
+    };
+    this.#previousDevOpen = devOpen;
     // Keep unsaved native fields through layout and interruption updates.
     if (this.#devValues && this.#root.querySelector('.dev-menu')) return;
     const fullscreenFocused =
       this.#root.querySelector('[data-action="fullscreen"]') ===
       document.activeElement;
-    const viewSignature = JSON.stringify([
-      model.screen,
-      model.portrait,
-      model.fullscreen,
-      model.devActive,
-      this.#devValues !== undefined,
-    ]);
-    if (viewSignature === this.#viewSignature && this.#updateView) {
+    if (
+      this.#view &&
+      sameUiView(this.#view, model) &&
+      this.#viewDevOpen === devOpen &&
+      this.#updateView
+    ) {
       this.#updateView(model);
       return;
     }
-    this.#viewSignature = viewSignature;
+    this.#view = this.#previous;
+    this.#viewDevOpen = devOpen;
     this.#updateView = undefined;
     const strip = this.#root.querySelector('.strip');
     if (strip) this.#stripScrollLeft = strip.scrollLeft;

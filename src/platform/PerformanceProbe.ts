@@ -1,3 +1,4 @@
+import { FramePacing } from './FrameStats.ts';
 /** CPU timings in navigation-relative ms; never feeds simulation or scheduling. */
 export interface PerformanceSnapshot {
   startInteractiveMs: number | undefined;
@@ -27,6 +28,7 @@ export interface PerformanceSnapshot {
 
 /** Bounded, read-only diagnostic sample. The caller owns clock and observers. */
 export class PerformanceProbe {
+  readonly framePacing = new FramePacing();
   readonly #now: () => number;
   readonly #decoding = new Map<string, number>();
   readonly #data: PerformanceSnapshot = {
@@ -93,6 +95,11 @@ export class PerformanceProbe {
 
   /** D-030 already measures CPU phases; reuse those clocks without wrapping texture methods. */
   atlasWork(durationMs: number, upload: boolean): void {
+    this.framePacing.event(
+      upload ? 'atlasUpload' : 'atlasSlice',
+      this.#now() - durationMs,
+      durationMs,
+    );
     if (upload) this.#data.atlas.uploadMs += durationMs;
     else this.#data.atlas.packRasterMs += durationMs;
   }

@@ -22,14 +22,14 @@ it('formats two short HUD lines with rounded metrics and the full seed', () => {
       vehicles: 5,
     }),
   ).toEqual([
-    '60 FPS · p95 17.3 ms · webgl · low',
+    '60 FPS · p95 17.3 ms · dlouhé 0 · webgl · low',
     'Svět 4294967295 · úsek -2 · 103.8 u/s · 5 vozů',
   ]);
 });
 
 it('keeps missing or non-finite measurements readable without JSON', () => {
   expect(hudLines({ medianFps: NaN, speedUPerSec: Infinity })).toEqual([
-    '— FPS · p95 — ms · — · —',
+    '— FPS · p95 — ms · dlouhé 0 · — · —',
     'Svět — · úsek — · — u/s · — vozů',
   ]);
 });
