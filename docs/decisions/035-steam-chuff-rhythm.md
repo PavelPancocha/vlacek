@@ -11,7 +11,8 @@ Majitel při hraní buildu `0.1.0+3961229` na Android tabletu uvedl:
 > "fix sound for steam locomotives. It goes from nice "šššh šššh šh" to "trrr" -> eaither it cannot go that fast or it needs different sound for that"
 
 Volíme první možnost: rytmus páry nesmí tak zrychlit. Ponecháváme původní
-nahrávku `steam-chuff` a přesně zachováváme oblíbený zvuk při pomalé jízdě.
+nahrávku `steam-chuff` a oblíbený zvuk při pomalé jízdě; přesnou shodu časování
+a výjimku při zrychlení vymezuje kontrakt níže.
 Dosavadní čtyři rázy na otáčku hnacího kola při vysoké rychlosti vytvářely
 příliš časté a zároveň příliš krátké zvuky. Jeden ráz trval právě interval
 mezi rázy (nejvýše 0,58 s), s měkkými hranami nejvýše 15 ms:
@@ -28,7 +29,8 @@ mezi rázy (nejvýše 0,58 s), s měkkými hranami nejvýše 15 ms:
 - `CHUFF_KNEE_PER_SEC = 4` (K): konec nezměněného rytmu.
 - `CHUFF_CEILING_PER_SEC = 6` (M): asymptotický strop rázů/s.
 - `CHUFF_MAX_OVERLAP = 1.5` (F): nejvyšší poměr délky rázu k intervalu;
-  musí zůstat **striktně pod 2** kvůli dvěma souběžným rázům v D-022.
+  musí zůstat **striktně pod 2** pro ustálený překryv. Samo F < 2 nezaručuje
+  přijetí rázu při zrychlování, kdy mohou ještě žít starší delší rázy.
 
 Pro `intervalU = 2π × wheelRadiusU / 4` a `b = speedUPerSec / intervalU`:
 
@@ -44,8 +46,13 @@ phaseIncrement = (distanceU / intervalU) × (r / b)
 Křivka je spojitá, má v koleni z obou stran směrnici 1, je monotónní
 a nepřekročí M. Nad kolenem je derivace podle b
 `exp(−(b − K) / (M − K))`, tedy v intervalu (0, 1].
-Pod kolenem zůstává původní akumulátor dráhy i výraz pro délku
+Pod kolenem zůstává výraz pro délku
 `min(0.58, intervalU / max(1, speedUPerSec))` beze změny výpočtu.
+Pro každou historii, která zůstává na koleni nebo pod ním, je plánované
+časování i délka přesně shodná s buildem `3961229`. Po návratu pod koleno
+z rychlejší jízdy jsou kadence a délka opět původní, ale přenáší se získaný
+fázový posun: absolutní místa rázů už nemusejí souhlasit s `3961229`.
+Fázi při přechodu ani při návratu neresetujeme a nezarovnáváme na kola.
 Při zvolených K/M/F se nad kolenem výraz zjednoduší na délku **0,25 s**;
 poměr překryvu přesto plynule roste z 1 k 1,5. Z kolene délka navazuje
 spojitě. Hlasitost zůstává 0,9 pod plynem a 0,35 při dojezdu.
@@ -62,6 +69,38 @@ a plynulé křivky brání skokům rytmu při zrychlování i zpomalování.
 Celočíselné vynechávání každého druhého taktu by při přepnutí rytmus
 slyšitelně rozpůlilo. Kouř dál drží čtyři takty na otáčku podle D-014,
 takže zvuk a kouř nad kolenem nesplývají při každém rázu.
+
+## Přijetí rázu při zrychlení — revize steam-chuff-2
+
+Ustálený překryv je menší než 2. To ale nestačí při změně rychlosti:
+pro poloměr 15 u spusť ráz při 40 u/s s nulovým zbytkem fáze (délka
+0,58 s) a zrychluj +160 u/s² při 60 FPS s trapezoidní dráhou
+`distance[n] = (v[n−1] + v[n]) / 120`. Další požadavky vzniknou
+v 0,350 s a 0,566667 s, oba s délkou 0,25 s. Při třetím požadavku
+ještě žijí první dva rázy. Původní manager třetí ráz zahodil.
+
+Při dvou živých rázech `AudioManager.chuff` nyní nejstaršímu zachytí
+aktuální gain, zruší automatizaci, nastaví lineární rampu k nule za
+**10 ms** a naplánuje konec. Nový požadavek uchová jako **jeden čekající
+ráz s požadovanou délkou**, bez source uzlu. Spustí jej až `ended`
+tohoto konkrétního nejstaršího rázu, stejnou cestou uvolnění uzlů a
+rekonciliace jako dosud. Ani dřívější konec druhého rázu čekání neobejde.
+Novější požadavek pouze nahradí čekající délku; neprodlouží rampu,
+nevytvoří zdroj ani frontu. Požadovaný ráz tak v tomto zrychlovacím
+případu nezmizí, pouze čeká 10 ms plus doručení `ended`. Delší zdržení
+browserové události není synchronní audio garance.
+
+Jde o výjimku z plné délky starého pomalého rázu: pouze při tomto
+konfliktu se jeho konec zkrátí. Jinak původní délku neměníme.
+`stopAll`, suspendování, mute, dispose, změna vrstvy z pulzní páry
+nebo ztráta vlastnictví enginu zruší čekání, i když obsazené taily
+odloží samotnou změnu vrstvy. Pozdní `ended` nic neobnoví. Každý source
+a jeho obálka se odpojí právě jednou. Změna vrstvy neprodlouží už
+zkrácený ráz; již bližší konec dohasínajícího hlasu se také neodkládá.
+Limit dvou souběžných parních rázů počítá i rázy starého
+enginu, který už doznívá v tailech; nový engine čeká na uvolnění stejně
+jako další ráz téhož hlasu. Dva tail zdroje a celkový strop 11 zdrojů
+podle D-022 zůstávají.
 
 ## Číselné výsledky
 
@@ -84,7 +123,7 @@ v krátkém měřicím okně. Při stání není zvuk, proto délku neuvádíme.
 
 ## Kompatibilita, ladění a ověření
 
-Nemění se nahrávka, gain, obálka, limity `AudioManager`, tunelový filtr,
+Nemění se nahrávka, gain, běžná 15ms obálka, limity zdrojů, tunelový filtr,
 diesel, elektřina, kouř, save, katalog ani generátor. Nevzniká timer,
 listener, fronta, další zvukový zdroj ani kontinuální parní smyčka.
 Plánovaný engine dál spotřebuje jeden loop slot a nejvýše dva současné
@@ -92,19 +131,37 @@ rázy, tedy beze změny celkového stropu 11 zdrojů podle D-022.
 
 Ladění po poslechu: změň jediný řádek požadované konstanty v
 `AudioDirector.ts`, zachovej `0 < K < M` a `1 ≤ F < 2`, přepočti tabulku
-a znovu ověř testy. K/M/F jsou jediným místem pro tato čísla v produkčním kódu.
+a znovu ověř testy včetně primovaného rozjezdu a skutečného přijímání v
+manageru. Podmínka F < 2 omezuje ustálený překryv, nikoli přijetí všech
+požadavků při změně rychlosti; to řeší výše uvedené čekání a 10ms rampa.
+K/M/F jsou jediným místem pro tato čísla v produkčním kódu.
 
 `tests/unit/platform/AudioDirector.test.ts` ověřuje původní pomalý rytmus
 snímek po snímku (60 u/s, 10 s, 60 FPS), plnou rychlost obou poloměrů
 (10 s, 60 FPS, 5,5–6 rázů/s, délka 0,25 s), tvar křivky po 0,1 u/s
 v rozsahu 0–600 u/s a mezní stavy dráhy/fáze. Horní mez přírůstku četnosti
 je `0.1 / intervalU + 1e-12` rázů/s mezi sousedními vzorky.
-Model živých rázů používá polootevřené intervaly `[start, start + duration)`
-při rampách 0 → 480 → 0 u/s, akceleraci +160 u/s² a zpomalování
-−96 (dojezd), −160 (symetrická rampa) i −480 u/s² (brzda), při 30 i 60 FPS,
-pro oba poloměry. Nejvýše dva současné rázy brání odmítnutí třetího
-rázu v `AudioManager.chuff`; test vyžaduje také skutečný překryv dvou rázů.
-Původní test čtyř taktů na otáčku i testy `AudioManager` zůstávají.
+Rampy 0 → 480 → 0 i primovaný start při 40 u/s používají skutečný
+`AudioManager` a sdílený AudioContext double z `tests/helpers/audioContextDouble.ts`
+(tělo double přesunuto beze změny z managerových testů). Dráha je trapezoidní,
+akcelerace +160 u/s² a zpomalování −96, −160 i −480 u/s², při 30 i 60 FPS
+pro oba poloměry. Test porovnává každý požadavek s přehráním a počítá
+zahájené, dosud neukončené zdroje. Pro konkrétní 40u/s regresi vyžaduje
+právě jeden odklad nejvýše 10,0011 ms při modelovaném doručení `ended`
+o 1 µs po konci. Testy manageru kontrolují náhradu čekající délky,
+pozdní `ended`, cleanup všech uzlů i případ s 11 zdroji a blokovanou
+změnou enginu; další regrese počítá také doznívající páru po výměně
+hlasu. Původní testy stropu zdrojů zůstávají beze změny;
+starší chuff cleanup test očekává nový 10ms konec nejstaršího rázu.
+
+Přechodový test zrychluje 80 → 110 u/s při +10 u/s², zpomaluje zpět
+při −10 u/s² a pak pokračuje při 60 u/s. Přesná posloupnost snímků
+v obou směrech ověřuje zachování fáze bez extra nebo vynechaného rázu.
+Pro změnu sousedních intervalů během rampy platí mez
+`10 / (intervalU × (80 / intervalU)³) + 2 / 60`, tedy **44,18 ms**:
+derivace četnosti je nejvýše `10 / intervalU` a dva snímky pokrývají
+kvantování časů. Po návratu při 60 u/s se ověřuje původní délka se
+zachovaným fázovým posunem. Původní test čtyř taktů na otáčku zůstává.
 
 Numerické testy a cílené browserové průchody nepotvrzují kvalitu poslechu.
 Poslech na Android tabletu, model/verze Androidu a Chrome, konkrétní

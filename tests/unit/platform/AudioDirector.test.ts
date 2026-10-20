@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setupAudioContext } from '../../helpers/audioContextDouble.ts';
 import { AudioManager } from '../../../src/platform/AudioManager.ts';
 import {
   ambientSound,
@@ -36,6 +37,100 @@ function recordSteam(wheelRadiusU: number) {
       });
     },
   };
+}
+
+afterEach(() => vi.unstubAllGlobals());
+
+async function playRamp(
+  radiusU: number,
+  fps: number,
+  initialSpeedUPerSec: number,
+  decelerationUPerSec2 = 160,
+) {
+  const state = setupAudioContext();
+  const { audio, context, voices, advanceTo } = state;
+  const director = new AudioDirector(audio);
+  const requests: { startSec: number; durationSec: number }[] = [];
+  const chuff = audio.chuff.bind(audio);
+  let requesting = false;
+  vi.spyOn(audio, 'chuff').mockImplementation((durationSec) => {
+    if (requesting)
+      requests.push({ startSec: context.currentTime, durationSec });
+    chuff(durationSec);
+  });
+  const update = (speedUPerSec: number, distanceU: number) => {
+    requesting = true;
+    director.update({
+      power: 'steam',
+      speedUPerSec,
+      distanceU,
+      wheelRadiusU: radiusU,
+      throttle: true,
+      biome: 'countryside',
+      covered: 0,
+      bellGain: 0,
+    });
+    requesting = false;
+  };
+  audio.unlock();
+  update(initialSpeedUPerSec, 0);
+  await advanceTo(10);
+  if (initialSpeedUPerSec > 0)
+    update(initialSpeedUPerSec, (2 * Math.PI * radiusU) / 4);
+  const accelerationSec = (480 - initialSpeedUPerSec) / 160;
+  const endSec = accelerationSec + 480 / decelerationUPerSec2;
+  let previousSpeedUPerSec = initialSpeedUPerSec;
+  let maximumLive = 0;
+  const advanceAudioTo = async (sec: number) => {
+    let dueSec = Math.min(
+      ...voices
+        .filter((source) => source.playing)
+        .map((source) => source.dueSec),
+    );
+    while (dueSec + 1e-6 < sec) {
+      await advanceTo(dueSec + 1e-6); // ended delivery 1 µs after the scheduled end.
+      dueSec = Math.min(
+        ...voices
+          .filter((source) => source.playing)
+          .map((source) => source.dueSec),
+      );
+    }
+    await advanceTo(sec);
+  };
+  for (let frame = 1; frame <= Math.ceil(endSec * fps); frame++) {
+    const timeSec = frame / fps;
+    await advanceAudioTo(10 + timeSec);
+    const speedUPerSec =
+      timeSec <= accelerationSec
+        ? initialSpeedUPerSec + timeSec * 160
+        : Math.max(0, 480 - (timeSec - accelerationSec) * decelerationUPerSec2);
+    update(speedUPerSec, (previousSpeedUPerSec + speedUPerSec) / (2 * fps));
+    previousSpeedUPerSec = speedUPerSec;
+    const live = voices.filter(
+      (source) => !source.loop && source.playing,
+    ).length;
+    maximumLive = Math.max(maximumLive, live);
+    expect(live).toBeLessThanOrEqual(2);
+    expect(audio.diagnostics.sourceCount).toBeLessThanOrEqual(11);
+  }
+  await advanceAudioTo(10 + endSec + 1);
+  const played = voices
+    .filter((source) => !source.loop)
+    .map((source) => source.start.mock.calls[0]);
+  expect(played).toHaveLength(requests.length);
+  let deferred = 0;
+  for (const [index, request] of requests.entries()) {
+    const start = played[index];
+    if (!start || start[0] === undefined)
+      throw new Error('Missing played steam stroke');
+    const delaySec = start[0] - request.startSec;
+    expect(delaySec).toBeGreaterThanOrEqual(0);
+    expect(delaySec).toBeLessThanOrEqual(0.0100011);
+    if (delaySec > 1e-9) deferred++;
+    expect(start[2]).toBe(request.durationSec);
+  }
+  audio.dispose();
+  return { maximumLive, deferred, requests };
 }
 
 describe('steam chuff rhythm (D-035)', () => {
@@ -109,35 +204,80 @@ describe('steam chuff rhythm (D-035)', () => {
   );
 
   it.each([30, 60])(
-    'never overlaps more than two strokes on 0 → 480 → 0 ramps at %s fps',
-    (fps) => {
-      for (const radiusU of [15, 19]) {
-        // +160 u/s² throttle; -96 coast, -160 symmetric ramp, -480 brake.
-        for (const decelerationUPerSec2 of [96, 160, 480]) {
-          const steam = recordSteam(radiusU);
-          const rampSec = 3 + 480 / decelerationUPerSec2;
-          for (let frame = 1; frame <= Math.ceil(rampSec * fps); frame++) {
-            const timeSec = frame / fps;
-            const speedUPerSec =
-              timeSec <= 3
-                ? timeSec * 160
-                : Math.max(0, 480 - (timeSec - 3) * decelerationUPerSec2);
-            steam.update(speedUPerSec, speedUPerSec / fps, timeSec);
+    'plays every stroke with at most two live on trapezoidal ramps at %s fps, including a primed slow start',
+    async (fps) => {
+      for (const radiusU of [15, 19])
+        for (const initialSpeedUPerSec of [0, 40])
+          for (const decelerationUPerSec2 of [96, 160, 480]) {
+            const result = await playRamp(
+              radiusU,
+              fps,
+              initialSpeedUPerSec,
+              decelerationUPerSec2,
+            );
+            expect(result.maximumLive).toBe(2);
           }
-          let maximumLive = 0;
-          for (const stroke of steam.strokes) {
-            const live = steam.strokes.filter(
-              (other) =>
-                other.startSec <= stroke.startSec &&
-                other.startSec + other.durationSec > stroke.startSec,
-            ).length;
-            maximumLive = Math.max(maximumLive, live);
-          }
-          expect(maximumLive).toBe(2);
-        }
-      }
     },
   );
+
+  it('plays the primed 40 u/s counterexample with exactly one 10ms deferral at 60 fps', async () => {
+    const result = await playRamp(15, 60, 40);
+    expect(result.requests[0]).toEqual({ startSec: 10, durationSec: 0.58 });
+    expect(result.requests[1]?.startSec).toBeCloseTo(10.35, 12);
+    expect(result.requests[2]?.startSec).toBeCloseTo(10 + 34 / 60, 12);
+    expect(result.deferred).toBe(1);
+  });
+
+  it('carries phase through both knee crossings without extra or missing chuffs and with bounded interval changes', () => {
+    const steam = recordSteam(15);
+    let previousSpeedUPerSec = 80;
+    for (let frame = 1; frame <= 480; frame++) {
+      const speedUPerSec =
+        frame <= 180
+          ? 80 + (10 * frame) / 60
+          : frame <= 360
+            ? 110 - (10 * (frame - 180)) / 60
+            : 60;
+      steam.update(
+        speedUPerSec,
+        (previousSpeedUPerSec + speedUPerSec) / 120,
+        frame / 60,
+      );
+      previousSpeedUPerSec = speedUPerSec;
+    }
+    // +10 then -10 u/s² through the knee (frames 86 / 275), then constant 60 u/s.
+    // Independently calculated phase crossings; BASE's falling/60 u/s beats differ.
+    expect(
+      steam.strokes.map((stroke) => Math.round(stroke.startSec * 60)),
+    ).toEqual([
+      18, 35, 51, 67, 82, 97, 111, 126, 140, 153, 167, 180, 193, 207, 220, 234,
+      248, 263, 278, 293, 309, 325, 342, 359, 382, 405, 429, 453, 476,
+    ]);
+    const intervalU = (2 * Math.PI * 15) / 4;
+    // |Δperiod| <= a / (intervalU * minRate³) + two frames of quantization: 44.18 ms.
+    const boundSec = 10 / (intervalU * (80 / intervalU) ** 3) + 2 / 60;
+    const times = steam.strokes
+      .filter((stroke) => stroke.startSec <= 6)
+      .map((stroke) => stroke.startSec);
+    for (let index = 2; index < times.length; index++) {
+      const current = times[index],
+        previous = times[index - 1],
+        before = times[index - 2];
+      if (
+        current === undefined ||
+        previous === undefined ||
+        before === undefined
+      )
+        throw new Error('Missing interval');
+      expect(
+        Math.abs(current - previous - (previous - before)),
+      ).toBeLessThanOrEqual(boundSec);
+    }
+    for (const stroke of steam.strokes.filter(
+      (stroke) => stroke.startSec > 6.2,
+    ))
+      expect(stroke.durationSec).toBe(Math.min(0.58, intervalU / 60));
+  });
 
   it('makes no strokes or phase progress without positive speed and distance', () => {
     const steam = recordSteam(15);

@@ -1,6 +1,9 @@
 /// <reference lib="dom" />
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AudioManager } from '../../../src/platform/AudioManager.ts';
+import {
+  response,
+  setupAudioContext as setup,
+} from '../../helpers/audioContextDouble.ts';
 
 function deferred<T>() {
   let settle: (value: T) => void = () => {
@@ -10,166 +13,6 @@ function deferred<T>() {
     settle = resolve;
   });
   return { promise, resolve: (value: T) => settle(value) };
-}
-const response = () => ({
-  ok: true,
-  arrayBuffer: () => Promise.resolve(new ArrayBuffer(2)),
-});
-
-function setup() {
-  const voices: ReturnType<typeof source>[] = [];
-  function source() {
-    const ended: (() => void)[] = [];
-    let started = false;
-    let finished = false;
-    let endSec = Infinity;
-    let stopSec = Infinity;
-    return {
-      buffer: undefined,
-      loop: false,
-      loopStart: 0,
-      loopEnd: 0,
-      playbackRate: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn() },
-      connect: vi.fn(),
-      disconnect: vi.fn(),
-      start: vi.fn((_when?: number, _offset?: number, duration?: number) => {
-        started = true;
-        endSec = nowSec + (duration ?? 3);
-      }),
-      stop: vi.fn((at?: number) => {
-        stopSec = at ?? nowSec;
-      }),
-      get playing() {
-        return started && !finished;
-      },
-      get dueSec() {
-        return Math.min(stopSec, this.loop ? Infinity : endSec);
-      },
-      addEventListener: vi.fn((_name: string, callback: () => void) =>
-        ended.push(callback),
-      ),
-      finish: () => {
-        finished = true;
-        for (const callback of ended.splice(0)) callback();
-      },
-    };
-  }
-  let nowSec = 10;
-  const param = () => {
-    let value = 0;
-    let target:
-      { value: number; from: number; at: number; constant: number } | undefined;
-    const sample = (at: number) =>
-      target
-        ? target.value +
-          (target.from - target.value) *
-            Math.exp(-Math.max(0, at - target.at) / target.constant)
-        : value;
-    return {
-      get value() {
-        return sample(nowSec);
-      },
-      set value(next: number) {
-        value = next;
-        target = undefined;
-      },
-      setValueAtTime: vi.fn((next: number) => {
-        value = next;
-        target = undefined;
-      }),
-      cancelScheduledValues: vi.fn((at: number) => {
-        value = sample(at);
-        target = undefined;
-      }),
-      setTargetAtTime: vi.fn((next: number, at: number, constant: number) => {
-        target = { value: next, from: sample(at), at, constant };
-      }),
-      linearRampToValueAtTime: vi.fn<(value: number, at: number) => void>(),
-    };
-  };
-  const node = () => {
-    const connections = new Set<object>();
-    return {
-      connections,
-      bufferedSample: 0,
-      gain: param(),
-      frequency: param(),
-      delayTime: param(),
-      type: 'lowpass',
-      connect: vi.fn((target: object) => connections.add(target)),
-      disconnect: vi.fn((target?: object) => {
-        if (target) connections.delete(target);
-        else connections.clear();
-      }),
-    };
-  };
-  const filter = node();
-  const delay = node();
-  const delays: ReturnType<typeof node>[] = [];
-  const gains: ReturnType<typeof node>[] = [];
-  const context = {
-    state: 'running',
-    get currentTime() {
-      return nowSec;
-    },
-    set currentTime(next: number) {
-      nowSec = next;
-    },
-    destination: {},
-    createGain: vi.fn(() => {
-      const gain = node();
-      gains.push(gain);
-      return gain;
-    }),
-    createBiquadFilter: vi.fn(() => filter),
-    createDelay: vi.fn(() => {
-      const next = delays.length === 0 ? delay : node();
-      delays.push(next);
-      return next;
-    }),
-    createBufferSource: vi.fn(() => {
-      const voice = source();
-      voices.push(voice);
-      return voice;
-    }),
-    decodeAudioData: vi.fn(() => Promise.resolve({ duration: 3 })),
-    resume: vi.fn(() => {
-      context.state = 'running';
-      return Promise.resolve();
-    }),
-    suspend: vi.fn(() => {
-      context.state = 'suspended';
-      return Promise.resolve();
-    }),
-    close: vi.fn(() => Promise.resolve()),
-  };
-  vi.stubGlobal(
-    'AudioContext',
-    vi.fn(function () {
-      return context;
-    }),
-  );
-  const fetch = vi.fn<
-    (url: string, options?: RequestInit) => Promise<ReturnType<typeof response>>
-  >(() => Promise.resolve(response()));
-  vi.stubGlobal('fetch', fetch);
-  return {
-    audio: new AudioManager(),
-    advanceTo: async (sec: number) => {
-      nowSec = sec;
-      for (const voice of [...voices])
-        if (voice.playing && voice.dueSec <= sec) voice.finish();
-      // Drain async decode/reconciliation without advancing the controlled audio clock.
-      await new Promise<void>((resolve) => setImmediate(resolve));
-    },
-    context,
-    voices,
-    fetch,
-    filter,
-    delay,
-    delays,
-    gains,
-  };
 }
 
 async function saturatedTails(extraClips: readonly string[] = []) {
@@ -213,6 +56,241 @@ async function saturatedTails(extraClips: readonly string[] = []) {
 
 afterEach(() => vi.unstubAllGlobals());
 describe('recorded sounds / H1', () => {
+  it('defers a third steam stroke until the oldest ends after a 10ms ramp, replacing only the pending duration', async () => {
+    const { audio, context, voices, gains, advanceTo } = setup();
+    audio.unlock();
+    audio.setLayers([
+      {
+        key: 'engine',
+        id: 'steam-chuff',
+        pulsed: true,
+        gain: 1,
+        rate: 1,
+        priority: 70,
+      },
+    ]);
+    await advanceTo(10);
+    audio.chuff(0.58);
+    context.currentTime = 10.35;
+    audio.chuff(0.25);
+    const oldest = voices[0];
+    const envelope = gains[2];
+    if (!oldest || !envelope) throw new Error('Missing steam stroke');
+    context.currentTime = 10.567;
+    audio.chuff(0.25);
+    expect(oldest.stop).toHaveBeenCalledExactlyOnceWith(10.577);
+    expect(envelope.gain.cancelScheduledValues).toHaveBeenCalledWith(10.567);
+    expect(envelope.gain.linearRampToValueAtTime).toHaveBeenLastCalledWith(
+      0,
+      10.577,
+    );
+    context.currentTime = 10.57;
+    audio.chuff(0.31);
+    expect(oldest.stop).toHaveBeenCalledOnce();
+    expect(voices).toHaveLength(2);
+    context.currentTime = 10.58; // Stop time passed; ended delivery is deliberately late.
+    expect(voices.filter((source) => source.playing)).toHaveLength(2);
+    oldest.finish();
+    expect(voices).toHaveLength(3);
+    expect(voices[2]?.start).toHaveBeenCalledExactlyOnceWith(10.58, 0, 0.31);
+    expect(voices.filter((source) => source.playing)).toHaveLength(2);
+    expect(audio.diagnostics.sourceCount).toBe(2);
+    expect(voices[1]?.stop).not.toHaveBeenCalled();
+    audio.dispose();
+    for (const source of voices) source.finish();
+    for (const source of voices)
+      expect(source.disconnect).toHaveBeenCalledOnce();
+    for (const gain of gains) expect(gain.disconnect).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    [10, 10.01, 10.011],
+    [10.145, 10.15, 10.151],
+  ])(
+    'counts retiring steam strokes at %s s without extending their existing end',
+    async (requestSec, endSec, deliverySec) => {
+      const { audio, voices, advanceTo, context } = setup();
+      const steam = {
+        key: 'engine',
+        id: 'steam-chuff',
+        pulsed: true,
+        gain: 1,
+        rate: 1,
+        priority: 70,
+      };
+      audio.unlock();
+      audio.setLayers([steam]);
+      await advanceTo(10);
+      audio.chuff(0.58);
+      audio.chuff(0.25);
+      audio.setLayers([]);
+      audio.setLayers([steam]);
+      await advanceTo(10);
+      context.currentTime = requestSec;
+      audio.chuff(0.3);
+      expect(voices.filter((source) => source.playing)).toHaveLength(2);
+      expect(voices[0]?.stop).toHaveBeenLastCalledWith(endSec);
+      context.currentTime = deliverySec;
+      voices[0]?.finish();
+      expect(voices.filter((source) => source.playing)).toHaveLength(2);
+      expect(voices.at(-1)?.start).toHaveBeenCalledExactlyOnceWith(
+        deliverySec,
+        0,
+        0.3,
+      );
+      audio.dispose();
+      for (const source of voices) source.finish();
+      for (const source of voices)
+        expect(source.disconnect).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('waits for the retired oldest stroke even if the newer stroke ends first', async () => {
+    const { audio, voices, advanceTo, context } = setup();
+    audio.unlock();
+    audio.setLayers([
+      {
+        key: 'engine',
+        id: 'steam-chuff',
+        pulsed: true,
+        gain: 1,
+        rate: 1,
+        priority: 70,
+      },
+    ]);
+    await advanceTo(10);
+    audio.chuff(0.58);
+    audio.chuff(0.25);
+    expect(voices[0]?.stop).not.toHaveBeenCalled();
+    audio.chuff(0.3);
+    expect(voices[0]?.stop).toHaveBeenCalledExactlyOnceWith(10.01);
+    voices[1]?.finish();
+    audio.chuff(0.4);
+    expect(voices).toHaveLength(2);
+    expect(voices[0]?.stop).toHaveBeenCalledOnce();
+    context.currentTime = 10.011;
+    voices[0]?.finish();
+    expect(voices).toHaveLength(3);
+    expect(voices[2]?.start).toHaveBeenCalledExactlyOnceWith(10.011, 0, 0.4);
+    audio.dispose();
+    for (const source of voices) source.finish();
+    for (const source of voices)
+      expect(source.disconnect).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the 11-source ceiling with a pending stroke and cancels it even when tails block an engine change', async () => {
+    const { audio, voices, advanceTo, gains } = setup();
+    audio.unlock();
+    const train = [
+      {
+        key: 'engine',
+        id: 'steam-chuff',
+        pulsed: true,
+        gain: 1,
+        rate: 1,
+        priority: 70,
+      },
+      { key: 'wheels', id: 'wheels', gain: 1, rate: 1, priority: 60 },
+      { key: 'ambient', id: 'forest', gain: 1, rate: 1, priority: 10 },
+    ];
+    audio.setLayers(train);
+    for (const id of ['cow', 'sheep', 'hen', 'cat', 'dog'])
+      audio.play(id, 1, 40);
+    await advanceTo(10);
+    audio.chuff(0.58);
+    audio.chuff(0.25);
+    const oldest = voices.find(
+      (source) => source.start.mock.calls[0]?.[2] === 0.58,
+    );
+    audio.setLayers([
+      ...train,
+      { key: 'bell', id: 'crossing-bell', gain: 1, rate: 1, priority: 90 },
+    ]);
+    await advanceTo(10);
+    audio.setLayers(train);
+    await advanceTo(10);
+    expect(voices.filter((source) => source.playing)).toHaveLength(11);
+    expect(audio.diagnostics.retiringSources).toBe(2);
+    const before = voices.length;
+    audio.chuff(0.31);
+    expect(voices).toHaveLength(before);
+    expect(oldest?.stop).toHaveBeenCalledExactlyOnceWith(10.01);
+    await advanceTo(10.010001);
+    expect(voices).toHaveLength(before + 1);
+    expect(voices.at(-1)?.start.mock.calls[0]?.[2]).toBe(0.31);
+    expect(voices.filter((source) => source.playing)).toHaveLength(11);
+    expect(audio.diagnostics.sourceCount).toBe(11);
+    expect(audio.diagnostics.retiringSources).toBe(2);
+    audio.chuff(0.32);
+    audio.setLayers(
+      train.map((layer) =>
+        layer.key === 'engine'
+          ? { ...layer, id: 'diesel-running', pulsed: false }
+          : layer,
+      ),
+    );
+    await advanceTo(10.030001);
+    expect(
+      voices.filter((source) => source.start.mock.calls[0]?.[2] !== undefined),
+    ).toHaveLength(3);
+    expect(
+      voices.filter((source) => source.playing).length,
+    ).toBeLessThanOrEqual(11);
+    expect(audio.diagnostics.retiringSources).toBeLessThanOrEqual(2);
+    audio.dispose();
+    await advanceTo(11);
+    for (const source of voices)
+      expect(source.disconnect).toHaveBeenCalledOnce();
+    for (const gain of gains) expect(gain.disconnect).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    'stopAll',
+    'suspend',
+    'mute',
+    'dispose',
+    'layer',
+    'engine-key',
+    'non-pulsed',
+  ] as const)(
+    'cancels a pending steam stroke on %s, including late ended delivery',
+    async (cleanup) => {
+      const { audio, context, voices, gains, advanceTo } = setup();
+      const steam = {
+        key: 'engine',
+        id: 'steam-chuff',
+        pulsed: true,
+        gain: 1,
+        rate: 1,
+        priority: 70,
+      };
+      audio.unlock();
+      audio.setLayers([steam]);
+      await advanceTo(10);
+      audio.chuff(0.58);
+      audio.chuff(0.25);
+      audio.chuff(0.3);
+      expect(voices[0]?.stop).toHaveBeenCalledExactlyOnceWith(10.01);
+      if (cleanup === 'stopAll') audio.stopAll();
+      else if (cleanup === 'suspend') audio.suspend();
+      else if (cleanup === 'mute') audio.setEnabled(false);
+      else if (cleanup === 'dispose') audio.dispose();
+      else if (cleanup === 'layer') audio.setLayers([]);
+      else if (cleanup === 'engine-key')
+        audio.setLayers([{ ...steam, key: 'other' }]);
+      else audio.setLayers([{ ...steam, pulsed: false }]);
+      context.currentTime = 10.02;
+      for (const source of [...voices]) source.finish();
+      await advanceTo(10.02);
+      expect(voices.filter((source) => !source.loop)).toHaveLength(2);
+      if (cleanup !== 'dispose') audio.dispose();
+      for (const source of voices) source.finish();
+      for (const source of voices)
+        expect(source.disconnect).toHaveBeenCalledOnce();
+      for (const gain of gains) expect(gain.disconnect).toHaveBeenCalledOnce();
+    },
+  );
+
   it.each(['cow', 'sheep'])(
     'switches a playing audition to %s without a delayed context suspension freezing it',
     async (id) => {
@@ -1351,8 +1429,10 @@ describe('recorded sounds / H1', () => {
     expect(audio.diagnostics.active[0]?.kind).toBe('loop');
     audio.setLayers([]);
     expect(audio.diagnostics.active).toHaveLength(0);
-    for (const voice of voices) {
-      expect(voice.stop).toHaveBeenCalledExactlyOnceWith(10.15);
+    for (const [index, voice] of voices.entries()) {
+      expect(voice.stop).toHaveBeenCalledExactlyOnceWith(
+        index === 0 ? 10.01 : 10.15,
+      );
       expect(voice.disconnect).not.toHaveBeenCalled();
       voice.finish();
       expect(voice.disconnect).toHaveBeenCalledOnce();
