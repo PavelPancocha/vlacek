@@ -101,6 +101,7 @@ export class RockTunnelView {
       (x) => rail(x) + 4,
       fromX - TUNNEL_MAST_CLEARANCE_U,
       toX + TUNNEL_MAST_CLEARANCE_U,
+      2,
     );
     if (polygon.length) g.fillPoints(polygon, true);
     for (const x of hangerXs) {

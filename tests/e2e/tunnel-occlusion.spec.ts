@@ -19,6 +19,91 @@ for (const renderer of ['canvas', 'webgl'])
     [1140, 512],
     [1280, 800],
   ] as const)
+    test(`D-033 interior seam ${renderer} ${width}: dark backing stays uniform at fractional camera positions`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      await probeScene(page);
+      await restore(page, renderer, 214, 100, ['cargo_box'], 7);
+      const seam = 214 * 1024;
+      await page.evaluate(() => {
+        const { scene, ride } = window.__tunnelProbe;
+        ride.step = () => {};
+        scene.sys.setActive(false);
+        // Inspect the opaque backing independently of the train/front composite.
+        for (const o of scene.children.list)
+          if (o.depth > 4.55) o.setVisible(false);
+      });
+      const rail = await page.evaluate((x) => {
+        const { ride } = window.__tunnelProbe;
+        return -ride.sample(
+          ride.track.sFromLocalX(Math.floor(x / 1024), x % 1024),
+        ).y;
+      }, seam);
+      for (const fraction of [0.25, 0.75]) {
+        await page.evaluate(
+          ({ seam, fraction }) => {
+            const { scene, ride } = window.__tunnelProbe;
+            const camera = scene.cameras.main;
+            const vehicle = scene.children.list.find((o) => o.depth === 7);
+            if (!vehicle) throw new Error('vehicle origin missing');
+            const origin = ride.vehiclePose(0).centerX - vehicle.x;
+            const x =
+              (seam - origin - camera.getWorldPoint(0, 0).x) * camera.zoom;
+            camera.scrollX += (x - Math.floor(x) - fraction) / camera.zoom;
+            for (const o of scene.children.list)
+              if (o.depth === 4.55) o.setVisible(true);
+          },
+          { seam, fraction },
+        );
+        await renderedFrame(page);
+        const clip = await worldCrop(page, {
+          x: seam - 12,
+          y: rail - 110,
+          width: 24,
+          height: 24,
+        });
+        const dark = await page.screenshot({ clip });
+        const error = await page.evaluate(async (base64) => {
+          const image = new Image();
+          image.src = `data:image/png;base64,${base64}`;
+          await image.decode();
+          const c = document.createElement('canvas');
+          c.width = image.width;
+          c.height = image.height;
+          const ctx = c.getContext('2d')!;
+          ctx.drawImage(image, 0, 0);
+          const pixels = ctx.getImageData(0, 0, c.width, c.height).data;
+          let error = 0;
+          for (let i = 0; i < pixels.length; i += 4)
+            for (const [channel, expected] of [41, 43, 39].entries())
+              error = Math.max(
+                error,
+                Math.abs((pixels[i + channel] ?? 0) - expected),
+              );
+          return error;
+        }, dark.toString('base64'));
+        expect(
+          error,
+          `opaque dark band at camera fraction ${fraction}`,
+        ).toBeLessThanOrEqual(1);
+        await page.evaluate(() => {
+          for (const o of window.__tunnelProbe.scene.children.list)
+            if (o.depth === 4.55) o.setVisible(false);
+        });
+        await renderedFrame(page);
+        expect(
+          await pixelChanges(page, dark, await page.screenshot({ clip })),
+          'positive control removes the interior',
+        ).toBeGreaterThan(0);
+      }
+    });
+
+for (const renderer of ['canvas', 'webgl'])
+  for (const [width, height] of [
+    [1140, 512],
+    [1280, 800],
+  ] as const)
     for (const size of ['short', 'longest'] as const)
       for (const area of ['crest', 'seam'] as const)
         test(`D-033 review ${renderer} ${width} ${size}: solid ${area} without double blending`, async ({

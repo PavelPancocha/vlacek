@@ -95,7 +95,9 @@ skutečného skalního materiálu mezi ústími. Hora nad tmavým vnitřkem zůs
 plná a neprůhledná; pouze přední tvář nad vnitřkem ukazuje vlak s krytem 50 %.
 Sousední fragmenty vlastní nepřekrývající se úseky 0–1 024 u, aby se jejich
 poloprůhledné tváře na hranici nesčítaly. Neprůhledný vektorový hřbet
-a pata mají 2u přesah pro pokrytí rasterizovaných hran; jejich alfa se nemění. Po odjezdu se alfa přichytí přesně
+a pata mají 2u přesah pro pokrytí rasterizovaných hran; jejich alfa se nemění.
+Stejný přesah má tmavý neprůhledný vnitřek pouze přes vnitřní hranice chunků;
+skutečné meze ústí se neposouvají. Průhledná tvář zůstává bez překryvu. Po odjezdu se alfa přichytí přesně
 k 1 při odchylce nejvýše 0,002; skryté bubliny tím ztratí i dotyk.
 Sněhové přílohy krátkých portálů sledují místní sklon obou ústí.
 

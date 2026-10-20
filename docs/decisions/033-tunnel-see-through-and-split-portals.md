@@ -97,7 +97,14 @@ svůj úsek 0–1 024 u. Původní sousední přesahy −2…1 026 u se při alf
 sčítaly na 0,75; tvrzení prvního předání o nepřekryvu platilo pouze uvnitř
 fragmentu a tímto se opravuje. Neprůhledný hřbet a pata zůstávají za vlakem
 a mají 2u přesah přes hranici chunku: vyplní antialiasované okraje vektorů,
-aniž by se sčítala alfa přední tváře nebo přibyla textura.
+aniž by se sčítala alfa přední tváře nebo přibyla textura. Totéž platí pro
+neprůhledný tmavý vnitřek přes vnitřní hranice chunků; skutečné meze u portálů
+zůstávají `fromX − TUNNEL_MAST_CLEARANCE_U` a `toX + TUNNEL_MAST_CLEARANCE_U`.
+Revize 2026-10-20 opravuje příliš široké tvrzení předchozího předání o absenci
+svislých švů: zbylá 1px vlasová čára ve vnitřku vyžaduje kontrolu samotného
+tmavého podkladu při zlomkové pozici kamery. Test středu kompozitu ji neodhalí.
+Canvas i WebGL proto ověřují souvislou barvu vnitřku RGB (41, 43, 39) ±1
+přes šev při projekci na 0,25 a 0,75 pixelu, s pozitivní kontrolou skrytého vnitřku.
 Vodorovný přesah pásu je 120 u: roh portálu při krajním 12% sklonu
 dosahuje méně než 118 u, další 2 u zůstávají rezervou. Původní 170u
 ramena hory zůstávají ve vektorech; prázdné části se nepečou.

@@ -58,6 +58,7 @@ interface ProbeScene {
   popBubble(id: number): boolean;
   cameras: {
     main: {
+      scrollX: number;
       zoom: number;
       getWorldPoint(x: number, y: number): { x: number; y: number };
     };

@@ -474,3 +474,26 @@ it('D-033 review-2: opaque vector crest pads chunk edges without extending the f
   expect(crest.flatMap((p) => p.map((v) => v.x))).toContain(-2);
   expect(crest.flatMap((p) => p.map((v) => v.x))).toContain(1026);
 });
+
+it.each([
+  { fromX: 128, toX: 3200, left: 68, right: 1026 },
+  { fromX: -896, toX: 2176, left: -2, right: 1026 },
+  { fromX: -2944, toX: 896, left: -2, right: 956 },
+])(
+  'D-033 review-3: dark interior pads internal seams and preserves portal limits $fromX/$toX',
+  ({ fromX, toX, left, right }) => {
+    const f = fragment({
+      id: 'dark-interior-seam',
+      chunkIndex: 1,
+      fromX,
+      toX,
+      rock: true,
+    });
+    const interior = f.polygons[0];
+    if (!interior) throw new Error('dark interior missing');
+    expect(Math.min(...interior.map((p) => p.x))).toBe(left);
+    expect(Math.max(...interior.map((p) => p.x))).toBe(right);
+    expect(f.bounds[0]?.left).toBeGreaterThanOrEqual(0);
+    expect(f.bounds[0]?.right).toBeLessThanOrEqual(1024);
+  },
+);
