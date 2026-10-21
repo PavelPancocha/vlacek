@@ -23,6 +23,8 @@ interface Voice {
   gain: GainNode;
   source: AudioBufferSourceNode | undefined;
   strokes: Map<AudioBufferSourceNode, GainNode>;
+  pendingStrokeSec: number | undefined;
+  retiringStroke: AudioBufferSourceNode | undefined;
 }
 
 interface ReadyShot {
@@ -272,6 +274,8 @@ export class AudioManager {
       gain,
       source: undefined,
       strokes: new Map(),
+      pendingStrokeSec: undefined,
+      retiringStroke: undefined,
     };
     this.#voices.set(key, voice);
     return voice;
@@ -285,6 +289,8 @@ export class AudioManager {
       this.#voices.delete(voice.key);
       this.#budget.release(voice.kind);
     } else if (!this.#tails.delete(voice)) return false;
+    voice.pendingStrokeSec = undefined;
+    voice.retiringStroke = undefined;
     voice.source?.stop();
     voice.source?.disconnect();
     for (const [stroke, envelope] of voice.strokes) {
@@ -344,13 +350,16 @@ export class AudioManager {
   #rampOut(voice: Voice, durationSec: number): void {
     const now = this.#context?.currentTime ?? 0;
     const end = now + durationSec;
+    voice.pendingStrokeSec = undefined;
     this.#tails.set(voice, end);
     const heldGain = voice.gain.gain.value;
     voice.gain.gain.cancelScheduledValues(now);
     voice.gain.gain.setValueAtTime(heldGain, now);
     voice.gain.gain.linearRampToValueAtTime(0, end);
     voice.source?.stop(end);
-    for (const stroke of voice.strokes.keys()) stroke.stop(end);
+    for (const stroke of voice.strokes.keys())
+      // A layer fade must not extend a stroke already shortened for admission.
+      if (stroke !== voice.retiringStroke) stroke.stop(end);
   }
   play(id: string, gainFactor = 1, priority = 100, maxDelaySec?: number): void {
     const clip = this.#clip(id);
@@ -472,6 +481,13 @@ export class AudioManager {
     this.#layers.clear();
     for (const layer of layers)
       if (layer.gain > 0) this.#layers.set(layer.key, layer);
+    const engine = this.#voices.get('engine');
+    const desiredEngine = this.#layers.get('engine');
+    if (
+      engine &&
+      (desiredEngine?.id !== 'steam-chuff' || !desiredEngine.pulsed)
+    )
+      engine.pendingStrokeSec = undefined;
     for (const voice of [...this.#voices.values()]) {
       if (voice.kind !== 'loop' || voice.key.startsWith('fade:')) continue;
       if (this.#layers.get(voice.key)?.id === voice.id) continue;
@@ -605,13 +621,45 @@ export class AudioManager {
     if (
       !context ||
       context.state !== 'running' ||
+      !this.#enabled ||
       !voice ||
       voice.id !== 'steam-chuff' ||
       voice.source !== undefined ||
-      !buffer ||
-      voice.strokes.size >= 2
+      this.#layers.get('engine')?.id !== 'steam-chuff' ||
+      !this.#layers.get('engine')?.pulsed ||
+      !buffer
     )
       return;
+    // Retiring engine voices still own live sources until their ended events.
+    const strokeOwners = [...this.#tails.keys(), voice];
+    const strokeCount = strokeOwners.reduce(
+      (sum, owner) => sum + owner.strokes.size,
+      0,
+    );
+    if (voice.retiringStroke || strokeCount >= 2) {
+      voice.pendingStrokeSec = durationSec;
+      if (!voice.retiringStroke) {
+        const owner = strokeOwners.find((owner) => owner.strokes.size > 0);
+        const oldest = owner?.strokes.entries().next().value;
+        if (!owner || !oldest) return;
+        const [stroke, envelope] = oldest;
+        if (owner.retiringStroke !== stroke) {
+          owner.retiringStroke = stroke;
+          const now = context.currentTime;
+          const end = Math.max(
+            now,
+            Math.min(now + SHORT_FADE_SEC, this.#tails.get(owner) ?? Infinity),
+          );
+          const heldGain = envelope.gain.value;
+          envelope.gain.cancelScheduledValues(now);
+          envelope.gain.setValueAtTime(heldGain, now);
+          envelope.gain.linearRampToValueAtTime(0, end);
+          stroke.stop(end);
+        }
+        voice.retiringStroke = stroke;
+      }
+      return;
+    }
     const source = context.createBufferSource();
     const envelope = context.createGain();
     const now = context.currentTime;
@@ -632,9 +680,19 @@ export class AudioManager {
         source.disconnect();
         envelope.disconnect();
         voice.strokes.delete(source);
+        const waitingEngine = this.#voices.get('engine');
+        const retired = waitingEngine?.retiringStroke === source;
+        if (voice.retiringStroke === source) voice.retiringStroke = undefined;
+        if (retired && waitingEngine) waitingEngine.retiringStroke = undefined;
         if (voice.strokes.size === 0 && this.#tails.has(voice))
           this.#stop(voice);
         this.#reconcile();
+        if (retired && waitingEngine?.pendingStrokeSec !== undefined) {
+          const durationSec = waitingEngine.pendingStrokeSec;
+          waitingEngine.pendingStrokeSec = undefined;
+          if (this.#voices.get('engine') === waitingEngine)
+            this.chuff(durationSec);
+        }
       },
       { once: true },
     );
