@@ -25,7 +25,7 @@ Dokument 04 §6 přejezdu dává slot 3 bloku biomu.
    - `chunkScenery` si rezervuje pruh silnice ±64 u: voda se kolem něj rozdělí a rekvizity ani jejich trasy do něj nezasahují.
 2. **Automat** (`src/domain/interaction/LevelCrossing.ts`). Fáze `OPEN`, `CLEARING`, `WARNING`, `CLOSING`, `CLOSED` a `OPENING` jdou podle tabulky dokumentu 05 §4.
    - Konfliktní zóna podél koleje je ±30 u, tedy polovina šířky silnice, s rezervou obsazení 32 u.
-   - Dclose se měří od okraje rozšířené zóny. Při 480 u/s vychází `480 × (2 + 1,2 + 0,8 + 0,5) + 80 = 2 240 u`; 890 u v dokumentu 05 platí pro starých 180 u/s.
+   - Dclose se měří od okraje rozšířené zóny. Při 240 u/s vychází `240 × (2 + 1,2 + 0,8 + 0,5) + 80 = 1 160 u`; historický příklad 890 u odpovídal 180 u/s.
    - Když se při otevírání blíží vlak, závory se vrátí do zavírání a silnice dál čeká.
    - `RideSimulation` drží přejezdy od 1 024 u za koncem vlaku po Dclose + 512 u před čelem a krokuje je v každém pevném kroku simulace, nezávisle na kameře.
    - Přejezd pod vlakem nebo v jeho předstihu vznikne rovnou zavřený, i po obnově ze save.
@@ -65,3 +65,5 @@ Dokument 04 §6 přejezdu dává slot 3 bloku biomu.
 - **Výstražné zvonění** doplněno v [D-022](022-recorded-sounds.md): tichý lokální nahraný belgický zvonek ve fázích WARNING/CLOSING/CLOSED, ztichne při zvedání závor. Poslech a kalibrace zařízení NEOVĚŘENO.
 - **Dotyk na auto nebo kolo** (zamávání, klakson) zatím nic nedělá. Přijde se scénkami dokumentu 05 §5 a nesmí aktéra zastavit v zóně.
 - **Fyzická zařízení:** NEOVĚŘENO.
+
+Aktuální rychlost, zrychlení a přepočet rezerv upřesňuje [D-036](036-slower-train.md).

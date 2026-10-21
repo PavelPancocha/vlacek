@@ -71,7 +71,7 @@ Terén kolem tratě je samostatná seedovaná funkce, ne součást profilu kolej
 
 ## 5. Regiony, scénky a návaznost krajiny
 
-Generátor **v2** odděluje geometrické bloky od regionů. Blok zůstává osm chunků, region má 3–7 celých bloků, tedy 24 576–57 344 u (asi 51–119 s při 480 u/s). Zastavení nepřepne krajinu. Pevný cyklus má 12 regionů a 60 bloků; seed řadí multiset délek `[3,4,4,4,4,5,5,5,6,6,7,7]`. Dvě explicitní trasy a tabulka sousedností kontrolují i spoj cyklů; záporné a vzdálené pozice mají omezený náhodný přístup bez generování minulosti.
+Generátor **v2** odděluje geometrické bloky od regionů. Blok zůstává osm chunků, region má 3–7 celých bloků, tedy 24 576–57 344 u (asi 102–239 s při 240 u/s). Zastavení nepřepne krajinu. Pevný cyklus má 12 regionů a 60 bloků; seed řadí multiset délek `[3,4,4,4,4,5,5,5,6,6,7,7]`. Dvě explicitní trasy a tabulka sousedností kontrolují i spoj cyklů; záporné a vzdálené pozice mají omezený náhodný přístup bez generování minulosti.
 
 Krajiny: `countryside`, `forest`, `lakes`, `foothills`, `mountains`, `coast`, **`dunes`**, **`town`**. Duny inspirované Moravskou Saharou mají písek, borovice, dunovou trávu a kameny. Pobřeží zůstává samostatné. `town` dočasně používá vesnické skladby; odstranění omezení: **replaced by the settlements-stations lane in the same PR**.
 

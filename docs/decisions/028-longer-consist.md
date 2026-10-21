@@ -27,7 +27,7 @@ Svislý cíl je nyní `camera.bandAnchor = 0.5`, polovina pásu mezi HUD a brzdo
 
 Diagnostika přejezdů používá `RideScene.worldScreenX`, tedy tentýž poslední vykreslený pohled, interpolaci a origin jako kamera. `AppController` nemá vlastní kopii zoomu ani rámování. Unit pokrývá CSS offset, DPR i rebase; E2E porovnává `screenX` s hranicemi skutečně kreslených chunků, včetně rebase a DPR 2 omezeného profilem. Samotná oprava projekce obnovila původní D-021 test bez změny jeho očekávání. Po rozšíření výhledu E2E vyžaduje viditelný začátek sklápění pro krátký vlak na plné i poloviční rychlosti a pro skutečné maximum 2 000 u; při obsazení zůstává závora přesně dole.
 
-Rychlost simulace zůstává 480 u/s, nově 0,144 šířky/s ve všech povolených sestavách. Metr, přidávání a odjezd nadále používají společné `ConsistLengthRules`.
+Rychlost simulace po [D-036](036-slower-train.md) je 240 u/s, tedy 0,072 šířky/s ve všech povolených sestavách; kamera se nemění. Při přijetí camera-1 to bylo 480 u/s a 0,144 šířky/s. Metr, přidávání a odjezd nadále používají společné `ConsistLengthRules`.
 
 Zadní geometrická rezerva roste z 1 024 na **1 600 u**: širší pohled krátkého vlaku jinak odkrýval prázdný pás na levém okraji. Bubliny sdílejí CSS výpočet kresleného průměru nejméně 12 px a hit testu nejméně 64 px. Tunelový filtr `coversPoint` se zachovává pro střed bubliny i místo dotyku, včetně rozšířeného cíle. Při překryvu dotykových oblastí se vybírá nejbližší střed oprávněné bubliny; pořadí kresby rozhoduje pouze při přesné shodě vzdáleností ([dokument 02 §9](../../vlacek-predavaci-balicek/02_OVLADANI_A_STAVY.md)).
 

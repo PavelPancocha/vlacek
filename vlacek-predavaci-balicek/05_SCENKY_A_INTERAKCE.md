@@ -66,7 +66,7 @@ Rozhodování používá nejkratší možný čas příjezdu `tArr` čela každ�
 Tmargin = distanceMarginU / Vmax
 Thold = TclearRoad + Twarning + Tclosing + Tsafety + Tmargin
 Tlower = Tclosing + Tsafety + Tmargin
-Dclose = Vmax * Thold = 480 * (2.0 + 1.2 + 0.8 + 0.5) + 80 = 2240 u
+Dclose = Vmax * Thold = 240 * (2.0 + 1.2 + 0.8 + 0.5) + 80 = 1160 u
 ```
 
 `Dclose` zůstává konzervativním dosahem logické simulace a vzdáleností blokování silnice při plné rychlosti, není pevnou spouštěcí vzdáleností celého zavírání. I stojící vlak má konečný čas příjezdu, může-li se rozjet. Přejezd i jeho kolej existují před vstupem do tohoto dosahu, nezávisle na kameře. Rodičovský nižší limit se zahrne do predikce.
@@ -82,7 +82,7 @@ Dclose = Vmax * Thold = 480 * (2.0 + 1.2 + 0.8 + 0.5) + 80 = 2240 u
 | `CLOSED`   | Vlaky projíždějí nebo stojí v blízkosti.                                                     | Žádný vlak neobsazuje zónu a všechny `tArr > Thold + openHysteresisSeconds` (0,5 s). |
 | `OPENING`  | Závory se zvedají, silnice stále čeká.                                                       | Úplně otevřeno, pak vypustit provoz; při novém `tArr ≤ Thold` znovu `CLOSING`.       |
 
-Nejkratší čas příjezdu při platném pohybu klesá nejvýš o délku simulačního kroku. Proto od blokování silnice zbývá celý čas vyklizení, minimální výstrahy, zavření a rezervy; od spuštění závor zbývá zavření a nejméně `Tsafety`. Rezerva 80 u při 480 u/s (0,167 s) pokrývá i přechody automatu po jednotlivých 1/60s krocích. Maximální výstraha pouze zavře dříve. Hystereze odlišuje opětovné otevření od spouštěcího prahu, aby zpomalující vlak u hranice závory nepřeklápěl. Podrobnosti: [D-021](../docs/decisions/021-crossing-closes-in-view.md).
+Nejkratší čas příjezdu při platném pohybu klesá nejvýš o délku simulačního kroku. Proto od blokování silnice zbývá celý čas vyklizení, minimální výstrahy, zavření a rezervy; od spuštění závor zbývá zavření a nejméně `Tsafety`. Rezerva 80 u při 240 u/s (0,333 s) pokrývá i přechody automatu po jednotlivých 1/60s krocích. Maximální výstraha pouze zavře dříve. Hystereze odlišuje opětovné otevření od spouštěcího prahu, aby zpomalující vlak u hranice závory nepřeklápěl. Podrobnosti: [D-021](../docs/decisions/021-crossing-closes-in-view.md).
 
 Blikání přejezdových světel je lokální klidná signalizace, nikoli celoplošný intenzivní záblesk. V úsporném režimu nelze signalizaci vypnout, jen zjednodušit její kresbu.
 
@@ -101,7 +101,7 @@ Pokud dlouhý vlak stojí přes silnici nebo těsně před ní, auta čekají li
 Implementace ([D-015](../docs/decisions/015-level-crossings.md)):
 
 - Automat `LevelCrossing` počítá obsazení z celé soupravy. Konfliktní zóna má ±30 u podél koleje a rezervu 32 u.
-- Při nynější nejvyšší rychlosti 480 u/s (dokument 14) vychází konzervativní dosah Dclose 2 240 u; fáze řídí časy příjezdu z D-021.
+- Při nynější nejvyšší rychlosti 240 u/s (dokument 14) vychází konzervativní dosah Dclose 1 160 u; fáze řídí časy příjezdu z D-021.
 - Stop čára je 40 u za tratí a 56 u před ní, u paty náspu.
 - Aktér za stop čárou opustí zónu nejpozději za 2,0 s, i když jede za nejpomalejším. Validace konfigurace odmítne `roadClearanceSeconds` kratší než tato doba.
 - Silnice je souvisle vykreslená přes celou patu náspu; za tratí a před tratí se její vrstvy setkávají na `roadU = 0`, ve společném bodě koleje. Kraje vozovky, stop čáry, dráhy aut a paty zařízení respektují sklon v místě křížení.
@@ -189,3 +189,5 @@ prozrazují vlastní pohyb; pauza zastaví jejich simulační čas.
 a dopravu přejezdu. Nezavádějí druhou simulaci ani navigaci. Okreska má auta
 v obou pruzích/směrech, dálnice lehký vzdálený provoz. Přejezd dál respektuje
 stopčáry, poslední vůz a všechny relevantní vlaky podle D-021.
+
+Aktuální rychlost, zrychlení a přepočet rezerv upřesňuje [D-036](../docs/decisions/036-slower-train.md).
