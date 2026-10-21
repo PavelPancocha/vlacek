@@ -170,13 +170,13 @@ describe('steam chuff rhythm (D-035)', () => {
           gameConfig.train.maxSpeedUPerSec / 60,
           frame / 60,
         );
-      expect(steam.strokes.length / 10).toBeGreaterThanOrEqual(2.9);
-      expect(steam.strokes.length / 10).toBeLessThanOrEqual(3);
+      expect(steam.strokes.length / 10).toBeGreaterThanOrEqual(3.9);
+      expect(steam.strokes.length / 10).toBeLessThanOrEqual(4);
     },
   );
 
   it.each([15, 19])(
-    'lengthens every full-speed chuff with radius %s u to 500 ms',
+    'sets every full-speed chuff with radius %s u to the 4/s ceiling duration',
     (radiusU) => {
       const steam = recordSteam(radiusU);
       for (let frame = 1; frame <= 600; frame++)
@@ -185,11 +185,28 @@ describe('steam chuff rhythm (D-035)', () => {
           gameConfig.train.maxSpeedUPerSec / 60,
           frame / 60,
         );
+      const kneePerSec = 2;
+      const ceilingPerSec = 4;
+      const maxOverlap = 1.5;
+      const beatsPerSec =
+        gameConfig.train.maxSpeedUPerSec / ((2 * Math.PI * radiusU) / 4);
+      const ratePerSec =
+        kneePerSec +
+        (ceilingPerSec - kneePerSec) *
+          (1 -
+            Math.exp(
+              -(beatsPerSec - kneePerSec) / (ceilingPerSec - kneePerSec),
+            ));
+      const overlap =
+        1 +
+        ((maxOverlap - 1) * (ratePerSec - kneePerSec)) /
+          (ceilingPerSec - kneePerSec);
+      const durationSec = overlap / ratePerSec;
       expect(steam.strokes.length).toBeGreaterThan(0);
       for (const stroke of steam.strokes) {
         expect(stroke.durationSec).toBeGreaterThanOrEqual(0.2);
         expect(stroke.durationSec).toBeLessThanOrEqual(0.58);
-        expect(stroke.durationSec).toBeCloseTo(0.5, 12);
+        expect(stroke.durationSec).toBeCloseTo(durationSec, 12);
       }
     },
   );
@@ -204,7 +221,7 @@ describe('steam chuff rhythm (D-035)', () => {
       expect(chuffRate(kneeSpeedUPerSec / intervalU)).toBeCloseTo(2, 12);
       expect(chuffRate(2)).toBe(2);
       expect((chuffRate(2 + 1e-6) - 2) / 1e-6).toBeCloseTo(1, 5);
-      expect(chuffRate(3)).toBeCloseTo(2.6321205588285577, 12);
+      expect(chuffRate(3)).toBeCloseTo(2.786938680574733, 12);
     },
   );
 
@@ -221,13 +238,13 @@ describe('steam chuff rhythm (D-035)', () => {
         expect(rate - previousRate).toBeLessThanOrEqual(
           0.1 / intervalU + 1e-12,
         );
-        expect(rate).toBeLessThanOrEqual(3);
+        expect(rate).toBeLessThanOrEqual(4);
         if (beatsPerSec <= 2) expect(rate).toBe(beatsPerSec);
         previousRate = rate;
       }
       expect(chuffRate(2)).toBe(2);
       expect((chuffRate(2 + 1e-6) - 2) / 1e-6).toBeCloseTo(1, 5);
-      expect(chuffRate(3)).toBeCloseTo(2.6321205588285577, 12);
+      expect(chuffRate(3)).toBeCloseTo(2.786938680574733, 12);
       expect(chuffRate(0)).toBe(0);
     },
   );
@@ -256,8 +273,8 @@ describe('steam chuff rhythm (D-035)', () => {
   it('plays the primed 40 u/s start at the new acceleration without dropping or deferring a stroke', async () => {
     const result = await playRamp(15, 60, 40);
     expect(result.requests[0]).toEqual({ startSec: 10, durationSec: 0.58 });
-    expect(result.requests[1]?.startSec).toBeCloseTo(10 + 27 / 60, 12);
-    expect(result.requests[2]?.startSec).toBeCloseTo(10 + 48 / 60, 12);
+    expect(result.requests[1]?.startSec).toBeCloseTo(10 + 26 / 60, 12);
+    expect(result.requests[2]?.startSec).toBeCloseTo(10 + 45 / 60, 12);
     expect(result.deferred).toBe(0);
   });
 
@@ -283,7 +300,7 @@ describe('steam chuff rhythm (D-035)', () => {
     expect(
       steam.strokes.map((stroke) => Math.round(stroke.startSec * 60)),
     ).toEqual([
-      35, 67, 97, 126, 153, 180, 207, 234, 263, 293, 325, 359, 405, 453,
+      35, 67, 97, 126, 153, 180, 206, 233, 262, 292, 324, 358, 404, 451,
     ]);
     const intervalU = (2 * Math.PI * 15) / 4;
     // |Δperiod| <= a / (intervalU * minRate³) + two frames of quantization.
@@ -326,7 +343,7 @@ describe('steam chuff rhythm (D-035)', () => {
 
   it('keeps the first capped chuff after one phase beat and discards whole catch-up beats', () => {
     const steam = recordSteam(15);
-    for (let frame = 1; frame <= 20; frame++)
+    for (let frame = 1; frame <= 15; frame++)
       steam.update(
         gameConfig.train.maxSpeedUPerSec,
         gameConfig.train.maxSpeedUPerSec / 60,
