@@ -4,6 +4,49 @@ Datum: 2026-10-20. Stav: přijato; poslech na zařízení **NEOVĚŘENO**.
 Upřesňuje zvuk páry v [D-022](022-recorded-sounds.md); kouř podle
 [D-014](014-particles-and-small-animations.md) se nemění.
 
+## Změna 2026-10-21 — pomalejší vlak a pára (D-036)
+
+Po poslechu předchozího buildu majitel zvolil poloviční rychlost vlaku i rytmus
+páry; důvod a pohybové konstanty vlastní [D-036](036-slower-train.md).
+Aktuálně platí `CHUFF_KNEE_PER_SEC = 2`, `CHUFF_CEILING_PER_SEC = 3`
+a nezměněné `CHUFF_MAX_OVERLAP = 1.5`. Vzorec křivky a přenos fáze zůstávají.
+Koleno je **47,123890 u/s** pro `steam_local` a **59,690260 u/s** pro
+`steam_express`. Pod kolenem zůstává přesně jeden ráz na takt kola;
+nad kolenem je `f/r = 0,5 s`, tedy pod délkovým stropem 0,58 s.
+Při stání žádný ráz nevzniká.
+
+| Rychlost u/s | `steam_local` rázů/s | Délka ms | `steam_express` rázů/s | Délka ms |
+| ------------ | -------------------- | -------- | ---------------------- | -------- |
+| 0            | 0,000000             | —        | 0,000000               | —        |
+| 30           | 1,273240             | 580,000  | 1,005189               | 580,000  |
+| 47           | 1,994742             | 501,318  | 1,574796               | 580,000  |
+| 60           | 2,421015             | 500,000  | 2,010325               | 500,000  |
+| 100          | 2,893980             | 500,000  | 2,740923               | 500,000  |
+| 150          | 2,987301             | 500,000  | 2,951488               | 500,000  |
+| 200          | 2,998479             | 500,000  | 2,990916               | 500,000  |
+| 240          | 2,999721             | 500,000  | 2,997622               | 500,000  |
+
+Aktuální testy v `AudioDirector.test.ts` ověřují 10 s při limitu z configu
+(240 u/s): obě lokomotivy 2,9–3 rázů/s a každý ráz 0,5 s. Přesný původní
+rytmus a délka se kontrolují při 30 u/s po každém snímku. Rampy 0/40 →
+240 → 0 při +80 u/s² a dojezdu −48, zpomalení −80 i brzdě −240 u/s²,
+30/60 FPS, oba poloměry používají skutečný `AudioManager`: žádný požadavek
+se nezahodí, žijí nejvýše dva rázy, celkem nejvýše 11 zdrojů. Každý
+přehraný požadavek zachová délku a čeká nejvýše 10,0011 ms při modelovaném
+`ended` o 1 µs po konci. Nové rampy nemusí vyvolat stejný počet odkladů
+jako historický protipříklad; samotné čekání, 10ms rampa, náhrada a cleanup
+zůstávají chráněné regresními testy manageru podle D-022/D-035.
+Přechod fáze se nyní ověřuje přes 40 → 55 → 40 a následně 30 u/s,
+se zrychlením/zpomalením 5 u/s²; přesná posloupnost snímků se přepočítala
+podle nové křivky. Spojitost a monotónnost zůstávají testované do 600 u/s.
+Poslech a pocit z jízdy na fyzických zařízeních: **NEOVĚŘENO**.
+
+## Historický kontrakt 2026-10-20 (před D-036)
+
+Následující důvody, konstanty, tabulky a výsledky zachycují původní D-035
+pro 480 u/s a koleno/strop 4/6 rázů/s. Aktuální číselné hodnoty a testy
+nahrazuje dodatek výše; pravidlo přijetí čekajícího rázu zůstává v platnosti.
+
 ## Důvod
 
 Majitel při hraní buildu `0.1.0+3961229` na Android tabletu uvedl:

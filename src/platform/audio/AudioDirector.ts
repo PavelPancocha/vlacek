@@ -1,4 +1,3 @@
-import { gameConfig } from '../../config/gameConfig.ts';
 import type { AudioLayer, AudioManager } from '../AudioManager.ts';
 import type { Season } from '../../domain/world/Regions.ts';
 import type { Biome } from '../../domain/world/Biomes.ts';
@@ -9,10 +8,8 @@ export interface CrossingAudioState {
   worldX: number;
 }
 export function wheelSound(speedUPerSec: number) {
-  const speed = Math.max(
-    0,
-    Math.min(1, speedUPerSec / gameConfig.train.maxSpeedUPerSec),
-  );
+  // Absolute u/s reference from D-022; D-036 halves train speed, not this mapping.
+  const speed = Math.max(0, Math.min(1, speedUPerSec / 480));
   return {
     rate: 0.65 + speed * 1.05,
     gain: speed === 0 ? 0 : 0.15 + 0.55 * speed,
@@ -66,8 +63,8 @@ export function coveredFraction(
   return Math.min(1, overlapU / lengthU);
 }
 // Owner: nice "šššh šššh šh" becomes "trrr" at speed. D-035; tune here after listening.
-const CHUFF_KNEE_PER_SEC = 4;
-const CHUFF_CEILING_PER_SEC = 6;
+const CHUFF_KNEE_PER_SEC = 2;
+const CHUFF_CEILING_PER_SEC = 3;
 const CHUFF_MAX_OVERLAP = 1.5; // Steady overlap < 2; D-035 admission also handles older, longer strokes.
 
 export function chuffRate(beatsPerSec: number): number {

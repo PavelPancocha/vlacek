@@ -1,3 +1,4 @@
+import { gameConfig } from '../../../src/config/gameConfig.ts';
 import { expect, it, vi } from 'vitest';
 import { AudioTunnelWindow } from '../../../src/app/AudioTunnelWindow.ts';
 import * as structures from '../../../src/domain/world/Structures.ts';
@@ -62,8 +63,8 @@ it('keeps AudioDirector layers, tunnel gain and steam beats identical along the 
     }
     const common = {
       power: 'steam',
-      speedUPerSec: 480,
-      distanceU: 480,
+      speedUPerSec: gameConfig.train.maxSpeedUPerSec,
+      distanceU: gameConfig.train.maxSpeedUPerSec,
       wheelRadiusU: 24,
       throttle: true,
       bellGain: k % 3 === 0 ? 0.5 : 0,
