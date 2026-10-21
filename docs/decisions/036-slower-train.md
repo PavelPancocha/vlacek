@@ -151,6 +151,12 @@ změněné testovací kontrakty.
   plnou rychlost z configu; geometrické kroky 480 u a 480chunkové
   sweeps nejsou rychlosti a zůstávají. Historické hodnoty v regresi
   obnovy i absolutní zvukové referenci jsou záměrné.
+- CI rozpočet E2E: dlouhé jízdy D-030 přes tři regiony a dvě sezóny
+  ujedou pevnou vzdálenost, takže trvají dvakrát déle (WebGL 162 → 324 s,
+  Canvas 114 → 228 s). Obě varianty padnou v každém projektu do jednoho
+  shardu, který pak přesáhl 15 minut. Limit E2E jobu v
+  `.github/workflows/ci.yml` je proto 25 minut. Shardování, aserce ani
+  časové limity testů se nemění.
 
 ## Omezení
 
