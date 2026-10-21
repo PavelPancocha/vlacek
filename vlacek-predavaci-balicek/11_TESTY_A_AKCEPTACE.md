@@ -97,6 +97,8 @@ Tyto kontrolní hodnoty se vztahují jen k dodanému hash algoritmu, nikoli k ji
 
 V každém ticku dopravního testu assertovat, že vlak a silniční aktér současně neobsazují konflikt. Zahrnout různé délky vlaku, rychlostní nastavení a okamžiky start/stop. Kontrola musí vyhodnotit i pohybový interval mezi tick stavy, ne pouze jejich koncové obrázky.
 
+Synchronní jízdy k cílové souřadnici v `tests/unit/ride/RideSimulation.test.ts` mají konečný rozpočet ticků a končí dříve při dosažení cíle. Rozpočet je `ceil(1,5 × (počáteční vzdálenost / maxSpeedUPerSec + maxSpeedUPerSec / accelerationUPerSec2) × fixedHz)` z `gameConfig`; 50% rezerva pokrývá sklony, délku oblouku a diskrétní kroky. Po smyčce musí samostatná aserce ověřit dosažení cíle, aby regrese pohybu skončila selháním místo zablokování workeru (časový limit Vitestu synchronní smyčku nepřeruší). Platí pro obě setkání s píšťalou SCN-09/10 i dlouhou jízdu kontrolující velikost historie protijedoucích vlaků; chování hry a uložená data se nemění.
+
 ## 6. Obsah a rozhraní — UI / CNT
 
 | ID     | Test                                                | Očekávaný výsledek                                                                                                                                                                                                                                                                        |
