@@ -1,3 +1,4 @@
+import { gameConfig } from '../../config/gameConfig.ts';
 import type Phaser from 'phaser';
 import { expect, it, vi } from 'vitest';
 import { worldParts } from '../../content/worldArt.ts';
@@ -120,7 +121,7 @@ it.each([
     const input: TrainEffectsInput = {
       dtSec: 1 / fps,
       speedUPerSec: 0,
-      maxSpeedUPerSec: 480,
+      maxSpeedUPerSec: gameConfig.train.maxSpeedUPerSec,
       travelDirection: 1,
       intent: 'THROTTLE',
       emitters: [],
@@ -136,13 +137,13 @@ it.each([
     for (let frame = 1; frame <= Math.ceil(0.16 * fps); frame++) {
       // A fresh contact value each render, including a changing slope and speed.
       const contact = {
-        x: 100 + (frame * 480) / fps,
+        x: 100 + (frame * gameConfig.train.maxSpeedUPerSec) / fps,
         y: -128 - (frame * frame) / 4,
       };
       effects.step({
         ...input,
         pantograph: contact,
-        speedUPerSec: 480 - frame * 2,
+        speedUPerSec: gameConfig.train.maxSpeedUPerSec - frame * 2,
       });
       field.step(input.dtSec); // RideScene advances newborn particles before drawing.
       const glowIndex = field
@@ -168,7 +169,7 @@ it.each([
       effects.step({
         ...input,
         dtSec: 0,
-        speedUPerSec: 480,
+        speedUPerSec: gameConfig.train.maxSpeedUPerSec,
         pantograph: interpolated,
       });
       field.step(0);

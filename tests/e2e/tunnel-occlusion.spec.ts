@@ -1,3 +1,4 @@
+import { gameConfig } from '../../src/config/gameConfig.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { snapshot } from './helpers.ts';
 import { kindIndex } from '../../src/render/particles/particleKinds.ts';
@@ -343,19 +344,19 @@ for (const renderer of ['canvas', 'webgl']) {
       .poll(async () => (await snapshot(page)).effects.kinds['smoke'] ?? 0)
       .toBeGreaterThan(0);
     // Move the same living smoke behind the core, preserving its age and source.
-    await page.evaluate(() => {
+    await page.evaluate((maxSpeedUPerSec) => {
       const { ride, field } = window.__tunnelProbe;
       ride.headS = ride.track.sFromLocalX(6, 370);
       ride.previousHeadS = ride.headS;
-      ride.speedUPerSec = 480;
+      ride.speedUPerSec = maxSpeedUPerSec;
       for (const particle of field.particles()) {
         particle.x = 6500;
         particle.y = -ride.vehiclePose(0).centerY - 70;
       }
-    });
+    }, gameConfig.train.maxSpeedUPerSec);
     await page.keyboard.down('ArrowLeft');
     await expect.poll(async () => (await snapshot(page)).intent).toBe('BRAKE');
-    const brakingTick = await page.evaluate(() => {
+    const brakingTick = await page.evaluate((maxSpeedUPerSec) => {
       const { ride } = window.__tunnelProbe;
       const head = ride.track.sFromLocalX(6, 370);
       const step = ride.step.bind(ride);
@@ -363,13 +364,13 @@ for (const renderer of ['canvas', 'webgl']) {
       ride.headS = head;
       ride.previousHeadS = head;
       ride.step = (intent) => {
-        ride.speedUPerSec = 480;
+        ride.speedUPerSec = maxSpeedUPerSec;
         step(intent);
         ride.headS = head;
         ride.previousHeadS = head;
       };
       return ride.simulationTick;
-    });
+    }, gameConfig.train.maxSpeedUPerSec);
     // Advance across actual effect frames; one 0.5 s jump would expire sparks.
     await expect
       .poll(async () => (await snapshot(page)).simulationTick)
@@ -851,7 +852,7 @@ for (const renderer of ['canvas', 'webgl']) {
         return { x, y, zoom: c.zoom };
       });
     const frozenCamera = await camera();
-    await page.evaluate(() => {
+    await page.evaluate((maxSpeedUPerSec) => {
       const { ride, step } = window.__tunnelProbe;
       if (!step) throw new Error('step missing');
       const head = ride.headS;
@@ -861,7 +862,7 @@ for (const renderer of ['canvas', 'webgl']) {
         tick < 30 && ride.oncomingTrains.length === 0;
         tick++
       ) {
-        ride.speedUPerSec = 480;
+        ride.speedUPerSec = maxSpeedUPerSec;
         step('THROTTLE');
       }
       if (ride.oncomingTrains.length !== 1)
@@ -870,7 +871,7 @@ for (const renderer of ['canvas', 'webgl']) {
       // Hold world render time too: camera easing and ambient motion are not under test.
       ride.simulationTick = tick;
       ride.resetMotion();
-    });
+    }, gameConfig.train.maxSpeedUPerSec);
     await renderedFrame(page);
     expect(await feet()).toBe(owners);
     expect(await camera()).toEqual(frozenCamera);
@@ -1069,16 +1070,16 @@ for (const renderer of ['canvas', 'webgl']) {
         'electric_modern',
       );
       await page.keyboard.down('ArrowRight');
-      await page.evaluate(() => {
+      await page.evaluate((maxSpeedUPerSec) => {
         const { ride } = window.__tunnelProbe;
         const step = ride.step.bind(ride);
         ride.step = (intent) => {
-          ride.speedUPerSec = 480;
+          ride.speedUPerSec = maxSpeedUPerSec;
           step(intent);
-          ride.speedUPerSec = 480;
+          ride.speedUPerSec = maxSpeedUPerSec;
           ride.previousHeadS = ride.headS;
         };
-      });
+      }, gameConfig.train.maxSpeedUPerSec);
       await expect
         .poll(async () => (await snapshot(page)).intent)
         .toBe('THROTTLE');
@@ -1168,7 +1169,7 @@ for (const renderer of ['canvas', 'webgl']) {
         ).toBeLessThanOrEqual(1.25);
       }
       // Existing living contact particles moved under the opaque core.
-      await page.evaluate(() => {
+      await page.evaluate((maxSpeedUPerSec) => {
         const { ride, field, scene } = window.__tunnelProbe;
         ride.track.ensureRange(ride.track.startS, ride.track.endS + 8000);
         // 370 u leaves the full 204 u locomotive inside the opaque span;
@@ -1178,7 +1179,7 @@ for (const renderer of ['canvas', 'webgl']) {
         ride.step = () => {
           ride.simulationTick++;
         };
-        ride.speedUPerSec = 480;
+        ride.speedUPerSec = maxSpeedUPerSec;
         for (const p of field.particles()) {
           if (p.depth === 7.55) {
             p.x = 6500;
@@ -1186,7 +1187,7 @@ for (const renderer of ['canvas', 'webgl']) {
           }
         }
         scene.update(performance.now(), 1000 / 60);
-      });
+      }, gameConfig.train.maxSpeedUPerSec);
       await renderedFrame(page);
       expect(
         (await snapshot(page)).tunnels.some((t) => t.vehicles[0] === 'inside'),

@@ -1,3 +1,4 @@
+import { gameConfig } from '../../../../src/config/gameConfig.ts';
 import { effectiveClimateAt } from '../../../../src/domain/world/Seasons.ts';
 import { frostyWireAt } from '../../../../src/render/particles/SeasonalEffects.ts';
 import { describe, expect, it } from 'vitest';
@@ -22,7 +23,7 @@ function lcg(seed: number): () => number {
   };
 }
 
-const MAX = 480;
+const MAX = gameConfig.train.maxSpeedUPerSec;
 const base: TrainEffectsInput = {
   dtSec: 1 / 60,
   speedUPerSec: 0,
@@ -444,7 +445,7 @@ it('SEA-04: each bogie stirs its own snow surface; a dry front cannot hide snowy
   for (let i = 0; i < 60; i++)
     effects.step({
       ...base,
-      speedUPerSec: 480,
+      speedUPerSec: gameConfig.train.maxSpeedUPerSec,
       wheels: [
         { x: 10, y: 0 },
         { x: 100, y: 0 },
@@ -474,7 +475,7 @@ it('SEA-04: low longest train leaves a continuous short granular trail without r
       effects
         .step({
           ...base,
-          speedUPerSec: 480,
+          speedUPerSec: gameConfig.train.maxSpeedUPerSec,
           rateScale: 0.5,
           wheels,
           groundAt: () => ({ kind: 'snow', strength: 1 }),

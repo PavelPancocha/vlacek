@@ -30,7 +30,12 @@ describe('D-028 longest consist, world 123', () => {
     let metNpc = false;
     let maxChunks = 0;
     let maxSamples = 0;
-    for (let tick = 0; tick < 60 * 50; tick++) {
+    // Same 24000 u cruise envelope as 50 s × the historical 480 u/s.
+    const ticks = Math.ceil(
+      (24000 / gameConfig.train.maxSpeedUPerSec) *
+        gameConfig.simulation.fixedHz,
+    );
+    for (let tick = 0; tick < ticks; tick++) {
       ride.step('THROTTLE');
       chunks.add(ride.headCursor().chunkIndex);
       metNpc ||= ride.oncomingTrains.some((train) => {

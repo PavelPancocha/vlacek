@@ -1,3 +1,4 @@
+import { gameConfig } from '../../src/config/gameConfig.ts';
 import { longestMixedConsist } from './perfConsist.ts';
 import { expect, test } from '@playwright/test';
 import {
@@ -201,7 +202,9 @@ for (const renderer of ['canvas', 'webgl']) {
         await page.mouse.move(700, 300);
         await page.mouse.down();
         await advanceSeasonalFrames(page, 180);
-        expect((await snapshot(page)).speedUPerSec).toBeGreaterThan(400);
+        expect((await snapshot(page)).speedUPerSec).toBeGreaterThan(
+          gameConfig.train.maxSpeedUPerSec * (400 / 480),
+        );
         for (let frame = 0; frame < 3; frame++) {
           const regions = await snowRegions(page, false);
           const simulationTick = (await snapshot(page)).simulationTick;

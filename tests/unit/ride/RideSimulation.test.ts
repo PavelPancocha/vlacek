@@ -178,7 +178,9 @@ describe('RideSimulation restore guard', () => {
 
   it('SCN-13: keeps its crossings working over the whole train, before Dclose and after the render window', () => {
     // Seed 4242's first crossing; the longest consist (≈ 1600 u).
-    const ride = new RideSimulation(setup(8));
+    const ride = new RideSimulation(
+      setup(8, { head: { chunkIndex: 1, arcOffsetU: 450 } }),
+    );
     const crossing = ride.crossings[0];
     expect(crossing).toBeDefined();
     if (!crossing) return;
@@ -203,7 +205,9 @@ describe('RideSimulation restore guard', () => {
   });
 
   it('SCN-08: a journey restored on a crossing starts with it closed', () => {
-    const first = new RideSimulation(setup(0));
+    const first = new RideSimulation(
+      setup(0, { head: { chunkIndex: 1, arcOffsetU: 450 } }),
+    );
     const crossing = first.crossings[0];
     if (!crossing) throw new Error('no crossing');
     const k = Math.floor(crossing.worldX / gameConfig.world.chunkWidthU);
@@ -224,7 +228,9 @@ describe('RideSimulation restore guard', () => {
     // Observe allocations while keeping the real crossing automaton.
     const created = vi.spyOn(crossingModule, 'LevelCrossing');
     try {
-      const ride = new RideSimulation(setup(0));
+      const ride = new RideSimulation(
+        setup(0, { head: { chunkIndex: 1, arcOffsetU: 450 } }),
+      );
       const crossing = ride.crossings[0];
       if (!crossing) throw new Error('no crossing in world 4242');
       const chunk = Math.floor(crossing.worldX / chunkWidthU);
@@ -316,7 +322,8 @@ describe('RideSimulation: the oncoming train (doc 05 §6, SCN-09/10)', () => {
 
   it('answers the horn at most every 8 s and never itself; greets once when meeting', () => {
     const ride = beforeTrigger(50);
-    for (let i = 0; i < 60 * 3; i++) ride.step('THROTTLE');
+    // Meet in the open, rather than stopping before the portal at the new lower speed.
+    while (frontX(ride) < site.fromX + 200) ride.step('THROTTLE');
     expect(ride.oncomingTrains).toHaveLength(1);
     // Hold still in range; it comes along and meets the player.
     const npcHorns: number[] = [];
@@ -337,7 +344,8 @@ describe('RideSimulation: the oncoming train (doc 05 §6, SCN-09/10)', () => {
 
   it('greets just once on its own, without any horn from the player', () => {
     const ride = beforeTrigger(50);
-    for (let i = 0; i < 60 * 3; i++) ride.step('THROTTLE');
+    // Meet in the open, rather than stopping before the portal at the new lower speed.
+    while (frontX(ride) < site.fromX + 200) ride.step('THROTTLE');
     let greetings = 0;
     for (let i = 0; i < 60 * 60; i++) {
       ride.step('BRAKE');

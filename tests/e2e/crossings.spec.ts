@@ -1,3 +1,4 @@
+import { gameConfig } from '../../src/config/gameConfig.ts';
 import { expect, test, type Page } from '@playwright/test';
 import type { DebugSnapshot } from '../../src/app/debugSnapshot.ts';
 import { CROSSING_ZONE_HALF_U } from '../../src/domain/interaction/LevelCrossing.ts';
@@ -107,7 +108,7 @@ test.describe('level crossings (doc 05 §4, doc 14 §5, D-015)', () => {
       if (scenario.longest)
         expect((await snapshot(page)).consistLengthU).toBe(2000);
       const result = await page.evaluate(
-        async ({ crossingId, halfSpeed }) => {
+        async ({ crossingId, halfSpeed, maxSpeedUPerSec }) => {
           const api = (
             window as unknown as { __vlacek: { snapshot(): DebugSnapshot } }
           ).__vlacek;
@@ -131,8 +132,10 @@ test.describe('level crossings (doc 05 §4, doc 14 §5, D-015)', () => {
               await new Promise((resolve) => requestAnimationFrame(resolve));
               const state = api.snapshot();
               if (halfSpeed) {
-                if (state.speedUPerSec > 245) setThrottle(false);
-                if (state.speedUPerSec < 235) setThrottle(true);
+                if (state.speedUPerSec > maxSpeedUPerSec * (245 / 480))
+                  setThrottle(false);
+                if (state.speedUPerSec < maxSpeedUPerSec * (235 / 480))
+                  setThrottle(true);
               }
               const crossing = state.crossings.find((c) => c.id === crossingId);
               if (!crossing) continue;
@@ -152,13 +155,24 @@ test.describe('level crossings (doc 05 §4, doc 14 §5, D-015)', () => {
             setThrottle(false);
           }
         },
-        { crossingId: CROSSING, halfSpeed: scenario.halfSpeed },
+        {
+          crossingId: CROSSING,
+          halfSpeed: scenario.halfSpeed,
+          maxSpeedUPerSec: gameConfig.train.maxSpeedUPerSec,
+        },
       );
       expect(result.barrier).toBe(1);
       if (scenario.halfSpeed) {
-        expect(result.lowering?.speed).toBeGreaterThan(220);
-        expect(result.lowering?.speed).toBeLessThan(270);
-      } else expect(result.lowering?.speed).toBeGreaterThanOrEqual(430);
+        expect(result.lowering?.speed).toBeGreaterThan(
+          gameConfig.train.maxSpeedUPerSec * (220 / 480),
+        );
+        expect(result.lowering?.speed).toBeLessThan(
+          gameConfig.train.maxSpeedUPerSec * (270 / 480),
+        );
+      } else
+        expect(result.lowering?.speed).toBeGreaterThanOrEqual(
+          gameConfig.train.maxSpeedUPerSec * (430 / 480),
+        );
       // Camera-1 shows more ahead: even the longest train must show the
       // start of lowering, rather than first seeing an already closed crossing.
       expect(result.lowering).toBeDefined();
@@ -171,7 +185,9 @@ test.describe('level crossings (doc 05 §4, doc 14 §5, D-015)', () => {
     page,
   }) => {
     test.setTimeout(60_000);
-    await continueJourney(page);
+    // D-036: start in chunk 1, inside the shorter streaming window but outside Dclose.
+    // The original chunk-0 cursor no longer has a crossing instance to assert OPEN.
+    await continueJourney(page, false, false, undefined, true);
     const find = async () => {
       const state = await snapshot(page);
       return {
@@ -186,7 +202,12 @@ test.describe('level crossings (doc 05 §4, doc 14 §5, D-015)', () => {
     await page.mouse.down();
     let phases: string[] = [];
     let occupiedSamples = 0;
-    for (let i = 0; i < 200; i++) {
+    // D-036: the same 9600 u drive envelope needs 9600 / Vmax seconds.
+    for (
+      let i = 0;
+      i < Math.ceil(9600 / gameConfig.train.maxSpeedUPerSec / 0.1);
+      i++
+    ) {
       const { state, crossing } = await find();
       // The app records every phase each frame; polling here could miss
       // the short OPENING phase on a slow machine.
