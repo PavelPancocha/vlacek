@@ -69,9 +69,11 @@ nepřelaďuje. Specifikace 03 a komentář configu nyní odpovídají skutečnos
 
 ## Zvuk
 
-Koleno/strop páry klesá **4/6 → 2/3 rázů/s**, překryv zůstává 1,5.
+Původní zvukové rozhodnutí D-036 (historické): koleno/strop páry klesl
+**4/6 → 2/3 rázů/s**, překryv zůstal 1,5.
 Kolena jsou 47,123890 / 59,690260 u/s pro `steam_local` / `steam_express`.
-Při 240 u/s oba typy hrají přibližně 3 rázy/s s délkou 0,5 s.
+Tehdy při 240 u/s oba typy hrály přibližně 3 rázy/s s délkou 0,5 s;
+tyto hodnoty nahrazuje dodatek níže.
 Pod kolenem je přesně jeden ráz na takt kola, fáze se neresetuje.
 Tabulku a regresní kontrakt včetně čekajícího rázu vlastní
 [aktuální dodatek D-035](035-steam-chuff-rhythm.md).
@@ -82,6 +84,35 @@ maximem vlaku. Při 240 u/s je playback rate 1,175 a gain 0,425;
 původně na 480 u/s byly 1,7 a 0,7. Diesel a elektrika odvozují mix
 od stejného gainu kol, takže s nižší rychlostí přirozeně znějí pomaleji.
 Nahrávky, limity zdrojů, filtry a hlasitost páry se nemění.
+
+### Dodatek 2026-10-21 — „Now too slow“, strop 4 rázy/s
+
+Po poslechu živého buildu `0.1.0+0848f72` majitel odpověděl **„Now too slow“**
+na nabídku zvýšit strop páry na 4 rázy/s bez změny rychlosti vlaku.
+`CHUFF_CEILING_PER_SEC` se proto mění 3 → 4; koleno 2 rázy/s,
+`CHUFF_MAX_OVERLAP = 1.5` a pohyb 240/80/48/240 zůstávají.
+Aktuální vzorec a přesná čísla vlastní [D-035](035-steam-chuff-rhythm.md):
+`r = 2 + 2 × (1 − exp(−(b − 2)/2))` nad kolenem,
+`f = 1 + 0,5 × (r − 2)/2`, délka `min(0,58, f/r)`.
+Při 240 u/s je to **3,966620 / 3,902471 rázu/s** a
+**376,052 / 378,124 ms** pro malou parní / expres. Pod koleny
+47,123890 / 59,690260 u/s zůstává původní časování i délka.
+
+| Rychlost u/s | `steam_local` rázů/s | Délka ms | `steam_express` rázů/s | Délka ms |
+| ------------ | -------------------- | -------- | ---------------------- | -------- |
+| 0            | 0,000000             | —        | 0,000000               | —        |
+| 30           | 1,273240             | 580,000  | 1,005189               | 580,000  |
+| 47           | 1,994742             | 501,318  | 1,574796               | 580,000  |
+| 60           | 2,478179             | 451,761  | 2,010351               | 498,713  |
+| 100          | 3,348787             | 399,308  | 2,982008               | 417,672  |
+| 150          | 3,774616             | 382,464  | 3,559492               | 390,470  |
+| 200          | 3,921995             | 377,486  | 3,809382               | 381,255  |
+| 240          | 3,966620             | 376,052  | 3,902471               | 378,124  |
+
+Tabulka popisuje křivku, ne počet celých událostí v krátkém okně.
+Kouř, nahrávky, gain, obálky, limity zdrojů i přijetí čekajícího rázu
+zůstávají. Save, katalog a generátor nevyžadují migraci. Poslech nového
+rytmu na konkrétním fyzickém tabletu/Tesle a firmwaru: **NEOVĚŘENO**.
 
 ## Uložená cesta a kompatibilita
 
@@ -103,7 +134,8 @@ změněné testovací kontrakty.
 - `gameConfig.test.ts`: 0,072 šířky/s při obou délkách, hodnoty
   240/80/48/240 a původní meze rozjezdu/dojezdu/brzdy.
 - `AudioDirector.test.ts`: 30 u/s pod oběma novými koleny, 10 s na
-  configovém limitu s 2,9–3 rázy/s a 0,5s délkou, koleno 47/60 u/s,
+  configovém limitu s 3,9–4 rázy/s a délkou odvozenou z K/M/F
+  (asi 376/378 ms podle dodatku steam-ceiling-1), koleno 47/60 u/s,
   hladká křivka a fáze. Skutečný manager přehraje všechny požadavky
   ramp 0/40 → 240 → 0, +80 a −48/−80/−240 u/s², při 30/60 FPS,
   s nejvýše dvěma živými rázy a zdrojovým stropem 11.

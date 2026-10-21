@@ -64,7 +64,7 @@ export function coveredFraction(
 }
 // Owner: nice "šššh šššh šh" becomes "trrr" at speed. D-035; tune here after listening.
 const CHUFF_KNEE_PER_SEC = 2;
-const CHUFF_CEILING_PER_SEC = 3;
+const CHUFF_CEILING_PER_SEC = 4;
 const CHUFF_MAX_OVERLAP = 1.5; // Steady overlap < 2; D-035 admission also handles older, longer strokes.
 
 export function chuffRate(beatsPerSec: number): number {

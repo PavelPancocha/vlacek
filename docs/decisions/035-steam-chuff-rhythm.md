@@ -4,11 +4,59 @@ Datum: 2026-10-20. Stav: přijato; poslech na zařízení **NEOVĚŘENO**.
 Upřesňuje zvuk páry v [D-022](022-recorded-sounds.md); kouř podle
 [D-014](014-particles-and-small-animations.md) se nemění.
 
-## Změna 2026-10-21 — pomalejší vlak a pára (D-036)
+## Dodatek 2026-10-21 — strop 4 rázy/s (steam-ceiling-1)
+
+Majitel po poslechu živého buildu `0.1.0+0848f72` (240 u/s, koleno 2 rázy/s,
+strop 3 rázy/s, délka při plné rychlosti 0,5 s) odpověděl **„Now too slow“**
+na nabídku zvýšit strop na 4 rázy/s při nezměněné rychlosti vlaku.
+Aktuálně platí `CHUFF_KNEE_PER_SEC = 2`, `CHUFF_CEILING_PER_SEC = 4`
+a `CHUFF_MAX_OVERLAP = 1.5`. Toto nahrazuje původní zvukové hodnoty D-036
+níže; pohyb zůstává 240 u/s a 80/48/240 u/s².
+
+Pro vzorec v historické části tedy platí K = 2, M = 4, F = 1,5.
+Nad kolenem je `f = 1 + 0,5 × (r − 2) / 2` a délka `min(0,58, f/r)`;
+už není konstantní. Při 240 u/s vychází pro `steam_local`
+`b = 10,185916357881302/s`, `r = 3,9666204218414993/s`,
+délka `0,37605188972628634 s`; pro `steam_express`
+`b = 8,041512914116817/s`, `r = 3,9024713674098033/s`,
+délka `0,37812393812177186 s`. Asymptotická délka je 0,375 s.
+Kolena zůstávají **47,123890 / 59,690260 u/s**; pod nimi se časování,
+délka i přírůstek fáze nemění. Při stání není ráz ani přírůstek fáze.
+Tabulka uvádí četnost křivky a délku, nikoli celé události v krátkém okně.
+
+| Rychlost u/s | `steam_local` rázů/s | Délka ms | `steam_express` rázů/s | Délka ms |
+| ------------ | -------------------- | -------- | ---------------------- | -------- |
+| 0            | 0,000000             | —        | 0,000000               | —        |
+| 30           | 1,273240             | 580,000  | 1,005189               | 580,000  |
+| 47           | 1,994742             | 501,318  | 1,574796               | 580,000  |
+| 60           | 2,478179             | 451,761  | 2,010351               | 498,713  |
+| 100          | 3,348787             | 399,308  | 2,982008               | 417,672  |
+| 150          | 3,774616             | 382,464  | 3,559492               | 390,470  |
+| 200          | 3,921995             | 377,486  | 3,809382               | 381,255  |
+| 240          | 3,966620             | 376,052  | 3,902471               | 378,124  |
+
+`AudioDirector.test.ts` ověřuje 10 s při configovém limitu (240 u/s),
+pásmo 3,9–4 rázy/s a délku odvozenou z K/M/F a rychlosti. Zachovává
+pomalý rytmus po snímcích, kolena, hladkou monotónní křivku se směrnicí
+nejvýše 1 do 600 u/s, přenos fáze a zahození celých doháněných taktů.
+Přesné fáze se přepočítaly podle nové křivky: první plný ráz malé parní
+při 60 FPS přichází v 16. snímku; primovaný start 40 u/s při +80 u/s²
+má po počátečním rázu další požadavky ve snímcích 26 a 45, bez odkladu.
+Rampy 0/40 → 240 → 0, +80 a −48/−80/−240 u/s², oba poloměry a 30/60 FPS
+stále používají skutečný manager: žádný zahozený ráz, nejvýše dva živé
+rázy a 11 zdrojů, zachovaná požadovaná délka a odklad nejvýše 10,0011 ms.
+Přijetí čekajícího rázu, 10ms rampa i cleanup zůstávají podle D-022.
+
+Nemění se train config, nahrávka, gain, obálka, kouř, tunelový filtr,
+limity zdrojů, diesel ani elektrika. Save, katalog a generátor zůstávají
+beze změny, migrace není potřeba. Nový poslech na fyzickém tabletu/Tesle
+včetně konkrétního zařízení a firmwaru: **NEOVĚŘENO**.
+
+## Historická změna 2026-10-21 — původní pomalejší vlak a pára (D-036)
 
 Po poslechu předchozího buildu majitel zvolil poloviční rychlost vlaku i rytmus
 páry; důvod a pohybové konstanty vlastní [D-036](036-slower-train.md).
-Aktuálně platí `CHUFF_KNEE_PER_SEC = 2`, `CHUFF_CEILING_PER_SEC = 3`
+Původně platilo `CHUFF_KNEE_PER_SEC = 2`, `CHUFF_CEILING_PER_SEC = 3`
 a nezměněné `CHUFF_MAX_OVERLAP = 1.5`. Vzorec křivky a přenos fáze zůstávají.
 Koleno je **47,123890 u/s** pro `steam_local` a **59,690260 u/s** pro
 `steam_express`. Pod kolenem zůstává přesně jeden ráz na takt kola;
@@ -26,7 +74,7 @@ Při stání žádný ráz nevzniká.
 | 200          | 2,998479             | 500,000  | 2,990916               | 500,000  |
 | 240          | 2,999721             | 500,000  | 2,997622               | 500,000  |
 
-Aktuální testy v `AudioDirector.test.ts` ověřují 10 s při limitu z configu
+Tehdejší testy v `AudioDirector.test.ts` ověřovaly 10 s při limitu z configu
 (240 u/s): obě lokomotivy 2,9–3 rázů/s a každý ráz 0,5 s. Přesný původní
 rytmus a délka se kontrolují při 30 u/s po každém snímku. Rampy 0/40 →
 240 → 0 při +80 u/s² a dojezdu −48, zpomalení −80 i brzdě −240 u/s²,
@@ -36,7 +84,7 @@ přehraný požadavek zachová délku a čeká nejvýše 10,0011 ms při modelov
 `ended` o 1 µs po konci. Nové rampy nemusí vyvolat stejný počet odkladů
 jako historický protipříklad; samotné čekání, 10ms rampa, náhrada a cleanup
 zůstávají chráněné regresními testy manageru podle D-022/D-035.
-Přechod fáze se nyní ověřuje přes 40 → 55 → 40 a následně 30 u/s,
+Přechod fáze se tehdy ověřoval přes 40 → 55 → 40 a následně 30 u/s,
 se zrychlením/zpomalením 5 u/s²; přesná posloupnost snímků se přepočítala
 podle nové křivky. Spojitost a monotónnost zůstávají testované do 600 u/s.
 Poslech a pocit z jízdy na fyzických zařízeních: **NEOVĚŘENO**.
