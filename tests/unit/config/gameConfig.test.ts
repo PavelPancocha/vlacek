@@ -27,7 +27,7 @@ describe('gameConfig', () => {
     });
   });
 
-  it('camera-1: the wider fixed scale changes screen speed while preserving motion', () => {
+  it('D-036: half speed at the unchanged camera scale preserves start, coast and brake times', () => {
     const { train, camera } = gameConfig;
     const framing = { ...camera, vehicleHeightU: 150 };
     const view = {
@@ -39,12 +39,18 @@ describe('gameConfig', () => {
     // Camera-1 keeps one fixed wider scale for every allowed ride.
     expect(
       (train.maxSpeedUPerSec * trainZoom(view, 1600, framing)) / view.widthPx,
-    ).toBeCloseTo(0.144, 9);
+    ).toBeCloseTo(0.072, 9);
     expect(
       (train.maxSpeedUPerSec *
         trainZoom(view, train.maxConsistLengthU, framing)) /
         view.widthPx,
-    ).toBeCloseTo(0.144, 9);
+    ).toBeCloseTo(0.072, 9);
+    expect([
+      train.maxSpeedUPerSec,
+      train.accelerationUPerSec2,
+      train.coastDecelerationUPerSec2,
+      train.brakeDecelerationUPerSec2,
+    ]).toEqual([240, 80, 48, 240]);
     // Smooth start and coast: seconds from standstill to full speed and back.
     const toFull = train.maxSpeedUPerSec / train.accelerationUPerSec2;
     const coast = train.maxSpeedUPerSec / train.coastDecelerationUPerSec2;
@@ -184,7 +190,7 @@ describe('gameConfig', () => {
       maxQueuedCars: 6,
       maxQueuedBikes: 2,
     });
-    // Doc 05 example: 180 u/s gives 890 u; the ride now tops out at 480 u/s.
+    // Doc 05 example: 180 u/s gives 890 u; the ride now tops out at 240 u/s.
     expect(crossingCloseDistanceU(gameConfig.crossing, 180)).toBeCloseTo(
       890,
       9,
@@ -194,7 +200,7 @@ describe('gameConfig', () => {
         gameConfig.crossing,
         gameConfig.train.maxSpeedUPerSec,
       ),
-    ).toBeCloseTo(480 * 4.5 + 80, 9);
+    ).toBeCloseTo(gameConfig.train.maxSpeedUPerSec * 4.5 + 80, 9);
   });
 
   it('is valid as shipped', () => {

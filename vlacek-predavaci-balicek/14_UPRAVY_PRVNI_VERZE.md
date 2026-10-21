@@ -83,6 +83,8 @@ Nevytvářej nové minihry ani závislost scének na nákladu. Nádraží zůst�
 
 ## 6. Zrychli jízdu a oprav charakter výškového profilu
 
+**Pozdější rozhodnutí majitele 2026-10-21:** požadavek na svižnější jízdu níže nahrazuje [D-036](../docs/decisions/036-slower-train.md): limit 240 u/s, rozjezd 80 u/s², dojezd 48 u/s² a brzda 240 u/s². Kamera i charakter profilu zůstávají.
+
 Jízda má být viditelně svižnější než nyní. Nestačí zvýšit číslo rychlosti, pokud po změně měřítka působí posun krajiny pořád pomalu. Laď výslednou rychlost na obrazovce tak, aby bylo cestování zřetelné, ale dítě ještě stíhalo sledovat a dotýkat se okolí. Rozjezd i dojezd mají zůstat plynulé.
 
 Zachovej jednoduché ovládání: **držím dotyk = vlak jede a zrychluje; pustím = postupně zpomaluje; brzda zpomalí výrazněji.** Nevyžaduj přesné dávkování ani nové ovládací prvky. Parametry rychlosti, akcelerace a brzdění soustřeď do konfigurace.

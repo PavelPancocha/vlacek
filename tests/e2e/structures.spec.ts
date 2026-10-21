@@ -1,3 +1,4 @@
+import { gameConfig } from '../../src/config/gameConfig.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { TRACK_GENERATOR_VERSION } from '../../src/domain/world/TrackProfile.ts';
 import {
@@ -73,7 +74,12 @@ test.describe('bridge and tunnel (doc 03 §8, doc 14 §2 and §5, D-018)', () =>
     let partlyCovered = false;
     let wasIn = false;
     let shot = false;
-    for (let i = 0; i < 300; i++) {
+    // D-036: preserve the 7200 u sampling envelope: 15 s × 480 / Vmax (30 s now).
+    for (
+      let i = 0;
+      i < Math.ceil(7200 / gameConfig.train.maxSpeedUPerSec / 0.05);
+      i++
+    ) {
       const state = await snapshot(page);
       if (state.headChunk !== undefined) chunks.add(state.headChunk);
       // The wire runs over the bridge and through the tunnel (TRN-08).

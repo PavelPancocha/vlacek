@@ -1,3 +1,4 @@
+import { gameConfig } from '../../../src/config/gameConfig.ts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setupAudioContext } from '../../helpers/audioContextDouble.ts';
 import { AudioManager } from '../../../src/platform/AudioManager.ts';
@@ -45,8 +46,9 @@ async function playRamp(
   radiusU: number,
   fps: number,
   initialSpeedUPerSec: number,
-  decelerationUPerSec2 = 160,
+  decelerationUPerSec2 = gameConfig.train.accelerationUPerSec2,
 ) {
+  const train = gameConfig.train;
   const state = setupAudioContext();
   const { audio, context, voices, advanceTo } = state;
   const director = new AudioDirector(audio);
@@ -77,8 +79,9 @@ async function playRamp(
   await advanceTo(10);
   if (initialSpeedUPerSec > 0)
     update(initialSpeedUPerSec, (2 * Math.PI * radiusU) / 4);
-  const accelerationSec = (480 - initialSpeedUPerSec) / 160;
-  const endSec = accelerationSec + 480 / decelerationUPerSec2;
+  const accelerationSec =
+    (train.maxSpeedUPerSec - initialSpeedUPerSec) / train.accelerationUPerSec2;
+  const endSec = accelerationSec + train.maxSpeedUPerSec / decelerationUPerSec2;
   let previousSpeedUPerSec = initialSpeedUPerSec;
   let maximumLive = 0;
   const advanceAudioTo = async (sec: number) => {
@@ -102,8 +105,12 @@ async function playRamp(
     await advanceAudioTo(10 + timeSec);
     const speedUPerSec =
       timeSec <= accelerationSec
-        ? initialSpeedUPerSec + timeSec * 160
-        : Math.max(0, 480 - (timeSec - accelerationSec) * decelerationUPerSec2);
+        ? initialSpeedUPerSec + timeSec * train.accelerationUPerSec2
+        : Math.max(
+            0,
+            train.maxSpeedUPerSec -
+              (timeSec - accelerationSec) * decelerationUPerSec2,
+          );
     update(speedUPerSec, (previousSpeedUPerSec + speedUPerSec) / (2 * fps));
     previousSpeedUPerSec = speedUPerSec;
     const live = voices.filter(
@@ -134,48 +141,70 @@ async function playRamp(
 }
 
 describe('steam chuff rhythm (D-035)', () => {
-  it('preserves every distance beat and the old duration at 60 u/s for 10 s at 60 fps', () => {
+  it('preserves every distance beat and the old duration at 30 u/s for 10 s at 60 fps', () => {
     const steam = recordSteam(15);
     const oldBeats = new ChuffDistance();
-    const oldDurationSec = Math.min(0.58, (2 * Math.PI * 15) / 4 / 60);
+    const oldDurationSec = Math.min(0.58, (2 * Math.PI * 15) / 4 / 30);
     for (let frame = 1; frame <= 600; frame++) {
       const before = steam.strokes.length;
-      steam.update(60, 1, frame / 60);
+      steam.update(30, 0.5, frame / 60);
       expect(steam.strokes.length - before).toBe(
-        oldBeats.advance(1, 15) ? 1 : 0,
+        oldBeats.advance(0.5, 15) ? 1 : 0,
       );
     }
     expect(
-      Math.abs(steam.strokes.length - 600 / ((2 * Math.PI * 15) / 4)),
+      Math.abs(steam.strokes.length - 300 / ((2 * Math.PI * 15) / 4)),
     ).toBeLessThanOrEqual(1);
-    expect(steam.strokes[0]?.startSec).toBe(24 / 60);
+    expect(steam.strokes[0]?.startSec).toBe(48 / 60);
     for (const stroke of steam.strokes)
       expect(stroke.durationSec).toBe(oldDurationSec);
   });
 
   it.each([15, 19])(
-    'caps full-speed chuffs with radius %s u over 10 s at 60 fps',
+    'D-036: caps full-speed chuffs with radius %s u over 10 s at 60 fps',
     (radiusU) => {
       const steam = recordSteam(radiusU);
       for (let frame = 1; frame <= 600; frame++)
-        steam.update(480, 480 / 60, frame / 60);
-      expect(steam.strokes.length / 10).toBeGreaterThanOrEqual(5.5);
-      expect(steam.strokes.length / 10).toBeLessThanOrEqual(6);
+        steam.update(
+          gameConfig.train.maxSpeedUPerSec,
+          gameConfig.train.maxSpeedUPerSec / 60,
+          frame / 60,
+        );
+      expect(steam.strokes.length / 10).toBeGreaterThanOrEqual(2.9);
+      expect(steam.strokes.length / 10).toBeLessThanOrEqual(3);
     },
   );
 
   it.each([15, 19])(
-    'lengthens every full-speed chuff with radius %s u to 250 ms',
+    'lengthens every full-speed chuff with radius %s u to 500 ms',
     (radiusU) => {
       const steam = recordSteam(radiusU);
       for (let frame = 1; frame <= 600; frame++)
-        steam.update(480, 480 / 60, frame / 60);
+        steam.update(
+          gameConfig.train.maxSpeedUPerSec,
+          gameConfig.train.maxSpeedUPerSec / 60,
+          frame / 60,
+        );
       expect(steam.strokes.length).toBeGreaterThan(0);
       for (const stroke of steam.strokes) {
         expect(stroke.durationSec).toBeGreaterThanOrEqual(0.2);
         expect(stroke.durationSec).toBeLessThanOrEqual(0.58);
-        expect(stroke.durationSec).toBeCloseTo(0.25, 12);
+        expect(stroke.durationSec).toBeCloseTo(0.5, 12);
       }
+    },
+  );
+
+  it.each([
+    [15, 47.12388980384689],
+    [19, 59.690260418206066],
+  ])(
+    'D-036: radius %s u reaches the knee at %s u/s',
+    (radiusU, kneeSpeedUPerSec) => {
+      const intervalU = (2 * Math.PI * radiusU) / 4;
+      expect(chuffRate(kneeSpeedUPerSec / intervalU)).toBeCloseTo(2, 12);
+      expect(chuffRate(2)).toBe(2);
+      expect((chuffRate(2 + 1e-6) - 2) / 1e-6).toBeCloseTo(1, 5);
+      expect(chuffRate(3)).toBeCloseTo(2.6321205588285577, 12);
     },
   );
 
@@ -192,13 +221,13 @@ describe('steam chuff rhythm (D-035)', () => {
         expect(rate - previousRate).toBeLessThanOrEqual(
           0.1 / intervalU + 1e-12,
         );
-        expect(rate).toBeLessThanOrEqual(6);
-        if (beatsPerSec <= 4) expect(rate).toBe(beatsPerSec);
+        expect(rate).toBeLessThanOrEqual(3);
+        if (beatsPerSec <= 2) expect(rate).toBe(beatsPerSec);
         previousRate = rate;
       }
-      expect(chuffRate(4)).toBe(4);
-      expect((chuffRate(4 + 1e-6) - 4) / 1e-6).toBeCloseTo(1, 5);
-      expect(chuffRate(6)).toBeCloseTo(5.264241117657115, 12);
+      expect(chuffRate(2)).toBe(2);
+      expect((chuffRate(2 + 1e-6) - 2) / 1e-6).toBeCloseTo(1, 5);
+      expect(chuffRate(3)).toBeCloseTo(2.6321205588285577, 12);
       expect(chuffRate(0)).toBe(0);
     },
   );
@@ -208,7 +237,11 @@ describe('steam chuff rhythm (D-035)', () => {
     async (fps) => {
       for (const radiusU of [15, 19])
         for (const initialSpeedUPerSec of [0, 40])
-          for (const decelerationUPerSec2 of [96, 160, 480]) {
+          for (const decelerationUPerSec2 of [
+            gameConfig.train.coastDecelerationUPerSec2,
+            gameConfig.train.accelerationUPerSec2,
+            gameConfig.train.brakeDecelerationUPerSec2,
+          ]) {
             const result = await playRamp(
               radiusU,
               fps,
@@ -220,24 +253,24 @@ describe('steam chuff rhythm (D-035)', () => {
     },
   );
 
-  it('plays the primed 40 u/s counterexample with exactly one 10ms deferral at 60 fps', async () => {
+  it('plays the primed 40 u/s start at the new acceleration without dropping or deferring a stroke', async () => {
     const result = await playRamp(15, 60, 40);
     expect(result.requests[0]).toEqual({ startSec: 10, durationSec: 0.58 });
-    expect(result.requests[1]?.startSec).toBeCloseTo(10.35, 12);
-    expect(result.requests[2]?.startSec).toBeCloseTo(10 + 34 / 60, 12);
-    expect(result.deferred).toBe(1);
+    expect(result.requests[1]?.startSec).toBeCloseTo(10 + 27 / 60, 12);
+    expect(result.requests[2]?.startSec).toBeCloseTo(10 + 48 / 60, 12);
+    expect(result.deferred).toBe(0);
   });
 
   it('carries phase through both knee crossings without extra or missing chuffs and with bounded interval changes', () => {
     const steam = recordSteam(15);
-    let previousSpeedUPerSec = 80;
+    let previousSpeedUPerSec = 40;
     for (let frame = 1; frame <= 480; frame++) {
       const speedUPerSec =
         frame <= 180
-          ? 80 + (10 * frame) / 60
+          ? 40 + (5 * frame) / 60
           : frame <= 360
-            ? 110 - (10 * (frame - 180)) / 60
-            : 60;
+            ? 55 - (5 * (frame - 180)) / 60
+            : 30;
       steam.update(
         speedUPerSec,
         (previousSpeedUPerSec + speedUPerSec) / 120,
@@ -245,17 +278,16 @@ describe('steam chuff rhythm (D-035)', () => {
       );
       previousSpeedUPerSec = speedUPerSec;
     }
-    // +10 then -10 u/s² through the knee (frames 86 / 275), then constant 60 u/s.
-    // Independently calculated phase crossings; BASE's falling/60 u/s beats differ.
+    // +5 then -5 u/s² through the new knee, then constant 30 u/s.
+    // Independently calculated phase crossings retain the accumulated phase.
     expect(
       steam.strokes.map((stroke) => Math.round(stroke.startSec * 60)),
     ).toEqual([
-      18, 35, 51, 67, 82, 97, 111, 126, 140, 153, 167, 180, 193, 207, 220, 234,
-      248, 263, 278, 293, 309, 325, 342, 359, 382, 405, 429, 453, 476,
+      35, 67, 97, 126, 153, 180, 207, 234, 263, 293, 325, 359, 405, 453,
     ]);
     const intervalU = (2 * Math.PI * 15) / 4;
-    // |Δperiod| <= a / (intervalU * minRate³) + two frames of quantization: 44.18 ms.
-    const boundSec = 10 / (intervalU * (80 / intervalU) ** 3) + 2 / 60;
+    // |Δperiod| <= a / (intervalU * minRate³) + two frames of quantization.
+    const boundSec = 5 / (intervalU * (40 / intervalU) ** 3) + 2 / 60;
     const times = steam.strokes
       .filter((stroke) => stroke.startSec <= 6)
       .map((stroke) => stroke.startSec);
@@ -276,36 +308,46 @@ describe('steam chuff rhythm (D-035)', () => {
     for (const stroke of steam.strokes.filter(
       (stroke) => stroke.startSec > 6.2,
     ))
-      expect(stroke.durationSec).toBe(Math.min(0.58, intervalU / 60));
+      expect(stroke.durationSec).toBe(Math.min(0.58, intervalU / 30));
   });
 
   it('makes no strokes or phase progress without positive speed and distance', () => {
     const steam = recordSteam(15);
     steam.update(0, 1000);
     steam.update(-10, 1000);
-    steam.update(480, 0);
-    steam.update(480, -10);
+    steam.update(gameConfig.train.maxSpeedUPerSec, 0);
+    steam.update(gameConfig.train.maxSpeedUPerSec, -10);
     expect(steam.strokes).toHaveLength(0);
-    steam.update(60, 23);
+    steam.update(30, 23);
     expect(steam.strokes).toHaveLength(0);
-    steam.update(60, 1);
+    steam.update(30, 1);
     expect(steam.strokes).toHaveLength(1);
   });
 
   it('keeps the first capped chuff after one phase beat and discards whole catch-up beats', () => {
     const steam = recordSteam(15);
-    for (let frame = 1; frame <= 10; frame++) steam.update(480, 8);
+    for (let frame = 1; frame <= 20; frame++)
+      steam.update(
+        gameConfig.train.maxSpeedUPerSec,
+        gameConfig.train.maxSpeedUPerSec / 60,
+      );
     expect(steam.strokes).toHaveLength(0);
-    steam.update(480, 8);
+    steam.update(
+      gameConfig.train.maxSpeedUPerSec,
+      gameConfig.train.maxSpeedUPerSec / 60,
+    );
     expect(steam.strokes).toHaveLength(1);
-    steam.update(480, 8000);
+    steam.update(gameConfig.train.maxSpeedUPerSec, 8000);
     expect(steam.strokes).toHaveLength(2);
-    steam.update(480, 0);
+    steam.update(gameConfig.train.maxSpeedUPerSec, 0);
     expect(steam.strokes).toHaveLength(2);
   });
 });
 
 describe('recorded audio layer mapping', () => {
+  it('D-036: wheels keep their absolute u/s mapping', () => {
+    expect(wheelSound(240)).toEqual({ rate: 1.175, gain: 0.42500000000000004 });
+  });
   it('wheels are silent at rest and increase rate and gain with speed', () => {
     expect(wheelSound(0).gain).toBe(0);
     expect(wheelSound(200).rate).toBeGreaterThan(wheelSound(50).rate);

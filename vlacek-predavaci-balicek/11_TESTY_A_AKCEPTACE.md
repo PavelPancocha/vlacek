@@ -13,7 +13,7 @@ Automatizované testy domény použijí Vitest, integrační/browser testy Playw
 | ID     | Situace                                                   | Očekávaný výsledek                                                      |
 | ------ | --------------------------------------------------------- | ----------------------------------------------------------------------- |
 | INP-01 | Podržet prst ve světě 3 s.                                | Vlak zrychluje, nikdy nepřekročí limit.                                 |
-| INP-02 | Pustit všechny prsty v plné rychlosti.                    | Plynule zpomalí k nule, bez couvání; nominálně zhruba 6 s.              |
+| INP-02 | Pustit všechny prsty v plné rychlosti.                    | Plynule zpomalí k nule, bez couvání; nominálně 5 s podle D-036.         |
 | INP-03 | V plné rychlosti držet brzdu.                             | Výrazně kratší zastavení, nominálně zhruba 1 s.                         |
 | INP-04 | Plyn jedním prstem, brzda druhým.                         | Brzda má přednost; po jejím puštění zbývající plyn znovu zrychluje.     |
 | INP-05 | Dotknout se zvířete a držet 4 s.                          | Plyn funguje, jedna reakce, žádné nekonečné restartování zvuku.         |
@@ -46,7 +46,7 @@ Audio regrese INP-10/12 podle [D-022](../docs/decisions/022-recorded-sounds.md) 
 | TRN-09 | Opakovaný rebase přes 16 384 u.                           | Neviditelný posun originu, stejné hit oblasti a obraz, žádný skok vlaku.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | TRN-10 | Vzorkování LUT a spřáhla na extrémním validním profilu.   | Chyba polohy ≤ 0.5 u, žádný průnik vozidel; spřáhlo vizuálně navazuje.                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
-U nominálního zastavení připustit toleranci dvou simulačních ticků plus snap epsilon. Přesný dojezd při maximální rychlosti na rovině zkontrolovat i podle analytického vztahu `v²/(2a)`; standardní hodnoty dávají 540 u bez brzdy a 90 u s brzdou před zanedbatelnou diskretizační odchylkou.
+U nominálního zastavení připustit toleranci dvou simulačních ticků plus snap epsilon. Přesný dojezd při maximální rychlosti na rovině zkontrolovat i podle analytického vztahu `v²/(2a)`; standardní hodnoty podle [D-036](../docs/decisions/036-slower-train.md) dávají 600 u bez brzdy a 120 u s brzdou před zanedbatelnou diskretizační odchylkou.
 
 ## 4. Generátor — GEN
 
@@ -354,3 +354,7 @@ oddělené CPU fáze atlasu, prvních 12 úseků a přesné 15s okno dlouhých �
 `hud-perf.spec.ts` kontroluje nulové pravidelné odběry plného snapshotu a
 skutečné obnovení obou řádků HUD po explicitním posunu hodin. Údaje a jejich
 formátování zůstávají shodné; detaily geometrie se odebírají na vyžádání.
+
+### Pomalejší vlak a pára (D-036)
+
+INP-01/02/03: limit 240 u/s, 80/48/240 u/s² zachovává nominální rozjezd/dojezd/brzdu 3/5/1 s. DATA-01/GEN-11: cesta uložená při historické rychlosti nad 240 u/s obnoví stejný kurzor a tick s nulovou rychlostí, bez posunu před novým vstupem. Zvukové regrese, nové koleno, tabulku a přijetí všech rázů při nejvýše dvou živých zdrojích vlastní [D-035](../docs/decisions/035-steam-chuff-rhythm.md).

@@ -256,11 +256,11 @@ export const gameConfig: GameConfig = {
     maxConsistLengthU: 2000,
     maxVehicleLengthU: 220,
     couplerGapU: 8,
-    // ≈ 0.144 screen widths per second at the D-028 camera scale (doc 14 §6).
-    maxSpeedUPerSec: 480,
-    accelerationUPerSec2: 160,
-    coastDecelerationUPerSec2: 96,
-    brakeDecelerationUPerSec2: 480,
+    // ≈ 0.072 screen widths per second at the D-028 camera scale (doc 14 §6).
+    maxSpeedUPerSec: 240,
+    accelerationUPerSec2: 80,
+    coastDecelerationUPerSec2: 48,
+    brakeDecelerationUPerSec2: 240,
     stopEpsilonUPerSec: 0.5,
     uphillSpeedReduction: 0.1,
     gradeAccelerationFactor: 0.25,

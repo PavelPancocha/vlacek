@@ -19,10 +19,10 @@ Tento soubor vlastní výchozí číselné parametry. Hodnoty jsou **návrh k im
     "maxConsistLengthU": 2000,
     "maxVehicleLengthU": 220,
     "couplerGapU": 8,
-    "maxSpeedUPerSec": 480,
-    "accelerationUPerSec2": 160,
-    "coastDecelerationUPerSec2": 96,
-    "brakeDecelerationUPerSec2": 480,
+    "maxSpeedUPerSec": 240,
+    "accelerationUPerSec2": 80,
+    "coastDecelerationUPerSec2": 48,
+    "brakeDecelerationUPerSec2": 240,
     "stopEpsilonUPerSec": 0.5,
     "uphillSpeedReduction": 0.1,
     "gradeAccelerationFactor": 0.25,
@@ -164,7 +164,7 @@ Limit soupravy je 2 000 u včetně spřáhel. [D-028, camera-1](../docs/decision
 
 `interaction.npcTrainMinSpeedUPerSec` a `interaction.npcTrainMaxSpeedUPerSec` musí být konečná kladná čísla, minimum nejvýš maximum. Validace odmítne také nekonečné maximum, aby protijedoucí vlak nemohl opustit svoji dráhu skokem do nekonečna (R2). Výchozí hodnoty 100–160 u/s ani uložená data se nemění.
 
-`Dclose` není druhá nezávislá konstanta. Je konzervativním dosahem simulace a blokováním silnice při plné rychlosti: `Vmax × (roadClearanceSeconds + warningSeconds + closingSeconds + safetySeconds) + distanceMarginU`, při nynějších 480 u/s tedy 2 240 u. Jednotlivé fáze řídí nejkratší možný čas příjezdu se zrychlením podle dokumentu 05 a [D-021](../docs/decisions/021-crossing-closes-in-view.md). Vzdálenost se měří od čela k bližšímu okraji rozšířené zóny (±62 u). `roadClearanceSeconds` nesmí být kratší než nejhorší doba opuštění konfliktu aktérem za stop čárou (2,0 s, D-015). `maxWarningSeconds` je kladná konečná hodnota nejméně `warningSeconds`: i při stání spustí závory po nejvýše 4 s výstrahy. Kladná konečná `openHysteresisSeconds` prodlužuje práh pro otevření o 0,5 s. Časová rezerva pro každou predikci je `distanceMarginU / Vmax` daného vlaku; validace odmítá neplatné hodnoty.
+`Dclose` není druhá nezávislá konstanta. Je konzervativním dosahem simulace a blokováním silnice při plné rychlosti: `Vmax × (roadClearanceSeconds + warningSeconds + closingSeconds + safetySeconds) + distanceMarginU`, při nynějších 240 u/s tedy 1 160 u. Jednotlivé fáze řídí nejkratší možný čas příjezdu se zrychlením podle dokumentu 05 a [D-021](../docs/decisions/021-crossing-closes-in-view.md). Vzdálenost se měří od čela k bližšímu okraji rozšířené zóny (±62 u). `roadClearanceSeconds` nesmí být kratší než nejhorší doba opuštění konfliktu aktérem za stop čárou (2,0 s, D-015). `maxWarningSeconds` je kladná konečná hodnota nejméně `warningSeconds`: i při stání spustí závory po nejvýše 4 s výstrahy. Kladná konečná `openHysteresisSeconds` prodlužuje práh pro otevření o 0,5 s. Časová rezerva pro každou predikci je `distanceMarginU / Vmax` daného vlaku; validace odmítá neplatné hodnoty.
 
 `world.chunksPerBiomeBlock` je pevně 8, stejně jako `world.blocksPerRouteCycle`. Rozvržení motivů podle dokumentu 04 §6 používá sloty 0–7; validace proto odmítá jinou velikost bloku, včetně 4 (R8). Odvození slotů pro jiné velikosti se zavede až při konkrétním požadavku spolu s novou verzí generátoru. Výchozí konfigurace ani uložené cesty se touto kontrolou nemění.
 

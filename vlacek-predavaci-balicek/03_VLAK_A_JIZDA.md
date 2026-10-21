@@ -12,7 +12,7 @@ Doménový svět má osu `x` doprava, `y` nahoru. Phaser má obrazovou osu `y` d
 
 Nepoužívat rigid-body fyziku, pružinová spřáhla ani výpočet tažné síly podle hmotnosti. Vlak je geometricky vedená souprava. Neexistuje prokluz, vykolejení, zlomení spřáhla ani neschopnost vyjet kopec.
 
-Základní hodnoty (dokument 14 §6): maximální rychlost 480 u/s, rozjezd 160 u/s², dojezdové zpomalení 96 u/s², brzda 480 u/s². Rozjezd na plnou rychlost trvá 3 s, prostý dojezd 5 s a aktivní brzda 1 s. Na obrazovce to odpovídá 0,216 šířky/s pro soupravy do 1 600 u a 0,173 šířky/s pro 2 000 u; kratší vlaky zachovávají původní měřítko ([D-028](../docs/decisions/028-longer-consist.md)). Verze 0.1 měla 180 u/s při větším měřítku (0,14 šířky za sekundu na 16:9). Hodnoty jsou laditelné; jejich zamýšlený pocit hlídá test `gameConfig` (0,216 / 0,1728 šířky/s podle délky jízdy, rozjezd 2–4 s, dojezd 4–7 s).
+Základní hodnoty podle [D-036](../docs/decisions/036-slower-train.md): maximální rychlost 240 u/s, rozjezd 80 u/s², dojezdové zpomalení 48 u/s², brzda 240 u/s². Rozjezd na plnou rychlost trvá 3 s, prostý dojezd 5 s a aktivní brzda 1 s; všechny tři sazby klesly na polovinu spolu s rychlostí. S aktuální pevnou kamerou `camera-1` ([D-028](../docs/decisions/028-longer-consist.md)) je to **0,072 šířky/s pro všechny povolené sestavy**, což hlídá test `gameConfig` společně s rozjezdem 2–4 s a dojezdem 4–7 s. Starší rámování by při poloviční rychlosti dávalo 0,108 / 0,0864 šířky/s místo původních 0,216 / 0,1728; tuto kameru už aktuální build nepoužívá. Verze 0.1 měla 180 u/s při větším měřítku (0,14 šířky za sekundu na 16:9). Pocit na fyzickém zařízení je NEOVĚŘENO.
 
 ### Aktualizace rychlosti
 

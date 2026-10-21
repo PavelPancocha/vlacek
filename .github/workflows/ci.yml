@@ -40,15 +40,18 @@ jobs:
   e2e:
     name: E2E (${{ matrix.shard }}/16)
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         # The full suite no longer fits one job; Playwright splits the fully
         # parallel tests evenly between the shards. Each shard runs one
         # browser (playwright.config.ts): with two, software WebGL starved
-        # atlas publication on the four vCPUs. Sixteen shards keep each job
-        # well inside 15 minutes, with room for a slow package mirror.
+        # atlas publication on the four vCPUs. Sixteen shards keep most jobs
+        # under 12 minutes. The D-030 long rides drive a fixed distance and
+        # take twice as long at the D-036 top speed (WebGL 162 -> 324 s,
+        # Canvas 114 -> 228 s); both land in one shard per project, so the
+        # job budget is 25 minutes, with room for a slow package mirror.
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0

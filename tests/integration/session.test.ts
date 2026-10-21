@@ -18,6 +18,55 @@ import {
 } from './helpers.ts';
 
 describe('GameSession: build → ride → pause → resume', () => {
+  it('D-036/DATA-01: a journey saved above the new limit restores stopped at the same position and tick', () => {
+    const storage = new MemoryStorage();
+    // Historical shipped motion constants, deliberately independent of current config.
+    const old = createSession(storage, {
+      config: {
+        ...gameConfig,
+        train: {
+          ...gameConfig.train,
+          maxSpeedUPerSec: 480,
+          accelerationUPerSec2: 160,
+          coastDecelerationUPerSec2: 96,
+          brakeDecelerationUPerSec2: 480,
+        },
+      },
+    });
+    buildAndDepart(old);
+    touchWorld(old);
+    runFor(old, 5);
+    if (!old.ride) throw new Error('missing legacy ride');
+    expect(old.ride.speedUPerSec).toBeGreaterThan(
+      gameConfig.train.maxSpeedUPerSec,
+    );
+    const head = old.ride.headCursor();
+    const position = old.ride.sample(old.ride.headS);
+    const tick = old.ride.simulationTick;
+    // The periodic checkpoint persists tick 300 while the old train is still moving.
+    expect(old.ride.simulationTick).toBe(5 * gameConfig.simulation.fixedHz);
+    expect(storage.getItem(PRIMARY_KEY)).not.toBeNull();
+    const restored = createSession(storage);
+    tap(restored, 'continue');
+    expect(restored.ride?.speedUPerSec).toBe(0);
+    expect(restored.ride?.headCursor()).toEqual(head);
+    expect(restored.ride?.simulationTick).toBe(tick);
+    if (!restored.ride) throw new Error('missing restored ride');
+    const actual = restored.ride.sample(restored.ride.headS);
+    expect(actual.x).toBeCloseTo(position.x, 6);
+    expect(actual.y).toBeCloseTo(position.y, 6);
+    const still = restored.ride.headCursor();
+    tap(restored, 'resume');
+    runFor(restored, 1);
+    expect(restored.ride.headCursor()).toEqual(still);
+    touchWorld(restored);
+    runFor(restored, 4);
+    expect(restored.ride.speedUPerSec).toBeGreaterThan(0);
+    expect(restored.ride.speedUPerSec).toBeLessThanOrEqual(
+      gameConfig.train.maxSpeedUPerSec,
+    );
+  });
+
   it('UI-01: a first run starts at locomotive selection without reading', () => {
     expect(createSession().screen).toEqual({
       name: 'SELECT_LOCO',

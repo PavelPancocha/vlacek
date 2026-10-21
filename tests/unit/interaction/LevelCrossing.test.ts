@@ -73,29 +73,51 @@ function drive(
 describe('LevelCrossing: barriers that really close (doc 05 §4)', () => {
   it('keeps barriers up after the minimum warning while arrival is still distant', () => {
     const crossing = new LevelCrossing('visible', X, 1, rules, span(X - 5000));
-    const train = span(X - 1500);
+    const train = span(X - CROSSING_ZONE_HALF_U - VMAX * 3);
     for (let i = 0; i < 120; i++) crossing.step(DT, train);
     expect(crossing.phase).toBe('WARNING');
     expect(crossing.barrier).toBe(0);
   });
 
   it('predicts rest, cruise, full speed and constant-speed oncoming arrivals', () => {
-    expect(earliestArrivalSeconds(100, 0, 480, 200)).toBeCloseTo(1);
-    expect(earliestArrivalSeconds(400, 200, 480, 200)).toBeCloseTo(
-      (Math.sqrt(200 ** 2 + 2 * 200 * 400) - 200) / 200,
-    );
-    expect(earliestArrivalSeconds(960, 480, 480, 200)).toBe(2);
-    expect(earliestArrivalSeconds(2000, 0, 480, 200)).toBeCloseTo(
-      2.4 + (2000 - 576) / 480,
-    );
+    const acceleration = span(0).accelerationUPerSec2;
+    const toFullSec = VMAX / acceleration;
+    const acceleratingU = (VMAX * toFullSec) / 2;
+    expect(
+      earliestArrivalSeconds(acceleration / 2, 0, VMAX, acceleration),
+    ).toBeCloseTo(1);
+    expect(earliestArrivalSeconds(VMAX * 2, VMAX, VMAX, acceleration)).toBe(2);
+    expect(
+      earliestArrivalSeconds(acceleratingU + VMAX * 3, 0, VMAX, acceleration),
+    ).toBeCloseTo(toFullSec + 3);
+    const initialSpeedUPerSec = VMAX / 2;
+    const distanceU = VMAX / 2;
+    const toLimitSec = (VMAX - initialSpeedUPerSec) / acceleration;
+    const distanceToLimitU = ((initialSpeedUPerSec + VMAX) * toLimitSec) / 2;
+    expect(distanceU).toBeLessThan(distanceToLimitU);
+    const duringAccelerationSec =
+      (Math.sqrt(initialSpeedUPerSec ** 2 + 2 * acceleration * distanceU) -
+        initialSpeedUPerSec) /
+      acceleration;
+    expect(
+      earliestArrivalSeconds(
+        distanceU,
+        initialSpeedUPerSec,
+        VMAX,
+        acceleration,
+      ),
+    ).toBeCloseTo(duringAccelerationSec, 10);
+    expect(
+      earliestArrivalSeconds(VMAX, initialSpeedUPerSec, VMAX, acceleration),
+    ).toBeCloseTo(toLimitSec + (VMAX - distanceToLimitU) / VMAX, 10);
     expect(earliestArrivalSeconds(600, 120, 120, 0)).toBe(5);
     expect(earliestArrivalSeconds(600, 0, 120, 0)).toBe(Infinity);
-    expect(earliestArrivalSeconds(0, 0, 480, 200)).toBe(0);
+    expect(earliestArrivalSeconds(0, 0, VMAX, acceleration)).toBe(0);
   });
 
   it('lowers after the maximum warning even for a standing train, never before the minimum', () => {
     const crossing = new LevelCrossing('standing', X, 1, rules, span(X - 5000));
-    const train = span(X - 1500);
+    const train = span(X - CROSSING_ZONE_HALF_U - VMAX * 3);
     crossing.step(DT, train);
     crossing.step(DT, train);
     expect(crossing.phase).toBe('WARNING');

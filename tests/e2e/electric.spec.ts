@@ -142,7 +142,12 @@ test.describe('electric locomotive and catenary (doc 03 §9, TRN-08, D-016)', ()
       let enteredTunnel = false;
       let exitedTunnel = false;
       const tunnelId = `g${TRACK_GENERATOR_VERSION}:chunk:6:tunnel:0`;
-      for (let i = 0; i < 300; i++) {
+      // D-036: preserve the 7200 u sampling envelope: 15 s × 480 / Vmax (30 s now).
+      for (
+        let i = 0;
+        i < Math.ceil(7200 / gameConfig.train.maxSpeedUPerSec / 0.05);
+        i++
+      ) {
         const state = await snapshot(page);
         expect(state.catenary.electrified).toBe(true);
         // Masts in every rendered chunk, across chunk seams.
