@@ -90,12 +90,26 @@ describe('LevelCrossing: barriers that really close (doc 05 §4)', () => {
     expect(
       earliestArrivalSeconds(acceleratingU + VMAX * 3, 0, VMAX, acceleration),
     ).toBeCloseTo(toFullSec + 3);
+    const initialSpeedUPerSec = VMAX / 2;
+    const distanceU = VMAX / 2;
+    const toLimitSec = (VMAX - initialSpeedUPerSec) / acceleration;
+    const distanceToLimitU = ((initialSpeedUPerSec + VMAX) * toLimitSec) / 2;
+    expect(distanceU).toBeLessThan(distanceToLimitU);
+    const duringAccelerationSec =
+      (Math.sqrt(initialSpeedUPerSec ** 2 + 2 * acceleration * distanceU) -
+        initialSpeedUPerSec) /
+      acceleration;
     expect(
-      earliestArrivalSeconds(VMAX, VMAX / 2, VMAX, acceleration),
-    ).toBeCloseTo(
-      (Math.sqrt((VMAX / 2) ** 2 + 2 * acceleration * VMAX) - VMAX / 2) /
+      earliestArrivalSeconds(
+        distanceU,
+        initialSpeedUPerSec,
+        VMAX,
         acceleration,
-    );
+      ),
+    ).toBeCloseTo(duringAccelerationSec, 10);
+    expect(
+      earliestArrivalSeconds(VMAX, initialSpeedUPerSec, VMAX, acceleration),
+    ).toBeCloseTo(toLimitSec + (VMAX - distanceToLimitU) / VMAX, 10);
     expect(earliestArrivalSeconds(600, 120, 120, 0)).toBe(5);
     expect(earliestArrivalSeconds(600, 0, 120, 0)).toBe(Infinity);
     expect(earliestArrivalSeconds(0, 0, VMAX, acceleration)).toBe(0);

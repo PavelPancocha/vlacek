@@ -119,7 +119,12 @@ změněné testovací kontrakty.
   přibližně 3 s dráhy na limitu; nový přístup je přesně
   `CROSSING_ZONE_HALF_U + Vmax × 3 = 782 u`. Očekávání WARNING,
   minimální/maximální výstrahy a uzavření se nemění. Příklady nejčasnějšího
-  příjezdu počítají z configu. Seedové bezpečnostní testy zůstávají.
+  příjezdu počítají z configu. Revize 2026-10-21 po nezávislé recenzi
+  rozlišuje příjezd během zrychlování z nenulové rychlosti (120 u/s,
+  vzdálenost 120 u < 216 u do dosažení limitu, kvadratický čas přibližně
+  0,7595917942 s) a příjezd po dosažení limitu (240 u, 1,3 s). Obě
+  očekávání používají výslovnou přesnost 10 desetinných míst; produkční
+  výpočet se nemění. Seedové bezpečnostní testy zůstávají.
 - `electric.spec.ts`, tři průjezdy TRN-08: původní vzorkovací obálka
   `300 × 0,05 × 480 = 7200 u` nyní používá `7200 / Vmax / 0,05`
   vzorků, tedy 600 místo 300 (30 místo 15 s). Stejně
