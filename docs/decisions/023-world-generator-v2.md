@@ -41,7 +41,7 @@ Nezměněné algoritmy drží původní číselnou RNG sůl 1. Nové plánován�
 
 ## Browserové fixtury v2
 
-V1 souřadnice nemají po migraci význam: fixtury R10 a pauzy v přechodu používají skutečnou hranici regionu a její x převedené na oblouk. Přejezd seedu 123 je ve v2 na x = 3 328 u; původní start 1/100 již leží uvnitř zavírací vzdálenosti 2 240 u, proto test začíná v 0/800 před ní. Očekávané bezpečné pořadí závor se nemění. Testy prvního snímku porovnávají původní trojici backdrop polí a navíc ověřují generátor/seed rozšířené diagnostiky `world`; obnovu renderu nepovažují za změnu světa.
+V1 souřadnice nemají po migraci význam: fixtury R10 a pauzy v přechodu používají skutečnou hranici regionu a její x převedené na oblouk. Přejezd seedu 123 je ve v2 na x = 3 328 u. Historická úprava při migraci v2 přesunula start z 1/100 do 0/800 kvůli tehdejšímu Dclose 2 240 u. Od 2026-10-21 toto neplatí jako společný popis všech fixture: [D-036](036-slower-train.md) snižuje Dclose na 1 160 u. Test celého pořadí fází v `crossings.spec.ts` začíná v 1/450, mimo Dclose, ale uvnitř kratšího streamovacího horizontu, kde již existuje OPEN přejezd. Plnorychlostní testy viditelného začátku sklápění (krátká i nejdelší souprava) dál začínají v 0/800; poloviční rychlostní varianta používá 1/450. Očekávané bezpečné pořadí závor se nemění. Testy prvního snímku porovnávají původní trojici backdrop polí a navíc ověřují generátor/seed rozšířené diagnostiky `world`; obnovu renderu nepovažují za změnu světa.
 
 ## Krok 2 — profily, popředí a rodičovská diagnostika
 
