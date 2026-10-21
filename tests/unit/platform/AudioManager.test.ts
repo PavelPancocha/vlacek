@@ -56,6 +56,72 @@ async function saturatedTails(extraClips: readonly string[] = []) {
 
 afterEach(() => vi.unstubAllGlobals());
 describe('recorded sounds / H1', () => {
+  it.each([
+    [10.245, 10.25],
+    [10.2, 10.2 + 0.01],
+    [10.26, 10.25],
+  ])(
+    "bounds the replacement fade at %s s by the stroke end and waits for that stroke's ended",
+    async (requestSec, fadeEndSec) => {
+      const { audio, context, voices, gains, advanceTo } = setup();
+      audio.unlock();
+      audio.setLayers([
+        {
+          key: 'engine',
+          id: 'steam-chuff',
+          pulsed: true,
+          gain: 1,
+          rate: 1,
+          priority: 70,
+        },
+      ]);
+      await advanceTo(10);
+      audio.chuff(0.25);
+      context.currentTime = 10.1;
+      audio.chuff(0.25);
+      const oldest = voices[0];
+      const envelope = gains[2];
+      if (!oldest || !envelope) throw new Error('Missing steam stroke');
+      expect(oldest.start).toHaveBeenCalledExactlyOnceWith(10, 0, 0.25);
+
+      context.currentTime = requestSec;
+      audio.chuff(0.31);
+      expect(envelope.gain.linearRampToValueAtTime).toHaveBeenLastCalledWith(
+        0,
+        fadeEndSec,
+      );
+      for (const [, atSec] of envelope.gain.linearRampToValueAtTime.mock.calls)
+        expect(atSec).toBeLessThanOrEqual(10.25);
+      if (fadeEndSec > requestSec) {
+        expect(oldest.stop).toHaveBeenCalledExactlyOnceWith(fadeEndSec);
+        expect(envelope.gain.setValueAtTime).toHaveBeenLastCalledWith(
+          expect.any(Number),
+          requestSec,
+        );
+      } else {
+        // An already silent source may still be awaiting its ended callback.
+        expect(oldest.stop).not.toHaveBeenCalled();
+        expect(envelope.gain.cancelScheduledValues).not.toHaveBeenCalled();
+      }
+      expect(oldest.dueSec).toBe(fadeEndSec);
+      expect(voices).toHaveLength(2);
+
+      // Both deadlines passed, but the oldest source's ended is delivered last.
+      context.currentTime = 10.351;
+      voices[1]?.finish();
+      expect(voices).toHaveLength(2);
+      oldest.finish();
+      expect(voices).toHaveLength(3);
+      expect(voices[2]?.start).toHaveBeenCalledExactlyOnceWith(10.351, 0, 0.31);
+      expect(audio.diagnostics.sourceCount).toBe(1);
+      audio.dispose();
+      for (const source of voices) source.finish();
+      for (const source of voices)
+        expect(source.disconnect).toHaveBeenCalledOnce();
+      for (const gain of gains) expect(gain.disconnect).toHaveBeenCalledOnce();
+    },
+  );
+
   it('defers a third steam stroke until the oldest ends after a 10ms ramp, replacing only the pending duration', async () => {
     const { audio, context, voices, gains, advanceTo } = setup();
     audio.unlock();

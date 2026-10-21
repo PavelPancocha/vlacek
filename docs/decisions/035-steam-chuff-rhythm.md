@@ -97,6 +97,7 @@ nebo ztráta vlastnictví enginu zruší čekání, i když obsazené taily
 odloží samotnou změnu vrstvy. Pozdní `ended` nic neobnoví. Každý source
 a jeho obálka se odpojí právě jednou. Změna vrstvy neprodlouží už
 zkrácený ráz; již bližší konec dohasínajícího hlasu se také neodkládá.
+10ms zkrácení končí nejpozději na vlastním konci rázu, takže jej náhradní rampa nikdy nepřesáhne.
 Limit dvou souběžných parních rázů počítá i rázy starého
 enginu, který už doznívá v tailech; nový engine čeká na uvolnění stejně
 jako další ráz téhož hlasu. Dva tail zdroje a celkový strop 11 zdrojů
