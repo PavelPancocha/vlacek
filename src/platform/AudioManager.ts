@@ -22,7 +22,7 @@ interface Voice {
   priority: number;
   gain: GainNode;
   source: AudioBufferSourceNode | undefined;
-  strokes: Map<AudioBufferSourceNode, GainNode>;
+  strokes: Map<AudioBufferSourceNode, { envelope: GainNode; endSec: number }>;
   pendingStrokeSec: number | undefined;
   retiringStroke: AudioBufferSourceNode | undefined;
 }
@@ -293,7 +293,7 @@ export class AudioManager {
     voice.retiringStroke = undefined;
     voice.source?.stop();
     voice.source?.disconnect();
-    for (const [stroke, envelope] of voice.strokes) {
+    for (const [stroke, { envelope }] of voice.strokes) {
       stroke.stop();
       stroke.disconnect();
       envelope.disconnect();
@@ -642,19 +642,23 @@ export class AudioManager {
         const owner = strokeOwners.find((owner) => owner.strokes.size > 0);
         const oldest = owner?.strokes.entries().next().value;
         if (!owner || !oldest) return;
-        const [stroke, envelope] = oldest;
+        const [stroke, { envelope, endSec }] = oldest;
         if (owner.retiringStroke !== stroke) {
           owner.retiringStroke = stroke;
           const now = context.currentTime;
-          const end = Math.max(
-            now,
-            Math.min(now + SHORT_FADE_SEC, this.#tails.get(owner) ?? Infinity),
+          const end = Math.min(
+            now + SHORT_FADE_SEC,
+            endSec,
+            this.#tails.get(owner) ?? Infinity,
           );
-          const heldGain = envelope.gain.value;
-          envelope.gain.cancelScheduledValues(now);
-          envelope.gain.setValueAtTime(heldGain, now);
-          envelope.gain.linearRampToValueAtTime(0, end);
-          stroke.stop(end);
+          // An elapsed stroke keeps its release while waiting for ended delivery.
+          if (end > now) {
+            const heldGain = envelope.gain.value;
+            envelope.gain.cancelScheduledValues(now);
+            envelope.gain.setValueAtTime(heldGain, now);
+            envelope.gain.linearRampToValueAtTime(0, end);
+            stroke.stop(end);
+          }
         }
         voice.retiringStroke = stroke;
       }
@@ -672,7 +676,7 @@ export class AudioManager {
     source.buffer = buffer;
     source.connect(envelope);
     envelope.connect(voice.gain);
-    voice.strokes.set(source, envelope);
+    voice.strokes.set(source, { envelope, endSec: now + duration });
     source.addEventListener(
       'ended',
       () => {
