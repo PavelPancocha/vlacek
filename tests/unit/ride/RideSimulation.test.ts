@@ -274,6 +274,18 @@ if (!site) throw new Error('no forced second track');
 const triggerX = site.fromX - npcTriggerBeforeFeatureU;
 const frontX = (ride: RideSimulation) => ride.sample(ride.frontS).x;
 
+function throttleTickBudget(distanceU: number): number {
+  const { train, simulation } = gameConfig;
+  // Cruise time + a full acceleration interval; 50% margin for grades,
+  // arc length and discrete ticks: ceil(1.5 × (distance / 240 + 240 / 80) × 60).
+  return Math.ceil(
+    1.5 *
+      (distanceU / train.maxSpeedUPerSec +
+        train.maxSpeedUPerSec / train.accelerationUPerSec2) *
+      simulation.fixedHz,
+  );
+}
+
 /** A ride stopped this far (u) before the second track's trigger. */
 function beforeTrigger(gapU: number): RideSimulation {
   const x = triggerX - gapU - 100;
@@ -323,7 +335,11 @@ describe('RideSimulation: the oncoming train (doc 05 §6, SCN-09/10)', () => {
   it('answers the horn at most every 8 s and never itself; greets once when meeting', () => {
     const ride = beforeTrigger(50);
     // Meet in the open, rather than stopping before the portal at the new lower speed.
-    while (frontX(ride) < site.fromX + 200) ride.step('THROTTLE');
+    const targetX = site.fromX + 200;
+    const tickBudget = throttleTickBudget(targetX - frontX(ride));
+    for (let tick = 0; tick < tickBudget && frontX(ride) < targetX; tick++)
+      ride.step('THROTTLE');
+    expect(frontX(ride)).toBeGreaterThanOrEqual(targetX);
     expect(ride.oncomingTrains).toHaveLength(1);
     // Hold still in range; it comes along and meets the player.
     const npcHorns: number[] = [];
@@ -345,7 +361,11 @@ describe('RideSimulation: the oncoming train (doc 05 §6, SCN-09/10)', () => {
   it('greets just once on its own, without any horn from the player', () => {
     const ride = beforeTrigger(50);
     // Meet in the open, rather than stopping before the portal at the new lower speed.
-    while (frontX(ride) < site.fromX + 200) ride.step('THROTTLE');
+    const targetX = site.fromX + 200;
+    const tickBudget = throttleTickBudget(targetX - frontX(ride));
+    for (let tick = 0; tick < tickBudget && frontX(ride) < targetX; tick++)
+      ride.step('THROTTLE');
+    expect(frontX(ride)).toBeGreaterThanOrEqual(targetX);
     let greetings = 0;
     for (let i = 0; i < 60 * 60; i++) {
       ride.step('BRAKE');
@@ -360,7 +380,8 @@ describe('RideSimulation: the oncoming train (doc 05 §6, SCN-09/10)', () => {
     const sent = new Set<string>();
     const blockU = gameConfig.world.chunksPerBiomeBlock * chunkWidthU;
     const endX = frontX(ride) + 12 * blockU;
-    while (frontX(ride) < endX) {
+    const tickBudget = throttleTickBudget(endX - frontX(ride));
+    for (let tick = 0; tick < tickBudget && frontX(ride) < endX; tick++) {
       ride.step('THROTTLE');
       for (const train of ride.oncomingTrains) sent.add(train.id);
       // Only the next two blocks' sites and the trains still running.
@@ -368,6 +389,7 @@ describe('RideSimulation: the oncoming train (doc 05 §6, SCN-09/10)', () => {
         2 + 2 * ride.oncomingTrains.length,
       );
     }
+    expect(frontX(ride)).toBeGreaterThanOrEqual(endX);
     expect(sent.size).toBeGreaterThanOrEqual(3);
   });
 });
